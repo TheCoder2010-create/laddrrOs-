@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'HR Head' | 'Voice – In Silence';
 
 export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head'];
+export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead'];
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 
@@ -15,10 +16,9 @@ export const useRole = () => {
     const router = useRouter();
 
     useEffect(() => {
-        // This effect runs once on mount to restore the role from localStorage
         try {
             const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as Role;
-            if (storedRole && availableRoles.includes(storedRole)) {
+            if (storedRole && [...availableRoles, 'Voice – In Silence'].includes(storedRole)) {
                 setRole(storedRole);
             }
         } catch (error) {
@@ -30,13 +30,12 @@ export const useRole = () => {
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
-            // We need to ensure the user is "logged out" before navigating to the anonymous page.
             localStorage.removeItem(ROLE_STORAGE_KEY);
-            setRole(null);
+            setRole(null); 
             router.push('/voice-in-silence/submit');
             return;
         }
-
+        
         setRole(newRole);
         try {
             if (newRole) {

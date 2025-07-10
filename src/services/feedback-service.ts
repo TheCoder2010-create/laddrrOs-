@@ -6,10 +6,12 @@
  * suitable for a prototype. It now includes custom event dispatching for same-tab updates.
  */
 import { v4 as uuidv4 } from 'uuid';
+import type { Role } from '@/hooks/use-role';
 
 export interface AuditEvent {
   event: string;
-  timestamp: Date | string; // Allow string for JSON compatibility
+  timestamp: Date | string; 
+  actor: Role;
   details?: string;
 }
 
@@ -17,12 +19,15 @@ export interface Feedback {
   trackingId: string;
   subject: string;
   message: string;
-  submittedAt: Date | string; // Allow string for JSON compatibility
+  submittedAt: Date | string; 
   summary?: string;
   criticality?: 'Low' | 'Medium' | 'High' | 'Critical';
   criticalityReasoning?: string;
   auditTrail?: AuditEvent[];
   viewed?: boolean;
+  status?: 'Open' | 'In Progress' | 'Resolved';
+  assignedTo?: Role;
+  resolution?: string;
 }
 
 // Client-side submission types
@@ -75,7 +80,7 @@ const getComplaintsFromStorage = (): Feedback[] => {
   }
 };
 
-// Helper to save complaints to localStorage
+// Helper to save complaints to localStorage and notify listeners
 const saveComplaintsToStorage = (complaints: Feedback[]): void => {
    if (typeof window === 'undefined') {
     return;
@@ -96,19 +101,35 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const trackingId = uuidv4();
   const submittedAt = new Date();
 
+  // Simulate AI analysis
+  const summary = "AI-generated summary of the user's feedback message.";
+  const criticality = (['Low', 'Medium', 'High', 'Critical'] as const)[Math.floor(Math.random() * 4)];
+  const criticalityReasoning = "AI-generated reasoning for the criticality assessment based on keywords and sentiment.";
+
   const newFeedback: Feedback = {
     ...input,
     trackingId,
     submittedAt,
+    summary,
+    criticality,
+    criticalityReasoning,
     viewed: false,
+    status: 'Open',
+    assignedTo: 'HR Head',
     auditTrail: [
       {
         event: 'Submitted',
         timestamp: submittedAt,
+        actor: 'Employee', // Assuming submitter is an employee for demo
         details: 'Feedback was received by the system.',
+      },
+      {
+        event: 'AI Analysis Completed',
+        timestamp: new Date(submittedAt.getTime() + 1000), // 1 second later
+        actor: 'HR Head', // System action, attributed to HR for demo
+        details: `AI assessed criticality as ${criticality}.`,
       }
     ]
-    // AI analysis would be added here in a real scenario
   };
 
   allFeedback.unshift(newFeedback); // Add to the beginning
@@ -160,4 +181,79 @@ export async function markAllFeedbackAsViewed(): Promise<void> {
     allFeedback = allFeedback.map(c => ({ ...c, viewed: true }));
     saveComplaintsToStorage(allFeedback);
   }
+}
+
+/**
+ * Assigns a feedback item to a new role.
+ * @param trackingId The ID of the feedback to assign.
+ * @param assignTo The role to assign the feedback to.
+ * @param actor The role performing the assignment.
+ * @param comment An optional comment for the assignment.
+ */
+export async function assignFeedback(trackingId: string, assignTo: Role, actor: Role, comment?: string): Promise<void> {
+    const allFeedback = getComplaintsFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+
+    if (feedbackIndex === -1) return;
+
+    const feedback = allFeedback[feedbackIndex];
+    feedback.assignedTo = assignTo;
+    feedback.status = assignTo === 'HR Head' ? 'Open' : 'In Progress';
+    feedback.auditTrail?.push({
+        event: 'Assigned',
+        timestamp: new Date(),
+        actor,
+        details: `Assigned to ${assignTo}.${comment ? ` Comment: ${comment}` : ''}`
+    });
+
+    saveComplaintsToStorage(allFeedback);
+}
+
+/**
+ * Adds an update to a feedback item.
+ * @param trackingId The ID of the feedback to update.
+ * @param actor The role adding the update.
+ * @param comment The update comment.
+ */
+export async function addFeedbackUpdate(trackingId: string, actor: Role, comment: string): Promise<void> {
+    const allFeedback = getComplaintsFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+
+    if (feedbackIndex === -1) return;
+
+    const feedback = allFeedback[feedbackIndex];
+    feedback.auditTrail?.push({
+        event: 'Update Added',
+        timestamp: new Date(),
+        actor,
+        details: comment,
+    });
+
+    saveComplaintsToStorage(allFeedback);
+}
+
+/**
+ * Resolves a feedback item.
+ * @param trackingId The ID of the feedback to resolve.
+ * @param actor The role resolving the feedback.
+ * @param resolution The resolution comment.
+ */
+export async function resolveFeedback(trackingId: string, actor: Role, resolution: string): Promise<void> {
+    const allFeedback = getComplaintsFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+
+    if (feedbackIndex === -1) return;
+
+    const feedback = allFeedback[feedbackIndex];
+    feedback.status = 'Resolved';
+    feedback.resolution = resolution;
+    feedback.assignedTo = 'HR Head'; // Final state belongs to HR
+    feedback.auditTrail?.push({
+        event: 'Resolved',
+        timestamp: new Date(),
+        actor,
+        details: resolution
+    });
+
+    saveComplaintsToStorage(allFeedback);
 }
