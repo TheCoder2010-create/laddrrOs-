@@ -33,7 +33,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
@@ -180,17 +179,22 @@ function HistorySection({ role }: { role: Role }) {
             item.supervisorName === currentUser.name || item.employeeName === currentUser.name
         );
         
-        // Check for related critical feedback items
+        // Check for related critical feedback items to link alerts
         const allFeedback = await getAllFeedback();
         const userHistoryWithAlerts = userHistory.map(item => {
+            const hasEscalationAlert = !!item.analysis.escalationAlert;
+            if (!hasEscalationAlert) return { ...item, hasPendingAction: false };
+
             const relatedFeedback = allFeedback.find(fb => 
-                fb.summary === item.analysis.escalationAlert &&
-                fb.employee === roleUserMapping[role].role
+                fb.summary === item.analysis.escalationAlert && 
+                (fb.supervisor === role || fb.employee === role)
             );
+
+            const hasPendingAction = relatedFeedback?.status === 'Pending Supervisor Action' && relatedFeedback?.assignedTo === role;
+
             return {
                 ...item,
-                escalationAlert: item.analysis.escalationAlert,
-                hasPendingAction: relatedFeedback?.status === 'Pending Supervisor Action' && relatedFeedback?.assignedTo === role
+                hasPendingAction,
             };
         });
 
@@ -229,14 +233,14 @@ function HistorySection({ role }: { role: Role }) {
                             <div className="flex justify-between items-center w-full pr-4">
                                 <div className="text-left">
                                     <p className="font-medium">
-                                        1-on-1 with {item.employeeName}
+                                        1-on-1 with {role === item.supervisorName ? item.employeeName : item.supervisorName}
                                     </p>
                                     <p className="text-sm text-muted-foreground font-normal">
                                         {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                     </p>
                                 </div>
-                                 {(item.analysis as any).escalationAlert && (
-                                    <div className="flex items-center gap-2 text-destructive">
+                                 {item.analysis.escalationAlert && (
+                                    <div className={cn("flex items-center gap-2", (item as any).hasPendingAction ? "text-destructive" : "text-muted-foreground")}>
                                         <AlertTriangle className="h-5 w-5" />
                                         <span className="hidden md:inline">Critical Insight</span>
                                     </div>
@@ -247,12 +251,18 @@ function HistorySection({ role }: { role: Role }) {
                             {(item as any).hasPendingAction && (
                                 <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-center">
                                     <h4 className="font-semibold text-destructive">Action Required</h4>
-                                    <p className="text-destructive/90 text-sm mb-2">{ (item.analysis as any).escalationAlert }</p>
+                                    <p className="text-destructive/90 text-sm mb-2">{item.analysis.escalationAlert}</p>
                                      <Button variant="destructive" size="sm" asChild>
                                         <Link href="/action-items">Address Insight</Link>
                                     </Button>
                                 </div>
                             )}
+                             {!((item as any).hasPendingAction) && item.analysis.escalationAlert && (
+                                <div className="p-3 rounded-md bg-muted/50 border">
+                                    <h4 className="font-semibold text-muted-foreground">Critical Insight Logged</h4>
+                                    <p className="text-muted-foreground text-sm">{item.analysis.escalationAlert}</p>
+                                </div>
+                             )}
 
                             <div>
                                 <h4 className="font-semibold">Key Themes</h4>
