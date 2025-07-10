@@ -220,7 +220,6 @@ function OneOnOnePage({ role }: { role: Role }) {
                     </Avatar>
                     <div>
                       <CardTitle className="text-xl">{meeting.with}</CardTitle>
-                      <p className="text-muted-foreground">{meeting.role}</p>
                     </div>
                   </div>
                 </CardHeader>
