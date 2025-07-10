@@ -14,20 +14,19 @@ import { getRoleByName } from '@/lib/role-mapping';
 
 export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
   const result = await analyzeOneOnOneFlow(input);
+  const allFeedback = await getAllFeedback();
+  const submittedAt = new Date();
+  
+  const supervisorRole = getRoleByName(input.supervisorName);
+  const employeeRole = getRoleByName(input.employeeName);
 
-  // If a critical insight is found, create a new feedback record to trigger the workflow.
+  if (!supervisorRole || !employeeRole) {
+      console.error("Could not determine roles for supervisor or employee. Aborting insight creation.");
+      return result;
+  }
+
+  // If a critical insight is found, create a new feedback record to trigger the critical workflow.
   if (result.escalationAlert && input.oneOnOneId) {
-      const allFeedback = await getAllFeedback();
-      const submittedAt = new Date();
-      
-      const supervisorRole = getRoleByName(input.supervisorName);
-      const employeeRole = getRoleByName(input.employeeName);
-      
-      if (!supervisorRole || !employeeRole) {
-          console.error("Could not determine roles for supervisor or employee. Aborting critical insight creation.");
-          return result;
-      }
-
       const newFeedback = {
           trackingId: uuidv4(),
           oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
@@ -64,8 +63,42 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
       };
       
       allFeedback.unshift(newFeedback);
-      await saveFeedback(allFeedback);
   }
+  
+  // If there are action items, create a "To-Do" feedback item for the supervisor.
+  if (result.actionItems && result.actionItems.length > 0) {
+      const newActionItemRecord = {
+          trackingId: uuidv4(),
+          oneOnOneId: input.oneOnOneId,
+          subject: `Action Items from 1-on-1 with ${input.employeeName}`,
+          message: `The following action items were generated from your 1-on-1 on ${new Date().toLocaleDateString()}.`,
+          submittedAt: submittedAt,
+          criticality: 'Low' as const,
+          status: 'To-Do' as const,
+          assignedTo: supervisorRole,
+          supervisor: supervisorRole,
+          employee: employeeRole,
+          viewed: true,
+          actionItems: result.actionItems.map(itemText => ({
+              id: uuidv4(),
+              text: itemText,
+              status: 'pending' as const,
+              owner: supervisorRole,
+          })),
+          auditTrail: [
+              {
+                  event: 'To-Do List Created',
+                  timestamp: submittedAt,
+                  actor: 'HR Head' as const, // System action
+                  details: 'Action items were generated from 1-on-1 analysis and assigned to the supervisor.',
+              }
+          ]
+      };
+      allFeedback.unshift(newActionItemRecord as any);
+  }
+
+  // Save all new feedback items created in this flow
+  await saveFeedback(allFeedback);
   
   return result;
 }
@@ -110,7 +143,7 @@ Here is the data from the session between supervisor {{supervisorName}} and empl
 Based on ALL the information provided, perform the following analysis and provide the output in the requested JSON format:
 
 1.  **keyThemes**: Identify the 3-5 most important themes. These could be about performance, goals, challenges, or morale.
-2.  **actionItems**: Extract or infer clear, actionable next steps. Assign ownership if possible (e.g., "Supervisor to schedule follow-up," "Employee to research training courses").
+2.  **actionItems**: Extract or infer clear, actionable next steps for the supervisor or employee. These should be concise to-do items. If an item is for the employee, start it with "Employee to...". Otherwise, assume it is for the supervisor.
 3.  **sentimentAnalysis**: Briefly describe the overall mood. Was it tense, collaborative, positive, etc.? Consider the employee's reception of feedback and any signs of stress.
 4.  **escalationAlert**: CRITICAL: Scrutinize the input for any red flags that might require HR intervention. This includes mentions of harassment, discrimination, extreme burnout, clear intent to quit, or serious policy violations. If found, formulate a concise, professional alert. If no such flags are present, OMIT this field entirely.
 5.  **coachingImpactAnalysis**: Based on the employee's feedback, reception, and aspirations, suggest the single most impactful area for the supervisor to focus their coaching efforts. For example, "Focus on building confidence through smaller, quick wins" or "Help the employee network with other teams to explore their career aspirations."

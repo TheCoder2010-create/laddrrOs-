@@ -23,7 +23,15 @@ export type FeedbackStatus =
   | 'Pending Employee Acknowledgement'
   | 'Pending AM Review'
   | 'Pending Manager Acknowledgement'
+  | 'To-Do'
   | 'Resolved';
+  
+export interface ActionItem {
+    id: string;
+    text: string;
+    status: 'pending' | 'completed';
+    owner: Role;
+}
 
 export interface Feedback {
   trackingId: string;
@@ -49,6 +57,8 @@ export interface Feedback {
   };
   amCoachingNotes?: string;
   managerAcknowledged?: boolean;
+  // New field for trackable action items from 1-on-1s
+  actionItems?: ActionItem[];
 }
 
 export interface OneOnOneHistoryItem {
@@ -479,6 +489,26 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
         actor,
         details: resolution
     });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+/**
+ * Toggles the status of a specific action item within a feedback object.
+ */
+export async function toggleActionItemStatus(trackingId: string, actionItemId: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const feedback = allFeedback[feedbackIndex];
+    if (!feedback.actionItems) return;
+
+    const actionItemIndex = feedback.actionItems.findIndex(a => a.id === actionItemId);
+    if (actionItemIndex === -1) return;
+
+    const currentStatus = feedback.actionItems[actionItemIndex].status;
+    feedback.actionItems[actionItemIndex].status = currentStatus === 'pending' ? 'completed' : 'pending';
 
     saveFeedbackToStorage(allFeedback);
 }

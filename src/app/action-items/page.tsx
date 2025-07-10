@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, amAcknowledgeResolution, amSubmitCoachingNotes, managerAcknowledge } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, amAcknowledgeResolution, amSubmitCoachingNotes, managerAcknowledge, toggleActionItemStatus, resolveFeedback, ActionItem } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -20,9 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import DashboardLayout from '@/components/dashboard-layout';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -34,6 +34,7 @@ const criticalityConfig = {
 const auditEventIcons = {
     'Submitted': FileCheck,
     'Critical Insight Identified': ShieldAlert,
+    'To-Do List Created': ListTodo,
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
     'Supervisor Responded': MessageSquare,
@@ -74,6 +75,59 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
     );
 }
 
+function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const allItemsCompleted = feedback.actionItems?.every(item => item.status === 'completed');
+
+    const handleToggle = async (actionItemId: string) => {
+        await toggleActionItemStatus(feedback.trackingId, actionItemId);
+        onUpdate();
+    }
+    
+    const handleResolve = async () => {
+        await resolveFeedback(feedback.trackingId, feedback.assignedTo!, "All action items completed.");
+        toast({ title: "To-Do List Completed", description: "You've completed all action items." });
+        onUpdate();
+    }
+
+    return (
+        <div className="space-y-4">
+             <div className="p-4 rounded-lg border bg-green-500/10 space-y-3">
+                 <div className="flex items-center gap-2 font-bold text-green-700 dark:text-green-400">
+                    <ListTodo className="h-5 w-5" />
+                    <span>To-Do from 1-on-1 with {feedback.employee}</span>
+                 </div>
+                 <p className="text-sm text-green-600 dark:text-green-300">
+                    The following action items were generated from your recent 1-on-1. Check them off as you complete them.
+                 </p>
+             </div>
+             <div className="space-y-3 pl-4">
+                {feedback.actionItems?.map(item => (
+                    <div key={item.id} className="flex items-center space-x-3">
+                        <Checkbox 
+                            id={`action-${item.id}`}
+                            checked={item.status === 'completed'}
+                            onCheckedChange={() => handleToggle(item.id)}
+                            aria-label={item.text}
+                        />
+                        <label
+                            htmlFor={`action-${item.id}`}
+                            className={cn("text-sm font-medium leading-none", item.status === 'completed' && "line-through text-muted-foreground")}
+                        >
+                            {item.text}
+                        </label>
+                    </div>
+                ))}
+             </div>
+             {allItemsCompleted && (
+                <div className="pt-4 border-t">
+                    <Button variant="success" onClick={handleResolve}>Mark as Completed</Button>
+                </div>
+             )}
+        </div>
+    )
+}
+
 function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -109,6 +163,10 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     };
 
     if (feedback.assignedTo !== role) return null;
+    
+    if (feedback.status === 'To-Do') {
+        return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />
+    }
 
     // Supervisor's action panel
     if (feedback.status === 'Pending Supervisor Action') {
@@ -201,6 +259,12 @@ function ActionItemsContent() {
     try {
       const allFeedback = await getAllFeedback();
       const myFeedback = allFeedback.filter(f => f.assignedTo === role && f.status !== 'Resolved' && f.status !== 'Open');
+      // Sort to show To-Do items first, then by date
+      myFeedback.sort((a, b) => {
+        if (a.status === 'To-Do' && b.status !== 'To-Do') return -1;
+        if (b.status === 'To-Do' && a.status !== 'To-Do') return 1;
+        return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+      });
       setAssignedFeedback(myFeedback);
     } catch (error) {
       console.error("Failed to fetch feedback", error);
@@ -242,15 +306,16 @@ function ActionItemsContent() {
     );
   }
 
-  const getStatusVariant = (status?: string) => {
+  const getStatusVariant = (status?: Feedback['status']) => {
     switch(status) {
         case 'Resolved': return 'success';
+        case 'To-Do': return 'default';
         case 'Pending Supervisor Action':
         case 'Pending AM Review':
         case 'Pending Manager Acknowledgement':
             return 'destructive';
         case 'Pending Employee Acknowledgement':
-            return 'default';
+            return 'secondary';
         default: return 'secondary';
     }
   }
@@ -306,7 +371,7 @@ function ActionItemsContent() {
             <ListTodo className="inline-block mr-3 h-8 w-8" /> Action Items
           </CardTitle>
            <CardDescription className="text-lg text-muted-foreground">
-            Cases assigned to you for review and action.
+            Cases and to-do lists assigned to you for review and action.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -318,7 +383,7 @@ function ActionItemsContent() {
               </p>
             </div>
           ) : (
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion type="single" collapsible className="w-full" defaultValue={assignedFeedback[0]?.trackingId}>
                 {assignedFeedback.map((feedback) => {
                     const config = criticalityConfig[feedback.criticality || 'Low'];
                     const Icon = config?.icon || Info;
@@ -333,24 +398,27 @@ function ActionItemsContent() {
                             <div className="flex items-center gap-4 ml-4">
                                  <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
                                 <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
-                                    Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' && a.details?.includes(role || ''))?.timestamp || feedback.submittedAt), { addSuffix: true })}
+                                    Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created')?.timestamp || feedback.submittedAt), { addSuffix: true })}
                                 </span>
                             </div>
                         </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                            <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
-                                 <div className="flex items-center gap-2 font-bold">
-                                    <Icon className="h-5 w-5" />
-                                    <span>AI Analysis: {feedback.criticality}</span>
-                                 </div>
-                                 <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="text-base">Original Submission</Label>
-                                <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
-                            </div>
+                             {feedback.status !== 'To-Do' && (
+                                <>
+                                    <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
+                                        <div className="flex items-center gap-2 font-bold">
+                                            <Icon className="h-5 w-5" />
+                                            <span>AI Analysis: {feedback.criticality}</span>
+                                        </div>
+                                        <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-base">Original Submission</Label>
+                                        <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
+                                    </div>
+                                </>
+                             )}
 
                             {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
 
