@@ -55,7 +55,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
     fetchFeedbackCount();
     
-  }, [currentRole, refreshKey]); // Rerun when role or refreshKey changes
+  }, [currentRole, refreshKey]);
 
 
   const menuItems = [

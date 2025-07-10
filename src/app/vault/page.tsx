@@ -80,7 +80,7 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
 function VaultContent() {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { refreshKey } = useRole(); // Use the refresh key from the hook
+  const { refreshKey } = useRole();
 
   useEffect(() => {
     const fetchFeedback = async () => {
@@ -96,7 +96,7 @@ function VaultContent() {
     }
     
     fetchFeedback();
-  }, [refreshKey]); // Refetch whenever the refreshKey changes
+  }, [refreshKey]);
 
   if (isLoading) {
     return (
