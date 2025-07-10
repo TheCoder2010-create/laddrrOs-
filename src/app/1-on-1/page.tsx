@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
@@ -9,8 +9,8 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX } from 'lucide-react';
-import { format } from 'date-fns';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,12 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +46,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { getOneOnOneHistory, OneOnOneHistoryItem } from '@/services/feedback-service';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];
@@ -156,6 +163,84 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
       </DialogFooter>
     </DialogContent>
   )
+}
+
+function HistorySection({ role }: { role: Role }) {
+    const [history, setHistory] = useState<OneOnOneHistoryItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchHistory = useCallback(async () => {
+        setIsLoading(true);
+        const allHistory = await getOneOnOneHistory();
+        const currentUser = roleUserMapping[role];
+        // Filter history for the current user, either as supervisor or employee
+        const userHistory = allHistory.filter(item => 
+            item.supervisorName === currentUser.name || item.employeeName === currentUser.name
+        );
+        setHistory(userHistory);
+        setIsLoading(false);
+    }, [role]);
+
+    useEffect(() => {
+        fetchHistory();
+        window.addEventListener('storage', fetchHistory);
+        return () => window.removeEventListener('storage', fetchHistory);
+    }, [fetchHistory]);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full mt-8" />;
+    }
+
+    if (history.length === 0) {
+        return null; // Don't show the section if there's no history
+    }
+
+    return (
+        <div className="mt-12">
+            <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Session History
+            </h2>
+            <Accordion type="single" collapsible className="w-full border rounded-lg">
+                {history.map(item => (
+                    <AccordionItem value={item.id} key={item.id} className="px-4">
+                        <AccordionTrigger>
+                            <div className="flex justify-between items-center w-full pr-4">
+                                <div className="text-left">
+                                    <p className="font-medium">
+                                        1-on-1 with {item.employeeName}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground font-normal">
+                                        {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
+                                    </p>
+                                </div>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                            <div>
+                                <h4 className="font-semibold">Key Themes</h4>
+                                <ul className="list-disc pl-5 text-muted-foreground text-sm">
+                                    {item.analysis.keyThemes.map((theme, i) => <li key={i}>{theme}</li>)}
+                                </ul>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold">Action Items</h4>
+                                <ul className="list-disc pl-5 text-muted-foreground text-sm">
+                                    {item.analysis.actionItems.map((action, i) => <li key={i}>{action}</li>)}
+                                </ul>
+                            </div>
+                            {item.analysis.coachingImpactAnalysis && (
+                                 <div>
+                                    <h4 className="font-semibold">Coaching Impact Analysis</h4>
+                                    <p className="text-muted-foreground text-sm">{item.analysis.coachingImpactAnalysis}</p>
+                                </div>
+                            )}
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
+        </div>
+    );
 }
 
 function OneOnOnePage({ role }: { role: Role }) {
@@ -275,6 +360,8 @@ function OneOnOnePage({ role }: { role: Role }) {
           </div>
         )}
       </div>
+
+      <HistorySection role={role} />
     </div>
   );
 }

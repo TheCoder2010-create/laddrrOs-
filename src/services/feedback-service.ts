@@ -7,6 +7,7 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
+import type { AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
 
 export interface AuditEvent {
   event: string;
@@ -49,6 +50,14 @@ export interface Feedback {
   managerAcknowledged?: boolean;
 }
 
+export interface OneOnOneHistoryItem {
+    id: string;
+    supervisorName: string;
+    employeeName: string;
+    date: string;
+    analysis: AnalyzeOneOnOneOutput;
+}
+
 // Client-side submission types
 export interface AnonymousFeedbackInput {
   subject: string;
@@ -78,38 +87,68 @@ export interface TrackFeedbackOutput {
 
 
 const FEEDBACK_KEY = 'accountability_feedback_v1';
+const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v1';
+
+
+// ==========================================
+// Generic Storage Helpers
+// ==========================================
+
+const getFromStorage = <T>(key: string): T[] => {
+    if (typeof window === 'undefined') return [];
+    const json = localStorage.getItem(key);
+    if (!json) return [];
+    try {
+        return JSON.parse(json) as T[];
+    } catch (e) {
+        console.error(`Error parsing ${key} from localStorage`, e);
+        return [];
+    }
+}
+
+const saveToStorage = (key: string, data: any[]): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(key, JSON.stringify(data));
+    window.dispatchEvent(new CustomEvent('feedbackUpdated'));
+    window.dispatchEvent(new CustomEvent('storage')); // for wider compatibility
+}
+
+
+// ==========================================
+// 1-on-1 History Service
+// ==========================================
+
+export async function getOneOnOneHistory(): Promise<OneOnOneHistoryItem[]> {
+    const history = getFromStorage<OneOnOneHistoryItem>(ONE_ON_ONE_HISTORY_KEY);
+    return history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id'>): Promise<void> {
+    const history = await getOneOnOneHistory();
+    const newHistoryItem: OneOnOneHistoryItem = { ...item, id: uuidv4() };
+    history.unshift(newHistoryItem);
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, history);
+}
+
+
+// ==========================================
+// Critical Feedback Service
+// ==========================================
 
 // Helper to get feedback from localStorage
 export const getFeedbackFromStorage = (): Feedback[] => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-  const feedbackJSON = localStorage.getItem(FEEDBACK_KEY);
-  if (!feedbackJSON) {
-    return [];
-  }
-  try {
-    const feedback = JSON.parse(feedbackJSON) as Feedback[];
-    // Dates are stored as strings in JSON, so we need to convert them back
-    return feedback.map(c => ({
-      ...c,
-      submittedAt: new Date(c.submittedAt),
-      auditTrail: c.auditTrail?.map(a => ({...a, timestamp: new Date(a.timestamp)}))
-    }));
-  } catch (error) {
-    console.error("Error parsing feedback from localStorage", error);
-    return [];
-  }
+  const feedback = getFromStorage<Feedback>(FEEDBACK_KEY);
+  // Dates are stored as strings in JSON, so we need to convert them back
+  return feedback.map(c => ({
+    ...c,
+    submittedAt: new Date(c.submittedAt),
+    auditTrail: c.auditTrail?.map(a => ({...a, timestamp: new Date(a.timestamp)}))
+  }));
 };
 
 // Helper to save feedback to localStorage and notify listeners
 export const saveFeedbackToStorage = (feedback: Feedback[]): void => {
-   if (typeof window === 'undefined') {
-    return;
-  }
-  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback));
-  // Dispatch a custom event to notify components in the same tab
-  window.dispatchEvent(new CustomEvent('feedbackUpdated'));
+   saveToStorage(FEEDBACK_KEY, feedback);
 };
 
 

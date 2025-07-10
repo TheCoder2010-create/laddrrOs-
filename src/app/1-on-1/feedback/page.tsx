@@ -8,6 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
+import { saveOneOnOneHistory } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -179,6 +180,13 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         try {
             const result = await analyzeOneOnOne(values);
             setAnalysisResult(result);
+            // Save the result to history
+            await saveOneOnOneHistory({
+                supervisorName: supervisor,
+                employeeName: meeting.with,
+                date: new Date(meeting.date).toISOString(),
+                analysis: result,
+            });
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
         } catch (error) {
             console.error("Analysis failed", error);
