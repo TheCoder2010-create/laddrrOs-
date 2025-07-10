@@ -34,10 +34,10 @@ export function ThemeToggle() {
       onClick={toggleTheme} 
       aria-label="Toggle theme"
       className={cn(
-        "hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+        "bg-transparent hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
         theme === 'light' 
-          ? "text-yellow-500 hover:text-yellow-500 hover:drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]" 
-          : "text-slate-400 hover:text-white hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+          ? "text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]" 
+          : "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
       )}
     >
       <Sun className="h-[1.2rem] w-[1.2rem] block dark:hidden" />
