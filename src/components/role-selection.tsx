@@ -1,3 +1,4 @@
+
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion, UserCog, ChevronRight } from 'lucide-react';
@@ -49,7 +50,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
       <button
         onClick={() => onSelectRole(role)}
         className={cn(
-          "group relative w-full text-left p-6 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
+          "group relative w-full text-left px-6 py-4 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
           isSpecial
             ? "bg-transparent border-2 border-dashed border-muted-foreground/50 hover:border-accent hover:bg-accent/10"
             : "bg-card/50 hover:bg-card/100 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20",
