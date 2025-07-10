@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns';
 
 function triggerDataRefresh() {
+  // This key will be listened for by the useRole hook in other tabs.
   localStorage.setItem('data-refresh-key', Date.now().toString());
 }
 
