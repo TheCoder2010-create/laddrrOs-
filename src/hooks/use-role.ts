@@ -1,3 +1,4 @@
+
 "use client"
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -26,7 +27,8 @@ export const useRole = () => {
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
-            router.push('/voice-in-silence');
+            // When selected from the role selection screen, go to the public submission page.
+            router.push('/voice-in-silence/submit');
             return;
         }
 
