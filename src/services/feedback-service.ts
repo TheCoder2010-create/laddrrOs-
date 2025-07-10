@@ -35,3 +35,13 @@ export async function getAllFeedback(): Promise<Feedback[]> {
   console.log(`Retrieving all ${feedbackStore.length} feedback submissions.`);
   return feedbackStore;
 }
+
+/**
+ * Retrieves a single feedback submission by its tracking ID.
+ * @param trackingId The ID of the feedback to retrieve.
+ * @returns A promise that resolves with the feedback object, or undefined if not found.
+ */
+export async function getFeedbackByTrackingId(trackingId: string): Promise<Feedback | undefined> {
+    console.log(`Searching for feedback with tracking ID: ${trackingId}`);
+    return feedbackStore.find(f => f.trackingId === trackingId);
+}

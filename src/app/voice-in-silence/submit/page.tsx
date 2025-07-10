@@ -11,19 +11,19 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, Loader2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback } from '@/ai/flows/submit-anonymous-feedback-flow';
+import { trackFeedback, TrackedFeedback } from '@/ai/flows/track-feedback-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { format } from 'date-fns';
 
 function triggerDataRefresh() {
-  // This is a simple way to signal other tabs/components to refresh.
-  // We write a random value to ensure a "change" event is fired.
   localStorage.setItem('data-refresh-key', Date.now().toString());
 }
 
-export default function VoiceInSilenceSubmitPage() {
+function SubmissionForm({ onSubmitted }: { onSubmitted: (result: { trackingId: string }) => void }) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState<{ trackingId: string } | null>(null);
   const { toast } = useToast();
 
   const handleSubmit = async () => {
@@ -38,8 +38,8 @@ export default function VoiceInSilenceSubmitPage() {
     setIsSubmitting(true);
     try {
       const result = await submitAnonymousFeedback({ subject, message });
-      setSubmissionResult(result);
       triggerDataRefresh(); // Signal that data has changed
+      onSubmitted(result);
     } catch (error) {
       console.error(error);
       toast({
@@ -51,6 +51,142 @@ export default function VoiceInSilenceSubmitPage() {
       setIsSubmitting(false);
     }
   };
+
+  return (
+    <CardContent className="space-y-6">
+      <p className="text-muted-foreground text-center">
+        This is a protected space for anonymous feedback. Your submission is confidential. Please provide as much detail as possible.
+      </p>
+      <div className="space-y-2">
+        <Label htmlFor="title">Subject</Label>
+        <Input
+          id="title"
+          placeholder="e.g., Feedback on Project Phoenix, Concerns about team dynamics"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          disabled={isSubmitting}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="message">Your Message</Label>
+        <Textarea
+          id="message"
+          placeholder="Please describe the situation, event, or feedback in detail. Include dates, times, and specific examples if possible. Do not include any personal identifying information."
+          rows={10}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          disabled={isSubmitting}
+        />
+      </div>
+       <CardFooter className="flex justify-end">
+        <Button onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Submit Anonymously
+        </Button>
+      </CardFooter>
+    </CardContent>
+  );
+}
+
+function TrackingForm() {
+  const [trackingId, setTrackingId] = useState('');
+  const [isTracking, setIsTracking] = useState(false);
+  const [searchResult, setSearchResult] = useState<TrackedFeedback | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const { toast } = useToast();
+  
+  const handleTrack = async () => {
+    if (!trackingId) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Tracking ID',
+        description: 'Please enter the tracking ID you received upon submission.',
+      });
+      return;
+    }
+    setIsTracking(true);
+    setSearchResult(null);
+    setNotFound(false);
+    try {
+      const result = await trackFeedback({ trackingId });
+      if (result.found && result.feedback) {
+        setSearchResult(result.feedback);
+      } else {
+        setNotFound(true);
+      }
+    } catch (error) {
+      console.error(error);
+      setNotFound(true);
+      toast({
+        variant: 'destructive',
+        title: 'Tracking Failed',
+        description: 'There was an error tracking your submission. Please check the ID and try again.',
+      });
+    } finally {
+      setIsTracking(false);
+    }
+  };
+  
+  return (
+     <CardContent className="space-y-6">
+        <p className="text-muted-foreground text-center">
+          Enter the tracking ID you received to check the status of your submission.
+        </p>
+        <div className="flex w-full items-center space-x-2">
+          <Input 
+            id="trackingId"
+            placeholder="Enter your tracking ID"
+            value={trackingId}
+            onChange={(e) => setTrackingId(e.target.value)}
+            disabled={isTracking}
+          />
+          <Button onClick={handleTrack} disabled={isTracking}>
+            {isTracking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Track"}
+          </Button>
+        </div>
+
+        {searchResult && (
+           <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Submission Details</CardTitle>
+              <CardDescription>
+                Submitted on {format(new Date(searchResult.submittedAt), "PPP p")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Subject</Label>
+                <p className="text-muted-foreground">{searchResult.subject}</p>
+              </div>
+               <div>
+                <Label>Message</Label>
+                <p className="text-muted-foreground whitespace-pre-wrap">{searchResult.message}</p>
+              </div>
+              <Alert>
+                <AlertTitle>Status</AlertTitle>
+                <AlertDescription>
+                  Your submission has been received. There are no public updates at this time.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        )}
+
+        {notFound && (
+           <Alert variant="destructive" className="mt-6">
+            <AlertTitle>Not Found</AlertTitle>
+            <AlertDescription>
+              No submission found with that Tracking ID. Please check the ID and try again.
+            </AlertDescription>
+          </Alert>
+        )}
+
+     </CardContent>
+  )
+}
+
+export default function VoiceInSilenceSubmitPage() {
+  const [submissionResult, setSubmissionResult] = useState<{ trackingId: string } | null>(null);
 
   const copyToClipboard = () => {
     if (submissionResult?.trackingId) {
@@ -87,15 +223,15 @@ export default function VoiceInSilenceSubmitPage() {
                 </Button>
               </AlertDescription>
             </Alert>
-             <p className="text-sm text-muted-foreground text-center pt-4">
+            <p className="text-sm text-muted-foreground text-center pt-4">
               Keep this ID in a safe place. It is the only way to check for a response to your submission.
             </p>
           </CardContent>
           <CardFooter className="flex justify-center">
             <Button asChild>
-                <Link href="/">
-                    Return to Home
-                </Link>
+              <Link href="/">
+                Return to Home
+              </Link>
             </Button>
           </CardFooter>
         </Card>
@@ -105,7 +241,7 @@ export default function VoiceInSilenceSubmitPage() {
 
   return (
     <div className="flex flex-col min-h-screen items-center justify-center bg-background p-4">
-       <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4">
         <Button variant="ghost" asChild>
           <Link href="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -122,38 +258,18 @@ export default function VoiceInSilenceSubmitPage() {
             “Because speaking up should never feel unsafe.”
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-            <p className="text-muted-foreground text-center">
-                This is a protected space for anonymous feedback. Your submission is confidential. Please provide as much detail as possible.
-            </p>
-            <div className="space-y-2">
-                <Label htmlFor="title">Subject</Label>
-                <Input 
-                    id="title" 
-                    placeholder="e.g., Feedback on Project Phoenix, Concerns about team dynamics" 
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    disabled={isSubmitting}
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="message">Your Message</Label>
-                <Textarea 
-                    id="message" 
-                    placeholder="Please describe the situation, event, or feedback in detail. Include dates, times, and specific examples if possible. Do not include any personal identifying information."
-                    rows={10}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    disabled={isSubmitting}
-                />
-            </div>
-        </CardContent>
-        <CardFooter className="flex justify-end">
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Submit Anonymously
-            </Button>
-        </CardFooter>
+        <Tabs defaultValue="submit" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="submit">Submit Feedback</TabsTrigger>
+                <TabsTrigger value="track">Track Submission</TabsTrigger>
+            </TabsList>
+            <TabsContent value="submit">
+                <SubmissionForm onSubmitted={setSubmissionResult} />
+            </TabsContent>
+            <TabsContent value="track">
+                <TrackingForm />
+            </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );
