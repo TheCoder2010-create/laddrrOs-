@@ -1,18 +1,20 @@
 "use client"
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
-export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'HR Head';
+export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'HR Head' | 'Voice – In Silence';
 
-export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head'];
+export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head', 'Voice – In Silence'];
 
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         try {
             const storedRole = localStorage.getItem('accountability-os-role') as Role;
-            if (storedRole && availableRoles.includes(storedRole)) {
+            if (storedRole && availableRoles.includes(storedRole) && storedRole !== 'Voice – In Silence') {
                 setRole(storedRole);
             }
         } catch (error) {
@@ -23,6 +25,11 @@ export const useRole = () => {
     }, []);
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
+        if (newRole === 'Voice – In Silence') {
+            router.push('/voice-in-silence');
+            return;
+        }
+
         setRole(newRole);
         try {
             if (newRole) {
@@ -33,7 +40,7 @@ export const useRole = () => {
         } catch (error) {
             console.error("Could not write role to localStorage", error);
         }
-    }, []);
+    }, [router]);
 
     return { role, setRole: setCurrentRole, isLoading, availableRoles };
 };

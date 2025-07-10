@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { availableRoles, type Role } from '@/hooks/use-role';
-import { Briefcase, Users, UserCheck, ShieldCheck } from 'lucide-react';
+import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion } from 'lucide-react';
 
 interface RoleSelectionProps {
   onSelectRole: (role: Role) => void;
@@ -23,6 +23,10 @@ const roleDetails = {
     icon: ShieldCheck,
     description: "Review compliance and ensure accountability standards.",
   },
+  'Voice – In Silence': {
+    icon: ShieldQuestion,
+    description: "Raise a concern safely and anonymously.",
+  }
 };
 
 export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
@@ -32,7 +36,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         <h1 className="font-headline text-4xl font-bold tracking-tight text-primary">Welcome to AccountabilityOS</h1>
         <p className="text-muted-foreground mt-2 text-lg">Please select your role to continue to your personalized dashboard.</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 max-w-7xl w-full">
         {availableRoles.map(role => {
           const details = roleDetails[role as keyof typeof roleDetails];
           const Icon = details.icon;
