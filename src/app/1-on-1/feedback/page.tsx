@@ -56,6 +56,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         isCrossFunctional: false,
         broadcastAppreciation: false,
         otherComments: "",
+        transcript: "",
     },
   });
 
@@ -78,6 +79,8 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
   const [analysisResult, setAnalysisResult] = useState<AnalyzeOneOnOneOutput | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
+  const hasMedia = !!recordedAudioUri || !!audioFile || !!transcriptContent;
+
   useEffect(() => {
     return () => { // Cleanup on unmount
         if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
@@ -87,13 +90,22 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     }
   }, []);
 
+  const updateTranscript = (content: string | null) => {
+    setTranscriptContent(content);
+    if (content) {
+      form.setValue('transcript', content, { shouldValidate: true });
+    } else {
+      form.setValue('transcript', '', { shouldValidate: true });
+    }
+  };
+
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setMicPermission('granted');
       setRecordedAudioUri(null);
       setAudioFile(null);
-      setTranscriptContent(null);
+      updateTranscript(null);
       
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
@@ -107,6 +119,8 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
         setRecordedAudioUri(audioUrl);
+        // In a real app, this would be transcribed. For now, we use a placeholder.
+        updateTranscript("This is a placeholder for the transcribed audio recording. The AI would normally process the actual audio.");
         stream.getTracks().forEach(track => track.stop());
         if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
       };
@@ -137,12 +151,13 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     if (file) {
         setAudioFile(file);
         setRecordedAudioUri(null);
-        setTranscriptContent(null);
         // Simple mock for transcript upload
         if (file.type === 'text/plain') {
             const reader = new FileReader();
-            reader.onload = (e) => setTranscriptContent(e.target?.result as string);
+            reader.onload = (e) => updateTranscript(e.target?.result as string);
             reader.readAsText(file);
+        } else {
+            updateTranscript(`This is a placeholder for the transcribed audio file: ${file.name}.`);
         }
     }
   };
@@ -159,21 +174,9 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     setAnalysisError(null);
     startTransition(async () => {
         try {
-            let transcript = transcriptContent;
-            if (!transcript && recordedAudioUri) {
-                transcript = "This is a placeholder for the transcribed audio recording. The AI would normally process the actual audio.";
-            } else if (!transcript && audioFile) {
-                transcript = `This is a placeholder for the transcribed audio file: ${audioFile.name}.`;
-            }
-
-            const result = await analyzeOneOnOne({
-                ...values,
-                transcript: transcript || ""
-            });
-            
+            const result = await analyzeOneOnOne(values);
             setAnalysisResult(result);
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
-
         } catch (error) {
             console.error("Analysis failed", error);
             setAnalysisError("The AI analysis failed. Please check the console for details.");
@@ -299,7 +302,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           <AccordionTrigger><MessageSquareQuote className="mr-2" /> Feedback & Conversation Capture</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="primaryFeedback" render={({ field }) => (
-                                  <FormItem><FormLabel>Primary Feedback / Talking Points <span className="text-destructive">*</span></FormLabel><FormControl><Textarea rows={5} placeholder="What was the core message delivered?" {...field} /></FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>Primary Feedback / Talking Points {!hasMedia && <span className="text-destructive">*</span>}</FormLabel><FormControl><Textarea rows={5} placeholder="What was the core message delivered? (Optional if recording is provided)" {...field} /></FormControl><FormMessage /></FormItem>
                                )} />
                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                    <FormField control={form.control} name="feedbackTone" render={({ field }) => (

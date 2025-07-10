@@ -12,7 +12,7 @@ export const formSchema = z.object({
   location: z.string().min(1, "Location is required."),
   liveConversation: z.boolean().refine(val => val === true, { message: "You must acknowledge this was a live conversation." }),
   employeeAware: z.boolean().refine(val => val === true, { message: "You must confirm the employee is aware of action items." }),
-  primaryFeedback: z.string().min(10, "Please provide substantive feedback."),
+  primaryFeedback: z.string(),
   feedbackTone: z.enum(["Constructive", "Positive", "Corrective", "Neutral"]),
   employeeAcceptedFeedback: z.enum(["Fully", "Partially", "Not Well"]),
   improvementAreas: z.string().optional(),
@@ -27,6 +27,21 @@ export const formSchema = z.object({
   broadcastAppreciation: z.boolean(),
   otherComments: z.string().optional(),
   transcript: z.string().optional().describe("An optional transcript of the conversation, either recorded or uploaded."),
+}).superRefine((data, ctx) => {
+    if (!data.primaryFeedback && !data.transcript) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please provide either primary feedback or a recording/transcript.",
+            path: ["primaryFeedback"],
+        });
+    }
+    if (data.primaryFeedback && data.primaryFeedback.length > 0 && data.primaryFeedback.length < 10) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please provide substantive feedback (at least 10 characters).",
+            path: ["primaryFeedback"],
+        });
+    }
 }).refine(data => data.feedbackTone !== 'Corrective' || (data.improvementAreas && data.improvementAreas.length > 0), {
   message: "Improvement areas are required for corrective feedback.",
   path: ["improvementAreas"],
