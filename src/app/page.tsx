@@ -24,5 +24,5 @@ export default function Home() {
     return <RoleSelection onSelectRole={setRole} />;
   }
 
-  return <DashboardLayout role={role} onSwitchRole={() => setRole(null)} />;
+  return <DashboardLayout role={role} onSwitchRole={setRole} />;
 }

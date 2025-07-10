@@ -5,7 +5,7 @@ import Dashboard from '@/components/dashboard';
 
 interface DashboardLayoutProps {
   role: Role;
-  onSwitchRole: () => void;
+  onSwitchRole: (role: Role | null) => void;
 }
 
 export default function DashboardLayout({ role, onSwitchRole }: DashboardLayoutProps) {
