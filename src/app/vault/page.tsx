@@ -1,18 +1,115 @@
 
-'use server';
+"use client";
 
+import { useState, useEffect } from 'react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllFeedback } from '@/services/feedback-service';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { getAllFeedback, Feedback } from '@/services/feedback-service';
 import { formatDistanceToNow } from 'date-fns';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Lock } from 'lucide-react';
 
-export default async function VaultPage() {
-  const allFeedback = await getAllFeedback();
+function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const handleLogin = () => {
+        if (username === 'hr_head' && password === 'password123') {
+            setError('');
+            onUnlock();
+        } else {
+            setError('Invalid username or password.');
+        }
+    };
+    
+    return (
+        <div className="flex items-center justify-center p-4 md:p-8">
+            <Card className="w-full max-w-md">
+                <CardHeader className="text-center">
+                    <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
+                        <Lock className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold font-headline">Vault is Locked</CardTitle>
+                    <CardDescription>Enter credentials to access sensitive content.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input 
+                            id="username" 
+                            placeholder="Enter username" 
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input 
+                            id="password" 
+                            type="password" 
+                            placeholder="Enter password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
+                     {error && <p className="text-sm text-destructive text-center">{error}</p>}
+                </CardContent>
+                <CardFooter className="flex flex-col gap-4">
+                    <Button className="w-full" onClick={handleLogin}>Unlock Vault</Button>
+                    <div className="text-xs text-muted-foreground text-center">
+                        <p>For demo purposes:</p>
+                        <p>Username: <code className="font-mono">hr_head</code> | Password: <code className="font-mono">password123</code></p>
+                    </div>
+                </CardFooter>
+            </Card>
+        </div>
+    )
+}
+
+function VaultContent() {
+  const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFeedback() {
+      try {
+        const feedback = await getAllFeedback();
+        setAllFeedback(feedback);
+      } catch (error) {
+        console.error("Failed to fetch feedback", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchFeedback();
+  }, []);
+
+  if (isLoading) {
+    return (
+        <div className="p-4 md:p-8">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-48 mb-2" />
+                    <Skeleton className="h-6 w-72" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -59,4 +156,15 @@ export default async function VaultPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function VaultPage() {
+    const [isUnlocked, setIsUnlocked] = useState(false);
+
+    if (!isUnlocked) {
+        return <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />;
+    }
+
+    return <VaultContent />;
 }
