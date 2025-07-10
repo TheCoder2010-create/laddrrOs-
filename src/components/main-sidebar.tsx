@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -27,6 +29,14 @@ const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint:
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
+  const pathname = usePathname();
+
+  const menuItems = [
+    { href: '/', icon: <BarChart />, label: 'Dashboard' },
+    { href: '/tasks', icon: <CheckSquare />, label: 'Tasks' },
+    { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
+    { href: '/audit-log', icon: <Shield />, label: 'Audit Log' },
+  ];
 
   return (
     <Sidebar>
@@ -70,30 +80,18 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton isActive>
-              <BarChart />
-              <span>Dashboard</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton>
-              <CheckSquare />
-              <span>Tasks</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <User />
-              <span>Voice – in Silence</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Shield />
-              <span>Audit Log</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {menuItems.map((item) => (
+            <SidebarMenuItem key={item.href}>
+              <Link href={item.href} passHref>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
+                  <div>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
