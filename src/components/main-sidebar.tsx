@@ -22,7 +22,7 @@ const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint:
   'Manager': { name: 'Alex Smith', fallback: 'AS', imageHint: 'manager' },
   'Team Lead': { name: 'Ben Carter', fallback: 'BC', imageHint: 'leader' },
   'Employee': { name: 'Casey Day', fallback: 'CD', imageHint: 'employee' },
-  'Auditor': { name: 'Dana Evans', fallback: 'DE', imageHint: 'auditor' },
+  'HR Head': { name: 'Dana Evans', fallback: 'DE', imageHint: 'hr head' },
 };
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {

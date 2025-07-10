@@ -19,7 +19,7 @@ const roleDetails = {
     icon: UserCheck,
     description: "Focus on personal tasks and contribute to team goals.",
   },
-  'Auditor': {
+  'HR Head': {
     icon: ShieldCheck,
     description: "Review compliance and ensure accountability standards.",
   },

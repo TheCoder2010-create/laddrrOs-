@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { FileText, ShieldAlert, GanttChartSquare, Bell } from "lucide-react";
 
-export default function AuditorDashboard() {
+export default function HRHeadDashboard() {
   const complianceChecks = [
     { id: 'CHK-001', team: 'Engineering', status: 'Compliant', date: '2023-10-26' },
     { id: 'CHK-002', team: 'Marketing', status: 'Pending', date: '2023-10-25' },
@@ -13,7 +13,7 @@ export default function AuditorDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold font-headline mb-6 text-foreground">Auditor Dashboard</h1>
+      <h1 className="text-3xl font-bold font-headline mb-6 text-foreground">HR Head Dashboard</h1>
        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
