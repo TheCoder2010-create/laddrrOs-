@@ -74,11 +74,11 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('complaintsUpdated', handleStorageChange);
+    window.addEventListener('feedbackUpdated', handleStorageChange);
 
     return () => {
         window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('complaintsUpdated', handleStorageChange);
+        window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
   }, [fetchFeedbackCounts]);
 

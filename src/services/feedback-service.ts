@@ -1,6 +1,6 @@
 
 /**
- * @fileOverview A service for managing anonymous feedback submissions using localStorage.
+ * @fileOverview A service for managing feedback submissions using localStorage.
  *
  * This service provides a simple, client-side persistent storage mechanism for feedback,
  * suitable for a prototype. It now includes custom event dispatching for same-tab updates.
@@ -58,39 +58,39 @@ export interface TrackFeedbackOutput {
 }
 
 
-const COMPLAINTS_KEY = 'accountability_complaints_v2';
+const FEEDBACK_KEY = 'accountability_feedback_v1';
 
-// Helper to get complaints from localStorage
-const getComplaintsFromStorage = (): Feedback[] => {
+// Helper to get feedback from localStorage
+const getFeedbackFromStorage = (): Feedback[] => {
   if (typeof window === 'undefined') {
     return [];
   }
-  const complaintsJSON = localStorage.getItem(COMPLAINTS_KEY);
-  if (!complaintsJSON) {
+  const feedbackJSON = localStorage.getItem(FEEDBACK_KEY);
+  if (!feedbackJSON) {
     return [];
   }
   try {
-    const complaints = JSON.parse(complaintsJSON) as Feedback[];
+    const feedback = JSON.parse(feedbackJSON) as Feedback[];
     // Dates are stored as strings in JSON, so we need to convert them back
-    return complaints.map(c => ({
+    return feedback.map(c => ({
       ...c,
       submittedAt: new Date(c.submittedAt),
       auditTrail: c.auditTrail?.map(a => ({...a, timestamp: new Date(a.timestamp)}))
     }));
   } catch (error) {
-    console.error("Error parsing complaints from localStorage", error);
+    console.error("Error parsing feedback from localStorage", error);
     return [];
   }
 };
 
-// Helper to save complaints to localStorage and notify listeners
-const saveComplaintsToStorage = (complaints: Feedback[]): void => {
+// Helper to save feedback to localStorage and notify listeners
+const saveFeedbackToStorage = (feedback: Feedback[]): void => {
    if (typeof window === 'undefined') {
     return;
   }
-  localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(complaints));
+  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback));
   // Dispatch a custom event to notify components in the same tab
-  window.dispatchEvent(new CustomEvent('complaintsUpdated'));
+  window.dispatchEvent(new CustomEvent('feedbackUpdated'));
 };
 
 
@@ -100,7 +100,7 @@ const saveComplaintsToStorage = (complaints: Feedback[]): void => {
  * @returns A promise that resolves with the tracking ID.
  */
 export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
-  const allFeedback = getComplaintsFromStorage();
+  const allFeedback = getFeedbackFromStorage();
   const trackingId = uuidv4();
   const submittedAt = new Date();
 
@@ -136,7 +136,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   };
 
   allFeedback.unshift(newFeedback); // Add to the beginning
-  saveComplaintsToStorage(allFeedback);
+  saveFeedbackToStorage(allFeedback);
   
   return { trackingId };
 }
@@ -148,7 +148,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
  * @returns A promise that resolves with the feedback object, or a 'not found' status.
  */
 export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFeedbackOutput> {
-  const allFeedback = getComplaintsFromStorage();
+  const allFeedback = getFeedbackFromStorage();
   const feedback = allFeedback.find(f => f.trackingId === input.trackingId);
 
   if (!feedback) {
@@ -182,7 +182,15 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
  * @returns A promise that resolves with an array of all feedback submissions.
  */
 export async function getAllFeedback(): Promise<Feedback[]> {
-  return getComplaintsFromStorage();
+  return getFeedbackFromStorage();
+}
+
+/**
+ * Saves a full array of feedback objects to storage.
+ * @param feedback The array of feedback to save.
+ */
+export async function saveFeedback(feedback: Feedback[]): Promise<void> {
+    saveFeedbackToStorage(feedback);
 }
 
 
@@ -190,10 +198,10 @@ export async function getAllFeedback(): Promise<Feedback[]> {
  * Marks all feedback as viewed.
  */
 export async function markAllFeedbackAsViewed(): Promise<void> {
-  let allFeedback = getComplaintsFromStorage();
+  let allFeedback = getFeedbackFromStorage();
   if (allFeedback.some(c => !c.viewed)) {
     allFeedback = allFeedback.map(c => ({ ...c, viewed: true }));
-    saveComplaintsToStorage(allFeedback);
+    saveFeedbackToStorage(allFeedback);
   }
 }
 
@@ -205,7 +213,7 @@ export async function markAllFeedbackAsViewed(): Promise<void> {
  * @param comment An optional comment for the assignment.
  */
 export async function assignFeedback(trackingId: string, assignTo: Role, actor: Role, comment?: string): Promise<void> {
-    const allFeedback = getComplaintsFromStorage();
+    const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
 
     if (feedbackIndex === -1) return;
@@ -220,7 +228,7 @@ export async function assignFeedback(trackingId: string, assignTo: Role, actor: 
         details: `Assigned to ${assignTo}.${comment ? ` Comment: ${comment}` : ''}`
     });
 
-    saveComplaintsToStorage(allFeedback);
+    saveFeedbackToStorage(allFeedback);
 }
 
 /**
@@ -230,7 +238,7 @@ export async function assignFeedback(trackingId: string, assignTo: Role, actor: 
  * @param comment The update comment.
  */
 export async function addFeedbackUpdate(trackingId: string, actor: Role, comment: string): Promise<void> {
-    const allFeedback = getComplaintsFromStorage();
+    const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
 
     if (feedbackIndex === -1) return;
@@ -243,7 +251,7 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
         details: comment,
     });
 
-    saveComplaintsToStorage(allFeedback);
+    saveFeedbackToStorage(allFeedback);
 }
 
 /**
@@ -253,7 +261,7 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
  * @param resolution The resolution comment.
  */
 export async function resolveFeedback(trackingId: string, actor: Role, resolution: string): Promise<void> {
-    const allFeedback = getComplaintsFromStorage();
+    const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
 
     if (feedbackIndex === -1) return;
@@ -269,5 +277,5 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
         details: resolution
     });
 
-    saveComplaintsToStorage(allFeedback);
+    saveFeedbackToStorage(allFeedback);
 }

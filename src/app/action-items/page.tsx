@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import {
   Accordion,
   AccordionContent,
@@ -173,11 +172,11 @@ function ActionItemsContent() {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('complaintsUpdated', handleStorageChange);
+    window.addEventListener('feedbackUpdated', handleStorageChange);
 
     return () => {
         window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('complaintsUpdated', handleStorageChange);
+        window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
   }, [fetchFeedback]);
 
@@ -219,7 +218,7 @@ function ActionItemsContent() {
         </CardHeader>
         <CardContent>
           {assignedFeedback.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <p className="text-muted-foreground text-lg">Your action item list is empty.</p>
               <p className="text-sm text-muted-foreground mt-2">
                 New cases assigned to you by HR will appear here.

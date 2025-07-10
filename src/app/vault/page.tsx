@@ -246,11 +246,11 @@ function VaultContent() {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('complaintsUpdated', handleStorageChange);
+    window.addEventListener('feedbackUpdated', handleStorageChange);
 
     return () => {
         window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('complaintsUpdated', handleStorageChange);
+        window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
   }, [fetchFeedback]);
 
@@ -293,7 +293,7 @@ function VaultContent() {
         </CardHeader>
         <CardContent>
           {allFeedback.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <p className="text-muted-foreground text-lg">The vault is currently empty.</p>
               <p className="text-sm text-muted-foreground mt-2">
                 New anonymous submissions will appear here.

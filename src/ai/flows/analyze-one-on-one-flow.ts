@@ -8,9 +8,48 @@
 
 import { ai } from '@/ai/genkit';
 import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
+import { getAllFeedback, saveFeedback } from '@/services/feedback-service';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
-  return analyzeOneOnOneFlow(input);
+  const result = await analyzeOneOnOneFlow(input);
+
+  // If a critical insight is found, create a new feedback record to track it.
+  if (result.escalationAlert) {
+      const allFeedback = await getAllFeedback();
+      const submittedAt = new Date();
+      
+      const newFeedback = {
+          trackingId: uuidv4(),
+          subject: `Critical Insight from 1-on-1`,
+          message: `An escalation alert was triggered during a 1-on-1 session. See details below.
+          
+- **Location**: ${input.location}
+- **Feedback Tone**: ${input.feedbackTone}
+- **How Feedback Was Received**: ${input.employeeAcceptedFeedback}
+- **Primary Feedback**: ${input.primaryFeedback || 'N/A'}`,
+          submittedAt: submittedAt,
+          summary: result.escalationAlert,
+          criticality: 'Critical' as const,
+          criticalityReasoning: 'This was flagged as a critical insight directly from a 1-on-1 session analysis.',
+          viewed: false,
+          status: 'Open' as const,
+          assignedTo: 'HR Head' as const,
+          auditTrail: [
+              {
+                  event: 'Submitted',
+                  timestamp: submittedAt,
+                  actor: 'HR Head' as const, // System action attributed to HR
+                  details: 'Critical insight automatically logged from 1-on-1 analysis.',
+              },
+          ],
+      };
+      
+      allFeedback.unshift(newFeedback);
+      await saveFeedback(allFeedback);
+  }
+  
+  return result;
 }
 
 const prompt = ai.definePrompt({
