@@ -10,18 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Loader2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { submitAnonymousFeedback } from '@/ai/flows/submit-anonymous-feedback-flow';
-import { trackFeedback, TrackedFeedback } from '@/ai/flows/track-feedback-flow';
+import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
+import { trackFeedback, TrackedFeedback } from '@/services/feedback-service';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns';
 
-function triggerDataRefresh() {
-  // This event will be caught by listeners in other components/tabs
-  window.dispatchEvent(new Event('storage'));
-}
 
-function SubmissionForm({ onSubmitted }: { onSubmitted: (result: { trackingId: string }) => void }) {
+function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,7 +35,6 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: { trackingId: s
     setIsSubmitting(true);
     try {
       const result = await submitAnonymousFeedback({ subject, message });
-      triggerDataRefresh(); // Signal that data has changed
       onSubmitted(result);
     } catch (error) {
       console.error(error);
@@ -187,7 +182,7 @@ function TrackingForm() {
 }
 
 export default function VoiceInSilenceSubmitPage() {
-  const [submissionResult, setSubmissionResult] = useState<{ trackingId: string } | null>(null);
+  const [submissionResult, setSubmissionResult] = useState<AnonymousFeedbackOutput | null>(null);
   const { toast } = useToast();
 
   const copyToClipboard = () => {

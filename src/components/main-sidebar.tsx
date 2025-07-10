@@ -57,10 +57,16 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   useEffect(() => {
     fetchFeedbackCount();
 
-    // Listen for storage changes to update in real-time
-    window.addEventListener('storage', fetchFeedbackCount);
+    const handleStorageChange = () => {
+        fetchFeedbackCount();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('complaintsUpdated', handleStorageChange);
+
     return () => {
-      window.removeEventListener('storage', fetchFeedbackCount);
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('complaintsUpdated', handleStorageChange);
     };
   }, [fetchFeedbackCount]);
 

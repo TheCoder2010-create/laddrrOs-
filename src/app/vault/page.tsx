@@ -125,10 +125,7 @@ function VaultContent() {
     try {
       const feedback = await getAllFeedback();
       setAllFeedback(feedback);
-      // Mark feedback as viewed when the vault is opened
       await markAllFeedbackAsViewed();
-      // Dispatch another storage event to update the badge count in the sidebar
-      window.dispatchEvent(new Event('storage'));
     } catch (error) {
       console.error("Failed to fetch feedback", error);
     } finally {
@@ -139,9 +136,16 @@ function VaultContent() {
   useEffect(() => {
     fetchFeedback();
 
-    window.addEventListener('storage', fetchFeedback);
+    const handleStorageChange = () => {
+        fetchFeedback();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('complaintsUpdated', handleStorageChange);
+
     return () => {
-        window.removeEventListener('storage', fetchFeedback);
+        window.removeEventListener('storage', handleStorageChange);
+        window.removeEventListener('complaintsUpdated', handleStorageChange);
     };
   }, [fetchFeedback]);
 
@@ -187,13 +191,13 @@ function VaultContent() {
                 <Accordion type="single" collapsible className="w-full">
                 {allFeedback.map((feedback) => {
                     const config = criticalityConfig[feedback.criticality || 'Low'];
-                    const Icon = config.icon;
+                    const Icon = config?.icon || Info;
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
                         <AccordionTrigger>
                         <div className="flex justify-between items-center w-full pr-4">
                             <div className="flex items-center gap-4">
-                                <Badge variant={config.badge as any}>{feedback.criticality}</Badge>
+                                <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality || 'N/A'}</Badge>
                                 <span className="font-medium text-left">{feedback.subject}</span>
                             </div>
                             <span className="text-sm text-muted-foreground font-normal">
@@ -202,14 +206,16 @@ function VaultContent() {
                         </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4">
-                            <div className={cn("p-4 rounded-lg border space-y-3", config.color)}>
-                                 <div className="flex items-center gap-2 font-bold">
-                                    <Icon className="h-5 w-5" />
-                                    <span>AI Analysis: {feedback.criticality}</span>
-                                 </div>
-                                 <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
-                                 <p><span className="font-semibold">Reasoning:</span> {feedback.criticalityReasoning}</p>
-                            </div>
+                            {feedback.summary && (
+                                <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
+                                     <div className="flex items-center gap-2 font-bold">
+                                        <Icon className="h-5 w-5" />
+                                        <span>AI Analysis: {feedback.criticality}</span>
+                                     </div>
+                                     <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
+                                     <p><span className="font-semibold">Reasoning:</span> {feedback.criticalityReasoning}</p>
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <Label className="text-base">Original Submission</Label>
