@@ -81,7 +81,7 @@ function VaultContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchFeedback() {
+    const fetchFeedback = async () => {
       try {
         const feedback = await getAllFeedback();
         setAllFeedback(feedback);
@@ -91,7 +91,11 @@ function VaultContent() {
         setIsLoading(false);
       }
     }
-    fetchFeedback();
+    
+    fetchFeedback(); // Initial fetch
+    const intervalId = setInterval(fetchFeedback, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on component unmount
   }, []);
 
   if (isLoading) {

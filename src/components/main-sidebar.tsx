@@ -37,22 +37,26 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [feedbackCount, setFeedbackCount] = useState(0);
 
   useEffect(() => {
-    async function fetchFeedbackCount() {
-      if (currentRole === 'HR Head') {
+    if (currentRole !== 'HR Head') {
+      setFeedbackCount(0);
+      return;
+    }
+
+    const fetchFeedbackCount = async () => {
+      try {
         const feedback = await getAllFeedback();
         setFeedbackCount(feedback.length);
-      } else {
+      } catch (error) {
+        console.error("Failed to fetch feedback count", error);
         setFeedbackCount(0);
       }
-    }
-    
+    };
+
     fetchFeedbackCount(); // Initial fetch
     
-    // Set up an interval to poll for new feedback.
-    // In a real app, you might use WebSockets or Server-Sent Events.
     const intervalId = setInterval(fetchFeedbackCount, 5000); // Poll every 5 seconds
 
-    return () => clearInterval(intervalId); // Cleanup on component unmount
+    return () => clearInterval(intervalId); // Cleanup on component unmount or role change
   }, [currentRole]);
 
 
