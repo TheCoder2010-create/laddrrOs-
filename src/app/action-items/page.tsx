@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck } from 'lucide-react';
-import { useRole, Role } from '@/hooks/use-role';
+import { useRole, Role, availableRolesForAssignment } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -71,6 +71,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     const { role } = useRole();
     const [updateComment, setUpdateComment] = useState('');
     const [assignmentComment, setAssignmentComment] = useState('');
+    const [assignTo, setAssignTo] = useState<Role | ''>('');
+    const [returnComment, setReturnComment] = useState('');
+
 
     const handleAddUpdate = async () => {
         if (!updateComment) return;
@@ -80,10 +83,19 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     }
     
     const handleReturnToHR = async () => {
-        await assignFeedback(feedback.trackingId, 'HR Head', role!, assignmentComment || 'Returning case to HR for review/resolution.');
+        await assignFeedback(feedback.trackingId, 'HR Head', role!, returnComment || 'Returning case to HR for review/resolution.');
+        setReturnComment('');
+        onUpdate();
+    }
+    
+    const handleAssign = async () => {
+        if (!assignTo) return;
+        await assignFeedback(feedback.trackingId, assignTo as Role, role!, assignmentComment);
+        setAssignTo('');
         setAssignmentComment('');
         onUpdate();
     }
+
 
     if (feedback.status === 'Resolved') return null;
 
@@ -100,13 +112,32 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                 />
                 <Button onClick={handleAddUpdate} disabled={!updateComment}>Add Update</Button>
             </div>
+            
+            <div className="p-4 border rounded-lg bg-background space-y-3">
+                <Label className="font-medium">Re-assign Case</Label>
+                 <Select value={assignTo} onValueChange={(val) => setAssignTo(val as Role)}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a role to assign..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableRolesForAssignment.map(r => <SelectItem key={r} value={r} disabled={r === role}>{r}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Textarea 
+                    placeholder="Add an assignment note (optional)..."
+                    value={assignmentComment}
+                    onChange={(e) => setAssignmentComment(e.target.value)}
+                />
+                <Button onClick={handleAssign} disabled={!assignTo}>Assign</Button>
+            </div>
+
 
             <div className="p-4 border rounded-lg bg-background space-y-3">
                 <Label className="font-medium">Return to HR Head</Label>
                 <Textarea 
                     placeholder="Add a final comment before returning the case (optional)..."
-                    value={assignmentComment}
-                    onChange={(e) => setAssignmentComment(e.target.value)}
+                    value={returnComment}
+                    onChange={(e) => setReturnComment(e.target.value)}
                 />
                 <Button onClick={handleReturnToHR} variant="secondary">Mark as Ready for HR Review</Button>
             </div>
