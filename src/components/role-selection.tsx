@@ -77,7 +77,6 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <Card className="w-full max-w-lg border-0 bg-transparent shadow-none md:border md:bg-card/30 md:shadow-lg">
           <CardHeader className="text-center">
-            <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground">AccountabilityOS</h1>
             <p className="text-muted-foreground mt-2 text-lg">Please select your role to continue.</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 p-4 md:p-6">
