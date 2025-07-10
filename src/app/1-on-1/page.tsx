@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlusCircle, Calendar, Clock, Video, X, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, X, MoreVertical, Edit, Trash2, CalendarCheck, CalendarX } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -21,12 +21,6 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -240,12 +234,12 @@ function OneOnOnePage({ role }: { role: Role }) {
                     <span>{formatTime(meeting.time)}</span>
                   </div>
                 </CardContent>
-                <CardFooter className="flex items-center gap-2">
+                <CardFooter className="flex items-center justify-start gap-2">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                       <Button className="w-full">
-                        <Video className="mr-2" />
-                        Start Meeting
+                       <Button variant="success" size="sm">
+                        <Video />
+                        Start
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -265,46 +259,37 @@ function OneOnOnePage({ role }: { role: Role }) {
                   </AlertDialog>
 
                   <Dialog>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-5 w-5" />
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                            <CalendarCheck />
+                            Reschedule
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DialogTrigger asChild>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            <span>Reschedule</span>
-                          </DropdownMenuItem>
-                        </DialogTrigger>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem className="text-destructive focus:text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>Cancel</span>
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                           <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently cancel your meeting with {meeting.with} on {format(meeting.date, 'PPP')} at {formatTime(meeting.time)}. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Go Back</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleCancelMeeting(meeting.id)} className={cn(buttonVariants({variant: 'destructive'}))}>
-                                Yes, Cancel
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                     {/* The DialogContent for rescheduling is placed here to be controlled by the DropdownMenuItem's DialogTrigger */}
+                    </DialogTrigger>
                     <ScheduleMeetingDialog meetingToEdit={meeting} onSchedule={handleSchedule} />
                   </Dialog>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                            <CalendarX />
+                            Cancel
+                        </Button>
+                    </AlertDialogTrigger>
+                      <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently cancel your meeting with {meeting.with} on {format(meeting.date, 'PPP')} at {formatTime(meeting.time)}. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Go Back</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleCancelMeeting(meeting.id)} className={cn(buttonVariants({variant: 'destructive'}))}>
+                          Yes, Cancel
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </CardFooter>
               </Card>
             ))}
