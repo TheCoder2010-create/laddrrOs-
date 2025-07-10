@@ -205,7 +205,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                 <CardContent className="flex-grow space-y-3">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-5 w-5" />
-                    <span>{format(meeting.date, 'MMMM d, yyyy')}</span>
+                    <span>{format(meeting.date, 'MM/dd/yy')}</span>
                     <span className="mx-1">&bull;</span>
                     <Clock className="h-5 w-5" />
                     <span>{formatTime(meeting.time)}</span>
