@@ -2,10 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ListTodo, Award, TrendingUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
-export default function ContributorDashboard() {
+export default function EmployeeDashboard() {
   return (
     <div>
-      <h1 className="text-3xl font-bold font-headline mb-6 text-foreground">My Dashboard</h1>
+      <h1 className="text-3xl font-bold font-headline mb-6 text-foreground">Employee Dashboard</h1>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

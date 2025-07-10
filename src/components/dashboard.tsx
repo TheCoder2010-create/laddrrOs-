@@ -1,7 +1,7 @@
 import type { Role } from '@/hooks/use-role';
 import ManagerDashboard from './dashboards/manager-dashboard';
 import LeadDashboard from './dashboards/lead-dashboard';
-import ContributorDashboard from './dashboards/contributor-dashboard';
+import EmployeeDashboard from './dashboards/employee-dashboard';
 import AuditorDashboard from './dashboards/auditor-dashboard';
 
 interface DashboardProps {
@@ -15,8 +15,8 @@ export default function Dashboard({ role }: DashboardProps) {
         return <ManagerDashboard />;
       case 'Team Lead':
         return <LeadDashboard />;
-      case 'Individual Contributor':
-        return <ContributorDashboard />;
+      case 'Employee':
+        return <EmployeeDashboard />;
       case 'Auditor':
         return <AuditorDashboard />;
       default:

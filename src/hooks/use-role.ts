@@ -1,9 +1,9 @@
 "use client"
 import { useState, useEffect, useCallback } from 'react';
 
-export type Role = 'Manager' | 'Team Lead' | 'Individual Contributor' | 'Auditor';
+export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'Auditor';
 
-export const availableRoles: Role[] = ['Manager', 'Team Lead', 'Individual Contributor', 'Auditor'];
+export const availableRoles: Role[] = ['Manager', 'Team Lead', 'Employee', 'Auditor'];
 
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);

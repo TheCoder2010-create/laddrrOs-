@@ -15,7 +15,7 @@ const roleDetails = {
     icon: Users,
     description: "Lead project execution and mentor team members.",
   },
-  'Individual Contributor': {
+  'Employee': {
     icon: UserCheck,
     description: "Focus on personal tasks and contribute to team goals.",
   },
@@ -34,7 +34,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl w-full">
         {availableRoles.map(role => {
-          const details = roleDetails[role];
+          const details = roleDetails[role as keyof typeof roleDetails];
           const Icon = details.icon;
           return (
             <Card 
