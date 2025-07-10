@@ -41,15 +41,18 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       if (currentRole === 'HR Head') {
         const feedback = await getAllFeedback();
         setFeedbackCount(feedback.length);
+      } else {
+        setFeedbackCount(0);
       }
     }
-    fetchFeedbackCount();
     
-    // Set up an interval to poll for new feedback, this is for demo purposes
-    // in a real app you might use websockets or server-sent events.
-    const interval = setInterval(fetchFeedbackCount, 5000); // every 5 seconds
+    fetchFeedbackCount(); // Initial fetch
+    
+    // Set up an interval to poll for new feedback.
+    // In a real app, you might use WebSockets or Server-Sent Events.
+    const intervalId = setInterval(fetchFeedbackCount, 5000); // Poll every 5 seconds
 
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalId); // Cleanup on component unmount
   }, [currentRole]);
 
 
