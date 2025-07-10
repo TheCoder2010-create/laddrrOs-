@@ -17,6 +17,7 @@ export const useRole = () => {
     const router = useRouter();
 
     useEffect(() => {
+        // Initial check for the role on component mount
         try {
             const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as Role;
             if (storedRole && availableRoles.includes(storedRole)) {
@@ -28,12 +29,13 @@ export const useRole = () => {
             setIsLoading(false);
         }
         
+        // This listener reacts to changes in other tabs/windows.
         const handleStorageChange = (event: StorageEvent) => {
             if (event.key === DATA_REFRESH_KEY && event.newValue) {
                 console.log('Data refresh key changed, forcing update.');
                 setRefreshKey(parseInt(event.newValue, 10));
             }
-            if (event.key === ROLE_STORAGE_KEY) {
+             if (event.key === ROLE_STORAGE_KEY) {
                 const newRole = event.newValue as Role | null;
                  if (newRole && availableRoles.includes(newRole)) {
                     setRole(newRole);
@@ -52,13 +54,7 @@ export const useRole = () => {
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
-            try {
-                localStorage.removeItem(ROLE_STORAGE_KEY);
-            } catch (error) {
-                console.error("Could not remove role from localStorage", error);
-            }
             router.push('/voice-in-silence/submit');
-            setRole(null);
             return;
         }
 

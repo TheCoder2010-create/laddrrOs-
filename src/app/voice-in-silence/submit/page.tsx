@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 
 function triggerDataRefresh() {
   // This key will be listened for by the useRole hook in other tabs.
+  // The value doesn't matter, only the fact that it changes.
   localStorage.setItem('data-refresh-key', Date.now().toString());
 }
 

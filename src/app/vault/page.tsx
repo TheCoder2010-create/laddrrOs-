@@ -229,6 +229,12 @@ function VaultContent() {
 
 export default function VaultPage() {
     const [isUnlocked, setIsUnlocked] = useState(false);
+    const { role } = useRole();
+
+    // This effect ensures that if the user logs out or switches role, they must re-authenticate to the vault.
+    useEffect(() => {
+        setIsUnlocked(false);
+    }, [role]);
 
     return (
       <div className="relative min-h-screen">
@@ -240,7 +246,19 @@ export default function VaultPage() {
                   </Link>
               </Button>
           </div>
-          {!isUnlocked ? (
+          {role !== 'HR Head' ? (
+              <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+                  <Card className="max-w-md">
+                      <CardHeader>
+                          <CardTitle>Access Denied</CardTitle>
+                          <CardDescription>You do not have permission to view this page.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <p>The Vault is restricted to the HR Head role.</p>
+                      </CardContent>
+                  </Card>
+              </div>
+          ) : !isUnlocked ? (
               <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />
           ) : (
               <div className="pt-16">
