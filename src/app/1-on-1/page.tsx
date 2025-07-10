@@ -37,6 +37,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { buttonVariants } from "@/components/ui/button";
 
 
 const roleUserMapping = {
@@ -248,7 +249,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Go Back</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleCancelMeeting(meeting.id)} className={cn(Button.getVariant({variant: 'destructive'}))}>
+                            <AlertDialogAction onClick={() => handleCancelMeeting(meeting.id)} className={cn(buttonVariants({variant: 'destructive'}))}>
                               Yes, Cancel
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -260,7 +261,6 @@ function OneOnOnePage({ role }: { role: Role }) {
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-5 w-5" />
                     <span>{format(meeting.date, 'MM/dd/yy')}</span>
-                    <span className="mx-1">&bull;</span>
                     <Clock className="h-5 w-5" />
                     <span>{formatTime(meeting.time)}</span>
                   </div>
