@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { LogOut, User, BarChart, CheckSquare, Shield, Check } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { availableRoles } from '@/hooks/use-role';
@@ -96,6 +96,16 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
+      <SidebarFooter className="p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => onSwitchRole(null)}>
+              <LogOut />
+              <span>Log out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
