@@ -11,6 +11,9 @@ export interface Feedback {
   subject: string;
   message: string;
   submittedAt: Date;
+  summary?: string;
+  criticality?: 'Low' | 'Medium' | 'High' | 'Critical';
+  criticalityReasoning?: string;
 }
 
 // In-memory array to store feedback submissions.

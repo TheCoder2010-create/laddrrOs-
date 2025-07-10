@@ -16,8 +16,16 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -77,6 +85,14 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     )
 }
 
+const criticalityConfig = {
+    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
+    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' },
+    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' },
+    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' },
+};
+
+
 function VaultContent() {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,7 +140,7 @@ function VaultContent() {
             🔒 Feedback Vault
           </CardTitle>
            <CardDescription className="text-lg text-muted-foreground italic">
-            Confidential submissions from Voice – in Silence.
+            Confidential submissions from Voice – in Silence, with AI-powered analysis.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -136,26 +152,47 @@ function VaultContent() {
               </p>
             </div>
           ) : (
-            <Accordion type="single" collapsible className="w-full">
-              {allFeedback.map((feedback) => (
-                <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
-                  <AccordionTrigger>
-                    <div className="flex justify-between w-full pr-4">
-                      <span className="font-medium">{feedback.subject}</span>
-                      <span className="text-sm text-muted-foreground font-normal">
-                        {formatDistanceToNow(feedback.submittedAt, { addSuffix: true })}
-                      </span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-2">
-                    <p className="whitespace-pre-wrap text-base text-muted-foreground">{feedback.message}</p>
-                    <div className="text-xs text-muted-foreground/80">
-                      Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+             <TooltipProvider>
+                <Accordion type="single" collapsible className="w-full">
+                {allFeedback.map((feedback) => {
+                    const config = criticalityConfig[feedback.criticality || 'Low'];
+                    const Icon = config.icon;
+                    return (
+                    <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
+                        <AccordionTrigger>
+                        <div className="flex justify-between items-center w-full pr-4">
+                            <div className="flex items-center gap-4">
+                                <Badge variant={config.badge as any}>{feedback.criticality}</Badge>
+                                <span className="font-medium text-left">{feedback.subject}</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground font-normal">
+                            {formatDistanceToNow(feedback.submittedAt, { addSuffix: true })}
+                            </span>
+                        </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-6 pt-4">
+                            <div className={cn("p-4 rounded-lg border space-y-3", config.color)}>
+                                 <div className="flex items-center gap-2 font-bold">
+                                    <Icon className="h-5 w-5" />
+                                    <span>AI Analysis: {feedback.criticality}</span>
+                                 </div>
+                                 <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
+                                 <p><span className="font-semibold">Reasoning:</span> {feedback.criticalityReasoning}</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-base">Original Submission</Label>
+                                <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
+                            </div>
+                            <div className="text-xs text-muted-foreground/80">
+                            Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                    )
+                })}
+                </Accordion>
+            </TooltipProvider>
           )}
         </CardContent>
       </Card>
