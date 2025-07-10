@@ -31,7 +31,7 @@ export const useRole = () => {
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
             localStorage.removeItem(ROLE_STORAGE_KEY);
-            setRole(null); 
+            setRole(newRole);
             router.push('/voice-in-silence/submit');
             return;
         }
@@ -53,3 +53,5 @@ export const useRole = () => {
 
     return { role, setRole: setCurrentRole, isLoading, availableRoles: allAvailableRoles };
 };
+
+    

@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -46,7 +46,8 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, getAllFeedback } from '@/services/feedback-service';
+import Link from 'next/link';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];
@@ -173,18 +174,38 @@ function HistorySection({ role }: { role: Role }) {
         setIsLoading(true);
         const allHistory = await getOneOnOneHistory();
         const currentUser = roleUserMapping[role];
+        
         // Filter history for the current user, either as supervisor or employee
         const userHistory = allHistory.filter(item => 
             item.supervisorName === currentUser.name || item.employeeName === currentUser.name
         );
-        setHistory(userHistory);
+        
+        // Check for related critical feedback items
+        const allFeedback = await getAllFeedback();
+        const userHistoryWithAlerts = userHistory.map(item => {
+            const relatedFeedback = allFeedback.find(fb => 
+                fb.summary === item.analysis.escalationAlert &&
+                fb.employee === roleUserMapping[role].role
+            );
+            return {
+                ...item,
+                escalationAlert: item.analysis.escalationAlert,
+                hasPendingAction: relatedFeedback?.status === 'Pending Supervisor Action' && relatedFeedback?.assignedTo === role
+            };
+        });
+
+        setHistory(userHistoryWithAlerts as any);
         setIsLoading(false);
     }, [role]);
 
     useEffect(() => {
         fetchHistory();
         window.addEventListener('storage', fetchHistory);
-        return () => window.removeEventListener('storage', fetchHistory);
+        window.addEventListener('feedbackUpdated', fetchHistory); // Listen for custom event
+        return () => {
+            window.removeEventListener('storage', fetchHistory);
+            window.removeEventListener('feedbackUpdated', fetchHistory);
+        }
     }, [fetchHistory]);
 
     if (isLoading) {
@@ -214,9 +235,25 @@ function HistorySection({ role }: { role: Role }) {
                                         {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                     </p>
                                 </div>
+                                 {(item.analysis as any).escalationAlert && (
+                                    <div className="flex items-center gap-2 text-destructive">
+                                        <AlertTriangle className="h-5 w-5" />
+                                        <span className="hidden md:inline">Critical Insight</span>
+                                    </div>
+                                )}
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-2">
+                            {(item as any).hasPendingAction && (
+                                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-center">
+                                    <h4 className="font-semibold text-destructive">Action Required</h4>
+                                    <p className="text-destructive/90 text-sm mb-2">{ (item.analysis as any).escalationAlert }</p>
+                                     <Button variant="destructive" size="sm" asChild>
+                                        <Link href="/action-items">Address Insight</Link>
+                                    </Button>
+                                </div>
+                            )}
+
                             <div>
                                 <h4 className="font-semibold">Key Themes</h4>
                                 <ul className="list-disc pl-5 text-muted-foreground text-sm">
@@ -392,3 +429,5 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
