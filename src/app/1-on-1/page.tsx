@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlusCircle, Calendar, Clock, Video, X } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, X, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -21,6 +21,12 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,7 +56,7 @@ const upcomingMeetings = [
       hint: 'manager avatar',
     },
     date: new Date(new Date().setDate(new Date().getDate() + 2)),
-    time: '10:00 AM',
+    time: '10:00', // Use 24hr format for input type="time"
   },
   {
     id: 2,
@@ -62,31 +68,37 @@ const upcomingMeetings = [
       hint: 'manager avatar',
     },
     date: new Date(new Date().setDate(new Date().getDate() + 9)),
-    time: '2:30 PM',
+    time: '14:30', // Use 24hr format for input type="time"
   },
 ];
 
-function ScheduleMeetingDialog() {
-  const [date, setDate] = useState<Date>();
+type Meeting = typeof upcomingMeetings[0];
 
+
+function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: Meeting, onSchedule: (details: any) => void }) {
+  const [date, setDate] = useState<Date | undefined>(meetingToEdit?.date);
+  const [time, setTime] = useState(meetingToEdit?.time || '');
+  const [participant, setParticipant] = useState(meetingToEdit?.with || '');
+  
   const handleSchedule = () => {
-    // In a real app, this would save the meeting
-    console.log("Meeting scheduled!");
-    // You would typically close the dialog here
+    onSchedule({ date, time, participant });
   }
+
+  const title = meetingToEdit ? "Reschedule 1-on-1" : "Schedule New 1-on-1";
+  const description = meetingToEdit ? "Update the date and time for your meeting." : "Select a participant, date, and time for your meeting.";
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Schedule New 1-on-1</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogDescription>
-          Select a participant, date, and time for your meeting.
+          {description}
         </DialogDescription>
       </DialogHeader>
       <div className="space-y-4 py-4">
         <div className="space-y-2">
           <Label htmlFor="participant">Participant</Label>
-          <Input id="participant" placeholder="Enter name..." />
+          <Input id="participant" placeholder="Enter name..." value={participant} onChange={e => setParticipant(e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label>Date</Label>
@@ -115,7 +127,7 @@ function ScheduleMeetingDialog() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="time">Time</Label>
-          <Input id="time" type="time" />
+          <Input id="time" type="time" value={time} onChange={e => setTime(e.target.value)} />
         </div>
       </div>
       <DialogFooter>
@@ -125,7 +137,7 @@ function ScheduleMeetingDialog() {
           </Button>
         </DialogClose>
         <DialogClose asChild>
-            <Button type="submit" onClick={handleSchedule}>Schedule</Button>
+            <Button type="submit" onClick={handleSchedule}>{meetingToEdit ? "Update" : "Schedule"}</Button>
         </DialogClose>
       </DialogFooter>
     </DialogContent>
@@ -133,26 +145,48 @@ function ScheduleMeetingDialog() {
 }
 
 function OneOnOnePage() {
+  const [meetings, setMeetings] = useState(upcomingMeetings);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  
+  const handleSchedule = (details: any) => {
+    // In a real app, this would save the meeting
+    console.log("Meeting scheduled/updated!", details);
+    setIsScheduleDialogOpen(false);
+  }
+  
+  const handleCancelMeeting = (meetingId: number) => {
+    console.log(`Cancelling meeting ${meetingId}`);
+    setMeetings(meetings.filter(m => m.id !== meetingId));
+  }
+
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours, 10));
+    date.setMinutes(parseInt(minutes, 10));
+    return format(date, 'p');
+  }
+
   return (
     <div className="p-4 md:p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold font-headline text-foreground">1-on-1s</h1>
-        <Dialog>
+        <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2" />
               Schedule New Meeting
             </Button>
           </DialogTrigger>
-          <ScheduleMeetingDialog />
+          <ScheduleMeetingDialog onSchedule={handleSchedule} />
         </Dialog>
       </div>
 
       <div>
         <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Upcoming Meetings</h2>
-        {upcomingMeetings.length > 0 ? (
+        {meetings.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upcomingMeetings.map((meeting) => (
+            {meetings.map((meeting) => (
               <Card key={meeting.id} className="flex flex-col">
                 <CardHeader>
                   <div className="flex items-center gap-4">
@@ -173,32 +207,74 @@ function OneOnOnePage() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-5 w-5" />
-                    <span>{meeting.time}</span>
+                    <span>{formatTime(meeting.time)}</span>
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex items-center gap-2">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                       <Button className="w-full" variant="secondary">
+                       <Button className="w-full">
                         <Video className="mr-2" />
-                        Join Meeting
+                        Start Meeting
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Ready to join?</AlertDialogTitle>
+                        <AlertDialogTitle>Ready to start?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This action will open the video conference link for your meeting with {meeting.with}.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => console.log('Joining meeting...')}>
-                          Join
+                        <AlertDialogCancel>Go Back</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => console.log('Starting meeting...')}>
+                          Start
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+
+                  <Dialog>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DialogTrigger asChild>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Reschedule</span>
+                          </DropdownMenuItem>
+                        </DialogTrigger>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem className="text-destructive focus:text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Cancel</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                           <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently cancel your meeting with {meeting.with} on {format(meeting.date, 'PPP')} at {formatTime(meeting.time)}. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Go Back</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleCancelMeeting(meeting.id)} className={cn(buttonVariants({variant: 'destructive'}))}>
+                                Yes, Cancel
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                     {/* The DialogContent for rescheduling is placed here to be controlled by the DropdownMenuItem's DialogTrigger */}
+                    <ScheduleMeetingDialog meetingToEdit={meeting} onSchedule={handleSchedule} />
+                  </Dialog>
                 </CardFooter>
               </Card>
             ))}
