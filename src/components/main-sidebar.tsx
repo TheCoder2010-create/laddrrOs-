@@ -85,7 +85,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
            <SidebarMenuItem>
             <SidebarMenuButton>
               <User />
-              <span>Team</span>
+              <span>Voice – in Silence</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
            <SidebarMenuItem>
