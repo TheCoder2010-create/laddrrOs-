@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'HR Head';
 
-export const availableRoles: Role[] = ['Manager', 'Team Lead', 'Employee', 'HR Head'];
+export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head'];
 
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
