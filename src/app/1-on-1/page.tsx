@@ -39,14 +39,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-
-const roleUserMapping = {
-  'Manager': { name: 'Alex Smith', role: 'Manager', imageHint: 'manager' },
-  'Team Lead': { name: 'Ben Carter', role: 'Team Lead', imageHint: 'leader' },
-  'AM': { name: 'Ashley Miles', role: 'AM', imageHint: 'assistant manager' },
-  'Employee': { name: 'Casey Day', role: 'Employee', imageHint: 'employee' },
-  'HR Head': { name: 'Dana Evans', role: 'HR Head', imageHint: 'hr head' },
-};
+import { roleUserMapping } from '@/lib/role-mapping';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];

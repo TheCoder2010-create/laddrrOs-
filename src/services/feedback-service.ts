@@ -15,6 +15,15 @@ export interface AuditEvent {
   details?: string;
 }
 
+export type FeedbackStatus = 
+  | 'Open' 
+  | 'In Progress' 
+  | 'Pending Supervisor Action'
+  | 'Pending Employee Acknowledgement'
+  | 'Pending AM Review'
+  | 'Pending Manager Acknowledgement'
+  | 'Resolved';
+
 export interface Feedback {
   trackingId: string;
   subject: string;
@@ -25,9 +34,19 @@ export interface Feedback {
   criticalityReasoning?: string;
   auditTrail?: AuditEvent[];
   viewed?: boolean;
-  status?: 'Open' | 'In Progress' | 'Resolved';
+  status?: FeedbackStatus;
   assignedTo?: Role;
   resolution?: string;
+  // New fields for the critical insight workflow
+  supervisor?: Role; // The supervisor involved in the 1-on-1
+  employee?: Role; // The employee involved in the 1-on-1
+  supervisorUpdate?: string;
+  employeeAcknowledgement?: {
+      approved: boolean;
+      justification: string;
+  };
+  amCoachingNotes?: string;
+  managerAcknowledged?: boolean;
 }
 
 // Client-side submission types
@@ -47,7 +66,7 @@ export interface TrackedFeedback {
   trackingId: string;
   subject: string;
   submittedAt: string;
-  status?: 'Open' | 'In Progress' | 'Resolved';
+  status?: FeedbackStatus;
   assignedTo?: Role;
   auditTrail?: AuditEvent[];
   resolution?: string;
@@ -61,7 +80,7 @@ export interface TrackFeedbackOutput {
 const FEEDBACK_KEY = 'accountability_feedback_v1';
 
 // Helper to get feedback from localStorage
-const getFeedbackFromStorage = (): Feedback[] => {
+export const getFeedbackFromStorage = (): Feedback[] => {
   if (typeof window === 'undefined') {
     return [];
   }
@@ -84,7 +103,7 @@ const getFeedbackFromStorage = (): Feedback[] => {
 };
 
 // Helper to save feedback to localStorage and notify listeners
-const saveFeedbackToStorage = (feedback: Feedback[]): void => {
+export const saveFeedbackToStorage = (feedback: Feedback[]): void => {
    if (typeof window === 'undefined') {
     return;
   }
@@ -178,6 +197,16 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
 }
 
 /**
+ * Retrieves a single feedback item by ID.
+ * @param trackingId The ID of the feedback to retrieve.
+ * @returns A promise that resolves with the feedback item or null.
+ */
+export async function getFeedbackById(trackingId: string): Promise<Feedback | null> {
+    const allFeedback = getFeedbackFromStorage();
+    return allFeedback.find(f => f.trackingId === trackingId) || null;
+}
+
+/**
  * Retrieves all feedback submissions from localStorage.
  * @returns A promise that resolves with an array of all feedback submissions.
  */
@@ -255,7 +284,131 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
 }
 
 /**
- * Resolves a feedback item.
+ * Supervisor submits an update for a critical insight.
+ */
+export async function submitSupervisorUpdate(trackingId: string, supervisor: Role, update: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.supervisorUpdate = update;
+    item.status = 'Pending Employee Acknowledgement';
+    item.assignedTo = item.employee; // Now the employee needs to act
+    item.auditTrail?.push({
+        event: 'Supervisor Responded',
+        timestamp: new Date(),
+        actor: supervisor,
+        details: update,
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+/**
+ * Employee acknowledges the supervisor's update.
+ */
+export async function submitEmployeeAcknowledgement(trackingId: string, employee: Role, approved: boolean, justification: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.employeeAcknowledgement = { approved, justification };
+
+    if (approved) {
+        item.status = 'Pending AM Review';
+        item.assignedTo = 'AM';
+        item.auditTrail?.push({
+            event: 'Employee Approved',
+            timestamp: new Date(),
+            actor: employee,
+            details: justification,
+        });
+    } else {
+        item.status = 'Pending AM Review'; // AM needs to review the rejection
+        item.assignedTo = 'AM';
+        item.auditTrail?.push({
+            event: 'Employee Rejected',
+            timestamp: new Date(),
+            actor: employee,
+            details: justification,
+        });
+    }
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+
+/**
+ * AM resolves a case after employee approval.
+ */
+export async function amAcknowledgeResolution(trackingId: string, am: Role): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.status = 'Pending Manager Acknowledgement';
+    item.assignedTo = 'Manager';
+    item.auditTrail?.push({
+        event: 'AM Acknowledged Resolution',
+        timestamp: new Date(),
+        actor: am,
+        details: 'AM has reviewed and acknowledged the positive resolution.',
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+
+/**
+ * AM submits coaching notes after employee rejection.
+ */
+export async function amSubmitCoachingNotes(trackingId: string, am: Role, notes: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.amCoachingNotes = notes;
+    item.status = 'Pending Manager Acknowledgement';
+    item.assignedTo = 'Manager';
+    item.auditTrail?.push({
+        event: 'AM Coached Supervisor',
+        timestamp: new Date(),
+        actor: am,
+        details: notes,
+    });
+    
+    saveFeedbackToStorage(allFeedback);
+}
+
+/**
+ * Manager provides the final acknowledgement.
+ */
+export async function managerAcknowledge(trackingId: string, manager: Role): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.managerAcknowledged = true;
+    item.status = 'Resolved';
+    item.assignedTo = 'HR Head'; // Case is now closed and archived under HR
+    item.auditTrail?.push({
+        event: 'Manager Acknowledged',
+        timestamp: new Date(),
+        actor: manager,
+        details: 'The full cycle has been reviewed and acknowledged by the Manager. Case closed.',
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+
+/**
+ * Resolves a feedback item (HR function).
  * @param trackingId The ID of the feedback to resolve.
  * @param actor The role resolving the feedback.
  * @param resolution The resolution comment.

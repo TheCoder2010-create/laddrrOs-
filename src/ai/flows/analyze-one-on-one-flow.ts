@@ -10,19 +10,23 @@ import { ai } from '@/ai/genkit';
 import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
 import { getAllFeedback, saveFeedback } from '@/services/feedback-service';
 import { v4 as uuidv4 } from 'uuid';
+import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 
 export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
   const result = await analyzeOneOnOneFlow(input);
 
-  // If a critical insight is found, create a new feedback record to track it.
+  // If a critical insight is found, create a new feedback record to trigger the workflow.
   if (result.escalationAlert) {
       const allFeedback = await getAllFeedback();
       const submittedAt = new Date();
       
+      const supervisorRole = getRoleByName(input.supervisorName);
+      const employeeRole = getRoleByName(input.employeeName);
+      
       const newFeedback = {
           trackingId: uuidv4(),
-          subject: `Critical Insight from 1-on-1`,
-          message: `An escalation alert was triggered during a 1-on-1 session. See details below.
+          subject: `Critical Insight from 1-on-1 with ${input.employeeName}`,
+          message: `An escalation alert was triggered during a 1-on-1 session between ${input.supervisorName} and ${input.employeeName}. See details below.
           
 - **Location**: ${input.location}
 - **Feedback Tone**: ${input.feedbackTone}
@@ -33,14 +37,22 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           criticality: 'Critical' as const,
           criticalityReasoning: 'This was flagged as a critical insight directly from a 1-on-1 session analysis.',
           viewed: false,
-          status: 'Open' as const,
-          assignedTo: 'HR Head' as const,
+          status: 'Pending Supervisor Action' as const,
+          assignedTo: supervisorRole,
+          supervisor: supervisorRole,
+          employee: employeeRole,
           auditTrail: [
               {
-                  event: 'Submitted',
+                  event: 'Critical Insight Identified',
                   timestamp: submittedAt,
                   actor: 'HR Head' as const, // System action attributed to HR
                   details: 'Critical insight automatically logged from 1-on-1 analysis.',
+              },
+               {
+                  event: 'Assigned',
+                  timestamp: new Date(submittedAt.getTime() + 1000),
+                  actor: 'HR Head' as const,
+                  details: `Case automatically assigned to ${supervisorRole} for initial response.`,
               },
           ],
       };
@@ -58,7 +70,7 @@ const prompt = ai.definePrompt({
   output: { schema: AnalyzeOneOnOneOutputSchema },
   prompt: `You are an expert HR analyst and executive coach. Your task is to analyze the provided 1-on-1 session feedback and generate a structured, insightful summary.
 
-Here is the data from the session:
+Here is the data from the session between supervisor {{supervisorName}} and employee {{employeeName}}:
 - **Location**: {{{location}}}
 - **Feedback Tone**: {{{feedbackTone}}}
 - **How Feedback Was Received**: {{{employeeAcceptedFeedback}}}

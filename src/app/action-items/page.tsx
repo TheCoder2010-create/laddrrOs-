@@ -9,19 +9,20 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, assignFeedback, addFeedbackUpdate } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, amAcknowledgeResolution, amSubmitCoachingNotes, managerAcknowledge } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserCheck, UserX, UserRoundCog, BrainCircuit, MessageCircleQuestion } from 'lucide-react';
 import { useRole, Role, availableRolesForAssignment } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import DashboardLayout from '@/components/dashboard-layout';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -32,8 +33,15 @@ const criticalityConfig = {
 
 const auditEventIcons = {
     'Submitted': FileCheck,
+    'Critical Insight Identified': ShieldAlert,
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
+    'Supervisor Responded': MessageSquare,
+    'Employee Approved': UserCheck,
+    'Employee Rejected': UserX,
+    'AM Acknowledged Resolution': UserRoundCog,
+    'AM Coached Supervisor': BrainCircuit,
+    'Manager Acknowledged': CheckCircle,
     'Update Added': MessageSquare,
     'Resolved': CheckCircle,
     'default': Clock,
@@ -56,7 +64,7 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
                                     {event.event} by <span className="text-primary">{event.actor}</span>
                                 </p>
                                 <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
-                                {event.details && <p className="text-sm text-muted-foreground mt-1">{event.details}</p>}
+                                {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
                             </div>
                         </div>
                     );
@@ -68,80 +76,117 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
 
 function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
-    const [updateComment, setUpdateComment] = useState('');
-    const [assignmentComment, setAssignmentComment] = useState('');
-    const [assignTo, setAssignTo] = useState<Role | ''>('');
-    const [returnComment, setReturnComment] = useState('');
+    const { toast } = useToast();
+    const [supervisorUpdate, setSupervisorUpdate] = useState('');
+    const [amCoachingNotes, setAmCoachingNotes] = useState('');
 
-
-    const handleAddUpdate = async () => {
-        if (!updateComment) return;
-        await addFeedbackUpdate(feedback.trackingId, role!, updateComment);
-        setUpdateComment('');
+    const handleSupervisorUpdate = async () => {
+        if (!supervisorUpdate) return;
+        await submitSupervisorUpdate(feedback.trackingId, role!, supervisorUpdate);
+        setSupervisorUpdate('');
+        toast({ title: "Update Submitted", description: "The employee has been notified to acknowledge your response." });
         onUpdate();
     }
     
-    const handleReturnToHR = async () => {
-        await assignFeedback(feedback.trackingId, 'HR Head', role!, returnComment || 'Returning case to HR for review/resolution.');
-        setReturnComment('');
+    const handleAmAcknowledge = async () => {
+        await amAcknowledgeResolution(feedback.trackingId, role!);
+        toast({ title: "Resolution Acknowledged", description: "The case has been escalated to the Manager for final review." });
         onUpdate();
+    };
+
+    const handleAmCoaching = async () => {
+        if (!amCoachingNotes) return;
+        await amSubmitCoachingNotes(feedback.trackingId, role!, amCoachingNotes);
+        setAmCoachingNotes('');
+        toast({ title: "Coaching Notes Submitted", description: "The case has been escalated to the Manager for final review." });
+        onUpdate();
+    };
+
+    const handleManagerAcknowledge = async () => {
+        await managerAcknowledge(feedback.trackingId, role!);
+        toast({ title: "Case Closed", description: "You have acknowledged the full audit trail. The case is now resolved." });
+        onUpdate();
+    };
+
+    if (feedback.assignedTo !== role) return null;
+
+    // Supervisor's action panel
+    if (feedback.status === 'Pending Supervisor Action') {
+        return (
+            <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+                <Label className="text-base font-semibold">Your Action Required</Label>
+                 <p className="text-sm text-muted-foreground">
+                    A critical insight was flagged in your 1-on-1. Please review the details and provide a summary of the actions you have taken or will take to address the concern.
+                </p>
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                    <Label htmlFor="supervisorUpdate" className="font-medium">Resolution Summary</Label>
+                    <Textarea 
+                        id="supervisorUpdate"
+                        placeholder="e.g., 'I spoke with the employee to clarify the issue and we have agreed on the following steps...'"
+                        value={supervisorUpdate}
+                        onChange={(e) => setSupervisorUpdate(e.target.value)}
+                        rows={4}
+                    />
+                    <Button onClick={handleSupervisorUpdate} disabled={!supervisorUpdate}>Submit Update to Employee</Button>
+                </div>
+            </div>
+        );
     }
     
-    const handleAssign = async () => {
-        if (!assignTo) return;
-        await assignFeedback(feedback.trackingId, assignTo as Role, role!, assignmentComment);
-        setAssignTo('');
-        setAssignmentComment('');
-        onUpdate();
+    // AM's action panel
+    if (feedback.status === 'Pending AM Review') {
+         const wasApproved = feedback.employeeAcknowledgement?.approved;
+         return (
+             <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+                 <Label className="text-base font-semibold">Your Action Required</Label>
+                  <div className={cn("p-4 rounded-lg border", wasApproved ? "bg-green-500/10" : "bg-destructive/10")}>
+                    <h4 className="font-bold flex items-center gap-2">
+                        {wasApproved ? <UserCheck /> : <UserX />}
+                        Employee {wasApproved ? 'Approved' : 'Rejected'} Supervisor's Response
+                    </h4>
+                    <p className="text-muted-foreground mt-2 pl-6">{feedback.employeeAcknowledgement?.justification}</p>
+                 </div>
+
+                 {wasApproved ? (
+                      <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                        <Label className="font-medium">Acknowledge Resolution</Label>
+                         <p className="text-sm text-muted-foreground">The employee has confirmed the issue is resolved. Please acknowledge to escalate for final managerial sign-off.</p>
+                        <Button onClick={handleAmAcknowledge} variant="success">Acknowledge and Close Loop</Button>
+                     </div>
+                 ) : (
+                     <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                        <Label htmlFor="amCoaching" className="font-medium">Submit Coaching Notes</Label>
+                        <p className="text-sm text-muted-foreground">The employee has indicated the issue is not resolved. Please coach the supervisor and document the coaching actions you took below.</p>
+                        <Textarea 
+                            id="amCoaching"
+                            placeholder="e.g., 'Coached supervisor on active listening techniques and scheduled a follow-up...'"
+                            value={amCoachingNotes}
+                            onChange={(e) => setAmCoachingNotes(e.target.value)}
+                            rows={4}
+                        />
+                        <Button onClick={handleAmCoaching} disabled={!amCoachingNotes}>Submit Coaching Notes & Escalate</Button>
+                     </div>
+                 )}
+             </div>
+         );
     }
 
-
-    if (feedback.status === 'Resolved') return null;
-
-    return (
-        <div className="p-4 border-t mt-4 space-y-6">
-            <Label className="text-base font-semibold">Case Management</Label>
-            
-            <div className="p-4 border rounded-lg bg-background space-y-3">
-                <Label className="font-medium">Add Update</Label>
-                <Textarea 
-                    placeholder="Provide an update on the investigation or actions taken..."
-                    value={updateComment}
-                    onChange={(e) => setUpdateComment(e.target.value)}
-                />
-                <Button onClick={handleAddUpdate} disabled={!updateComment}>Add Update</Button>
+    // Manager's action panel
+    if (feedback.status === 'Pending Manager Acknowledgement') {
+        return (
+            <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+                <Label className="text-base font-semibold">Final Acknowledgement Required</Label>
+                 <p className="text-sm text-muted-foreground">
+                    Please review the complete audit trail for this critical insight. Your acknowledgement will close this case.
+                </p>
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                    <Button onClick={handleManagerAcknowledge}>Read and Acknowledge</Button>
+                </div>
             </div>
-            
-            <div className="p-4 border rounded-lg bg-background space-y-3">
-                <Label className="font-medium">Re-assign Case</Label>
-                 <Select value={assignTo} onValueChange={(val) => setAssignTo(val as Role)}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a role to assign..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableRolesForAssignment.map(r => <SelectItem key={r} value={r} disabled={r === role}>{r}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <Textarea 
-                    placeholder="Add an assignment note (optional)..."
-                    value={assignmentComment}
-                    onChange={(e) => setAssignmentComment(e.target.value)}
-                />
-                <Button onClick={handleAssign} disabled={!assignTo}>Assign</Button>
-            </div>
+        )
+    }
 
-
-            <div className="p-4 border rounded-lg bg-background space-y-3">
-                <Label className="font-medium">Return to HR Head</Label>
-                <Textarea 
-                    placeholder="Add a final comment before returning the case (optional)..."
-                    value={returnComment}
-                    onChange={(e) => setReturnComment(e.target.value)}
-                />
-                <Button onClick={handleReturnToHR} variant="secondary">Mark as Ready for HR Review</Button>
-            </div>
-        </div>
-    );
+    return null; // No action panel for other statuses
 }
 
 
@@ -155,7 +200,7 @@ function ActionItemsContent() {
     setIsLoading(true);
     try {
       const allFeedback = await getAllFeedback();
-      const myFeedback = allFeedback.filter(f => f.assignedTo === role && f.status === 'In Progress');
+      const myFeedback = allFeedback.filter(f => f.assignedTo === role && f.status !== 'Resolved' && f.status !== 'Open');
       setAssignedFeedback(myFeedback);
     } catch (error) {
       console.error("Failed to fetch feedback", error);
@@ -200,9 +245,57 @@ function ActionItemsContent() {
   const getStatusVariant = (status?: string) => {
     switch(status) {
         case 'Resolved': return 'success';
-        case 'In Progress': return 'secondary';
-        default: return 'default';
+        case 'Pending Supervisor Action':
+        case 'Pending AM Review':
+        case 'Pending Manager Acknowledgement':
+            return 'destructive';
+        case 'Pending Employee Acknowledgement':
+            return 'default';
+        default: return 'secondary';
     }
+  }
+
+  // Special handling for employee acknowledgement
+  if (role === 'Employee') {
+      const ackItems = assignedFeedback.filter(f => f.status === 'Pending Employee Acknowledgement');
+      return (
+           <div className="p-4 md:p-8">
+              <Card>
+                  <CardHeader>
+                      <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground">
+                          <MessageCircleQuestion className="inline-block mr-3 h-8 w-8" /> Acknowledgements
+                      </CardTitle>
+                      <CardDescription className="text-lg text-muted-foreground">
+                          Please review the following items and confirm if your concern has been addressed.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      {ackItems.length === 0 ? (
+                           <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                              <p className="text-muted-foreground text-lg">You have no pending acknowledgements.</p>
+                          </div>
+                      ) : (
+                          <div className="space-y-4">
+                              {ackItems.map(item => (
+                                  <Card key={item.trackingId} className="p-4">
+                                      <CardTitle>{item.subject}</CardTitle>
+                                      <CardDescription className="mt-2">Your supervisor, {item.supervisor}, has provided the following update regarding your concern:</CardDescription>
+                                      <blockquote className="mt-2 p-4 bg-muted/50 border-l-4 rounded-md">
+                                          {item.supervisorUpdate}
+                                      </blockquote>
+                                      <div className="mt-4">
+                                        <Link href={`/acknowledge/${item.trackingId}`}>
+                                            <Button>Respond to Update</Button>
+                                        </Link>
+                                      </div>
+                                  </Card>
+                              ))}
+                          </div>
+                      )}
+                  </CardContent>
+              </Card>
+          </div>
+      )
   }
 
   return (
@@ -213,7 +306,7 @@ function ActionItemsContent() {
             <ListTodo className="inline-block mr-3 h-8 w-8" /> Action Items
           </CardTitle>
            <CardDescription className="text-lg text-muted-foreground">
-            Cases assigned to you for investigation and action.
+            Cases assigned to you for review and action.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -221,11 +314,10 @@ function ActionItemsContent() {
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <p className="text-muted-foreground text-lg">Your action item list is empty.</p>
               <p className="text-sm text-muted-foreground mt-2">
-                New cases assigned to you by HR will appear here.
+                New cases assigned to you will appear here.
               </p>
             </div>
           ) : (
-             <TooltipProvider>
                 <Accordion type="single" collapsible className="w-full">
                 {assignedFeedback.map((feedback) => {
                     const config = criticalityConfig[feedback.criticality || 'Low'];
@@ -239,6 +331,7 @@ function ActionItemsContent() {
                                 <span className="font-medium text-left truncate">{feedback.subject}</span>
                             </div>
                             <div className="flex items-center gap-4 ml-4">
+                                 <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
                                 <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
                                     Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' && a.details?.includes(role || ''))?.timestamp || feedback.submittedAt), { addSuffix: true })}
                                 </span>
@@ -252,7 +345,6 @@ function ActionItemsContent() {
                                     <span>AI Analysis: {feedback.criticality}</span>
                                  </div>
                                  <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
-                                 <p><span className="font-semibold">Reasoning:</span> {feedback.criticalityReasoning}</p>
                             </div>
 
                             <div className="space-y-2">
@@ -272,7 +364,6 @@ function ActionItemsContent() {
                     )
                 })}
                 </Accordion>
-            </TooltipProvider>
           )}
         </CardContent>
       </Card>
@@ -292,7 +383,7 @@ export default function ActionItemsPage() {
         )
     }
 
-    if (!role || !availableRolesForAssignment.includes(role)) {
+    if (!role || (!availableRolesForAssignment.includes(role) && role !== 'Employee')) {
          return (
             <DashboardLayout role={role!} onSwitchRole={setRole}>
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
@@ -302,7 +393,7 @@ export default function ActionItemsPage() {
                           <CardDescription>You do not have permission to view this page.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <p>This page is restricted to Manager, Team Lead, and AM roles.</p>
+                          <p>This page is restricted to roles with assigned action items.</p>
                       </CardContent>
                   </Card>
               </div>

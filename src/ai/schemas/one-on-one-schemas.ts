@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Zod schemas for the 1-on-1 analysis feature.
  * This file is kept separate to allow its non-async exports (the schemas)
@@ -27,6 +28,8 @@ export const formSchema = z.object({
   broadcastAppreciation: z.boolean(),
   otherComments: z.string().optional(),
   transcript: z.string().optional().describe("An optional transcript of the conversation, either recorded or uploaded."),
+  supervisorName: z.string(),
+  employeeName: z.string(),
 }).superRefine((data, ctx) => {
     if (!data.primaryFeedback && !data.transcript) {
         ctx.addIssue({

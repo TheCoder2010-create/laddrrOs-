@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect, useRef, ChangeEvent } from 'react';
@@ -57,6 +58,8 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         broadcastAppreciation: false,
         otherComments: "",
         transcript: "",
+        supervisorName: supervisor,
+        employeeName: meeting.with,
     },
   });
 

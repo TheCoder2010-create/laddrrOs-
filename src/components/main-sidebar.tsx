@@ -18,20 +18,13 @@ import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback } from '@/services/feedback-service';
 import { Badge } from '@/components/ui/badge';
+import { roleUserMapping } from '@/lib/role-mapping';
+
 
 interface MainSidebarProps {
   currentRole: Role;
   onSwitchRole: (role: Role | null) => void;
 }
-
-const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint: string }> = {
-  'Manager': { name: 'Alex Smith', fallback: 'AS', imageHint: 'manager' },
-  'Team Lead': { name: 'Ben Carter', fallback: 'BC', imageHint: 'leader' },
-  'AM': { name: 'Ashley Miles', fallback: 'AM', imageHint: 'assistant manager' },
-  'Employee': { name: 'Casey Day', fallback: 'CD', imageHint: 'employee' },
-  'HR Head': { name: 'Dana Evans', fallback: 'DE', imageHint: 'hr head' },
-  'Voice – In Silence': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person' }
-};
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
   const { availableRoles } = useRole();
@@ -41,22 +34,19 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [actionItemCount, setActionItemCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
+    if (!currentRole) return;
     try {
       const feedback = await getAllFeedback();
       
       if (currentRole === 'HR Head') {
-        const newCount = feedback.filter(c => !c.viewed).length;
+        const newCount = feedback.filter(c => !c.viewed && c.status === 'Open').length;
         setVaultFeedbackCount(newCount);
       } else {
         setVaultFeedbackCount(0);
       }
-
-      if (currentRole === 'Manager' || currentRole === 'Team Lead' || currentRole === 'AM') {
-        const assignedCount = feedback.filter(c => c.assignedTo === currentRole && c.status === 'In Progress').length;
-        setActionItemCount(assignedCount);
-      } else {
-        setActionItemCount(0);
-      }
+      
+      const assignedCount = feedback.filter(f => f.assignedTo === currentRole && f.status !== 'Resolved').length;
+      setActionItemCount(assignedCount);
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
@@ -104,7 +94,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-3 cursor-pointer">
               <Avatar className="h-12 w-12">
-                <AvatarImage src="https://placehold.co/100x100.png" alt={currentUser.name} data-ai-hint={`${currentUser.imageHint} avatar`} />
+                <AvatarImage src={`https://placehold.co/100x100.png`} alt={currentUser.name} data-ai-hint={`${currentUser.imageHint} avatar`} />
                 <AvatarFallback>{currentUser.fallback}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start">
@@ -170,7 +160,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
               </Link>
             </SidebarMenuItem>
           ))}
-          {(currentRole === 'Manager' || currentRole === 'Team Lead' || currentRole === 'AM') && assigneeMenuItems.map((item) => (
+          {assigneeMenuItems.map((item) => (
              <SidebarMenuItem key={item.href}>
               <Link href={item.href} passHref>
                 <SidebarMenuButton asChild isActive={pathname === item.href}>
@@ -180,7 +170,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
                       <span>{item.label}</span>
                     </div>
                     {item.badge ? (
-                       <Badge variant="secondary" className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
+                       <Badge variant="destructive" className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
                         {item.badge}
                       </Badge>
                     ) : null}
