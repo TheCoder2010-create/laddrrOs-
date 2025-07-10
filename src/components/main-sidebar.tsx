@@ -33,7 +33,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
-    { href: '/tasks', icon: <CheckSquare />, label: 'Tasks' },
+    { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
     { href: '/audit-log', icon: <Shield />, label: 'Audit Log' },
   ];
