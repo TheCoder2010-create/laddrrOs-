@@ -91,7 +91,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
       <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-lg border-0 bg-transparent shadow-none md:border md:bg-card/30 md:shadow-lg">
+        <Card className="w-full max-w-sm border-0 bg-transparent shadow-none md:border md:bg-card/30 md:shadow-lg">
           <CardHeader className="px-4 md:px-6 pt-4 pb-2">
             <p className="text-muted-foreground">Please select your role to continue.</p>
           </CardHeader>
