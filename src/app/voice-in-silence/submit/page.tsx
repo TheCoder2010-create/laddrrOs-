@@ -8,13 +8,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Copy } from 'lucide-react';
+import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
 import { trackFeedback, TrackedFeedback } from '@/services/feedback-service';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+import type { AuditEvent } from '@/services/feedback-service';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 
 function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
@@ -84,6 +87,49 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
   );
 }
 
+const publicAuditEventIcons = {
+    'Submitted': FileCheck,
+    'AI Analysis Completed': ChevronsRight,
+    'Assigned': Send,
+    'Update Added': MessageSquare,
+    'Resolved': CheckCircle,
+    'default': Clock,
+}
+
+function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
+    if (!trail || trail.length === 0) return null;
+
+    return (
+        <div className="space-y-2">
+            <Label>Case History</Label>
+            <div className="p-4 border rounded-md bg-muted/50 space-y-4">
+                {trail.map((event, index) => {
+                    const Icon = publicAuditEventIcons[event.event as keyof typeof publicAuditEventIcons] || publicAuditEventIcons.default;
+                    let eventText = event.event;
+                    if (event.event === 'Assigned') {
+                        eventText = 'Case assigned for review';
+                    } else if (event.event === 'Update Added') {
+                        eventText = 'An update was added to the case';
+                    }
+
+                    return (
+                        <div key={index} className="flex items-start gap-3">
+                            <Icon className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                            <div className="flex-1">
+                                <p className="font-medium text-sm">
+                                    {eventText}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+
 function TrackingForm() {
   const [trackingId, setTrackingId] = useState('');
   const [isTracking, setIsTracking] = useState(false);
@@ -122,6 +168,14 @@ function TrackingForm() {
       setIsTracking(false);
     }
   };
+
+  const getStatusVariant = (status?: string) => {
+    switch(status) {
+        case 'Resolved': return 'success';
+        case 'In Progress': return 'secondary';
+        default: return 'default';
+    }
+  }
   
   return (
      <CardContent className="space-y-6">
@@ -144,26 +198,32 @@ function TrackingForm() {
         {searchResult && (
            <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Submission Details</CardTitle>
+              <CardTitle className="flex justify-between items-center">
+                <span>Submission Status</span>
+                <Badge variant={getStatusVariant(searchResult.status)}>{searchResult.status || 'Open'}</Badge>
+              </CardTitle>
               <CardDescription>
                 Submitted on {format(new Date(searchResult.submittedAt), "PPP p")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+               <div>
+                  <Label>Assigned To</Label>
+                  <p className="text-muted-foreground">
+                    {searchResult.status === 'Resolved' ? 'Case Closed' : `Under review by ${searchResult.assignedTo || 'HR Head'}`}
+                  </p>
+              </div>
               <div>
-                <Label>Subject</Label>
+                <Label>Your Original Subject</Label>
                 <p className="text-muted-foreground">{searchResult.subject}</p>
               </div>
-               <div>
-                <Label>Message</Label>
-                <p className="text-muted-foreground whitespace-pre-wrap">{searchResult.message}</p>
-              </div>
-              <Alert>
-                <AlertTitle>Status</AlertTitle>
-                <AlertDescription>
-                  Your submission has been received. There are no public updates at this time.
-                </AlertDescription>
-              </Alert>
+              {searchResult.auditTrail && <PublicAuditTrail trail={searchResult.auditTrail} />}
+              {searchResult.resolution && (
+                <div>
+                  <Label>Final Resolution</Label>
+                  <p className="text-muted-foreground whitespace-pre-wrap p-4 border rounded-md bg-muted/50">{searchResult.resolution}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

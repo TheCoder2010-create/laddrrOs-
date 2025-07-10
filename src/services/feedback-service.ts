@@ -46,8 +46,11 @@ export interface TrackFeedbackInput {
 export interface TrackedFeedback {
   trackingId: string;
   subject: string;
-  message: string;
   submittedAt: string;
+  status?: 'Open' | 'In Progress' | 'Resolved';
+  assignedTo?: Role;
+  auditTrail?: AuditEvent[];
+  resolution?: string;
 }
 export interface TrackFeedbackOutput {
   found: boolean;
@@ -140,7 +143,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
 
 
 /**
- * Retrieves a single feedback submission by its tracking ID from localStorage.
+ * Retrieves a single feedback submission by its tracking ID from localStorage for public tracking.
  * @param input The tracking ID to look for.
  * @returns A promise that resolves with the feedback object, or a 'not found' status.
  */
@@ -151,14 +154,25 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
   if (!feedback) {
     return { found: false };
   }
+  
+  // Create a safe, public-facing version of the audit trail
+  const publicAuditTrail = feedback.auditTrail?.map(event => ({
+      event: event.event,
+      timestamp: new Date(event.timestamp).toISOString(),
+      actor: event.actor, // We will hide this on the front-end
+      // Intentionally omitting 'details'
+  }));
 
   return {
     found: true,
     feedback: {
       trackingId: feedback.trackingId,
       subject: feedback.subject,
-      message: feedback.message,
       submittedAt: new Date(feedback.submittedAt).toISOString(),
+      status: feedback.status,
+      assignedTo: feedback.assignedTo,
+      auditTrail: publicAuditTrail,
+      resolution: feedback.resolution,
     },
   };
 }
