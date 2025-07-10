@@ -12,13 +12,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { v4 as uuidv4 } from 'uuid';
 
-export const AnonymousFeedbackInputSchema = z.object({
+const AnonymousFeedbackInputSchema = z.object({
   subject: z.string().describe('The subject of the feedback submission.'),
   message: z.string().describe('The detailed message of the feedback submission.'),
 });
 export type AnonymousFeedbackInput = z.infer<typeof AnonymousFeedbackInputSchema>;
 
-export const AnonymousFeedbackOutputSchema = z.object({
+const AnonymousFeedbackOutputSchema = z.object({
   trackingId: z.string().describe('A unique tracking ID for the user to follow up on their submission.'),
 });
 export type AnonymousFeedbackOutput = z.infer<typeof AnonymousFeedbackOutputSchema>;
