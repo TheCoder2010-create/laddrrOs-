@@ -11,7 +11,7 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Shield, Check } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { availableRoles } from '@/hooks/use-role';
 
@@ -25,6 +25,7 @@ const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint:
   'Team Lead': { name: 'Ben Carter', fallback: 'BC', imageHint: 'leader' },
   'Employee': { name: 'Casey Day', fallback: 'CD', imageHint: 'employee' },
   'HR Head': { name: 'Dana Evans', fallback: 'DE', imageHint: 'hr head' },
+  'Voice – In Silence': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person' }
 };
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
@@ -35,8 +36,11 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
-    { href: '/audit-log', icon: <Shield />, label: 'Audit Log' },
   ];
+
+  const hrMenuItems = [
+    { href: '/vault', icon: <Vault />, label: 'Vault' },
+  ]
 
   return (
     <Sidebar>
@@ -81,6 +85,18 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map((item) => (
+            <SidebarMenuItem key={item.href}>
+              <Link href={item.href} passHref>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
+                  <div>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          ))}
+          {currentRole === 'HR Head' && hrMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href} passHref>
                 <SidebarMenuButton asChild isActive={pathname === item.href}>

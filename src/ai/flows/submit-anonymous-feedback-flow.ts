@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Handles anonymous feedback submissions.
@@ -11,6 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { v4 as uuidv4 } from 'uuid';
+import { saveFeedback } from '@/services/feedback-service';
 
 const AnonymousFeedbackInputSchema = z.object({
   subject: z.string().describe('The subject of the feedback submission.'),
@@ -43,9 +43,13 @@ const submitAnonymousFeedbackFlow = ai.defineFlow(
 
     const trackingId = uuidv4();
     
-    // Here you could add more steps, like using another AI prompt
-    // to categorize the feedback, assess its urgency, or summarize it
-    // before saving it.
+    // Save the feedback to our in-memory service
+    await saveFeedback({
+      trackingId,
+      subject: input.subject,
+      message: input.message,
+      submittedAt: new Date(),
+    });
 
     return {
       trackingId,
