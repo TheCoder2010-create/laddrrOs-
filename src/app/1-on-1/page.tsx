@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState } from 'react';
-import { useRole } from '@/hooks/use-role';
+import { useState, useMemo } from 'react';
+import { useRole, Role } from '@/hooks/use-role';
 import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,34 +45,63 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
-const upcomingMeetings = [
-  {
-    id: 1,
-    with: 'Alex Smith',
-    role: 'Manager',
-    avatar: {
-      src: 'https://placehold.co/100x100.png',
-      fallback: 'AS',
-      hint: 'manager avatar',
-    },
-    date: new Date(new Date().setDate(new Date().getDate() + 2)),
-    time: '10:00', // Use 24hr format for input type="time"
-  },
-  {
-    id: 2,
-    with: 'Alex Smith',
-    role: 'Manager',
-    avatar: {
-      src: 'https://placehold.co/100x100.png',
-      fallback: 'AS',
-      hint: 'manager avatar',
-    },
-    date: new Date(new Date().setDate(new Date().getDate() + 9)),
-    time: '14:30', // Use 24hr format for input type="time"
-  },
-];
 
-type Meeting = typeof upcomingMeetings[0];
+const roleUserMapping = {
+  'Manager': { name: 'Alex Smith', role: 'Manager', fallback: 'AS', imageHint: 'manager' },
+  'Team Lead': { name: 'Ben Carter', role: 'Team Lead', fallback: 'BC', imageHint: 'leader' },
+  'Employee': { name: 'Casey Day', role: 'Employee', fallback: 'CD', imageHint: 'employee' },
+  'HR Head': { name: 'Dana Evans', role: 'HR Head', fallback: 'DE', imageHint: 'hr head' },
+};
+
+const getMeetingDataForRole = (role: Role) => {
+    let participant;
+    switch(role) {
+        case 'Employee':
+            participant = roleUserMapping['Team Lead'];
+            break;
+        case 'Team Lead':
+            participant = roleUserMapping['Employee'];
+            break;
+        case 'Manager':
+            participant = roleUserMapping['Team Lead'];
+            break;
+        case 'HR Head':
+            participant = roleUserMapping['Manager'];
+            break;
+        default:
+            participant = { name: 'Participant', role: 'Role', fallback: 'P', imageHint: 'person' };
+            break;
+    }
+
+    return [
+      {
+        id: 1,
+        with: participant.name,
+        role: participant.role,
+        avatar: {
+          src: 'https://placehold.co/100x100.png',
+          fallback: participant.fallback,
+          hint: `${participant.imageHint} avatar`,
+        },
+        date: new Date(new Date().setDate(new Date().getDate() + 2)),
+        time: '10:00', // Use 24hr format for input type="time"
+      },
+      {
+        id: 2,
+        with: participant.name,
+        role: participant.role,
+        avatar: {
+          src: 'https://placehold.co/100x100.png',
+          fallback: participant.fallback,
+          hint: `${participant.imageHint} avatar`,
+        },
+        date: new Date(new Date().setDate(new Date().getDate() + 9)),
+        time: '14:30', // Use 24hr format for input type="time"
+      },
+    ];
+};
+
+type Meeting = ReturnType<typeof getMeetingDataForRole>[0];
 
 
 function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: Meeting, onSchedule: (details: any) => void }) {
@@ -144,7 +173,8 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
   )
 }
 
-function OneOnOnePage() {
+function OneOnOnePage({ role }: { role: Role }) {
+  const upcomingMeetings = useMemo(() => getMeetingDataForRole(role), [role]);
   const [meetings, setMeetings] = useState(upcomingMeetings);
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   
@@ -314,7 +344,7 @@ export default function Home() {
 
   return (
     <DashboardLayout role={role} onSwitchRole={setRole}>
-        <OneOnOnePage />
+        <OneOnOnePage role={role} />
     </DashboardLayout>
   );
 }
