@@ -1,5 +1,5 @@
 import type { Role } from '@/hooks/use-role';
-import { availableRoles } from '@/hooks/use-role';
+import { useRole } from '@/hooks/use-role';
 import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +26,8 @@ const roleDetails = {
 };
 
 export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
+  const { availableRoles } = useRole();
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="text-center mb-12">

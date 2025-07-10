@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,30 +33,36 @@ const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint:
 };
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
-  const { availableRoles, refreshKey } = useRole();
+  const { availableRoles } = useRole();
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
   const pathname = usePathname();
   const [feedbackCount, setFeedbackCount] = useState(0);
 
-  useEffect(() => {
+  const fetchFeedbackCount = useCallback(async () => {
     if (currentRole !== 'HR Head') {
       setFeedbackCount(0);
       return;
     }
+    try {
+      const feedback = await getAllFeedback();
+      const newCount = feedback.filter(c => !c.viewed).length;
+      setFeedbackCount(newCount);
+    } catch (error) {
+      console.error("Failed to fetch feedback count", error);
+      setFeedbackCount(0);
+    }
+  }, [currentRole]);
 
-    const fetchFeedbackCount = async () => {
-      try {
-        const feedback = await getAllFeedback();
-        setFeedbackCount(feedback.length);
-      } catch (error) {
-        console.error("Failed to fetch feedback count", error);
-        setFeedbackCount(0);
-      }
-    };
 
+  useEffect(() => {
     fetchFeedbackCount();
-    
-  }, [currentRole, refreshKey]);
+
+    // Listen for storage changes to update in real-time
+    window.addEventListener('storage', fetchFeedbackCount);
+    return () => {
+      window.removeEventListener('storage', fetchFeedbackCount);
+    };
+  }, [fetchFeedbackCount]);
 
 
   const menuItems = [
@@ -132,11 +138,11 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
                       {item.icon}
                       <span>{item.label}</span>
                     </div>
-                    {item.badge && (
+                    {item.badge ? (
                        <Badge variant="secondary" className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
                         {item.badge}
                       </Badge>
-                    )}
+                    ) : null}
                   </div>
                 </SidebarMenuButton>
               </Link>

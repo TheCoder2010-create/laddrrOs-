@@ -69,37 +69,38 @@ const submitAnonymousFeedbackFlow = ai.defineFlow(
     // Step 1: Generate a tracking ID
     const trackingId = uuidv4();
     
-    // Step 2: Save the initial feedback (this will create the first audit event)
-    await saveFeedback({
-      trackingId,
-      subject: input.subject,
-      message: input.message,
-      submittedAt: new Date(),
-    });
+    const submittedAt = new Date();
 
-    // Step 3: Analyze the feedback with the AI agent
+    // Step 2: Analyze the feedback with the AI agent
     const { output: analysis } = await analysisPrompt(input);
     if (!analysis) {
         throw new Error("Failed to get analysis from AI");
     }
     console.log('AI Analysis received:', analysis);
 
-    // Step 4: Add the AI analysis event to the audit trail
-    await addAuditEvent(trackingId, {
-      event: 'AI Analysis Completed',
-      details: `Criticality assessed as "${analysis.criticality}".`,
+    // Step 3: Save the initial feedback with AI analysis
+    await saveFeedback({
+      trackingId,
+      subject: input.subject,
+      message: input.message,
+      submittedAt: submittedAt,
+      summary: analysis.summary,
+      criticality: analysis.criticality,
+      criticalityReasoning: analysis.reasoning,
+      auditTrail: [
+        {
+          event: 'Submitted',
+          timestamp: submittedAt,
+          details: 'Feedback was received by the system.',
+        },
+        {
+          event: 'AI Analysis Completed',
+          timestamp: new Date(),
+          details: `Criticality assessed as "${analysis.criticality}".`,
+        }
+      ],
+      viewed: false,
     });
-    
-    // Step 5: Update the record with the AI analysis results
-    // This is a bit awkward with an in-memory store. A real DB would do an update.
-    // For now, we fetch and modify the object.
-    const feedbackRecord = await import('@/services/feedback-service').then(m => m.getFeedbackByTrackingId(trackingId));
-    if (feedbackRecord) {
-        feedbackRecord.summary = analysis.summary;
-        feedbackRecord.criticality = analysis.criticality;
-        feedbackRecord.criticalityReasoning = analysis.reasoning;
-    }
-
 
     return {
       trackingId,

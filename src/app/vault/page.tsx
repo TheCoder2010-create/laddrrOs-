@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Accordion,
@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, markAllFeedbackAsViewed } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -106,7 +106,7 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
                         <Clock className="h-5 w-5 mt-0.5 text-muted-foreground" />
                         <div className="flex-1">
                             <p className="font-medium text-sm">{event.event}</p>
-                            <p className="text-xs text-muted-foreground">{format(event.timestamp, "PPP p")}</p>
+                            <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                             {event.details && <p className="text-sm text-muted-foreground mt-1">{event.details}</p>}
                         </div>
                     </div>
@@ -119,23 +119,31 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
 function VaultContent() {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { refreshKey } = useRole();
+
+  const fetchFeedback = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const feedback = await getAllFeedback();
+      setAllFeedback(feedback);
+      // Mark feedback as viewed when the vault is opened
+      await markAllFeedbackAsViewed();
+      // Dispatch another storage event to update the badge count in the sidebar
+      window.dispatchEvent(new Event('storage'));
+    } catch (error) {
+      console.error("Failed to fetch feedback", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchFeedback = async () => {
-      setIsLoading(true);
-      try {
-        const feedback = await getAllFeedback();
-        setAllFeedback(feedback);
-      } catch (error) {
-        console.error("Failed to fetch feedback", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
     fetchFeedback();
-  }, [refreshKey]);
+
+    window.addEventListener('storage', fetchFeedback);
+    return () => {
+        window.removeEventListener('storage', fetchFeedback);
+    };
+  }, [fetchFeedback]);
 
   if (isLoading) {
     return (
@@ -189,7 +197,7 @@ function VaultContent() {
                                 <span className="font-medium text-left">{feedback.subject}</span>
                             </div>
                             <span className="text-sm text-muted-foreground font-normal">
-                            {formatDistanceToNow(feedback.submittedAt, { addSuffix: true })}
+                            {formatDistanceToNow(new Date(feedback.submittedAt), { addSuffix: true })}
                             </span>
                         </div>
                         </AccordionTrigger>

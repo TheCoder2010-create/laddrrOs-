@@ -5,19 +5,17 @@ import { useRouter } from 'next/navigation';
 
 export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'HR Head' | 'Voice – In Silence';
 
-export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head', 'Voice – In Silence'];
+export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head'];
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
-const DATA_REFRESH_KEY = 'data-refresh-key';
 
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [refreshKey, setRefreshKey] = useState(Date.now());
     const router = useRouter();
 
     useEffect(() => {
-        // Initial check for the role on component mount
+        // This effect runs once on mount to restore the role from localStorage
         try {
             const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as Role;
             if (storedRole && availableRoles.includes(storedRole)) {
@@ -28,32 +26,13 @@ export const useRole = () => {
         } finally {
             setIsLoading(false);
         }
-        
-        // This listener reacts to changes in other tabs/windows.
-        const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === DATA_REFRESH_KEY && event.newValue) {
-                console.log('Data refresh key changed, forcing update.');
-                setRefreshKey(parseInt(event.newValue, 10));
-            }
-             if (event.key === ROLE_STORAGE_KEY) {
-                const newRole = event.newValue as Role | null;
-                 if (newRole && availableRoles.includes(newRole)) {
-                    setRole(newRole);
-                } else if (!newRole) {
-                    setRole(null);
-                }
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-        };
-
     }, []);
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
+            // We need to ensure the user is "logged out" before navigating to the anonymous page.
+            localStorage.removeItem(ROLE_STORAGE_KEY);
+            setRole(null);
             router.push('/voice-in-silence/submit');
             return;
         }
@@ -70,5 +49,8 @@ export const useRole = () => {
         }
     }, [router]);
 
-    return { role, setRole: setCurrentRole, isLoading, availableRoles, refreshKey };
+    // We add 'Voice – In Silence' separately for the selection screen
+    const allAvailableRoles: Role[] = [...availableRoles, 'Voice – In Silence'];
+
+    return { role, setRole: setCurrentRole, isLoading, availableRoles: allAvailableRoles };
 };
