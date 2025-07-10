@@ -234,7 +234,7 @@ function HistorySection({ role }: { role: Role }) {
                             <div className="flex justify-between items-center w-full pr-4">
                                 <div className="text-left">
                                     <p className="font-medium">
-                                        1-on-1 with {role === item.supervisorName ? item.employeeName : item.supervisorName}
+                                        1-on-1 with {role === roleUserMapping[item.supervisorName as Role]?.role ? item.employeeName : item.supervisorName}
                                     </p>
                                     <p className="text-sm text-muted-foreground font-normal">
                                         {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
@@ -440,3 +440,5 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
