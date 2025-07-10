@@ -10,23 +10,18 @@ interface RoleSelectionProps {
 const roleDetails = {
   'Employee': {
     icon: UserCheck,
-    description: "Focus on personal tasks and contribute to team goals.",
   },
   'Team Lead': {
     icon: Users,
-    description: "Lead project execution and mentor team members.",
   },
   'Manager': {
     icon: Briefcase,
-    description: "Oversee team performance and manage resources.",
   },
   'HR Head': {
     icon: ShieldCheck,
-    description: "Review compliance and ensure accountability standards.",
   },
   'Voice – In Silence': {
     icon: ShieldQuestion,
-    description: "Raise a concern safely and anonymously.",
   }
 };
 
@@ -52,7 +47,6 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
               </div>
               <div>
                 <h2 className="font-headline text-2xl text-foreground">{role}</h2>
-                <p className="text-sm text-muted-foreground">{details.description}</p>
               </div>
             </div>
           );
