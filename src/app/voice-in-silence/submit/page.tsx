@@ -187,6 +187,7 @@ function TrackingForm() {
 
 export default function VoiceInSilenceSubmitPage() {
   const [submissionResult, setSubmissionResult] = useState<{ trackingId: string } | null>(null);
+  const { toast } = useToast();
 
   const copyToClipboard = () => {
     if (submissionResult?.trackingId) {

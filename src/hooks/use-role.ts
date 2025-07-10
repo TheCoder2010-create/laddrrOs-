@@ -27,7 +27,6 @@ export const useRole = () => {
             setIsLoading(false);
         }
         
-        // Listen for storage changes to trigger refresh
         const handleStorageChange = (event: StorageEvent) => {
             if (event.key === DATA_REFRESH_KEY) {
                 setRefreshKey(Date.now());
