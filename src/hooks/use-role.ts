@@ -29,12 +29,11 @@ export const useRole = () => {
         }
         
         const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === DATA_REFRESH_KEY) {
-                console.log('Data refresh triggered by storage event.');
-                setRefreshKey(Date.now());
+            if (event.key === DATA_REFRESH_KEY && event.newValue) {
+                console.log('Data refresh key changed, forcing update.');
+                setRefreshKey(parseInt(event.newValue, 10));
             }
             if (event.key === ROLE_STORAGE_KEY) {
-                // When role changes in another tab, update the current tab
                 const newRole = event.newValue as Role | null;
                  if (newRole && availableRoles.includes(newRole)) {
                     setRole(newRole);
@@ -53,15 +52,13 @@ export const useRole = () => {
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
-            // First, log the user out by clearing the role
             try {
                 localStorage.removeItem(ROLE_STORAGE_KEY);
             } catch (error) {
-                console.error("Could not write role to localStorage", error);
+                console.error("Could not remove role from localStorage", error);
             }
-            // Then redirect to the submission page
             router.push('/voice-in-silence/submit');
-            setRole(null); // Ensure the local state is also cleared
+            setRole(null);
             return;
         }
 
