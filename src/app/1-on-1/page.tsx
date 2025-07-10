@@ -206,8 +206,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-5 w-5" />
                     <span>{format(meeting.date, 'MMMM d, yyyy')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span className="mx-1">&bull;</span>
                     <Clock className="h-5 w-5" />
                     <span>{formatTime(meeting.time)}</span>
                   </div>
