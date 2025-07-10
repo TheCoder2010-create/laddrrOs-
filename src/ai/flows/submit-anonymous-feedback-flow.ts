@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { v4 as uuidv4 } from 'uuid';
-import { saveFeedback } from '@/services/feedback-service';
+import { saveFeedback, addAuditEvent } from '@/services/feedback-service';
 
 const AnonymousFeedbackInputSchema = z.object({
   subject: z.string().describe('The subject of the feedback submission.'),
@@ -65,28 +65,41 @@ const submitAnonymousFeedbackFlow = ai.defineFlow(
   },
   async (input) => {
     console.log('Received anonymous feedback:', input.subject);
-
-    // Step 1: Analyze the feedback with the AI agent
-    const { output: analysis } = await analysisPrompt(input);
-    if (!analysis) {
-        throw new Error("Failed to get analysis from AI");
-    }
-
-    console.log('AI Analysis received:', analysis);
-
-    // Step 2: Generate a tracking ID
+    
+    // Step 1: Generate a tracking ID
     const trackingId = uuidv4();
     
-    // Step 3: Save the original feedback along with the AI analysis
+    // Step 2: Save the initial feedback (this will create the first audit event)
     await saveFeedback({
       trackingId,
       subject: input.subject,
       message: input.message,
       submittedAt: new Date(),
-      summary: analysis.summary,
-      criticality: analysis.criticality,
-      criticalityReasoning: analysis.reasoning,
     });
+
+    // Step 3: Analyze the feedback with the AI agent
+    const { output: analysis } = await analysisPrompt(input);
+    if (!analysis) {
+        throw new Error("Failed to get analysis from AI");
+    }
+    console.log('AI Analysis received:', analysis);
+
+    // Step 4: Add the AI analysis event to the audit trail
+    await addAuditEvent(trackingId, {
+      event: 'AI Analysis Completed',
+      details: `Criticality assessed as "${analysis.criticality}".`,
+    });
+    
+    // Step 5: Update the record with the AI analysis results
+    // This is a bit awkward with an in-memory store. A real DB would do an update.
+    // For now, we fetch and modify the object.
+    const feedbackRecord = await import('@/services/feedback-service').then(m => m.getFeedbackByTrackingId(trackingId));
+    if (feedbackRecord) {
+        feedbackRecord.summary = analysis.summary;
+        feedbackRecord.criticality = analysis.criticality;
+        feedbackRecord.criticalityReasoning = analysis.reasoning;
+    }
+
 
     return {
       trackingId,

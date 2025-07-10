@@ -10,13 +10,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback } from '@/services/feedback-service';
-import { formatDistanceToNow } from 'date-fns';
+import { getAllFeedback, Feedback, AuditEvent } from '@/services/feedback-service';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -92,6 +92,29 @@ const criticalityConfig = {
     'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' },
 };
 
+function AuditTrail({ trail }: { trail: AuditEvent[] }) {
+    if (!trail || trail.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-2">
+            <Label className="text-base">Audit Trail</Label>
+            <div className="p-4 border rounded-md bg-muted/50 space-y-4">
+                {trail.map((event, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                        <Clock className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                        <div className="flex-1">
+                            <p className="font-medium text-sm">{event.event}</p>
+                            <p className="text-xs text-muted-foreground">{format(event.timestamp, "PPP p")}</p>
+                            {event.details && <p className="text-sm text-muted-foreground mt-1">{event.details}</p>}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 function VaultContent() {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
@@ -184,8 +207,11 @@ function VaultContent() {
                                 <Label className="text-base">Original Submission</Label>
                                 <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
                             </div>
-                            <div className="text-xs text-muted-foreground/80">
-                            Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
+
+                            {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
+
+                            <div className="text-xs text-muted-foreground/80 pt-4 border-t">
+                                Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
                             </div>
                         </AccordionContent>
                     </AccordionItem>
@@ -203,6 +229,14 @@ function VaultContent() {
 
 export default function VaultPage() {
     const [isUnlocked, setIsUnlocked] = useState(false);
+    const { role } = useRole();
+
+    // Automatically unlock if the role is already HR Head.
+    useEffect(() => {
+        if (role === 'HR Head') {
+            setIsUnlocked(true);
+        }
+    }, [role]);
 
     return (
       <div className="relative min-h-screen">

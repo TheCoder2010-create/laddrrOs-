@@ -6,6 +6,12 @@
  * a secure, encrypted database.
  */
 
+export interface AuditEvent {
+  event: string;
+  timestamp: Date;
+  details?: string;
+}
+
 export interface Feedback {
   trackingId: string;
   subject: string;
@@ -14,6 +20,7 @@ export interface Feedback {
   summary?: string;
   criticality?: 'Low' | 'Medium' | 'High' | 'Critical';
   criticalityReasoning?: string;
+  auditTrail?: AuditEvent[];
 }
 
 // In-memory array to store feedback submissions.
@@ -27,8 +34,40 @@ const feedbackStore: Feedback[] = [];
  */
 export async function saveFeedback(feedback: Feedback): Promise<void> {
   console.log(`Saving feedback with tracking ID: ${feedback.trackingId}`);
+  
+  // Initialize the audit trail with the submission event
+  const submissionEvent: AuditEvent = {
+    event: 'Submitted',
+    timestamp: feedback.submittedAt,
+    details: 'Feedback was received by the system.',
+  };
+  
+  feedback.auditTrail = [submissionEvent];
+
   feedbackStore.unshift(feedback); // Add to the beginning of the array
 }
+
+/**
+ * Adds a new event to a feedback item's audit trail.
+ * @param trackingId The ID of the feedback to add the event to.
+ * @param event The audit event to add.
+ */
+export async function addAuditEvent(trackingId: string, event: Omit<AuditEvent, 'timestamp'>): Promise<void> {
+  console.log(`Adding audit event to tracking ID: ${trackingId}`);
+  const feedbackItem = await getFeedbackByTrackingId(trackingId);
+  if (feedbackItem) {
+    if (!feedbackItem.auditTrail) {
+      feedbackItem.auditTrail = [];
+    }
+    feedbackItem.auditTrail.push({
+      ...event,
+      timestamp: new Date(),
+    });
+  } else {
+    console.warn(`Could not find feedback with ID ${trackingId} to add audit event.`);
+  }
+}
+
 
 /**
  * Retrieves all feedback submissions from the in-memory store.
