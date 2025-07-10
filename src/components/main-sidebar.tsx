@@ -18,7 +18,16 @@ interface MainSidebarProps {
   onSwitchRole: (role: Role | null) => void;
 }
 
+const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint: string }> = {
+  'Manager': { name: 'Alex Smith', fallback: 'AS', imageHint: 'manager' },
+  'Team Lead': { name: 'Ben Carter', fallback: 'BC', imageHint: 'leader' },
+  'Employee': { name: 'Casey Day', fallback: 'CD', imageHint: 'employee' },
+  'Auditor': { name: 'Dana Evans', fallback: 'DE', imageHint: 'auditor' },
+};
+
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
+  const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -26,17 +35,17 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-3 cursor-pointer">
               <Avatar className="h-12 w-12">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Jane Doe" data-ai-hint="person avatar" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src="https://placehold.co/100x100.png" alt={currentUser.name} data-ai-hint={`${currentUser.imageHint} avatar`} />
+                <AvatarFallback>{currentUser.fallback}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start">
-                <span className="font-semibold text-lg text-sidebar-foreground">Jane Doe</span>
+                <span className="font-semibold text-lg text-sidebar-foreground">{currentUser.name}</span>
                 <span className="text-sm text-muted-foreground">{currentRole}</span>
               </div>
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 ml-4">
-            <DropdownMenuLabel>Jane Doe</DropdownMenuLabel>
+            <DropdownMenuLabel>{currentUser.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
