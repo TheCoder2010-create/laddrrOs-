@@ -38,14 +38,15 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 
 const roleUserMapping = {
-  'Manager': { name: 'Alex Smith', role: 'Manager' },
-  'Team Lead': { name: 'Ben Carter', role: 'Team Lead' },
-  'AM': { name: 'Ashley Miles', role: 'AM' },
-  'Employee': { name: 'Casey Day', role: 'Employee' },
-  'HR Head': { name: 'Dana Evans', role: 'HR Head' },
+  'Manager': { name: 'Alex Smith', role: 'Manager', imageHint: 'manager' },
+  'Team Lead': { name: 'Ben Carter', role: 'Team Lead', imageHint: 'leader' },
+  'AM': { name: 'Ashley Miles', role: 'AM', imageHint: 'assistant manager' },
+  'Employee': { name: 'Casey Day', role: 'Employee', imageHint: 'employee' },
+  'HR Head': { name: 'Dana Evans', role: 'HR Head', imageHint: 'hr head' },
 };
 
 const getMeetingDataForRole = (role: Role) => {
@@ -67,7 +68,7 @@ const getMeetingDataForRole = (role: Role) => {
             participant = roleUserMapping['Manager'];
             break;
         default:
-            participant = { name: 'Participant', role: 'Role' };
+            participant = { name: 'Participant', role: 'Role', imageHint: 'person' };
             break;
     }
 
@@ -75,12 +76,16 @@ const getMeetingDataForRole = (role: Role) => {
       {
         id: 1,
         with: participant.name,
+        role: participant.role,
+        imageHint: participant.imageHint,
         date: new Date(new Date().setDate(new Date().getDate() + 2)),
         time: '10:00', // Use 24hr format for input type="time"
       },
       {
         id: 2,
         with: participant.name,
+        role: participant.role,
+        imageHint: participant.imageHint,
         date: new Date(new Date().setDate(new Date().getDate() + 9)),
         time: '14:30', // Use 24hr format for input type="time"
       },
@@ -201,12 +206,12 @@ function OneOnOnePage({ role }: { role: Role }) {
       <div>
         <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Upcoming Meetings</h2>
         {meetings.length > 0 ? (
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {meetings.map((meeting) => (
-              <div key={meeting.id} className="flex flex-col border rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xl font-semibold">{meeting.with}</span>
-                  <div className="flex items-center gap-1">
+              <Card key={meeting.id}>
+                <CardHeader className="flex flex-row items-center justify-between p-4">
+                    <CardTitle className="text-xl font-semibold">{meeting.with}</CardTitle>
+                    <div className="flex items-center gap-1">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -260,16 +265,16 @@ function OneOnOnePage({ role }: { role: Role }) {
                         </AlertDialogContent>
                       </AlertDialog>
                   </div>
-                </div>
-                <div className="pt-2">
+                </CardHeader>
+                <CardContent className="pt-0 p-4">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-5 w-5" />
                     <span>{format(new Date(meeting.date), 'MM/dd/yy')}</span>
                     <Clock className="h-5 w-5" />
                     <span>{formatTime(meeting.time)}</span>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : (
