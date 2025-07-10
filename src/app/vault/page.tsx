@@ -229,14 +229,6 @@ function VaultContent() {
 
 export default function VaultPage() {
     const [isUnlocked, setIsUnlocked] = useState(false);
-    const { role } = useRole();
-
-    // Automatically unlock if the role is already HR Head.
-    useEffect(() => {
-        if (role === 'HR Head') {
-            setIsUnlocked(true);
-        }
-    }, [role]);
 
     return (
       <div className="relative min-h-screen">
