@@ -38,6 +38,7 @@ export interface Feedback {
   status?: FeedbackStatus;
   assignedTo?: Role;
   resolution?: string;
+  oneOnOneId?: string; // Link back to the 1-on-1 history item
   // New fields for the critical insight workflow
   supervisor?: Role; // The supervisor involved in the 1-on-1
   employee?: Role; // The employee involved in the 1-on-1
@@ -123,11 +124,12 @@ export async function getOneOnOneHistory(): Promise<OneOnOneHistoryItem[]> {
     return history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id'>): Promise<void> {
+export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id'>): Promise<OneOnOneHistoryItem> {
     const history = await getOneOnOneHistory();
     const newHistoryItem: OneOnOneHistoryItem = { ...item, id: uuidv4() };
     history.unshift(newHistoryItem);
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, history);
+    return newHistoryItem;
 }
 
 

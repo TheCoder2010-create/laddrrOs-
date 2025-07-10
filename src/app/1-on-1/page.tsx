@@ -33,10 +33,10 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -186,12 +186,12 @@ function HistorySection({ role }: { role: Role }) {
             const hasEscalationAlert = !!item.analysis.escalationAlert;
             if (!hasEscalationAlert) return { ...item, hasPendingAction: false };
 
-            const relatedFeedback = allFeedback.find(fb => 
-                fb.summary === item.analysis.escalationAlert && 
-                (fb.supervisor === role || fb.employee === role)
-            );
+            // Find the feedback item linked to this 1-on-1
+            const relatedFeedback = allFeedback.find(fb => fb.oneOnOneId === item.id);
 
-            const hasPendingAction = relatedFeedback?.status === 'Pending Supervisor Action' && relatedFeedback?.assignedTo === role;
+            const hasPendingAction = !!relatedFeedback && 
+                relatedFeedback.status === 'Pending Supervisor Action' && 
+                relatedFeedback.assignedTo === role;
 
             return {
                 ...item,

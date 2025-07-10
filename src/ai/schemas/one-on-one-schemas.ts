@@ -30,6 +30,7 @@ export const formSchema = z.object({
   transcript: z.string().optional().describe("An optional transcript of the conversation, either recorded or uploaded."),
   supervisorName: z.string(),
   employeeName: z.string(),
+  oneOnOneId: z.string().optional(), // Added to link feedback to 1-on-1
 }).superRefine((data, ctx) => {
     if (!data.primaryFeedback && !data.transcript) {
         ctx.addIssue({

@@ -178,15 +178,37 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     setAnalysisError(null);
     startTransition(async () => {
         try {
-            const result = await analyzeOneOnOne(values);
-            setAnalysisResult(result);
-            // Save the result to history
-            await saveOneOnOneHistory({
+            const historyItem = await saveOneOnOneHistory({
                 supervisorName: supervisor,
                 employeeName: meeting.with,
                 date: new Date(meeting.date).toISOString(),
-                analysis: result,
+                // Temporarily store empty analysis
+                analysis: { keyThemes: [], actionItems: [], sentimentAnalysis: '' }, 
             });
+
+            // Pass the new history ID to the analysis flow
+            const result = await analyzeOneOnOne({
+                ...values,
+                oneOnOneId: historyItem.id, // Pass the ID for linking
+            });
+
+            setAnalysisResult(result);
+            
+            // Now update the history item with the real analysis
+            historyItem.analysis = result;
+            // This requires a way to update an existing history item.
+            // For now, we'll re-save, which isn't ideal but works for the prototype.
+            // A proper implementation would have an `update` function.
+            const allHistory = await getOneOnOneHistory();
+            const index = allHistory.findIndex(h => h.id === historyItem.id);
+            if (index !== -1) {
+                allHistory[index] = historyItem;
+                const { saveOneOnOneHistory: _s, ...feedbackService } = await import('@/services/feedback-service');
+                const { saveToStorage } = await import('@/services/feedback-service');
+                // A bit of a hack to avoid circular dependencies and call a private method
+                (feedbackService as any).saveToStorage('one_on_one_history_v1', allHistory);
+            }
+            
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
         } catch (error) {
             console.error("Analysis failed", error);

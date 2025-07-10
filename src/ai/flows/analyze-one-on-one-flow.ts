@@ -16,7 +16,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
   const result = await analyzeOneOnOneFlow(input);
 
   // If a critical insight is found, create a new feedback record to trigger the workflow.
-  if (result.escalationAlert) {
+  if (result.escalationAlert && input.oneOnOneId) {
       const allFeedback = await getAllFeedback();
       const submittedAt = new Date();
       
@@ -25,6 +25,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
       
       const newFeedback = {
           trackingId: uuidv4(),
+          oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
           subject: `Critical Insight from 1-on-1 with ${input.employeeName}`,
           message: `An escalation alert was triggered during a 1-on-1 session between ${input.supervisorName} and ${input.employeeName}. See details below.
           
