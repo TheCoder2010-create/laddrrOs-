@@ -19,7 +19,7 @@ export const useRole = () => {
     useEffect(() => {
         try {
             const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as Role;
-            if (storedRole && availableRoles.includes(storedRole) && storedRole !== 'Voice – In Silence') {
+            if (storedRole && availableRoles.includes(storedRole)) {
                 setRole(storedRole);
             }
         } catch (error) {
@@ -34,8 +34,9 @@ export const useRole = () => {
                 setRefreshKey(Date.now());
             }
             if (event.key === ROLE_STORAGE_KEY) {
+                // When role changes in another tab, update the current tab
                 const newRole = event.newValue as Role | null;
-                if (newRole && availableRoles.includes(newRole)) {
+                 if (newRole && availableRoles.includes(newRole)) {
                     setRole(newRole);
                 } else if (!newRole) {
                     setRole(null);
@@ -52,7 +53,15 @@ export const useRole = () => {
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
+            // First, log the user out by clearing the role
+            try {
+                localStorage.removeItem(ROLE_STORAGE_KEY);
+            } catch (error) {
+                console.error("Could not write role to localStorage", error);
+            }
+            // Then redirect to the submission page
             router.push('/voice-in-silence/submit');
+            setRole(null); // Ensure the local state is also cleared
             return;
         }
 
