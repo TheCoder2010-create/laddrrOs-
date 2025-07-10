@@ -239,7 +239,6 @@ function OneOnOnePage({ role }: { role: Role }) {
                     <AlertDialogTrigger asChild>
                        <Button variant="success" size="sm">
                         <Video />
-                        Start
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -262,7 +261,6 @@ function OneOnOnePage({ role }: { role: Role }) {
                     <DialogTrigger asChild>
                         <Button variant="outline" size="sm">
                             <CalendarCheck />
-                            Reschedule
                         </Button>
                     </DialogTrigger>
                     <ScheduleMeetingDialog meetingToEdit={meeting} onSchedule={handleSchedule} />
@@ -272,7 +270,6 @@ function OneOnOnePage({ role }: { role: Role }) {
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" size="sm">
                             <CalendarX />
-                            Cancel
                         </Button>
                     </AlertDialogTrigger>
                       <AlertDialogContent>
