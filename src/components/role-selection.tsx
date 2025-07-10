@@ -42,27 +42,25 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
           <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground">Welcome to AccountabilityOS</h1>
           <p className="text-muted-foreground mt-2 text-lg">Please select your role to continue.</p>
         </div>
-        <Card className="w-full max-w-md">
-            <CardContent className="p-4">
-                 <div className="flex flex-col gap-4">
-                    {availableRoles.map(role => {
-                        const details = roleDetails[role as keyof typeof roleDetails];
-                        const Icon = details.icon;
-                        return (
-                        <Button 
-                            key={role} 
-                            size="lg"
-                            className="w-full justify-start text-base py-6"
-                            onClick={() => onSelectRole(role)}
-                        >
-                            <Icon className="mr-4 h-6 w-6" />
-                            <span>{role}</span>
-                        </Button>
-                        );
-                    })}
-                </div>
-            </CardContent>
-        </Card>
+        <div className="w-full max-w-md">
+            <div className="flex flex-col">
+            {availableRoles.map(role => {
+                const details = roleDetails[role as keyof typeof roleDetails];
+                const Icon = details.icon;
+                return (
+                <Button 
+                    key={role} 
+                    size="lg"
+                    className="w-full justify-start text-base py-8 border-b-4 border-primary/90 hover:bg-primary/95 active:translate-y-0.5 active:border-b-2"
+                    onClick={() => onSelectRole(role)}
+                >
+                    <Icon className="mr-4 h-6 w-6" />
+                    <span>{role}</span>
+                </Button>
+                );
+            })}
+            </div>
+        </div>
       </main>
     </div>
   );
