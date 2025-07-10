@@ -30,6 +30,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -616,10 +617,10 @@ function OneOnOnePage({ role }: { role: Role }) {
       <div>
         <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Upcoming Meetings</h2>
         {meetings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {meetings.map((meeting) => (
               <div key={meeting.id} className="border rounded-lg">
-                <div className="flex items-center justify-between p-3">
+                <div className="flex items-center justify-between p-3 py-2">
                     <h3 className="text-lg font-semibold">{meeting.with}</h3>
                     <div className="flex items-center gap-1">
                       <Dialog>
@@ -663,7 +664,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                       </AlertDialog>
                   </div>
                 </div>
-                <div className="border-t p-3">
+                <div className="border-t p-3 py-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-5 w-5" />
                     <span>{format(new Date(meeting.date), 'MM/dd/yy')}</span>
