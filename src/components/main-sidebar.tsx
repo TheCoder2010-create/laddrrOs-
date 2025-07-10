@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +15,8 @@ import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, Sid
 import { LogOut, User, BarChart, CheckSquare, Vault, Check } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { availableRoles } from '@/hooks/use-role';
+import { getAllFeedback } from '@/services/feedback-service';
+import { Badge } from '@/components/ui/badge';
 
 interface MainSidebarProps {
   currentRole: Role;
@@ -31,6 +34,24 @@ const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint:
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
   const pathname = usePathname();
+  const [feedbackCount, setFeedbackCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchFeedbackCount() {
+      if (currentRole === 'HR Head') {
+        const feedback = await getAllFeedback();
+        setFeedbackCount(feedback.length);
+      }
+    }
+    fetchFeedbackCount();
+    
+    // Set up an interval to poll for new feedback, this is for demo purposes
+    // in a real app you might use websockets or server-sent events.
+    const interval = setInterval(fetchFeedbackCount, 5000); // every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [currentRole]);
+
 
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
@@ -39,7 +60,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   ];
 
   const hrMenuItems = [
-    { href: '/vault', icon: <Vault />, label: 'Vault' },
+    { href: '/vault', icon: <Vault />, label: 'Vault', badge: feedbackCount > 0 ? feedbackCount : null },
   ]
 
   return (
@@ -100,9 +121,16 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
             <SidebarMenuItem key={item.href}>
               <Link href={item.href} passHref>
                 <SidebarMenuButton asChild isActive={pathname === item.href}>
-                  <div>
-                    {item.icon}
-                    <span>{item.label}</span>
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center gap-2">
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && (
+                       <Badge variant="secondary" className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
+                        {item.badge}
+                      </Badge>
+                    )}
                   </div>
                 </SidebarMenuButton>
               </Link>
