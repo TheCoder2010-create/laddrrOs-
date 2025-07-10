@@ -1,6 +1,6 @@
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
-import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion } from 'lucide-react';
+import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion, UserCog } from 'lucide-react';
 import Header from './header';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,9 @@ const roleDetails = {
   },
   'Team Lead': {
     icon: Users,
+  },
+  'AM': {
+    icon: UserCog,
   },
   'Manager': {
     icon: Briefcase,

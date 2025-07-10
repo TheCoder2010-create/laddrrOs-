@@ -293,7 +293,7 @@ export default function ActionItemsPage() {
         )
     }
 
-    if (!role || (role !== 'Manager' && role !== 'Team Lead')) {
+    if (!role || !availableRolesForAssignment.includes(role)) {
          return (
             <DashboardLayout role={role!} onSwitchRole={setRole}>
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
@@ -303,7 +303,7 @@ export default function ActionItemsPage() {
                           <CardDescription>You do not have permission to view this page.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <p>Action Items are restricted to Manager and Team Lead roles.</p>
+                          <p>This page is restricted to Manager, Team Lead, and AM roles.</p>
                       </CardContent>
                   </Card>
               </div>

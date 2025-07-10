@@ -27,6 +27,7 @@ interface MainSidebarProps {
 const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint: string }> = {
   'Manager': { name: 'Alex Smith', fallback: 'AS', imageHint: 'manager' },
   'Team Lead': { name: 'Ben Carter', fallback: 'BC', imageHint: 'leader' },
+  'AM': { name: 'Ashley Miles', fallback: 'AM', imageHint: 'assistant manager' },
   'Employee': { name: 'Casey Day', fallback: 'CD', imageHint: 'employee' },
   'HR Head': { name: 'Dana Evans', fallback: 'DE', imageHint: 'hr head' },
   'Voice – In Silence': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person' }
@@ -50,7 +51,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         setVaultFeedbackCount(0);
       }
 
-      if (currentRole === 'Manager' || currentRole === 'Team Lead') {
+      if (currentRole === 'Manager' || currentRole === 'Team Lead' || currentRole === 'AM') {
         const assignedCount = feedback.filter(c => c.assignedTo === currentRole && c.status === 'In Progress').length;
         setActionItemCount(assignedCount);
       } else {
@@ -169,7 +170,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
               </Link>
             </SidebarMenuItem>
           ))}
-          {(currentRole === 'Manager' || currentRole === 'Team Lead') && assigneeMenuItems.map((item) => (
+          {(currentRole === 'Manager' || currentRole === 'Team Lead' || currentRole === 'AM') && assigneeMenuItems.map((item) => (
              <SidebarMenuItem key={item.href}>
               <Link href={item.href} passHref>
                 <SidebarMenuButton asChild isActive={pathname === item.href}>

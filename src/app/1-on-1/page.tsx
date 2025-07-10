@@ -43,6 +43,7 @@ import { buttonVariants } from "@/components/ui/button";
 const roleUserMapping = {
   'Manager': { name: 'Alex Smith', role: 'Manager' },
   'Team Lead': { name: 'Ben Carter', role: 'Team Lead' },
+  'AM': { name: 'Ashley Miles', role: 'AM' },
   'Employee': { name: 'Casey Day', role: 'Employee' },
   'HR Head': { name: 'Dana Evans', role: 'HR Head' },
 };
@@ -55,6 +56,9 @@ const getMeetingDataForRole = (role: Role) => {
             break;
         case 'Team Lead':
             participant = roleUserMapping['Employee'];
+            break;
+        case 'AM':
+            participant = roleUserMapping['Team Lead'];
             break;
         case 'Manager':
             participant = roleUserMapping['Team Lead'];
@@ -244,7 +248,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently cancel your meeting with {meeting.with} on {format(meeting.date, 'PPP')} at {formatTime(meeting.time)}. This action cannot be undone.
+                              This will permanently cancel your meeting with {meeting.with} on {format(new Date(meeting.date), 'PPP')} at {formatTime(meeting.time)}. This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -260,7 +264,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                 <CardContent className="p-4 pt-0">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-5 w-5" />
-                    <span>{format(meeting.date, 'MM/dd/yy')}</span>
+                    <span>{format(new Date(meeting.date), 'MM/dd/yy')}</span>
                     <Clock className="h-5 w-5" />
                     <span>{formatTime(meeting.time)}</span>
                   </div>
