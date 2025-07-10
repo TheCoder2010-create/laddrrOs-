@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, getOneOnOneHistory } from '@/services/feedback-service';
+import { saveOneOnOneHistory, getOneOnOneHistory, updateOneOnOneHistoryItem } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -196,18 +196,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
             
             // Now update the history item with the real analysis
             historyItem.analysis = result;
-            // This requires a way to update an existing history item.
-            // For now, we'll re-save, which isn't ideal but works for the prototype.
-            // A proper implementation would have an `update` function.
-            const allHistory = await getOneOnOneHistory();
-            const index = allHistory.findIndex(h => h.id === historyItem.id);
-            if (index !== -1) {
-                allHistory[index] = historyItem;
-                const { saveOneOnOneHistory: _s, ...feedbackService } = await import('@/services/feedback-service');
-                const { saveToStorage } = await import('@/services/feedback-service');
-                // A bit of a hack to avoid circular dependencies and call a private method
-                (feedbackService as any).saveToStorage('one_on_one_history_v1', allHistory);
-            }
+            await updateOneOnOneHistoryItem(historyItem);
             
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
         } catch (error) {

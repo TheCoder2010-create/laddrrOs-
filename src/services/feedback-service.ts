@@ -132,6 +132,15 @@ export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id'>)
     return newHistoryItem;
 }
 
+export async function updateOneOnOneHistoryItem(updatedItem: OneOnOneHistoryItem): Promise<void> {
+    const allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === updatedItem.id);
+    if (index !== -1) {
+        allHistory[index] = updatedItem;
+        saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+    }
+}
+
 
 // ==========================================
 // Critical Feedback Service
