@@ -4,47 +4,10 @@
  * @fileOverview An AI flow for analyzing 1-on-1 feedback sessions.
  *
  * - analyzeOneOnOne - A function that takes form data from a 1-on-1 and returns a structured analysis.
- * - AnalyzeOneOnOneInput - The input type for the analyzeOneOnOne function.
- * - AnalyzeOneOnOneOutput - The return type for the analyzeOneOnOne function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-// Zod schema for the input, matching the frontend form structure
-export const AnalyzeOneOnOneInputSchema = z.object({
-  location: z.string(),
-  liveConversation: z.boolean(),
-  employeeAware: z.boolean(),
-  primaryFeedback: z.string(),
-  feedbackTone: z.enum(["Constructive", "Positive", "Corrective", "Neutral"]),
-  employeeAcceptedFeedback: z.enum(["Fully", "Partially", "Not Well"]),
-  improvementAreas: z.string().optional(),
-  growthRating: z.string(),
-  showedSignsOfStress: z.enum(["Yes", "No", "Unsure"]),
-  stressDescription: z.string().optional(),
-  expressedAspirations: z.boolean(),
-  aspirationDetails: z.string().optional(),
-  didAppreciate: z.boolean(),
-  appreciationMessage: z.string().optional(),
-  isCrossFunctional: z.boolean(),
-  broadcastAppreciation: z.boolean(),
-  otherComments: z.string().optional(),
-  transcript: z.string().optional().describe("An optional transcript of the conversation, either recorded or uploaded."),
-});
-
-export type AnalyzeOneOnOneInput = z.infer<typeof AnalyzeOneOnOneInputSchema>;
-
-// Zod schema for the structured output we want from the AI
-export const AnalyzeOneOnOneOutputSchema = z.object({
-  keyThemes: z.array(z.string()).describe("A list of 3-5 key themes that emerged from the conversation."),
-  actionItems: z.array(z.string()).describe("A list of clear, actionable items for the employee or supervisor."),
-  sentimentAnalysis: z.string().describe("A brief analysis of the overall sentiment and tone of the conversation."),
-  escalationAlert: z.string().optional().describe("If the conversation contains red flags (e.g., mentions of harassment, burnout, quitting), provide a concise alert. Otherwise, this should be omitted."),
-  coachingImpactAnalysis: z.string().optional().describe("Identify one key area where the supervisor's coaching could have the most impact, based on the feedback."),
-});
-
-export type AnalyzeOneOnOneOutput = z.infer<typeof AnalyzeOneOnOneOutputSchema>;
+import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
 
 export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
   return analyzeOneOnOneFlow(input);
@@ -111,5 +74,3 @@ const analyzeOneOnOneFlow = ai.defineFlow(
     return output;
   }
 );
-
-    

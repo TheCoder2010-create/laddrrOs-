@@ -49,7 +49,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { analyzeOneOnOne, AnalyzeOneOnOneOutput } from '@/ai/flows/analyze-one-on-one-flow';
+import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
+import { formSchema, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
 
 
 const roleUserMapping = {
@@ -107,31 +108,6 @@ const getMeetingDataForRole = (role: Role) => {
 };
 
 type Meeting = ReturnType<typeof getMeetingDataForRole>['meetings'][0];
-
-// Zod Schema for the form
-const formSchema = z.object({
-  location: z.string().min(1, "Location is required."),
-  liveConversation: z.boolean().refine(val => val === true, { message: "You must acknowledge this was a live conversation." }),
-  employeeAware: z.boolean().refine(val => val === true, { message: "You must confirm the employee is aware of action items." }),
-  primaryFeedback: z.string().min(10, "Please provide substantive feedback."),
-  feedbackTone: z.enum(["Constructive", "Positive", "Corrective", "Neutral"]),
-  employeeAcceptedFeedback: z.enum(["Fully", "Partially", "Not Well"]),
-  improvementAreas: z.string().optional(),
-  growthRating: z.string().refine(val => ["1","2","3","4","5"].includes(val), { message: "Please select a rating."}),
-  showedSignsOfStress: z.enum(["Yes", "No", "Unsure"]),
-  stressDescription: z.string().optional(),
-  expressedAspirations: z.boolean(),
-  aspirationDetails: z.string().optional(),
-  didAppreciate: z.boolean(),
-  appreciationMessage: z.string().optional(),
-  isCrossFunctional: z.boolean(),
-  broadcastAppreciation: z.boolean(),
-  otherComments: z.string().optional(),
-}).refine(data => data.feedbackTone !== 'Corrective' || (data.improvementAreas && data.improvementAreas.length > 0), {
-  message: "Improvement areas are required for corrective feedback.",
-  path: ["improvementAreas"],
-});
-
 
 function OneOnOneFeedbackForm({ meeting, supervisor, onClose }: { meeting: Meeting, supervisor: string, onClose: () => void }) {
   const form = useForm<z.infer<typeof formSchema>>({
