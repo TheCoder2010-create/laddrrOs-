@@ -10,7 +10,7 @@ import { ai } from '@/ai/genkit';
 import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
 import { getAllFeedback, saveFeedback } from '@/services/feedback-service';
 import { v4 as uuidv4 } from 'uuid';
-import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
+import { getRoleByName } from '@/lib/role-mapping';
 
 export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
   const result = await analyzeOneOnOneFlow(input);
@@ -23,6 +23,11 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
       const supervisorRole = getRoleByName(input.supervisorName);
       const employeeRole = getRoleByName(input.employeeName);
       
+      if (!supervisorRole || !employeeRole) {
+          console.error("Could not determine roles for supervisor or employee. Aborting critical insight creation.");
+          return result;
+      }
+
       const newFeedback = {
           trackingId: uuidv4(),
           oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
