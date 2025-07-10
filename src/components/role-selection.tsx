@@ -51,12 +51,11 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                         return (
                         <Button 
                             key={role} 
-                            variant="outline"
                             size="lg"
                             className="w-full justify-start text-base py-6"
                             onClick={() => onSelectRole(role)}
                         >
-                            <Icon className="mr-4 h-6 w-6 text-primary" />
+                            <Icon className="mr-4 h-6 w-6" />
                             <span>{role}</span>
                         </Button>
                         );
