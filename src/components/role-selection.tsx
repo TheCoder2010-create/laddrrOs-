@@ -50,21 +50,17 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
       <button
         onClick={() => onSelectRole(role)}
         className={cn(
-          "group relative w-full text-left p-4 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
+          "group relative w-full text-left px-6 py-4 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
            "bg-card/50 hover:bg-card/100 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         )}
       >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Icon className="h-8 w-8 text-muted-foreground transition-colors group-hover:text-primary" />
+        <div className="flex items-center gap-4">
+            <Icon className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
             <div>
-              <p className="text-lg font-semibold text-foreground">{role}</p>
-              <p className="text-sm text-muted-foreground">{details.description}</p>
+              <p className="font-semibold text-foreground">{role}</p>
             </div>
           </div>
-          <ChevronRight className="h-6 w-6 text-muted-foreground/50 transition-transform group-hover:translate-x-1" />
-        </div>
       </button>
     );
   };
@@ -76,21 +72,17 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
        <button
         onClick={() => onSelectRole(role)}
         className={cn(
-          "group relative w-full text-left p-4 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
+          "group relative w-full text-left px-6 py-4 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
           "bg-transparent border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/10",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         )}
       >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Icon className="h-8 w-8 text-muted-foreground transition-colors group-hover:text-primary" />
+        <div className="flex items-center gap-4">
+            <Icon className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
             <div>
-              <p className="text-lg font-semibold text-foreground">{role}</p>
-              <p className="text-sm text-muted-foreground">{details.description}</p>
+              <p className="font-semibold text-foreground">{role}</p>
             </div>
           </div>
-          <ChevronRight className="h-6 w-6 text-muted-foreground/50 transition-transform group-hover:translate-x-1" />
-        </div>
       </button>
     )
   }
@@ -100,10 +92,10 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
       <Header />
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <Card className="w-full max-w-lg border-0 bg-transparent shadow-none md:border md:bg-card/30 md:shadow-lg">
-          <CardHeader className="p-4 md:p-6 pb-2">
-            <p className="text-muted-foreground text-lg">Please select your role to continue.</p>
+          <CardHeader className="px-4 md:px-6 pt-4 pb-2">
+            <p className="text-muted-foreground">Please select your role to continue.</p>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 p-4 md:p-6">
+          <CardContent className="flex flex-col gap-3 p-4 md:p-6 pt-0">
             {standardRoles.map((role) => (
               <RoleTile key={role} role={role} />
             ))}
