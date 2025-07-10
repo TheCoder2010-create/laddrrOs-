@@ -50,9 +50,12 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
       <button
         onClick={() => onSelectRole(role)}
         className={cn(
-          "group relative w-full text-left px-6 py-4 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
+          "group relative w-full text-left rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
            "bg-card/50 hover:bg-card/100 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          isSpecial 
+            ? "border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/10" 
+            : "p-4"
         )}
       >
         <div className="flex items-center gap-4">
@@ -65,28 +68,6 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
     );
   };
   
-  const SpecialRoleTile = ({ role }: { role: Role }) => {
-    const details = roleDetails[role as keyof typeof roleDetails];
-    const Icon = details.icon;
-    return (
-       <button
-        onClick={() => onSelectRole(role)}
-        className={cn(
-          "group relative w-full text-left px-6 py-4 rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
-          "bg-transparent border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/10",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        )}
-      >
-        <div className="flex items-center gap-4">
-            <Icon className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
-            <div>
-              <p className="font-semibold text-foreground">{role}</p>
-            </div>
-          </div>
-      </button>
-    )
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Header />
@@ -106,7 +87,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                   <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase">Or</span>
                   <div className="flex-grow border-t border-border"></div>
                 </div>
-                <SpecialRoleTile role={specialRole} />
+                <RoleTile role={specialRole} isSpecial={true} />
               </>
             )}
           </CardContent>
