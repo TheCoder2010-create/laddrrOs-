@@ -14,7 +14,7 @@ import {
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { LogOut, User, BarChart, CheckSquare, Vault, Check } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
-import { availableRoles } from '@/hooks/use-role';
+import { useRole } from '@/hooks/use-role';
 import { getAllFeedback } from '@/services/feedback-service';
 import { Badge } from '@/components/ui/badge';
 
@@ -32,6 +32,7 @@ const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint:
 };
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
+  const { availableRoles, refreshKey } = useRole();
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
   const pathname = usePathname();
   const [feedbackCount, setFeedbackCount] = useState(0);
@@ -52,12 +53,9 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
     };
 
-    fetchFeedbackCount(); // Initial fetch
+    fetchFeedbackCount();
     
-    const intervalId = setInterval(fetchFeedbackCount, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on component unmount or role change
-  }, [currentRole]);
+  }, [currentRole, refreshKey]); // Rerun when role or refreshKey changes
 
 
   const menuItems = [

@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Lock, ArrowLeft } from 'lucide-react';
+import { useRole } from '@/hooks/use-role';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -79,9 +80,11 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
 function VaultContent() {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { refreshKey } = useRole(); // Use the refresh key from the hook
 
   useEffect(() => {
     const fetchFeedback = async () => {
+      setIsLoading(true);
       try {
         const feedback = await getAllFeedback();
         setAllFeedback(feedback);
@@ -92,11 +95,8 @@ function VaultContent() {
       }
     }
     
-    fetchFeedback(); // Initial fetch
-    const intervalId = setInterval(fetchFeedback, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on component unmount
-  }, []);
+    fetchFeedback();
+  }, [refreshKey]); // Refetch whenever the refreshKey changes
 
   if (isLoading) {
     return (

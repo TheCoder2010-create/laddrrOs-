@@ -7,9 +7,12 @@ export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'HR Head' | 'Voice –
 
 export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head', 'Voice – In Silence'];
 
+const DATA_REFRESH_KEY = 'data-refresh-key';
+
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(Date.now());
     const router = useRouter();
 
     useEffect(() => {
@@ -23,11 +26,23 @@ export const useRole = () => {
         } finally {
             setIsLoading(false);
         }
+        
+        // Listen for storage changes to trigger refresh
+        const handleStorageChange = (event: StorageEvent) => {
+            if (event.key === DATA_REFRESH_KEY) {
+                setRefreshKey(Date.now());
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+
     }, []);
 
     const setCurrentRole = useCallback((newRole: Role | null) => {
         if (newRole === 'Voice – In Silence') {
-            // When selected from the role selection screen, go to the public submission page.
             router.push('/voice-in-silence/submit');
             return;
         }
@@ -44,5 +59,5 @@ export const useRole = () => {
         }
     }, [router]);
 
-    return { role, setRole: setCurrentRole, isLoading, availableRoles };
+    return { role, setRole: setCurrentRole, isLoading, availableRoles, refreshKey };
 };

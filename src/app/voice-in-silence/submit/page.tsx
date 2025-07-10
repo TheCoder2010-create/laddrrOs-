@@ -13,6 +13,12 @@ import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback } from '@/ai/flows/submit-anonymous-feedback-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+function triggerDataRefresh() {
+  // This is a simple way to signal other tabs/components to refresh.
+  // We write a random value to ensure a "change" event is fired.
+  localStorage.setItem('data-refresh-key', Date.now().toString());
+}
+
 export default function VoiceInSilenceSubmitPage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -33,6 +39,7 @@ export default function VoiceInSilenceSubmitPage() {
     try {
       const result = await submitAnonymousFeedback({ subject, message });
       setSubmissionResult(result);
+      triggerDataRefresh(); // Signal that data has changed
     } catch (error) {
       console.error(error);
       toast({
