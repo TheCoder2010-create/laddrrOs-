@@ -13,7 +13,7 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback } from '@/services/feedback-service';
@@ -36,29 +36,40 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const { availableRoles } = useRole();
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
   const pathname = usePathname();
-  const [feedbackCount, setFeedbackCount] = useState(0);
+  const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
+  const [actionItemCount, setActionItemCount] = useState(0);
 
-  const fetchFeedbackCount = useCallback(async () => {
-    if (currentRole !== 'HR Head') {
-      setFeedbackCount(0);
-      return;
-    }
+  const fetchFeedbackCounts = useCallback(async () => {
     try {
       const feedback = await getAllFeedback();
-      const newCount = feedback.filter(c => !c.viewed).length;
-      setFeedbackCount(newCount);
+      
+      if (currentRole === 'HR Head') {
+        const newCount = feedback.filter(c => !c.viewed).length;
+        setVaultFeedbackCount(newCount);
+      } else {
+        setVaultFeedbackCount(0);
+      }
+
+      if (currentRole === 'Manager' || currentRole === 'Team Lead') {
+        const assignedCount = feedback.filter(c => c.assignedTo === currentRole && c.status === 'In Progress').length;
+        setActionItemCount(assignedCount);
+      } else {
+        setActionItemCount(0);
+      }
+
     } catch (error) {
-      console.error("Failed to fetch feedback count", error);
-      setFeedbackCount(0);
+      console.error("Failed to fetch feedback counts", error);
+      setVaultFeedbackCount(0);
+      setActionItemCount(0);
     }
   }, [currentRole]);
 
 
   useEffect(() => {
-    fetchFeedbackCount();
+    fetchFeedbackCounts();
 
     const handleStorageChange = () => {
-        fetchFeedbackCount();
+        fetchFeedbackCounts();
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -68,7 +79,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         window.removeEventListener('storage', handleStorageChange);
         window.removeEventListener('complaintsUpdated', handleStorageChange);
     };
-  }, [fetchFeedbackCount]);
+  }, [fetchFeedbackCounts]);
 
 
   const menuItems = [
@@ -78,7 +89,11 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   ];
 
   const hrMenuItems = [
-    { href: '/vault', icon: <Vault />, label: 'Vault', badge: feedbackCount > 0 ? feedbackCount : null },
+    { href: '/vault', icon: <Vault />, label: 'Vault', badge: vaultFeedbackCount > 0 ? vaultFeedbackCount : null },
+  ]
+
+  const assigneeMenuItems = [
+    { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null }
   ]
 
   return (
@@ -137,6 +152,25 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           ))}
           {currentRole === 'HR Head' && hrMenuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
+              <Link href={item.href} passHref>
+                <SidebarMenuButton asChild isActive={pathname === item.href}>
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center gap-2">
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge ? (
+                       <Badge variant="secondary" className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
+                        {item.badge}
+                      </Badge>
+                    ) : null}
+                  </div>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+          ))}
+          {(currentRole === 'Manager' || currentRole === 'Team Lead') && assigneeMenuItems.map((item) => (
+             <SidebarMenuItem key={item.href}>
               <Link href={item.href} passHref>
                 <SidebarMenuButton asChild isActive={pathname === item.href}>
                   <div className="flex justify-between items-center w-full">
