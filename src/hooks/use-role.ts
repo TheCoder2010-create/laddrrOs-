@@ -7,6 +7,7 @@ export type Role = 'Manager' | 'Team Lead' | 'Employee' | 'HR Head' | 'Voice –
 
 export const availableRoles: Role[] = ['Employee', 'Team Lead', 'Manager', 'HR Head', 'Voice – In Silence'];
 
+const ROLE_STORAGE_KEY = 'accountability-os-role';
 const DATA_REFRESH_KEY = 'data-refresh-key';
 
 export const useRole = () => {
@@ -17,7 +18,7 @@ export const useRole = () => {
 
     useEffect(() => {
         try {
-            const storedRole = localStorage.getItem('accountability-os-role') as Role;
+            const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as Role;
             if (storedRole && availableRoles.includes(storedRole) && storedRole !== 'Voice – In Silence') {
                 setRole(storedRole);
             }
@@ -29,7 +30,16 @@ export const useRole = () => {
         
         const handleStorageChange = (event: StorageEvent) => {
             if (event.key === DATA_REFRESH_KEY) {
+                console.log('Data refresh triggered by storage event.');
                 setRefreshKey(Date.now());
+            }
+            if (event.key === ROLE_STORAGE_KEY) {
+                const newRole = event.newValue as Role | null;
+                if (newRole && availableRoles.includes(newRole)) {
+                    setRole(newRole);
+                } else if (!newRole) {
+                    setRole(null);
+                }
             }
         };
 
@@ -49,9 +59,9 @@ export const useRole = () => {
         setRole(newRole);
         try {
             if (newRole) {
-                localStorage.setItem('accountability-os-role', newRole);
+                localStorage.setItem(ROLE_STORAGE_KEY, newRole);
             } else {
-                localStorage.removeItem('accountability-os-role');
+                localStorage.removeItem(ROLE_STORAGE_KEY);
             }
         } catch (error) {
             console.error("Could not write role to localStorage", error);
