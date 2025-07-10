@@ -201,11 +201,11 @@ function OneOnOnePage({ role }: { role: Role }) {
       <div>
         <h2 className="text-xl font-semibold mb-4 text-muted-foreground">Upcoming Meetings</h2>
         {meetings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-2">
             {meetings.map((meeting) => (
-              <Card key={meeting.id} className="flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between p-4">
-                  <CardTitle className="text-xl">{meeting.with}</CardTitle>
+              <div key={meeting.id} className="flex flex-col border rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-semibold">{meeting.with}</span>
                   <div className="flex items-center gap-1">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -260,16 +260,16 @@ function OneOnOnePage({ role }: { role: Role }) {
                         </AlertDialogContent>
                       </AlertDialog>
                   </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
+                </div>
+                <div className="pt-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-5 w-5" />
                     <span>{format(new Date(meeting.date), 'MM/dd/yy')}</span>
                     <Clock className="h-5 w-5" />
                     <span>{formatTime(meeting.time)}</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         ) : (
