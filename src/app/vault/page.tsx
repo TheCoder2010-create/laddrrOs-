@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Accordion,
   AccordionContent,
@@ -15,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowLeft } from 'lucide-react';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -32,7 +33,7 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     };
     
     return (
-        <div className="flex items-center justify-center p-4 md:p-8">
+        <div className="flex items-center justify-center min-h-screen bg-background p-4 md:p-8">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4">
@@ -162,9 +163,23 @@ function VaultContent() {
 export default function VaultPage() {
     const [isUnlocked, setIsUnlocked] = useState(false);
 
-    if (!isUnlocked) {
-        return <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />;
-    }
-
-    return <VaultContent />;
+    return (
+      <div className="relative min-h-screen">
+          <div className="absolute top-4 left-4 z-10">
+              <Button variant="ghost" asChild>
+                  <Link href="/">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to Dashboard
+                  </Link>
+              </Button>
+          </div>
+          {!isUnlocked ? (
+              <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />
+          ) : (
+              <div className="pt-16">
+                  <VaultContent />
+              </div>
+          )}
+      </div>
+    );
 }
