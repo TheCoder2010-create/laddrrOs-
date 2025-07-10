@@ -8,8 +8,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlusCircle, Calendar, Clock, Video, X, MoreVertical, Edit, Trash2, CalendarCheck, CalendarX } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -41,10 +40,10 @@ import { cn } from '@/lib/utils';
 
 
 const roleUserMapping = {
-  'Manager': { name: 'Alex Smith', role: 'Manager', fallback: 'AS', imageHint: 'manager' },
-  'Team Lead': { name: 'Ben Carter', role: 'Team Lead', fallback: 'BC', imageHint: 'leader' },
-  'Employee': { name: 'Casey Day', role: 'Employee', fallback: 'CD', imageHint: 'employee' },
-  'HR Head': { name: 'Dana Evans', role: 'HR Head', fallback: 'DE', imageHint: 'hr head' },
+  'Manager': { name: 'Alex Smith', role: 'Manager' },
+  'Team Lead': { name: 'Ben Carter', role: 'Team Lead' },
+  'Employee': { name: 'Casey Day', role: 'Employee' },
+  'HR Head': { name: 'Dana Evans', role: 'HR Head' },
 };
 
 const getMeetingDataForRole = (role: Role) => {
@@ -63,7 +62,7 @@ const getMeetingDataForRole = (role: Role) => {
             participant = roleUserMapping['Manager'];
             break;
         default:
-            participant = { name: 'Participant', role: 'Role', fallback: 'P', imageHint: 'person' };
+            participant = { name: 'Participant', role: 'Role' };
             break;
     }
 
@@ -71,24 +70,12 @@ const getMeetingDataForRole = (role: Role) => {
       {
         id: 1,
         with: participant.name,
-        role: participant.role,
-        avatar: {
-          src: 'https://placehold.co/100x100.png',
-          fallback: participant.fallback,
-          hint: `${participant.imageHint} avatar`,
-        },
         date: new Date(new Date().setDate(new Date().getDate() + 2)),
         time: '10:00', // Use 24hr format for input type="time"
       },
       {
         id: 2,
         with: participant.name,
-        role: participant.role,
-        avatar: {
-          src: 'https://placehold.co/100x100.png',
-          fallback: participant.fallback,
-          hint: `${participant.imageHint} avatar`,
-        },
         date: new Date(new Date().setDate(new Date().getDate() + 9)),
         time: '14:30', // Use 24hr format for input type="time"
       },
@@ -213,15 +200,7 @@ function OneOnOnePage({ role }: { role: Role }) {
             {meetings.map((meeting) => (
               <Card key={meeting.id} className="flex flex-col">
                 <CardHeader>
-                  <div className="flex items-center gap-4">
-                     <Avatar className="h-12 w-12">
-                        <AvatarImage src={meeting.avatar.src} alt={meeting.with} data-ai-hint={meeting.avatar.hint} />
-                        <AvatarFallback>{meeting.avatar.fallback}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="text-xl">{meeting.with}</CardTitle>
-                    </div>
-                  </div>
+                  <CardTitle className="text-xl">{meeting.with}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3">
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -236,7 +215,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                 <CardFooter className="flex items-center justify-start gap-2">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                       <Button variant="success" size="sm">
+                       <Button variant="success" size="icon">
                         <Video />
                       </Button>
                     </AlertDialogTrigger>
@@ -258,7 +237,7 @@ function OneOnOnePage({ role }: { role: Role }) {
 
                   <Dialog>
                     <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="icon">
                             <CalendarCheck />
                         </Button>
                     </DialogTrigger>
@@ -267,7 +246,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
+                        <Button variant="destructive" size="icon">
                             <CalendarX />
                         </Button>
                     </AlertDialogTrigger>
