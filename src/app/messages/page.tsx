@@ -6,7 +6,7 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users } from 'lucide-react';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase } from 'lucide-react';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
@@ -63,6 +63,14 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                         {item.analysis.criticalCoachingInsight?.supervisorResponse}
                     </p>
                 </div>
+                 {item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'Supervisor Retry Action') && (
+                     <div className="p-3 bg-muted/80 rounded-md border">
+                        <p className="font-semibold text-foreground">Supervisor's Follow-up Notes</p>
+                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'Supervisor Retry Action')?.details}
+                        </p>
+                    </div>
+                )}
                 <div className="space-y-3">
                     <Label className="font-semibold">Your Acknowledgement</Label>
                     <p className="text-sm text-muted-foreground">
@@ -203,9 +211,55 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
     )
 }
 
+function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    const amCoachingNotes = insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
+    const supervisorRetryNotes = insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.details;
+
+    return (
+        <Card className="border-destructive">
+            <CardHeader className="bg-destructive/10">
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                    <Briefcase className="h-6 w-6" />
+                    Manager Level Escalation
+                </CardTitle>
+                <CardDescription>
+                    Final review for the case between {item.supervisorName} and {item.employeeName}.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2 p-3 bg-red-500/10 rounded-md border border-red-500/20">
+                    <p className="font-bold text-red-700 dark:text-red-500 text-sm">Initial AI Insight</p>
+                    <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{insight.summary}</p>
+                </div>
+                <div className="space-y-2 p-3 bg-muted/80 rounded-md border">
+                    <p className="font-bold text-foreground text-sm">TL Response</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{insight.supervisorResponse}</p>
+                </div>
+                <div className="space-y-2 p-3 bg-orange-500/10 rounded-md border border-orange-500/20">
+                    <p className="font-bold text-orange-700 dark:text-orange-500 text-sm">AM Coaching Notes</p>
+                    <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amCoachingNotes}</p>
+                </div>
+                <div className="space-y-2 p-3 bg-muted/80 rounded-md border">
+                    <p className="font-bold text-foreground text-sm">TL Retry Notes</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{supervisorRetryNotes}</p>
+                </div>
+                 <div className="space-y-2 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
+                    <p className="font-bold text-blue-700 dark:text-blue-500 text-sm">Final Employee Acknowledgement</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                </div>
+            </CardContent>
+            <CardFooter className="bg-destructive/10 pt-4">
+                <p className="text-sm text-destructive/80">This case requires direct intervention. Please follow up outside the system. (Further actions will be implemented in the next step).</p>
+            </CardFooter>
+        </Card>
+    );
+}
+
 function MessagesContent({ role }: { role: Role }) {
   const [pendingAcknowledgements, setPendingAcknowledgements] = useState<OneOnOneHistoryItem[]>([]);
-  const [escalatedItems, setEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
+  const [amEscalatedItems, setAmEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
+  const [managerEscalatedItems, setManagerEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
@@ -221,13 +275,23 @@ function MessagesContent({ role }: { role: Role }) {
     setPendingAcknowledgements(pending);
 
     // For AMs: Find items escalated to them
-    const escalated = history.filter(item =>
-        item.analysis.criticalCoachingInsight?.status === 'pending_am_review'
-    );
-    if(role === 'AM') {
-        setEscalatedItems(escalated);
+    if (role === 'AM') {
+        const amEscalated = history.filter(item =>
+            item.analysis.criticalCoachingInsight?.status === 'pending_am_review'
+        );
+        setAmEscalatedItems(amEscalated);
     } else {
-        setEscalatedItems([]);
+        setAmEscalatedItems([]);
+    }
+
+    // For Managers: Find items escalated to them
+    if (role === 'Manager') {
+        const managerEscalated = history.filter(item =>
+            item.analysis.criticalCoachingInsight?.status === 'pending_manager_review'
+        );
+        setManagerEscalatedItems(managerEscalated);
+    } else {
+        setManagerEscalatedItems([]);
     }
     
     setIsLoading(false);
@@ -247,7 +311,7 @@ function MessagesContent({ role }: { role: Role }) {
     }
   }, [fetchMessages]);
 
-  const hasMessages = pendingAcknowledgements.length > 0 || escalatedItems.length > 0;
+  const hasMessages = pendingAcknowledgements.length > 0 || amEscalatedItems.length > 0 || managerEscalatedItems.length > 0;
 
   return (
     <div className="p-4 md:p-8">
@@ -269,8 +333,11 @@ function MessagesContent({ role }: { role: Role }) {
                     {pendingAcknowledgements.map(item => (
                         <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />
                     ))}
-                    {escalatedItems.map(item => (
+                    {amEscalatedItems.map(item => (
                         <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} />
+                    ))}
+                    {managerEscalatedItems.map(item => (
+                        <ManagerEscalationWidget key={item.id} item={item} onUpdate={fetchMessages} />
                     ))}
                 </>
             ) : (

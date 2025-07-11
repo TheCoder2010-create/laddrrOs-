@@ -63,8 +63,12 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       } else if (currentRole === 'AM') {
         // For AMs, count pending reviews
         count = history.filter(h =>
-          h.assignedTo === 'AM' &&
           h.analysis.criticalCoachingInsight?.status === 'pending_am_review'
+        ).length;
+      } else if (currentRole === 'Manager') {
+        // For Managers, count pending reviews
+        count = history.filter(h =>
+            h.analysis.criticalCoachingInsight?.status === 'pending_manager_review'
         ).length;
       }
       setMessageCount(count);

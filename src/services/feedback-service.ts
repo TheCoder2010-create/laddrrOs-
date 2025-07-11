@@ -173,11 +173,18 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
 
     insight.employeeAcknowledgement = acknowledgement;
 
+    const wasRetry = insight.auditTrail?.some(e => e.event === 'Supervisor Retry Action');
+
     if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
         insight.status = 'resolved';
+    } else if (wasRetry) {
+        // If it was a retry and still not resolved, escalate to Manager
+        insight.status = 'pending_manager_review';
+        item.assignedTo = 'Manager';
     } else {
+        // First time not resolved, escalate to AM
         insight.status = 'pending_am_review';
-        item.assignedTo = 'AM'; // Assign the whole item to AM for visibility
+        item.assignedTo = 'AM';
     }
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
