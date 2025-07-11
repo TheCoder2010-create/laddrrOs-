@@ -21,7 +21,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useRole } from '@/hooks/use-role';
@@ -36,6 +36,16 @@ interface Meeting {
   date: string | Date; // Allow for serialized date
   time: string;
 }
+
+const dataUriFromFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 
 function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, supervisor: string }) {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -61,6 +71,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         transcript: "",
         supervisorName: supervisor,
         employeeName: meeting.with,
+        conversationRecordingDataUri: "",
     },
   });
 
@@ -124,12 +135,15 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         audioChunks.push(event.data);
       };
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
         setRecordedAudioUri(audioUrl);
-        // In a real app, this would be transcribed. For now, we use a placeholder.
-        updateTranscript("This is a placeholder for the transcribed audio recording. The AI would normally process the actual audio.");
+        
+        const audioDataUri = await dataUriFromFile(new File([audioBlob], "recording.webm"));
+        form.setValue('conversationRecordingDataUri', audioDataUri);
+        updateTranscript("Audio has been recorded. The AI will transcribe and analyze it directly.");
+
         stream.getTracks().forEach(track => track.stop());
         if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
       };
@@ -155,18 +169,22 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     }
   };
   
-  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
         setAudioFile(file);
         setRecordedAudioUri(null);
-        // Simple mock for transcript upload
-        if (file.type === 'text/plain') {
+        
+        if (file.type.startsWith('audio/')) {
+            const audioDataUri = await dataUriFromFile(file);
+            form.setValue('conversationRecordingDataUri', audioDataUri);
+            updateTranscript(`Audio file ${file.name} uploaded. The AI will process it.`);
+        } else if (file.type === 'text/plain') {
             const reader = new FileReader();
             reader.onload = (e) => updateTranscript(e.target?.result as string);
             reader.readAsText(file);
         } else {
-            updateTranscript(`This is a placeholder for the transcribed audio file: ${file.name}.`);
+            updateTranscript(`Unsupported file type: ${file.name}. Please upload audio or plain text.`);
         }
     }
   };
@@ -191,7 +209,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                 employeeName: meeting.with,
                 date: new Date(meeting.date).toISOString(),
                 // Temporarily store empty analysis
-                analysis: { keyThemes: [], actionItems: [], sentimentAnalysis: '' }, 
+                analysis: { summary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false } }, 
             });
 
             // Pass the new history ID to the analysis flow
@@ -202,7 +220,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
 
             setAnalysisResult(result);
 
-            if (result.criticalCoachingInsight) {
+            if (result.escalationAlert) {
                 // Find the newly created feedback item to manage its state
                 const feedbackItem = await getFeedbackById(historyItem.id, true);
                 setRelatedFeedbackItem(feedbackItem);
@@ -444,34 +462,71 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
             </Alert>
         )}
         {analysisResult && !isPending && (
-            <Alert className="bg-primary/5 border-primary/20">
-                <div className="flex items-center gap-2 font-bold text-primary">
-                    <Bot />
-                    <AlertTitle>Analysis Complete</AlertTitle>
-                </div>
-                <AlertDescription className="space-y-4 text-primary/90">
-                    <div className="mt-4">
-                        <h4 className="font-semibold text-foreground">Key Themes</h4>
-                        <ul className="list-disc pl-5">
-                            {analysisResult.keyThemes.map((theme, i) => <li key={i}>{theme}</li>)}
+            <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                    <div className="flex items-center gap-2 font-bold text-primary">
+                        <Bot />
+                        <CardTitle>AI Analysis & Coaching Report</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6 text-primary/90">
+                    <div>
+                        <h4 className="font-semibold text-foreground mb-2">Session Summary</h4>
+                        <p className="whitespace-pre-wrap">{analysisResult.summary}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-3 rounded-md bg-background/50 border">
+                            <h4 className="font-semibold text-foreground flex items-center gap-2"><Star /> Leadership Score</h4>
+                            <p className="text-2xl font-bold">{analysisResult.leadershipScore}/10</p>
+                        </div>
+                        <div className="p-3 rounded-md bg-background/50 border">
+                            <h4 className="font-semibold text-foreground flex items-center gap-2"><BarChart /> Effectiveness Score</h4>
+                            <p className="text-2xl font-bold">{analysisResult.effectivenessScore}/10</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold text-foreground">Strengths Observed</h4>
+                        <ul className="list-disc pl-5 mt-2 space-y-1">
+                            {analysisResult.strengthsObserved.map((strength, i) => <li key={i}><strong>{strength.action}:</strong> "{strength.example}"</li>)}
                         </ul>
                     </div>
+
                     <div>
                         <h4 className="font-semibold text-foreground">Action Items</h4>
-                        <ul className="list-disc pl-5">
-                            {analysisResult.actionItems.map((item, i) => <li key={i}>{item}</li>)}
+                        <ul className="list-disc pl-5 mt-2 space-y-1">
+                            {analysisResult.actionItems.map((item, i) => <li key={i}><strong>{item.owner}:</strong> {item.task} {item.deadline && `(by ${item.deadline})`}</li>)}
                         </ul>
                     </div>
-                    {analysisResult.sentimentAnalysis && (
-                        <div>
-                            <h4 className="font-semibold text-foreground">Sentiment Analysis</h4>
-                            <p>{analysisResult.sentimentAnalysis}</p>
+                    
+                    {analysisResult.coachingRecommendations.length > 0 && (
+                        <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 mt-4">
+                            <h4 className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2"><Zap /> Coaching Recommendations</h4>
+                            <ul className="list-disc pl-5 mt-2 space-y-1 text-green-600 dark:text-green-300">
+                                {analysisResult.coachingRecommendations.map((rec, i) => <li key={i}><strong>{rec.recommendation}:</strong> {rec.reason}</li>)}
+                            </ul>
                         </div>
                     )}
-                    {analysisResult.criticalCoachingInsight && (
+                    
+                    {analysisResult.missedSignals && analysisResult.missedSignals.length > 0 && (
+                         <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
+                            <h4 className="font-semibold text-yellow-700 dark:text-yellow-400">Missed Signals</h4>
+                             <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
+                                {analysisResult.missedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
+                            </ul>
+                        </div>
+                    )}
+
+                    {analysisResult.escalationAlert && (
                         <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 mt-4">
-                            <h4 className="font-semibold text-destructive">Critical Coaching Insight</h4>
-                            <p className="text-destructive/90">{analysisResult.criticalCoachingInsight}</p>
+                            <h4 className="font-semibold text-destructive flex items-center gap-2">
+                                <ShieldAlert /> Critical Coaching Insight
+                            </h4>
+                            <p className="text-destructive/90 mt-2"><strong>What was missed:</strong> {analysisResult.escalationAlert.summary}</p>
+                            <p className="text-destructive/90 mt-1"><strong>Why it matters:</strong> {analysisResult.escalationAlert.reason}</p>
+                            <p className="text-destructive/90 mt-1"><strong>Suggested action:</strong> {analysisResult.escalationAlert.suggestedAction}</p>
+
                              {relatedFeedbackItem?.status === 'Pending Supervisor Action' && (
                                 <div className="mt-4">
                                     {!showAddressInsight ? (
@@ -514,14 +569,9 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                             )}
                         </div>
                     )}
-                    {analysisResult.coachingImpactAnalysis && (
-                        <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 mt-4">
-                            <h4 className="font-semibold text-green-700 dark:text-green-400">Coaching Impact Analysis</h4>
-                            <p className="text-green-600 dark:text-green-300">{analysisResult.coachingImpactAnalysis}</p>
-                        </div>
-                    )}
-                </AlertDescription>
-            </Alert>
+
+                </CardContent>
+            </Card>
         )}
         {analysisError && (
             <Alert variant="destructive" className="mt-6">

@@ -26,7 +26,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
   }
 
   // If a critical insight is found, create a new feedback record to trigger the critical workflow.
-  if (result.criticalCoachingInsight && input.oneOnOneId) {
+  if (result.escalationAlert && input.oneOnOneId) {
       const newFeedback = {
           trackingId: uuidv4(),
           oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
@@ -36,11 +36,11 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
 - **Location**: ${input.location}
 - **Feedback Tone**: ${input.feedbackTone}
 - **How Feedback Was Received**: ${input.employeeAcceptedFeedback}
-- **Primary Feedback**: ${input.primaryFeedback || 'N/A'}`,
+- **Primary Feedback**: ${input.supervisorNotes || 'N/A'}`,
           submittedAt: submittedAt,
-          summary: result.criticalCoachingInsight,
+          summary: result.escalationAlert.summary,
           criticality: 'Critical' as const,
-          criticalityReasoning: 'This was flagged as a critical coaching insight directly from a 1-on-1 session analysis.',
+          criticalityReasoning: result.escalationAlert.reason,
           viewed: false,
           status: 'Pending Supervisor Action' as const,
           assignedTo: supervisorRole,
@@ -81,9 +81,9 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           viewed: true,
           actionItems: result.actionItems.map(itemText => ({
               id: uuidv4(),
-              text: itemText,
+              text: itemText.task, // Updated to use 'task' from new schema
               status: 'pending' as const,
-              owner: supervisorRole,
+              owner: itemText.owner === 'Supervisor' ? supervisorRole : employeeRole,
           })),
           auditTrail: [
               {
@@ -107,47 +107,41 @@ const prompt = ai.definePrompt({
   name: 'analyzeOneOnOnePrompt',
   input: { schema: AnalyzeOneOnOneInputSchema },
   output: { schema: AnalyzeOneOnOneOutputSchema },
-  prompt: `You are an expert HR analyst and executive coach. Your task is to analyze the provided 1-on-1 session feedback and generate a structured, insightful summary.
+  prompt: `You are an expert organizational coach, licensed behavioral analyst, and AI-powered leadership assistant. Your task is to analyze a 1-on-1 conversation between a supervisor and employee. Use the provided audio, transcript, and/or notes to create a comprehensive JSON report. This report will be used for coaching, compliance monitoring, and continuous leadership development. Your analysis must remain objective, bias-aware, privacy-compliant, and contextually accurate.
 
-Here is the data from the session between supervisor {{supervisorName}} and employee {{employeeName}}:
-- **Location**: {{{location}}}
-- **Feedback Tone**: {{{feedbackTone}}}
-- **How Feedback Was Received**: {{{employeeAcceptedFeedback}}}
-- **Growth/Performance Rating (1-5)**: {{{growthRating}}}
-- **Signs of Stress**: {{{showedSignsOfStress}}}{{#if stressDescription}} (Details: {{{stressDescription}}}){{/if}}
-- **Expressed Aspirations**: {{#if expressedAspirations}}Yes{{#if aspirationDetails}} (Details: {{{aspirationDetails}}}){{/if}}{{else}}No{{/if}}
-- **Appreciation Given**: {{#if didAppreciate}}Yes{{#if appreciationMessage}} (Message: {{{appreciationMessage}}}){{/if}}{{else}}No{{/if}}
+Inputs You Will Receive:
 
-**Primary Feedback & Key Points Discussed**:
-<feedback>
-{{{primaryFeedback}}}
-</feedback>
-
-**Specific Improvement Areas Mentioned**:
-<improvement>
-{{{improvementAreas}}}
-</improvement>
-
-**Other Comments**:
-<comments>
-{{{otherComments}}}
-</comments>
-
-{{#if transcript}}
-**Conversation Transcript**:
-<transcript>
-{{{transcript}}}
-</transcript>
+Supervisor's Notes: {{{supervisorNotes}}}
+{{#if conversationTranscript}}
+Conversation Transcript: {{{conversationTranscript}}}
 {{/if}}
+{{#if conversationRecordingDataUri}}
+Audio Recording (Primary source of truth): {{media url=conversationRecordingDataUri}}
+{{/if}}
+Past Declined Coaching Areas: {{#if pastDeclinedRecommendationAreas}}{{#each pastDeclinedRecommendationAreas}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None{{/if}}
+Active Development Goals: {{#if activeDevelopmentGoals}}{{#each activeDevelopmentGoals}}{{this.area}}: {{this.title}}{{/each}}{{else}}None{{/if}}
+Language Locale: {{languageLocale}}
 
-Based on ALL the information provided, perform the following analysis and provide the output in the requested JSON format:
+Analysis Instructions:
 
-1.  **keyThemes**: Identify the 3-5 most important themes. These could be about performance, goals, challenges, or morale.
-2.  **actionItems**: Extract or infer clear, actionable next steps for the supervisor or employee. These should be concise to-do items. If an item is for the employee, start it with "Employee to...". Otherwise, assume it is for the supervisor.
-3.  **sentimentAnalysis**: Briefly describe the overall mood. Was it tense, collaborative, positive, etc.? Consider the employee's reception of feedback and any signs of stress.
-4.  **criticalCoachingInsight**: This is the most important field. Scrutinize the input for critical moments that require a thoughtful, supportive response. This includes mentions of burnout, intent to quit, high stress, or interpersonal conflict. If a critical moment is detected, formulate a constructive, educational insight FOR THE SUPERVISOR. Frame it as a missed coaching opportunity. For example: "The employee's mention of burnout was a critical moment. This was an opportunity to pause, express empathy, and ask open-ended questions to understand the root cause before moving on. A good next step would be to check in specifically about their workload and well-being." If no such moment is detected, OMIT this field entirely.
-5.  **coachingImpactAnalysis**: Based on the employee's feedback, reception, and aspirations, suggest the single most impactful area for the supervisor to focus their coaching efforts. For example, "Focus on building confidence through smaller, quick wins" or "Help the employee network with other teams to explore their career aspirations."
-`,
+If the input is empty or non-meaningful (e.g., silence, test phrases), return a JSON with summary "Insufficient input for analysis.", scores set to 1, and an explanation. Otherwise, generate the full report:
+
+Session Summary: Quote 1-2 key phrases to anchor the summary. Describe the tone, energy, clarity, and who led the conversation more (employee/supervisor).
+Leadership Score (1-10): Rate based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
+Effectiveness Score (1-10): Rate based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
+Strengths Observed: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
+Coaching Recommendations: Provide 2-3 concrete suggestions for the supervisor to improve, based on weaknesses in this session.
+Action Items: List all concrete tasks for both employee and supervisor, including deadlines if stated.
+Coaching Impact Analysis: (Only if activeDevelopmentGoals are provided) Analyze if the supervisor showed growth towards a goal. If so, summarize the application with a supporting quote. If mastery is shown, return the completedGoalId.
+Missed Signals: Identify any subtle indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore.
+Escalation Alert: (Generate ONLY if an unaddressed red flag is present)
+Trigger Conditions: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, or potential HR issues.
+Content: Must include a summary (what was missed), reason (why it matters AND a recommended micro-learning action), suggestedAction for the manager, and severity.
+If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
+Bias/Fairness Check: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
+Localization Compliance: If languageLocale is not 'en', note that analysis applied localized norms.
+Legal & Data Compliance: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
+Generate the complete, compliant, and objective report now.`,
 });
 
 const analyzeOneOnOneFlow = ai.defineFlow(
