@@ -209,8 +209,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
             }
             
             // Now update the history item with the real analysis
-            historyItem.analysis = result;
-            await updateOneOnOneHistoryItem(historyItem);
+            await updateOneOnOneHistoryItem({ ...historyItem, analysis: result });
             
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
         } catch (error) {
@@ -433,7 +432,18 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
       </Form>
       
       <div className="mt-6">
-        {analysisResult && (
+        {isPending && (
+            <Alert>
+                <div className="flex items-center gap-2 font-bold text-primary">
+                    <Loader2 className="animate-spin" />
+                    <AlertTitle>Analyzing Session...</AlertTitle>
+                </div>
+                <AlertDescription>
+                    The AI is processing your 1-on-1 feedback. This may take a moment.
+                </AlertDescription>
+            </Alert>
+        )}
+        {analysisResult && !isPending && (
             <Alert className="bg-primary/5 border-primary/20">
                 <div className="flex items-center gap-2 font-bold text-primary">
                     <Bot />

@@ -45,7 +45,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { roleUserMapping } from '@/lib/role-mapping';
+import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 import { getOneOnOneHistory, OneOnOneHistoryItem, getAllFeedback, Feedback } from '@/services/feedback-service';
 import Link from 'next/link';
 
@@ -171,7 +171,7 @@ function HistorySection({ role }: { role: Role }) {
     const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchHistory = useCallback(async () => {
+    const fetchHistoryAndFeedback = useCallback(async () => {
         setIsLoading(true);
         const [historyData, feedbackData] = await Promise.all([
             getOneOnOneHistory(),
@@ -180,9 +180,10 @@ function HistorySection({ role }: { role: Role }) {
         
         const currentUser = roleUserMapping[role];
         
-        const userHistory = historyData.filter(item => 
-            item.supervisorName === currentUser.name || item.employeeName === currentUser.name
-        );
+        const userHistory = historyData.filter(item => {
+            const participantRole = getRoleByName(item.employeeName) || getRoleByName(item.supervisorName);
+            return item.supervisorName === currentUser.name || item.employeeName === currentUser.name || (role === 'AM' && participantRole === 'Team Lead') || (role === 'Manager' && participantRole === 'Team Lead');
+        });
         
         setHistory(userHistory);
         setAllFeedback(feedbackData);
@@ -190,14 +191,15 @@ function HistorySection({ role }: { role: Role }) {
     }, [role]);
 
     useEffect(() => {
-        fetchHistory();
-        window.addEventListener('storage', fetchHistory);
-        window.addEventListener('feedbackUpdated', fetchHistory); // Listen for custom event
+        fetchHistoryAndFeedback();
+        const handleDataUpdate = () => fetchHistoryAndFeedback();
+        window.addEventListener('storage', handleDataUpdate);
+        window.addEventListener('feedbackUpdated', handleDataUpdate); // Listen for custom event
         return () => {
-            window.removeEventListener('storage', fetchHistory);
-            window.removeEventListener('feedbackUpdated', fetchHistory);
+            window.removeEventListener('storage', handleDataUpdate);
+            window.removeEventListener('feedbackUpdated', handleDataUpdate);
         }
-    }, [fetchHistory]);
+    }, [fetchHistoryAndFeedback]);
 
     if (isLoading) {
         return <Skeleton className="h-24 w-full mt-8" />;
@@ -215,15 +217,8 @@ function HistorySection({ role }: { role: Role }) {
             </h2>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
-                    const relatedFeedback = allFeedback.find(f => 
-                        f.oneOnOneId === item.id && f.criticality === 'Critical'
-                    );
-
-                    const hasPendingAction = relatedFeedback && 
-                        relatedFeedback.status === 'Pending Supervisor Action' &&
-                        relatedFeedback.assignedTo === role;
-
-                    const hasCriticalInsight = !!item.analysis.criticalCoachingInsight;
+                    const criticalFeedback = allFeedback.find(f => f.oneOnOneId === item.id && f.criticality === 'Critical');
+                    const hasPendingAction = criticalFeedback && criticalFeedback.status === 'Pending Supervisor Action' && criticalFeedback.assignedTo === role;
 
                     return (
                         <AccordionItem value={item.id} key={item.id} className="px-4">
@@ -231,13 +226,13 @@ function HistorySection({ role }: { role: Role }) {
                                 <div className="flex justify-between items-center w-full pr-4">
                                     <div className="text-left">
                                         <p className="font-medium">
-                                            1-on-1 with {role === roleUserMapping[item.supervisorName as Role]?.role ? item.employeeName : item.supervisorName}
+                                            1-on-1 with {role === getRoleByName(item.supervisorName)?.role ? item.employeeName : item.supervisorName}
                                         </p>
                                         <p className="text-sm text-muted-foreground font-normal">
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                    {hasCriticalInsight && (
+                                    {criticalFeedback && (
                                         <div className={cn(
                                             "flex items-center gap-2", 
                                             hasPendingAction ? "text-destructive" : "text-muted-foreground"
@@ -259,7 +254,7 @@ function HistorySection({ role }: { role: Role }) {
                                             <Link href="/action-items">Address Insight</Link>
                                         </Button>
                                     </div>
-                                ) : hasCriticalInsight && (
+                                ) : item.analysis.criticalCoachingInsight && (
                                     <div className="p-3 rounded-md bg-muted/50 border">
                                         <h4 className="font-semibold text-foreground">Critical Coaching Insight</h4>
                                         <p className="text-muted-foreground">{item.analysis.criticalCoachingInsight}</p>
@@ -442,5 +437,3 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-
-    
