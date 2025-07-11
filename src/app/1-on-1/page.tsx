@@ -182,10 +182,11 @@ function HistorySection({ role }: { role: Role }) {
         
         const userHistory = historyData.filter(item => {
              const supervisorRole = getRoleByName(item.supervisorName);
+             const employeeRole = getRoleByName(item.employeeName);
              return item.supervisorName === currentUser.name || 
                     item.employeeName === currentUser.name || 
-                    (role === 'AM' && supervisorRole === 'Team Lead') || 
-                    (role === 'Manager' && supervisorRole === 'Team Lead');
+                    (role === 'AM' && (supervisorRole === 'Team Lead' || employeeRole === 'Team Lead')) ||
+                    (role === 'Manager' && (supervisorRole === 'Team Lead' || employeeRole === 'Team Lead' || supervisorRole === 'AM' || employeeRole === 'AM'));
         });
         
         setHistory(userHistory);
@@ -220,14 +221,8 @@ function HistorySection({ role }: { role: Role }) {
             </h2>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
-                    // This logic finds if a critical feedback item exists for THIS 1-on-1 AND requires action from the current user.
-                    const criticalFeedback = allFeedback.find(f => 
-                        f.oneOnOneId === item.id && 
-                        f.criticality === 'Critical'
-                    );
-                    const hasPendingAction = criticalFeedback && 
-                                             criticalFeedback.status === 'Pending Supervisor Action' && 
-                                             criticalFeedback.assignedTo === role;
+                    const criticalFeedback = allFeedback.find(f => f.oneOnOneId === item.id && f.criticality === 'Critical');
+                    const hasPendingAction = criticalFeedback && criticalFeedback.status === 'Pending Supervisor Action' && criticalFeedback.assignedTo === role;
 
                     return (
                         <AccordionItem value={item.id} key={item.id} className="px-4">
@@ -459,5 +454,3 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-
-    
