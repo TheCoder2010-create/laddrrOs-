@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -131,20 +131,20 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
     const { toast } = useToast();
     const { role } = useRole();
     const [action, setAction] = useState<'coach' | 'address' | null>(null);
-    const [coachingNotes, setCoachingNotes] = useState('');
+    const [actionNotes, setActionNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleAmActionSubmit = async () => {
-        if (action === 'coach' && !coachingNotes) return;
+        if (!actionNotes) return;
 
         setIsSubmitting(true);
         try {
             if (action === 'coach') {
-                await submitAmCoachingNotes(item.id, role!, coachingNotes);
+                await submitAmCoachingNotes(item.id, role!, actionNotes);
                 toast({ title: "Coaching Notes Submitted", description: "The supervisor has been notified to retry the 1-on-1." });
             } else if (action === 'address') {
-                 // Placeholder for next step
-                toast({ title: "Action Recorded", description: "Next step: Address Employee directly. This will be implemented next." });
+                await escalateToManager(item.id, role!, actionNotes);
+                toast({ title: "Case Escalated", description: "The case has been escalated to the Manager for review." });
             }
             onUpdate();
         } catch (error) {
@@ -153,15 +153,12 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
         } finally {
             setIsSubmitting(false);
             setAction(null);
-            setCoachingNotes('');
+            setActionNotes('');
         }
     };
     
     const handleActionClick = (selectedAction: 'coach' | 'address') => {
         setAction(selectedAction);
-        if (selectedAction === 'address') {
-            handleAmActionSubmit(); // Immediately submit for 'address' as there's no form
-        }
     };
 
 
@@ -193,20 +190,32 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
             <CardFooter className="bg-orange-500/10 pt-4 flex-col items-start gap-4">
                  <Label className="font-semibold text-orange-700 dark:text-orange-400">Your Action</Label>
                 
-                 {action === 'coach' ? (
+                 {action ? (
                      <div className="w-full space-y-3">
-                         <p className="text-sm text-muted-foreground">Log your coaching notes for the supervisor. This will be visible to them.</p>
+                         <Label htmlFor={`action-notes-${item.id}`}>
+                            {action === 'coach' ? 'Coaching Notes for Supervisor' : 'Escalation Notes for Manager'}
+                         </Label>
+                         <p className="text-sm text-muted-foreground">
+                            {action === 'coach' 
+                                ? 'Log your coaching notes for the supervisor. This will be visible to them.'
+                                : 'Explain why this case requires manager intervention. This will be visible to the manager.'
+                            }
+                         </p>
                          <Textarea 
-                            placeholder="e.g., Coached Ben on active listening and validating concerns before offering solutions. Suggested a follow-up meeting..."
-                            value={coachingNotes}
-                            onChange={(e) => setCoachingNotes(e.target.value)}
+                            id={`action-notes-${item.id}`}
+                            placeholder={action === 'coach' 
+                                ? "e.g., Coached Ben on active listening and validating concerns before offering solutions..."
+                                : "e.g., This issue involves cross-team dynamics that require manager-level visibility to resolve..."
+                            }
+                            value={actionNotes}
+                            onChange={(e) => setActionNotes(e.target.value)}
                             rows={4}
                             className="bg-background"
                          />
                          <div className="flex gap-2">
-                             <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !coachingNotes}>
+                             <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                Submit Coaching Notes
+                                Submit
                              </Button>
                              <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
                          </div>
@@ -220,8 +229,8 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
                                 Coach Supervisor
                             </Button>
                             <Button onClick={() => handleActionClick('address')}>
-                                <User className="mr-2 h-4 w-4" />
-                                Address Employee
+                                <ChevronsRight className="mr-2 h-4 w-4" />
+                                Escalate to Manager
                             </Button>
                         </div>
                     </>
@@ -246,7 +255,7 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
         setIsSubmitting(true);
         try {
             await submitManagerResolution(item.id, role!, resolutionNotes);
-            toast({ title: "Resolution Submitted", description: "The employee has been notified for a final acknowledgement." });
+            toast({ title: "Resolution Submitted", description: "The case has been escalated to HR for final review." });
             onUpdate();
         } catch (error) {
             console.error("Failed to submit manager resolution", error);
@@ -296,7 +305,7 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
             <CardFooter className="bg-destructive/10 pt-4 flex-col items-start gap-4">
                 <Label className="font-semibold text-destructive">Your Action</Label>
                 <p className="text-sm text-muted-foreground">
-                    This case requires your direct intervention. Document the actions you will take to resolve this situation. The employee will be asked to acknowledge this final resolution.
+                    This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to HR for final review.
                 </p>
                 <div className="w-full space-y-3">
                      <Textarea 
@@ -309,7 +318,7 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
                      <div className="flex gap-2">
                          <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmitting || !resolutionNotes}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                            Submit Final Resolution
+                            Submit to HR for Review
                          </Button>
                      </div>
                  </div>

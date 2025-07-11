@@ -153,8 +153,20 @@ export async function submitSupervisorInsightResponse(historyId: string, respons
     let allHistory = await getOneOnOneHistory();
     const index = allHistory.findIndex(h => h.id === historyId);
     if (index !== -1 && allHistory[index].analysis.criticalCoachingInsight) {
-        allHistory[index].analysis.criticalCoachingInsight!.supervisorResponse = response;
-        allHistory[index].analysis.criticalCoachingInsight!.status = 'pending_employee_acknowledgement';
+        const item = allHistory[index];
+        item.analysis.criticalCoachingInsight!.supervisorResponse = response;
+        item.analysis.criticalCoachingInsight!.status = 'pending_employee_acknowledgement';
+
+        if (!item.analysis.criticalCoachingInsight!.auditTrail) {
+            item.analysis.criticalCoachingInsight!.auditTrail = [];
+        }
+        item.analysis.criticalCoachingInsight!.auditTrail.push({
+            event: 'Supervisor Responded',
+            timestamp: new Date(),
+            actor: item.supervisorName,
+            details: response,
+        });
+        
         saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
     } else {
         throw new Error("Could not find history item or critical insight to update.");
@@ -236,6 +248,32 @@ export async function submitAmCoachingNotes(historyId: string, actor: Role, note
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
+export async function escalateToManager(historyId: string, actor: Role, notes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+         throw new Error("Could not find history item or critical insight to update.");
+    }
+    
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    insight.status = 'pending_manager_review';
+    item.assignedTo = 'Manager';
+    
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: 'Escalated by AM',
+        timestamp: new Date(),
+        actor: actor,
+        details: `Case escalated to Manager for direct intervention. Notes: ${notes}`,
+    });
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
 export async function submitSupervisorRetry(historyId: string, retryNotes: string): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const index = allHistory.findIndex(h => h.id === historyId);
@@ -272,8 +310,9 @@ export async function submitManagerResolution(historyId: string, actor: Role, no
     const item = allHistory[index];
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
 
-    // Send back to employee for final acknowledgement
-    insight.status = 'pending_employee_acknowledgement';
+    // Directly escalate to HR for review
+    insight.status = 'pending_hr_review';
+    item.assignedTo = 'HR Head';
     
     if (!insight.auditTrail) {
         insight.auditTrail = [];
