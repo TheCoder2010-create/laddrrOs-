@@ -173,7 +173,7 @@ export async function submitSupervisorInsightResponse(historyId: string, respons
     }
 }
 
-export async function submitEmployeeAcknowledgement(historyId: string, acknowledgement: string, previousStatus?: CriticalCoachingInsight['status']): Promise<void> {
+export async function submitEmployeeAcknowledgement(historyId: string, acknowledgement: string, comments: string, previousStatus?: CriticalCoachingInsight['status']): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const index = allHistory.findIndex(h => h.id === historyId);
     if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
@@ -183,7 +183,8 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
     const item = allHistory[index];
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
 
-    insight.employeeAcknowledgement = acknowledgement;
+    const fullAcknowledgement = `${acknowledgement}${comments ? `\n\nComments: ${comments}` : ''}`;
+    insight.employeeAcknowledgement = fullAcknowledgement;
     
     if (!insight.auditTrail) {
         insight.auditTrail = [];
@@ -192,7 +193,7 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
         event: 'Employee Acknowledged',
         timestamp: new Date(),
         actor: item.employeeName as Role,
-        details: acknowledgement,
+        details: fullAcknowledgement,
     });
     
     const wasAmResponse = insight.auditTrail?.some(e => e.event === 'AM Responded to Employee');

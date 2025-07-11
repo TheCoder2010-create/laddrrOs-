@@ -21,6 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const { toast } = useToast();
     const [employeeAcknowledgement, setEmployeeAcknowledgement] = useState('');
+    const [acknowledgementComments, setAcknowledgementComments] = useState('');
     const [isSubmittingAck, setIsSubmittingAck] = useState(false);
 
     const handleEmployeeAckSubmit = async () => {
@@ -30,8 +31,9 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
         const previousStatus = item.analysis.criticalCoachingInsight?.status;
 
         try {
-            await submitEmployeeAcknowledgement(item.id, employeeAcknowledgement, previousStatus);
+            await submitEmployeeAcknowledgement(item.id, employeeAcknowledgement, acknowledgementComments, previousStatus);
             setEmployeeAcknowledgement("");
+            setAcknowledgementComments("");
             
             if (employeeAcknowledgement === "The concern was fully addressed to my satisfaction.") {
                  toast({ title: "Acknowledgement Submitted", description: "Thank you for your feedback. This insight is now resolved." });
@@ -126,6 +128,17 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                             <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
                         </div>
                     </RadioGroup>
+                    <div className="space-y-2 pt-2">
+                        <Label htmlFor={`ack-comments-${item.id}`}>Additional Comments (Optional)</Label>
+                        <Textarea
+                            id={`ack-comments-${item.id}`}
+                            value={acknowledgementComments}
+                            onChange={(e) => setAcknowledgementComments(e.target.value)}
+                            placeholder="Provide more detail about your selection..."
+                            rows={3}
+                            className="bg-background"
+                        />
+                    </div>
                     <div className="flex gap-2 pt-2">
                         <Button
                             onClick={handleEmployeeAckSubmit}
