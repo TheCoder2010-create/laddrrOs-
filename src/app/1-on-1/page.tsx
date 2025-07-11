@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -192,7 +192,10 @@ function HistorySection({ role }: { role: Role }) {
         const currentUser = roleUserMapping[role];
         
         const userHistory = historyData.filter(item => {
-             return item.supervisorName === currentUser.name || item.employeeName === currentUser.name;
+             // Show if user is direct participant OR if their role is in the escalation path (TL, AM, Manager)
+             return item.supervisorName === currentUser.name || 
+                    item.employeeName === currentUser.name ||
+                    (item.analysis.criticalCoachingInsight && ['Team Lead', 'AM', 'Manager'].includes(role));
         });
         
         setHistory(userHistory.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -291,6 +294,10 @@ function HistorySection({ role }: { role: Role }) {
                                 return <Badge className="bg-purple-500 text-white flex items-center gap-1.5"><Repeat className="h-3 w-3" />Retry Required</Badge>;
                             case 'pending_am_review':
                                 return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Escalated to AM</Badge>;
+                            case 'pending_manager_review':
+                                return <Badge className="bg-red-700 text-white flex items-center gap-1.5"><Briefcase className="h-3 w-3" />Manager Review</Badge>;
+                            case 'pending_hr_review':
+                                return <Badge className="bg-black text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
                             case 'resolved':
                                 return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
                             default:
@@ -320,7 +327,7 @@ function HistorySection({ role }: { role: Role }) {
                             </AccordionTrigger>
                             <AccordionContent className="space-y-6 pt-2">
                                 
-                                {isSupervisor && (
+                                {role !== 'Employee' && (
                                     <div className="space-y-4">
                                         <div className="bg-muted/50 p-4 rounded-lg">
                                             <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><UserCheck className="h-5 w-5 text-primary"/>Supervisor View</h4>

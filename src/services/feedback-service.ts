@@ -190,8 +190,7 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
         insight.status = 'resolved';
     } else if (wasManagerAction) {
         // After manager intervention, final escalation is to HR for offline review.
-        // It lands in their "Action Items" queue.
-        insight.status = 'pending_supervisor_action'; // This status shows up in the 'Action Items' queue
+        insight.status = 'pending_hr_review';
         item.assignedTo = 'HR Head';
     } else if (wasRetry) {
         // If it was a retry and still not resolved, escalate to Manager

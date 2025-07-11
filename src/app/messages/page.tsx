@@ -6,7 +6,7 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase } from 'lucide-react';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck } from 'lucide-react';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
@@ -308,10 +308,56 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
     );
 }
 
+function HrReviewWidget({ item }: { item: OneOnOneHistoryItem }) {
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
+        const entry = insight.auditTrail?.find(e => e.event === event);
+        if (!details && !entry?.details) return null;
+        return (
+            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
+                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
+            </div>
+        );
+    };
+
+    return (
+        <Card className="border-black dark:border-gray-600">
+            <CardHeader className="bg-black/10 dark:bg-gray-800/50">
+                <CardTitle className="flex items-center gap-2 text-black dark:text-white">
+                    <ShieldCheck className="h-6 w-6" />
+                    Final Escalation for HR Review
+                </CardTitle>
+                <CardDescription>
+                    Case between {item.supervisorName} and {item.employeeName}.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
+                {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                {renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+                {renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Employee Acknowledged", "Final Employee Acknowledgement", insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", undefined, "bg-muted/80", "text-foreground")}
+            </CardContent>
+            <CardFooter className="bg-black/10 dark:bg-gray-800/50 pt-4 flex-col items-start gap-4">
+                <Label className="font-semibold text-black dark:text-white">Action Required</Label>
+                 <p className="text-sm text-muted-foreground">
+                    The automated workflow for this case has concluded. Please review the complete audit trail and take the necessary offline actions to resolve this issue. This case will remain in your queue until manually resolved in the system.
+                </p>
+                {/* Future actions for HR could be added here */}
+            </CardFooter>
+        </Card>
+    );
+}
+
 function MessagesContent({ role }: { role: Role }) {
   const [pendingAcknowledgements, setPendingAcknowledgements] = useState<OneOnOneHistoryItem[]>([]);
   const [amEscalatedItems, setAmEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
   const [managerEscalatedItems, setManagerEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
+  const [hrEscalatedItems, setHrEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
@@ -327,24 +373,22 @@ function MessagesContent({ role }: { role: Role }) {
     setPendingAcknowledgements(pending);
 
     // For AMs: Find items escalated to them
-    if (role === 'AM') {
-        const amEscalated = history.filter(item =>
-            item.analysis.criticalCoachingInsight?.status === 'pending_am_review'
-        );
-        setAmEscalatedItems(amEscalated);
-    } else {
-        setAmEscalatedItems([]);
-    }
+    const amEscalated = history.filter(item =>
+        role === 'AM' && item.analysis.criticalCoachingInsight?.status === 'pending_am_review'
+    );
+    setAmEscalatedItems(amEscalated);
 
     // For Managers: Find items escalated to them
-    if (role === 'Manager') {
-        const managerEscalated = history.filter(item =>
-            item.analysis.criticalCoachingInsight?.status === 'pending_manager_review'
-        );
-        setManagerEscalatedItems(managerEscalated);
-    } else {
-        setManagerEscalatedItems([]);
-    }
+    const managerEscalated = history.filter(item =>
+        role === 'Manager' && item.analysis.criticalCoachingInsight?.status === 'pending_manager_review'
+    );
+    setManagerEscalatedItems(managerEscalated);
+
+    // For HR Head: Find items escalated to them
+    const hrEscalated = history.filter(item =>
+        role === 'HR Head' && item.analysis.criticalCoachingInsight?.status === 'pending_hr_review'
+    );
+    setHrEscalatedItems(hrEscalated);
     
     setIsLoading(false);
   }, [role]);
@@ -363,7 +407,7 @@ function MessagesContent({ role }: { role: Role }) {
     }
   }, [fetchMessages]);
 
-  const hasMessages = pendingAcknowledgements.length > 0 || amEscalatedItems.length > 0 || managerEscalatedItems.length > 0;
+  const hasMessages = pendingAcknowledgements.length > 0 || amEscalatedItems.length > 0 || managerEscalatedItems.length > 0 || hrEscalatedItems.length > 0;
 
   return (
     <div className="p-4 md:p-8">
@@ -390,6 +434,9 @@ function MessagesContent({ role }: { role: Role }) {
                     ))}
                     {managerEscalatedItems.map(item => (
                         <ManagerEscalationWidget key={item.id} item={item} onUpdate={fetchMessages} />
+                    ))}
+                    {hrEscalatedItems.map(item => (
+                        <HrReviewWidget key={item.id} item={item} />
                     ))}
                 </>
             ) : (

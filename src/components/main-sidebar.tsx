@@ -54,22 +54,33 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       // Messages count logic
       const history = await getOneOnOneHistory();
       let count = 0;
-      if (currentRole === 'Employee') {
-        // For employees, count pending acknowledgements
-        count = history.filter(h => 
-          h.employeeName === currentUser.name &&
-          h.analysis.criticalCoachingInsight?.status === 'pending_employee_acknowledgement'
-        ).length;
-      } else if (currentRole === 'AM') {
-        // For AMs, count pending reviews
-        count = history.filter(h =>
-          h.analysis.criticalCoachingInsight?.status === 'pending_am_review'
-        ).length;
-      } else if (currentRole === 'Manager') {
-        // For Managers, count pending reviews
-        count = history.filter(h =>
-            h.analysis.criticalCoachingInsight?.status === 'pending_manager_review'
-        ).length;
+      const statusesToCount: string[] = [];
+
+      switch (currentRole) {
+        case 'Employee':
+          statusesToCount.push('pending_employee_acknowledgement');
+          count = history.filter(h =>
+            h.employeeName === currentUser.name &&
+            h.analysis.criticalCoachingInsight?.status &&
+            statusesToCount.includes(h.analysis.criticalCoachingInsight.status)
+          ).length;
+          break;
+        case 'AM':
+          statusesToCount.push('pending_am_review');
+          break;
+        case 'Manager':
+          statusesToCount.push('pending_manager_review');
+          break;
+        case 'HR Head':
+            statusesToCount.push('pending_hr_review');
+            break;
+      }
+
+      if (['AM', 'Manager', 'HR Head'].includes(currentRole)) {
+          count = history.filter(h => 
+            h.analysis.criticalCoachingInsight?.status && 
+            statusesToCount.includes(h.analysis.criticalCoachingInsight.status)
+          ).length;
       }
       setMessageCount(count);
 
