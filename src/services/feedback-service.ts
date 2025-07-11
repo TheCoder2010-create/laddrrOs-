@@ -147,6 +147,30 @@ export async function updateOneOnOneHistoryItem(updatedItem: OneOnOneHistoryItem
     }
 }
 
+export async function submitSupervisorInsightResponse(historyId: string, response: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index !== -1 && allHistory[index].analysis.criticalCoachingInsight) {
+        allHistory[index].analysis.criticalCoachingInsight!.supervisorResponse = response;
+        allHistory[index].analysis.criticalCoachingInsight!.status = 'pending_employee_acknowledgement';
+        saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+    } else {
+        throw new Error("Could not find history item or critical insight to update.");
+    }
+}
+
+export async function submitEmployeeAcknowledgement(historyId: string, acknowledgement: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index !== -1 && allHistory[index].analysis.criticalCoachingInsight) {
+        allHistory[index].analysis.criticalCoachingInsight!.employeeAcknowledgement = acknowledgement;
+        allHistory[index].analysis.criticalCoachingInsight!.status = 'resolved';
+        saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+    } else {
+        throw new Error("Could not find history item or critical insight to update.");
+    }
+}
+
 
 // ==========================================
 // Feedback Service
