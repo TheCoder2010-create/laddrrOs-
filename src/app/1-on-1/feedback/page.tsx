@@ -202,7 +202,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
 
             setAnalysisResult(result);
 
-            if (result.escalationAlert) {
+            if (result.criticalCoachingInsight) {
                 // Find the newly created feedback item to manage its state
                 const feedbackItem = await getFeedbackById(historyItem.id, true);
                 setRelatedFeedbackItem(feedbackItem);
@@ -458,10 +458,10 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                             <p>{analysisResult.sentimentAnalysis}</p>
                         </div>
                     )}
-                    {analysisResult.escalationAlert && (
+                    {analysisResult.criticalCoachingInsight && (
                         <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 mt-4">
-                            <h4 className="font-semibold text-destructive">Critical Insight Logged</h4>
-                            <p className="text-destructive/90">{analysisResult.escalationAlert}</p>
+                            <h4 className="font-semibold text-destructive">Critical Coaching Insight</h4>
+                            <p className="text-destructive/90">{analysisResult.criticalCoachingInsight}</p>
                              {relatedFeedbackItem?.status === 'Pending Supervisor Action' && (
                                 <div className="mt-4">
                                     {!showAddressInsight ? (

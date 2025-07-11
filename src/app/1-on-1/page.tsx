@@ -221,7 +221,7 @@ function HistorySection({ role }: { role: Role }) {
                                         {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                     </p>
                                 </div>
-                                 {item.analysis.escalationAlert && (
+                                 {item.analysis.criticalCoachingInsight && (
                                     <div className="flex items-center gap-2 text-destructive">
                                         <AlertTriangle className="h-5 w-5" />
                                         <span className="hidden md:inline">Critical Insight</span>
@@ -230,10 +230,10 @@ function HistorySection({ role }: { role: Role }) {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-2">
-                             {item.analysis.escalationAlert && (
+                             {item.analysis.criticalCoachingInsight && (
                                 <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                                    <h4 className="font-semibold text-destructive">Critical Insight Logged</h4>
-                                    <p className="text-destructive/90">{item.analysis.escalationAlert}</p>
+                                    <h4 className="font-semibold text-destructive">Critical Coaching Insight</h4>
+                                    <p className="text-destructive/90">{item.analysis.criticalCoachingInsight}</p>
                                 </div>
                              )}
 

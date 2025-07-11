@@ -26,21 +26,21 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
   }
 
   // If a critical insight is found, create a new feedback record to trigger the critical workflow.
-  if (result.escalationAlert && input.oneOnOneId) {
+  if (result.criticalCoachingInsight && input.oneOnOneId) {
       const newFeedback = {
           trackingId: uuidv4(),
           oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
-          subject: `Critical Insight from 1-on-1 with ${input.employeeName}`,
-          message: `An escalation alert was triggered during a 1-on-1 session between ${input.supervisorName} and ${input.employeeName}. See details below.
+          subject: `Critical Coaching Insight from 1-on-1 with ${input.employeeName}`,
+          message: `A critical coaching insight was identified during a 1-on-1 session between ${input.supervisorName} and ${input.employeeName}. See details below.
           
 - **Location**: ${input.location}
 - **Feedback Tone**: ${input.feedbackTone}
 - **How Feedback Was Received**: ${input.employeeAcceptedFeedback}
 - **Primary Feedback**: ${input.primaryFeedback || 'N/A'}`,
           submittedAt: submittedAt,
-          summary: result.escalationAlert,
+          summary: result.criticalCoachingInsight,
           criticality: 'Critical' as const,
-          criticalityReasoning: 'This was flagged as a critical insight directly from a 1-on-1 session analysis.',
+          criticalityReasoning: 'This was flagged as a critical coaching insight directly from a 1-on-1 session analysis.',
           viewed: false,
           status: 'Pending Supervisor Action' as const,
           assignedTo: supervisorRole,
@@ -51,7 +51,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
                   event: 'Critical Insight Identified',
                   timestamp: submittedAt,
                   actor: 'HR Head' as const, // System action attributed to HR
-                  details: 'Critical insight automatically logged from 1-on-1 analysis.',
+                  details: 'Critical coaching insight automatically logged from 1-on-1 analysis.',
               },
                {
                   event: 'Assigned',
@@ -145,7 +145,7 @@ Based on ALL the information provided, perform the following analysis and provid
 1.  **keyThemes**: Identify the 3-5 most important themes. These could be about performance, goals, challenges, or morale.
 2.  **actionItems**: Extract or infer clear, actionable next steps for the supervisor or employee. These should be concise to-do items. If an item is for the employee, start it with "Employee to...". Otherwise, assume it is for the supervisor.
 3.  **sentimentAnalysis**: Briefly describe the overall mood. Was it tense, collaborative, positive, etc.? Consider the employee's reception of feedback and any signs of stress.
-4.  **escalationAlert**: CRITICAL: Scrutinize the input for any red flags that might require HR intervention. This includes mentions of harassment, discrimination, extreme burnout, clear intent to quit, or serious policy violations. If found, formulate a concise, professional alert. If no such flags are present, OMIT this field entirely.
+4.  **criticalCoachingInsight**: This is the most important field. Scrutinize the input for critical moments that require a thoughtful, supportive response. This includes mentions of burnout, intent to quit, high stress, or interpersonal conflict. If a critical moment is detected, formulate a constructive, educational insight FOR THE SUPERVISOR. Frame it as a missed coaching opportunity. For example: "The employee's mention of burnout was a critical moment. This was an opportunity to pause, express empathy, and ask open-ended questions to understand the root cause before moving on. A good next step would be to check in specifically about their workload and well-being." If no such moment is detected, OMIT this field entirely.
 5.  **coachingImpactAnalysis**: Based on the employee's feedback, reception, and aspirations, suggest the single most impactful area for the supervisor to focus their coaching efforts. For example, "Focus on building confidence through smaller, quick wins" or "Help the employee network with other teams to explore their career aspirations."
 `,
 });
