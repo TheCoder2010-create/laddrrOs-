@@ -12,7 +12,7 @@ import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight } from '@/ai/schema
 export interface AuditEvent {
   event: string;
   timestamp: Date | string; 
-  actor: Role;
+  actor: Role | string;
   details?: string;
 }
 
@@ -185,8 +185,10 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
 
     const wasRetry = insight.auditTrail?.some(e => e.event === 'Supervisor Retry Action');
     const wasManagerAction = insight.auditTrail?.some(e => e.event === 'Manager Resolution');
+    const wasHrAction = insight.auditTrail?.some(e => e.event === 'HR Resolution');
 
-    if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
+    if (acknowledgement === "The concern was fully addressed to my satisfaction." || wasHrAction) {
+        // Resolve if employee is satisfied, OR if it's the final HR step (workflow ends here)
         insight.status = 'resolved';
     } else if (wasManagerAction) {
         // After manager intervention, final escalation is to HR for offline review.
@@ -274,6 +276,32 @@ export async function submitManagerResolution(historyId: string, actor: Role, no
     }
     insight.auditTrail.push({
         event: 'Manager Resolution',
+        timestamp: new Date(),
+        actor: actor,
+        details: notes,
+    });
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+export async function submitHrResolution(historyId: string, actor: Role, notes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+         throw new Error("Could not find history item or critical insight to update.");
+    }
+    
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    // Send back to employee for one last acknowledgement
+    insight.status = 'pending_employee_acknowledgement';
+    
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: 'HR Resolution',
         timestamp: new Date(),
         actor: actor,
         details: notes,

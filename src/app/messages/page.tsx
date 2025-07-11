@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -46,6 +46,8 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
             setIsSubmittingAck(false);
         }
     };
+    
+    const wasHrAction = item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'HR Resolution');
 
     return (
         <Card className="border-blue-500/50">
@@ -78,6 +80,14 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                         <p className="font-semibold text-foreground">Manager's Final Resolution</p>
                         <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                             {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'Manager Resolution')?.details}
+                        </p>
+                    </div>
+                )}
+                {wasHrAction && (
+                     <div className="p-3 bg-muted/80 rounded-md border">
+                        <p className="font-semibold text-foreground">HR Head's Final Resolution</p>
+                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'HR Resolution')?.details}
                         </p>
                     </div>
                 )}
@@ -308,8 +318,27 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
     );
 }
 
-function HrReviewWidget({ item }: { item: OneOnOneHistoryItem }) {
+function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleHrSubmit = async () => {
+        if (!resolutionNotes) return;
+        setIsSubmitting(true);
+        try {
+            await submitHrResolution(item.id, role!, resolutionNotes);
+            toast({ title: "Resolution Submitted", description: "The employee has been notified for a final acknowledgement." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit HR resolution", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
         const entry = insight.auditTrail?.find(e => e.event === event);
@@ -339,15 +368,30 @@ function HrReviewWidget({ item }: { item: OneOnOneHistoryItem }) {
                 {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
                 {renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
                 {renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
-                {renderAuditEntry("Employee Acknowledged", "Final Employee Acknowledgement", insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
-                {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", undefined, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Employee Acknowledged", "Second Employee Acknowledgement", insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, "bg-muted/80", "text-foreground")}
+                 {renderAuditEntry("Employee Acknowledged", `Third Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
             </CardContent>
             <CardFooter className="bg-black/10 dark:bg-gray-800/50 pt-4 flex-col items-start gap-4">
-                <Label className="font-semibold text-black dark:text-white">Action Required</Label>
+                <Label className="font-semibold text-black dark:text-white">Your Action</Label>
                  <p className="text-sm text-muted-foreground">
-                    The automated workflow for this case has concluded. Please review the complete audit trail and take the necessary offline actions to resolve this issue. This case will remain in your queue until manually resolved in the system.
+                    The automated workflow for this case has concluded. Document your final actions to resolve this situation. The employee will be asked for a final acknowledgement.
                 </p>
-                {/* Future actions for HR could be added here */}
+                <div className="w-full space-y-3">
+                     <Textarea 
+                        placeholder="e.g., I have met with all parties involved and have put a formal performance improvement plan in place for the supervisor..."
+                        value={resolutionNotes}
+                        onChange={(e) => setResolutionNotes(e.target.value)}
+                        rows={4}
+                        className="bg-background"
+                     />
+                     <div className="flex gap-2">
+                         <Button className="bg-black hover:bg-black/80 text-white" onClick={handleHrSubmit} disabled={isSubmitting || !resolutionNotes}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Submit Final HR Resolution
+                         </Button>
+                     </div>
+                 </div>
             </CardFooter>
         </Card>
     );
@@ -436,7 +480,7 @@ function MessagesContent({ role }: { role: Role }) {
                         <ManagerEscalationWidget key={item.id} item={item} onUpdate={fetchMessages} />
                     ))}
                     {hrEscalatedItems.map(item => (
-                        <HrReviewWidget key={item.id} item={item} />
+                        <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />
                     ))}
                 </>
             ) : (
