@@ -267,20 +267,21 @@ function HistorySection({ role }: { role: Role }) {
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
                     const insight = item.analysis.criticalCoachingInsight;
-                    const insightStatus = insight?.status || 'open';
+                    if (!insight) return null; // Only render items with insights for this logic
                     
-                    const currentUserRole = getRoleByName(roleUserMapping[role].name);
-                    const supervisorRole = getRoleByName(item.supervisorName);
+                    const insightStatus = insight.status || 'open';
+                    const currentUserName = roleUserMapping[role].name;
                     
-                    const canSupervisorAct = currentUserRole === supervisorRole && insightStatus === 'open';
-                    const canEmployeeRespond = currentUserRole !== supervisorRole && insightStatus === 'pending_employee_acknowledgement';
+                    const isSupervisor = currentUserName === item.supervisorName;
+                    const isEmployee = currentUserName === item.employeeName;
 
+                    const canSupervisorAct = isSupervisor && insightStatus === 'open';
+                    const canEmployeeRespond = isEmployee && insightStatus === 'pending_employee_acknowledgement';
+                    
                     const getStatusBadge = () => {
-                        if (!insight) return null;
-
                         switch(insightStatus) {
                             case 'open':
-                                if (currentUserRole === supervisorRole) {
+                                if (isSupervisor) {
                                     return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Action Required</Badge>;
                                 }
                                 return null;
@@ -299,7 +300,7 @@ function HistorySection({ role }: { role: Role }) {
                                 <div className="flex justify-between items-center w-full pr-4">
                                     <div className="text-left">
                                         <p className="font-medium">
-                                            1-on-1 with {currentUserRole === supervisorRole ? item.employeeName : item.supervisorName}
+                                            1-on-1 with {isSupervisor ? item.employeeName : item.supervisorName}
                                         </p>
                                         <p className="text-sm text-muted-foreground font-normal">
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
@@ -312,101 +313,99 @@ function HistorySection({ role }: { role: Role }) {
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2">
                                 
-                                {insight && (
-                                    <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                                        <h4 className="font-semibold text-destructive flex items-center gap-2">
-                                           <AlertTriangle className="h-4 w-4" />Critical Coaching Insight
-                                        </h4>
-                                        <p className="text-destructive/90 my-2">{insight.summary}</p>
-                                        
-                                        {/* Supervisor's action form */}
-                                        {canSupervisorAct && (
-                                            <div className="mt-4">
-                                                {addressingInsightId !== item.id ? (
-                                                    <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
-                                                        Address Insight
-                                                    </Button>
-                                                ) : (
-                                                    <div className="space-y-2 bg-background/50 p-3 rounded-md">
-                                                        <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
-                                                            How did you address this?
-                                                        </Label>
-                                                        <Textarea
-                                                            id={`supervisor-response-${item.id}`}
-                                                            value={supervisorResponse}
-                                                            onChange={(e) => setSupervisorResponse(e.target.value)}
-                                                            placeholder="Explain the actions you took to resolve this concern..."
-                                                            rows={4}
-                                                            className="bg-background"
-                                                        />
-                                                        <div className="flex gap-2">
-                                                            <Button
-                                                                onClick={() => handleAddressInsightSubmit(item)}
-                                                                disabled={isSubmittingResponse || !supervisorResponse}
-                                                            >
-                                                                {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
-                                                                Submit for Acknowledgement
-                                                            </Button>
-                                                            <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
-                                                                Cancel
-                                                            </Button>
-                                                        </div>
+                                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                    <h4 className="font-semibold text-destructive flex items-center gap-2">
+                                       <AlertTriangle className="h-4 w-4" />Critical Coaching Insight
+                                    </h4>
+                                    <p className="text-destructive/90 my-2">{insight.summary}</p>
+                                    
+                                    {/* Supervisor's action form */}
+                                    {canSupervisorAct && (
+                                        <div className="mt-4">
+                                            {addressingInsightId !== item.id ? (
+                                                <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
+                                                    Address Insight
+                                                </Button>
+                                            ) : (
+                                                <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                    <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
+                                                        How did you address this?
+                                                    </Label>
+                                                    <Textarea
+                                                        id={`supervisor-response-${item.id}`}
+                                                        value={supervisorResponse}
+                                                        onChange={(e) => setSupervisorResponse(e.target.value)}
+                                                        placeholder="Explain the actions you took to resolve this concern..."
+                                                        rows={4}
+                                                        className="bg-background"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            onClick={() => handleAddressInsightSubmit(item)}
+                                                            disabled={isSubmittingResponse || !supervisorResponse}
+                                                        >
+                                                            {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
+                                                            Submit for Acknowledgement
+                                                        </Button>
+                                                        <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
+                                                            Cancel
+                                                        </Button>
                                                     </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Display supervisor's response when pending or resolved */}
-                                        {insight.supervisorResponse && (
-                                             <div className="mt-4 p-3 bg-muted/80 rounded-md border">
-                                                <p className="font-semibold text-foreground">Supervisor's Response</p>
-                                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
-                                            </div>
-                                        )}
-
-                                        {/* Employee's acknowledgement form */}
-                                        {canEmployeeRespond && (
-                                            <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20 space-y-3">
-                                                <Label className="font-semibold text-blue-700 dark:text-blue-400">Your Acknowledgement is Requested</Label>
-                                                <p className="text-sm text-blue-600 dark:text-blue-300">
-                                                    Your supervisor has responded to the concern raised. Please review their notes and provide your feedback on the resolution.
-                                                </p>
-                                                <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
-                                                    <div className="flex items-center space-x-2">
-                                                        <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
-                                                        <Label htmlFor={`ack-yes-${item.id}`}>The concern was fully addressed to my satisfaction.</Label>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <RadioGroupItem value="The concern was partially addressed, but I still have reservations." id={`ack-partial-${item.id}`} />
-                                                        <Label htmlFor={`ack-partial-${item.id}`}>The concern was partially addressed, but I still have reservations.</Label>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <RadioGroupItem value="I do not feel the concern was adequately addressed." id={`ack-no-${item.id}`} />
-                                                        <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
-                                                    </div>
-                                                </RadioGroup>
-                                                 <div className="flex gap-2 pt-2">
-                                                    <Button
-                                                        onClick={() => handleEmployeeAckSubmit(item)}
-                                                        disabled={isSubmittingAck || !employeeAcknowledgement}
-                                                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                                                    >
-                                                        {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
-                                                        Submit Acknowledgement
-                                                    </Button>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
+                                    )}
 
-                                        {/* Display employee's acknowledgement when resolved */}
-                                        {insight.employeeAcknowledgement && (
-                                             <div className="mt-4 p-3 bg-green-500/10 rounded-md border border-green-500/20">
-                                                <p className="font-semibold text-green-700 dark:text-green-400">Your Acknowledgement</p>
-                                                <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                                    {/* Display supervisor's response when pending or resolved */}
+                                    {insight.supervisorResponse && (
+                                         <div className="mt-4 p-3 bg-muted/80 rounded-md border">
+                                            <p className="font-semibold text-foreground">Supervisor's Response</p>
+                                            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Employee's acknowledgement form */}
+                                    {canEmployeeRespond && (
+                                        <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20 space-y-3">
+                                            <Label className="font-semibold text-blue-700 dark:text-blue-400">Your Acknowledgement is Requested</Label>
+                                            <p className="text-sm text-blue-600 dark:text-blue-300">
+                                                Your supervisor has responded to the concern raised. Please review their notes and provide your feedback on the resolution.
+                                            </p>
+                                            <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
+                                                    <Label htmlFor={`ack-yes-${item.id}`}>The concern was fully addressed to my satisfaction.</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="The concern was partially addressed, but I still have reservations." id={`ack-partial-${item.id}`} />
+                                                    <Label htmlFor={`ack-partial-${item.id}`}>The concern was partially addressed, but I still have reservations.</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="I do not feel the concern was adequately addressed." id={`ack-no-${item.id}`} />
+                                                    <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
+                                                </div>
+                                            </RadioGroup>
+                                             <div className="flex gap-2 pt-2">
+                                                <Button
+                                                    onClick={() => handleEmployeeAckSubmit(item)}
+                                                    disabled={isSubmittingAck || !employeeAcknowledgement}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                >
+                                                    {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
+                                                    Submit Acknowledgement
+                                                </Button>
                                             </div>
-                                        )}
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
+
+                                    {/* Display employee's acknowledgement when resolved */}
+                                    {insight.employeeAcknowledgement && (
+                                         <div className="mt-4 p-3 bg-green-500/10 rounded-md border border-green-500/20">
+                                            <p className="font-semibold text-green-700 dark:text-green-400">Your Acknowledgement</p>
+                                            <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                                        </div>
+                                    )}
+                                </div>
                                 
                                 <div>
                                     <h4 className="font-semibold">Summary</h4>
@@ -597,5 +596,3 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-
-    
