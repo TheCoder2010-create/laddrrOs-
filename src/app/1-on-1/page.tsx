@@ -267,7 +267,7 @@ function HistorySection({ role }: { role: Role }) {
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
                     const insight = item.analysis.criticalCoachingInsight;
-                    if (!insight) return null; // Only render items with insights for this logic
+                    if (!insight) return null;
                     
                     const insightStatus = insight.status || 'open';
                     const currentUserName = roleUserMapping[role].name;
@@ -596,3 +596,5 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
