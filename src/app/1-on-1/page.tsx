@@ -46,7 +46,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitEmployeeAcknowledgement } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -179,11 +179,6 @@ function HistorySection({ role }: { role: Role }) {
     const [supervisorResponse, setSupervisorResponse] = useState('');
     const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
-    // State for employee acknowledgement
-    const [employeeAcknowledgement, setEmployeeAcknowledgement] = useState('');
-    const [isSubmittingAck, setIsSubmittingAck] = useState(false);
-
-
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
         const historyData = await getOneOnOneHistory();
@@ -231,23 +226,6 @@ function HistorySection({ role }: { role: Role }) {
             setIsSubmittingResponse(false);
         }
     };
-    
-    const handleEmployeeAckSubmit = async (itemToUpdate: OneOnOneHistoryItem) => {
-        if (!employeeAcknowledgement) return;
-        setIsSubmittingAck(true);
-
-        try {
-            await submitEmployeeAcknowledgement(itemToUpdate.id, employeeAcknowledgement);
-            setEmployeeAcknowledgement("");
-            toast({ title: "Acknowledgement Submitted", description: "Thank you for your feedback. This insight is now resolved." });
-            fetchHistory(); // Re-fetch to update UI
-        } catch (error) {
-            console.error("Failed to submit acknowledgement", error);
-            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your acknowledgement." });
-        } finally {
-            setIsSubmittingAck(false);
-        }
-    };
 
 
     if (isLoading) {
@@ -273,10 +251,7 @@ function HistorySection({ role }: { role: Role }) {
                     const currentUserName = roleUserMapping[role].name;
                     
                     const isSupervisor = currentUserName === item.supervisorName;
-                    const isEmployee = currentUserName === item.employeeName;
-
                     const canSupervisorAct = isSupervisor && insightStatus === 'open';
-                    const canEmployeeRespond = isEmployee && insightStatus === 'pending_employee_acknowledgement';
                     
                     const getStatusBadge = () => {
                         switch(insightStatus) {
@@ -284,9 +259,9 @@ function HistorySection({ role }: { role: Role }) {
                                 if (isSupervisor) {
                                     return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Action Required</Badge>;
                                 }
-                                return null;
+                                return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Critical Insight</Badge>;
                             case 'pending_employee_acknowledgement':
-                                return <Badge className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Pending Acknowledgement</Badge>
+                                return <Badge className="bg-blue-500 text-white flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Pending Acknowledgement</Badge>
                             case 'resolved':
                                 return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
                             default:
@@ -364,44 +339,10 @@ function HistorySection({ role }: { role: Role }) {
                                         </div>
                                     )}
 
-                                    {/* Employee's acknowledgement form */}
-                                    {canEmployeeRespond && (
-                                        <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20 space-y-3">
-                                            <Label className="font-semibold text-blue-700 dark:text-blue-400">Your Acknowledgement is Requested</Label>
-                                            <p className="text-sm text-blue-600 dark:text-blue-300">
-                                                Your supervisor has responded to the concern raised. Please review their notes and provide your feedback on the resolution.
-                                            </p>
-                                            <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
-                                                <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
-                                                    <Label htmlFor={`ack-yes-${item.id}`}>The concern was fully addressed to my satisfaction.</Label>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="The concern was partially addressed, but I still have reservations." id={`ack-partial-${item.id}`} />
-                                                    <Label htmlFor={`ack-partial-${item.id}`}>The concern was partially addressed, but I still have reservations.</Label>
-                                                </div>
-                                                <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="I do not feel the concern was adequately addressed." id={`ack-no-${item.id}`} />
-                                                    <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
-                                                </div>
-                                            </RadioGroup>
-                                             <div className="flex gap-2 pt-2">
-                                                <Button
-                                                    onClick={() => handleEmployeeAckSubmit(item)}
-                                                    disabled={isSubmittingAck || !employeeAcknowledgement}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                                                >
-                                                    {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
-                                                    Submit Acknowledgement
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {/* Display employee's acknowledgement when resolved */}
                                     {insight.employeeAcknowledgement && (
                                          <div className="mt-4 p-3 bg-green-500/10 rounded-md border border-green-500/20">
-                                            <p className="font-semibold text-green-700 dark:text-green-400">Your Acknowledgement</p>
+                                            <p className="font-semibold text-green-700 dark:text-green-400">Employee Acknowledgement</p>
                                             <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
                                         </div>
                                     )}

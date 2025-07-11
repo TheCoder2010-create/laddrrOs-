@@ -117,7 +117,7 @@ const saveToStorage = (key: string, data: any[]): void => {
     if (typeof window === 'undefined') return;
     localStorage.setItem(key, JSON.stringify(data));
     window.dispatchEvent(new CustomEvent('feedbackUpdated'));
-    window.dispatchEvent(new CustomEvent('storage')); // for wider compatibility
+    window.dispatchEvent(new Event('storage')); // for wider compatibility
 }
 
 
@@ -401,3 +401,5 @@ export async function toggleActionItemStatus(trackingId: string, actionItemId: s
 
     saveFeedbackToStorage(allFeedback);
 }
+
+    

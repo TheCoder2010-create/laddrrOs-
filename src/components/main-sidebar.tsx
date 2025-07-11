@@ -16,7 +16,7 @@ import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, Sid
 import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
-import { getAllFeedback } from '@/services/feedback-service';
+import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
 
@@ -32,43 +32,59 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const pathname = usePathname();
   const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
   const [actionItemCount, setActionItemCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
     try {
-      const feedback = await getAllFeedback();
-      
+      // Vault count for HR Head
       if (currentRole === 'HR Head') {
+        const feedback = await getAllFeedback();
         const newCount = feedback.filter(c => !c.viewed && c.status === 'Open').length;
         setVaultFeedbackCount(newCount);
       } else {
         setVaultFeedbackCount(0);
       }
       
+      // Action items for assignees
+      const feedback = await getAllFeedback();
       const assignedCount = feedback.filter(f => f.assignedTo === currentRole && f.status !== 'Resolved').length;
       setActionItemCount(assignedCount);
+
+      // Messages for employees with pending acknowledgements
+      if (currentRole === 'Employee') {
+        const history = await getOneOnOneHistory();
+        const ackCount = history.filter(h => 
+          h.employeeName === currentUser.name &&
+          h.analysis.criticalCoachingInsight?.status === 'pending_employee_acknowledgement'
+        ).length;
+        setMessageCount(ackCount);
+      } else {
+        setMessageCount(0);
+      }
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
       setVaultFeedbackCount(0);
       setActionItemCount(0);
+      setMessageCount(0);
     }
-  }, [currentRole]);
+  }, [currentRole, currentUser.name]);
 
 
   useEffect(() => {
     fetchFeedbackCounts();
 
-    const handleStorageChange = () => {
+    const handleDataUpdate = () => {
         fetchFeedbackCounts();
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('feedbackUpdated', handleStorageChange);
+    window.addEventListener('storage', handleDataUpdate);
+    window.addEventListener('feedbackUpdated', handleDataUpdate);
 
     return () => {
-        window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('feedbackUpdated', handleStorageChange);
+        window.removeEventListener('storage', handleDataUpdate);
+        window.removeEventListener('feedbackUpdated', handleDataUpdate);
     };
   }, [fetchFeedbackCounts]);
 
@@ -76,17 +92,37 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
-    { href: '/messages', icon: <MessageSquare />, label: 'Messages' },
+    { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
   ];
 
   const hrMenuItems = [
-    { href: '/vault', icon: <Vault />, label: 'Vault', badge: vaultFeedbackCount > 0 ? vaultFeedbackCount : null },
+    { href: '/vault', icon: <Vault />, label: 'Vault', badge: vaultFeedbackCount > 0 ? vaultFeedbackCount : null, badgeVariant: 'secondary' as const },
   ]
 
   const assigneeMenuItems = [
-    { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null }
+    { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
   ]
+
+  const renderMenuItem = (item: any) => (
+     <SidebarMenuItem key={item.href}>
+        <Link href={item.href} passHref>
+          <SidebarMenuButton asChild isActive={pathname === item.href}>
+            <div className="flex justify-between items-center w-full">
+              <div className="flex items-center gap-2">
+                {item.icon}
+                <span>{item.label}</span>
+              </div>
+              {item.badge ? (
+                  <Badge variant={item.badgeVariant} className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
+                  {item.badge}
+                </Badge>
+              ) : null}
+            </div>
+          </SidebarMenuButton>
+        </Link>
+      </SidebarMenuItem>
+  );
 
   return (
     <Sidebar>
@@ -130,56 +166,9 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       </SidebarHeader>
       <SidebarContent className="p-2">
         <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref>
-                <SidebarMenuButton asChild isActive={pathname === item.href}>
-                  <div>
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </div>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
-          {currentRole === 'HR Head' && hrMenuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref>
-                <SidebarMenuButton asChild isActive={pathname === item.href}>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </div>
-                    {item.badge ? (
-                       <Badge variant="secondary" className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
-                        {item.badge}
-                      </Badge>
-                    ) : null}
-                  </div>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
-          {assigneeMenuItems.map((item) => (
-             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} passHref>
-                <SidebarMenuButton asChild isActive={pathname === item.href}>
-                  <div className="flex justify-between items-center w-full">
-                    <div className="flex items-center gap-2">
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </div>
-                    {item.badge ? (
-                       <Badge variant="destructive" className="h-6 w-6 flex items-center justify-center p-0 rounded-full">
-                        {item.badge}
-                      </Badge>
-                    ) : null}
-                  </div>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
+          {menuItems.map(renderMenuItem)}
+          {currentRole === 'HR Head' && hrMenuItems.map(renderMenuItem)}
+          {assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
@@ -195,3 +184,5 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     </Sidebar>
   );
 }
+
+    
