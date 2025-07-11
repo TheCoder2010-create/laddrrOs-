@@ -46,7 +46,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, getAllFeedback, Feedback } from '@/services/feedback-service';
 import Link from 'next/link';
 
 const getMeetingDataForRole = (role: Role) => {
@@ -168,19 +168,24 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
 
 function HistorySection({ role }: { role: Role }) {
     const [history, setHistory] = useState<OneOnOneHistoryItem[]>([]);
+    const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
-        const allHistory = await getOneOnOneHistory();
+        const [historyData, feedbackData] = await Promise.all([
+            getOneOnOneHistory(),
+            getAllFeedback()
+        ]);
+        
         const currentUser = roleUserMapping[role];
         
-        // Filter history for the current user, either as supervisor or employee
-        const userHistory = allHistory.filter(item => 
+        const userHistory = historyData.filter(item => 
             item.supervisorName === currentUser.name || item.employeeName === currentUser.name
         );
         
         setHistory(userHistory);
+        setAllFeedback(feedbackData);
         setIsLoading(false);
     }, [role]);
 
@@ -209,55 +214,80 @@ function HistorySection({ role }: { role: Role }) {
                 Session History
             </h2>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
-                {history.map(item => (
-                    <AccordionItem value={item.id} key={item.id} className="px-4">
-                        <AccordionTrigger>
-                            <div className="flex justify-between items-center w-full pr-4">
-                                <div className="text-left">
-                                    <p className="font-medium">
-                                        1-on-1 with {role === roleUserMapping[item.supervisorName as Role]?.role ? item.employeeName : item.supervisorName}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground font-normal">
-                                        {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
-                                    </p>
+                {history.map(item => {
+                    const relatedFeedback = allFeedback.find(f => 
+                        f.oneOnOneId === item.id && f.criticality === 'Critical'
+                    );
+
+                    const hasPendingAction = relatedFeedback && 
+                        relatedFeedback.status === 'Pending Supervisor Action' &&
+                        relatedFeedback.assignedTo === role;
+
+                    const hasCriticalInsight = !!item.analysis.criticalCoachingInsight;
+
+                    return (
+                        <AccordionItem value={item.id} key={item.id} className="px-4">
+                            <AccordionTrigger>
+                                <div className="flex justify-between items-center w-full pr-4">
+                                    <div className="text-left">
+                                        <p className="font-medium">
+                                            1-on-1 with {role === roleUserMapping[item.supervisorName as Role]?.role ? item.employeeName : item.supervisorName}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground font-normal">
+                                            {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
+                                        </p>
+                                    </div>
+                                    {hasCriticalInsight && (
+                                        <div className={cn(
+                                            "flex items-center gap-2", 
+                                            hasPendingAction ? "text-destructive" : "text-muted-foreground"
+                                        )}>
+                                            <AlertTriangle className="h-5 w-5" />
+                                            <span className="hidden md:inline">
+                                                {hasPendingAction ? "Action Required" : "Critical Insight"}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
-                                 {item.analysis.criticalCoachingInsight && (
-                                    <div className="flex items-center gap-2 text-destructive">
-                                        <AlertTriangle className="h-5 w-5" />
-                                        <span className="hidden md:inline">Critical Insight</span>
+                            </AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-2">
+                                {hasPendingAction ? (
+                                    <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                        <h4 className="font-semibold text-destructive">Action Required: Critical Coaching Insight</h4>
+                                        <p className="text-destructive/90 my-2">{item.analysis.criticalCoachingInsight}</p>
+                                        <Button asChild variant="destructive">
+                                            <Link href="/action-items">Address Insight</Link>
+                                        </Button>
+                                    </div>
+                                ) : hasCriticalInsight && (
+                                    <div className="p-3 rounded-md bg-muted/50 border">
+                                        <h4 className="font-semibold text-foreground">Critical Coaching Insight</h4>
+                                        <p className="text-muted-foreground">{item.analysis.criticalCoachingInsight}</p>
                                     </div>
                                 )}
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-4 pt-2">
-                             {item.analysis.criticalCoachingInsight && (
-                                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                                    <h4 className="font-semibold text-destructive">Critical Coaching Insight</h4>
-                                    <p className="text-destructive/90">{item.analysis.criticalCoachingInsight}</p>
-                                </div>
-                             )}
 
-                            <div>
-                                <h4 className="font-semibold">Key Themes</h4>
-                                <ul className="list-disc pl-5 text-muted-foreground text-sm">
-                                    {item.analysis.keyThemes.map((theme, i) => <li key={i}>{theme}</li>)}
-                                </ul>
-                            </div>
-                             <div>
-                                <h4 className="font-semibold">Action Items</h4>
-                                <ul className="list-disc pl-5 text-muted-foreground text-sm">
-                                    {item.analysis.actionItems.map((action, i) => <li key={i}>{action}</li>)}
-                                </ul>
-                            </div>
-                            {item.analysis.coachingImpactAnalysis && (
-                                 <div>
-                                    <h4 className="font-semibold">Coaching Impact Analysis</h4>
-                                    <p className="text-muted-foreground text-sm">{item.analysis.coachingImpactAnalysis}</p>
+                                <div>
+                                    <h4 className="font-semibold">Key Themes</h4>
+                                    <ul className="list-disc pl-5 text-muted-foreground text-sm">
+                                        {item.analysis.keyThemes.map((theme, i) => <li key={i}>{theme}</li>)}
+                                    </ul>
                                 </div>
-                            )}
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
+                                <div>
+                                    <h4 className="font-semibold">Action Items</h4>
+                                    <ul className="list-disc pl-5 text-muted-foreground text-sm">
+                                        {item.analysis.actionItems.map((action, i) => <li key={i}>{action}</li>)}
+                                    </ul>
+                                </div>
+                                {item.analysis.coachingImpactAnalysis && (
+                                    <div>
+                                        <h4 className="font-semibold">Coaching Impact Analysis</h4>
+                                        <p className="text-muted-foreground text-sm">{item.analysis.coachingImpactAnalysis}</p>
+                                    </div>
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    );
+                })}
             </Accordion>
         </div>
     );
@@ -412,3 +442,5 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
