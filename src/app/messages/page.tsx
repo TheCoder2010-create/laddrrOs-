@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users } from 'lucide-react';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
@@ -99,6 +99,15 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
 
 function EscalationWidget({ item }: { item: OneOnOneHistoryItem }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    const { toast } = useToast();
+
+    const handleAmAction = (action: 'coach' | 'address') => {
+        // Placeholder for the next step in the workflow
+        toast({
+            title: "Action Recorded",
+            description: `Next step: ${action === 'coach' ? 'Coach Supervisor' : 'Address Employee'}. This will be implemented next.`
+        })
+    }
 
     return (
         <Card className="border-orange-500/50">
@@ -124,11 +133,21 @@ function EscalationWidget({ item }: { item: OneOnOneHistoryItem }) {
                     <p className="font-semibold text-blue-700 dark:text-blue-500">{item.employeeName}'s (Employee) Acknowledgement</p>
                     <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
                 </div>
-                <div className="pt-4 border-t">
-                    <p className="text-sm text-muted-foreground">This case now requires your review and action. Please follow up with both parties to mediate a resolution.</p>
-                    {/* In a future step, we would add action buttons here for the AM */}
-                </div>
             </CardContent>
+            <CardFooter className="bg-orange-500/10 pt-4 flex-col items-start gap-4">
+                 <Label className="font-semibold text-orange-700 dark:text-orange-400">Your Action</Label>
+                 <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
+                 <div className="flex gap-4">
+                    <Button variant="secondary" onClick={() => handleAmAction('coach')}>
+                        <Users className="mr-2 h-4 w-4" />
+                        Coach Supervisor
+                    </Button>
+                    <Button onClick={() => handleAmAction('address')}>
+                        <User className="mr-2 h-4 w-4" />
+                        Address Employee
+                    </Button>
+                 </div>
+            </CardFooter>
         </Card>
     )
 }
