@@ -31,7 +31,6 @@ export const formSchema = z.object({
   supervisorName: z.string(),
   employeeName: z.string(),
   oneOnOneId: z.string().optional(),
-  // Fields for the new prompt
   conversationRecordingDataUri: z.string().optional().describe("A data URI of the recorded audio."),
   pastDeclinedRecommendationAreas: z.array(z.string()).optional(),
   activeDevelopmentGoals: z.array(z.object({ area: z.string(), title: z.string() })).optional(),
@@ -71,12 +70,12 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
     completedGoalId: z.string().optional().describe("The ID of the development goal if mastery was demonstrated."),
   }).optional().describe("Analysis of coaching impact against active development goals."),
   missedSignals: z.array(z.string()).optional().describe("A list of subtle signals that the supervisor failed to explore."),
-  escalationAlert: z.object({
+  criticalCoachingInsight: z.object({
     summary: z.string().describe("A summary of what was missed or the unaddressed red flag."),
     reason: z.string().describe("Why the issue is important and a recommended micro-learning action. Prefixed with 'RECURRING ISSUE: ' if it matches a past declined area."),
     suggestedAction: z.string().describe("The suggested next action for the manager."),
     severity: z.enum(["low", "medium", "high"]),
-  }).optional().describe("An alert generated ONLY if an unaddressed red flag is present."),
+  }).optional().describe("An insight generated ONLY if an unaddressed red flag is present."),
   biasFairnessCheck: z.object({
     flag: z.boolean().describe("True if potential bias was detected."),
     details: z.string().optional().describe("Details of the potential bias."),

@@ -250,15 +250,15 @@ function HistorySection({ role }: { role: Role }) {
                                 {hasPendingAction ? (
                                     <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
                                         <h4 className="font-semibold text-destructive">Action Required: Critical Coaching Insight</h4>
-                                        <p className="text-destructive/90 my-2">{item.analysis.escalationAlert?.summary}</p>
+                                        <p className="text-destructive/90 my-2">{item.analysis.criticalCoachingInsight?.summary}</p>
                                         <Button asChild variant="destructive">
                                             <Link href="/action-items">Address Insight</Link>
                                         </Button>
                                     </div>
-                                ) : item.analysis.escalationAlert && (
+                                ) : item.analysis.criticalCoachingInsight && (
                                     <div className="p-3 rounded-md bg-muted/50 border">
                                         <h4 className="font-semibold text-foreground">Critical Coaching Insight Logged</h4>
-                                        <p className="text-muted-foreground">{item.analysis.escalationAlert.summary}</p>
+                                        <p className="text-muted-foreground">{item.analysis.criticalCoachingInsight.summary}</p>
                                     </div>
                                 )}
                                 
@@ -452,4 +452,3 @@ export default function Home() {
   );
 }
 
-    

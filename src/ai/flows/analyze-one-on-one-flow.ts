@@ -24,8 +24,8 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
       return result;
   }
 
-  // If a critical insight is found, create a new feedback record to trigger the critical workflow.
-  if (result.escalationAlert && input.oneOnOneId) {
+  // If a critical insight is found, create a new feedback record to trigger the workflow.
+  if (result.criticalCoachingInsight && input.oneOnOneId) {
       const allFeedback = [];
       const newFeedback = {
           trackingId: uuidv4(),
@@ -38,9 +38,9 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
 - **How Feedback Was Received**: ${input.employeeAcceptedFeedback}
 - **Primary Feedback**: ${input.supervisorNotes || 'N/A'}`,
           submittedAt: submittedAt,
-          summary: result.escalationAlert.summary,
+          summary: result.criticalCoachingInsight.summary,
           criticality: 'Critical' as const,
-          criticalityReasoning: result.escalationAlert.reason,
+          criticalityReasoning: result.criticalCoachingInsight.reason,
           viewed: false,
           status: 'Pending Supervisor Action' as const,
           assignedTo: supervisorRole,
@@ -134,7 +134,7 @@ Coaching Recommendations: Provide 2-3 concrete suggestions for the supervisor to
 Action Items: List all concrete tasks for both employee and supervisor, including deadlines if stated.
 Coaching Impact Analysis: (Only if activeDevelopmentGoals are provided) Analyze if the supervisor showed growth towards a goal. If so, summarize the application with a supporting quote. If mastery is shown, return the completedGoalId.
 Missed Signals: Identify any subtle indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore.
-Escalation Alert: (Generate ONLY if an unaddressed red flag is present)
+Critical Coaching Insight: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
 Trigger Conditions: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, or potential HR issues.
 Content: Must include a summary (what was missed), reason (why it matters AND a recommended micro-learning action), suggestedAction for the manager, and severity.
 If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
@@ -158,5 +158,4 @@ const analyzeOneOnOneFlow = ai.defineFlow(
     return output;
   }
 );
-
     

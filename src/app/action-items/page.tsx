@@ -9,13 +9,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, amAcknowledgeResolution, amSubmitCoachingNotes, managerAcknowledge, toggleActionItemStatus, resolveFeedback, ActionItem } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserCheck, UserX, UserRoundCog, BrainCircuit, MessageCircleQuestion } from 'lucide-react';
-import { useRole, Role, availableRolesForAssignment } from '@/hooks/use-role';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck } from 'lucide-react';
+import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,12 +38,6 @@ const auditEventIcons = {
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
     'Supervisor Responded': MessageSquare,
-    'Employee Approved': UserCheck,
-    'Employee Rejected': UserX,
-    'AM Acknowledged Resolution': UserRoundCog,
-    'AM Coached Supervisor': BrainCircuit,
-    'Manager Acknowledged': CheckCircle,
-    'Update Added': MessageSquare,
     'Resolved': CheckCircle,
     'default': Clock,
 }
@@ -132,36 +126,15 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     const { role } = useRole();
     const { toast } = useToast();
     const [supervisorUpdate, setSupervisorUpdate] = useState('');
-    const [amCoachingNotes, setAmCoachingNotes] = useState('');
 
     const handleSupervisorUpdate = async () => {
         if (!supervisorUpdate) return;
         await submitSupervisorUpdate(feedback.trackingId, role!, supervisorUpdate);
         setSupervisorUpdate('');
-        toast({ title: "Update Submitted", description: "The employee has been notified to acknowledge your response." });
+        toast({ title: "Update Submitted", description: "You have addressed the critical insight. The case is now resolved." });
         onUpdate();
     }
     
-    const handleAmAcknowledge = async () => {
-        await amAcknowledgeResolution(feedback.trackingId, role!);
-        toast({ title: "Resolution Acknowledged", description: "The case has been escalated to the Manager for final review." });
-        onUpdate();
-    };
-
-    const handleAmCoaching = async () => {
-        if (!amCoachingNotes) return;
-        await amSubmitCoachingNotes(feedback.trackingId, role!, amCoachingNotes);
-        setAmCoachingNotes('');
-        toast({ title: "Coaching Notes Submitted", description: "The case has been escalated to the Manager for final review." });
-        onUpdate();
-    };
-
-    const handleManagerAcknowledge = async () => {
-        await managerAcknowledge(feedback.trackingId, role!);
-        toast({ title: "Case Closed", description: "You have acknowledged the full audit trail. The case is now resolved." });
-        onUpdate();
-    };
-
     if (feedback.assignedTo !== role) return null;
     
     if (feedback.status === 'To-Do') {
@@ -185,65 +158,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         onChange={(e) => setSupervisorUpdate(e.target.value)}
                         rows={4}
                     />
-                    <Button onClick={handleSupervisorUpdate} disabled={!supervisorUpdate}>Submit Update to Employee</Button>
+                    <Button onClick={handleSupervisorUpdate} disabled={!supervisorUpdate}>Submit Update</Button>
                 </div>
             </div>
         );
     }
     
-    // AM's action panel
-    if (feedback.status === 'Pending AM Review') {
-         const wasApproved = feedback.employeeAcknowledgement?.approved;
-         return (
-             <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-                 <Label className="text-base font-semibold">Your Action Required</Label>
-                  <div className={cn("p-4 rounded-lg border", wasApproved ? "bg-green-500/10" : "bg-destructive/10")}>
-                    <h4 className="font-bold flex items-center gap-2">
-                        {wasApproved ? <UserCheck /> : <UserX />}
-                        Employee {wasApproved ? 'Approved' : 'Rejected'} Supervisor's Response
-                    </h4>
-                    <p className="text-muted-foreground mt-2 pl-6">{feedback.employeeAcknowledgement?.justification}</p>
-                 </div>
-
-                 {wasApproved ? (
-                      <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                        <Label className="font-medium">Acknowledge Resolution</Label>
-                         <p className="text-sm text-muted-foreground">The employee has confirmed the issue is resolved. Please acknowledge to escalate for final managerial sign-off.</p>
-                        <Button onClick={handleAmAcknowledge} variant="success">Acknowledge and Close Loop</Button>
-                     </div>
-                 ) : (
-                     <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                        <Label htmlFor="amCoaching" className="font-medium">Submit Coaching Notes</Label>
-                        <p className="text-sm text-muted-foreground">The employee has indicated the issue is not resolved. Please coach the supervisor and document the coaching actions you took below.</p>
-                        <Textarea 
-                            id="amCoaching"
-                            placeholder="e.g., 'Coached supervisor on active listening techniques and scheduled a follow-up...'"
-                            value={amCoachingNotes}
-                            onChange={(e) => setAmCoachingNotes(e.target.value)}
-                            rows={4}
-                        />
-                        <Button onClick={handleAmCoaching} disabled={!amCoachingNotes}>Submit Coaching Notes & Escalate</Button>
-                     </div>
-                 )}
-             </div>
-         );
-    }
-
-    // Manager's action panel
-    if (feedback.status === 'Pending Manager Acknowledgement') {
-        return (
-            <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-                <Label className="text-base font-semibold">Final Acknowledgement Required</Label>
-                 <p className="text-sm text-muted-foreground">
-                    Please review the complete audit trail for this critical insight. Your acknowledgement will close this case.
-                </p>
-                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                    <Button onClick={handleManagerAcknowledge}>Read and Acknowledge</Button>
-                </div>
-            </div>
-        )
-    }
-
     return null; // No action panel for other statuses
 }
 
@@ -259,9 +179,6 @@ function ActionItemsContent() {
     try {
       const allFeedback = await getAllFeedback();
       const myFeedback = allFeedback.filter(f => {
-        if (role === 'Employee') {
-            return f.assignedTo === role && f.status === 'Pending Employee Acknowledgement';
-        }
         return f.assignedTo === role && f.status !== 'Resolved' && f.status !== 'Open';
       });
       // Sort to show To-Do items first, then by date
@@ -315,57 +232,9 @@ function ActionItemsContent() {
     switch(status) {
         case 'Resolved': return 'success';
         case 'To-Do': return 'default';
-        case 'Pending Supervisor Action':
-        case 'Pending AM Review':
-        case 'Pending Manager Acknowledgement':
-            return 'destructive';
-        case 'Pending Employee Acknowledgement':
-            return 'secondary';
+        case 'Pending Supervisor Action': return 'destructive';
         default: return 'secondary';
     }
-  }
-
-  // Special handling for employee acknowledgement
-  if (role === 'Employee') {
-      const ackItems = assignedFeedback.filter(f => f.status === 'Pending Employee Acknowledgement');
-      return (
-           <div className="p-4 md:p-8">
-              <Card>
-                  <CardHeader>
-                      <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground">
-                          <MessageCircleQuestion className="inline-block mr-3 h-8 w-8" /> Acknowledgements
-                      </CardTitle>
-                      <CardDescription className="text-lg text-muted-foreground">
-                          Please review the following items and confirm if your concern has been addressed.
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                      {ackItems.length === 0 ? (
-                           <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                              <p className="text-muted-foreground text-lg">You have no pending acknowledgements.</p>
-                          </div>
-                      ) : (
-                          <div className="space-y-4">
-                              {ackItems.map(item => (
-                                  <Card key={item.trackingId} className="p-4">
-                                      <CardTitle>{item.subject}</CardTitle>
-                                      <CardDescription className="mt-2">Your supervisor, {item.supervisor}, has provided the following update regarding your concern:</CardDescription>
-                                      <blockquote className="mt-2 p-4 bg-muted/50 border-l-4 rounded-md whitespace-pre-wrap">
-                                          {item.supervisorUpdate}
-                                      </blockquote>
-                                      <div className="mt-4">
-                                        <Link href={`/acknowledge/${item.trackingId}`}>
-                                            <Button>Respond to Update</Button>
-                                        </Link>
-                                      </div>
-                                  </Card>
-                              ))}
-                          </div>
-                      )}
-                  </CardContent>
-              </Card>
-          </div>
-      )
   }
 
   return (
@@ -419,8 +288,8 @@ function ActionItemsContent() {
                                         <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-base">Original Submission</Label>
-                                        <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
+                                        <Label className="text-base">Original Submission Context</Label>
+                                        <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
                                     </div>
                                 </>
                              )}
@@ -455,8 +324,10 @@ export default function ActionItemsPage() {
             </div>
         )
     }
+    
+    const canAccessPage = role === 'Team Lead' || role === 'AM' || role === 'Manager' || role === 'HR Head';
 
-    if (!role || (!availableRolesForAssignment.includes(role) && role !== 'Employee' && role !== 'HR Head' && role !== 'Manager')) {
+    if (!role || !canAccessPage) {
          return (
             <DashboardLayout role={role!} onSwitchRole={setRole}>
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
@@ -466,7 +337,7 @@ export default function ActionItemsPage() {
                           <CardDescription>You do not have permission to view this page.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <p>This page is restricted to roles with assigned action items.</p>
+                          <p>This page is restricted to leadership roles with assigned action items.</p>
                       </CardContent>
                   </Card>
               </div>
@@ -481,4 +352,3 @@ export default function ActionItemsPage() {
     );
 }
 
-    
