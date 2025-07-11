@@ -289,11 +289,11 @@ function HistorySection({ role }: { role: Role }) {
                         if (!insight) return null;
 
                         if (finalDecisionEvent) {
-                            let icon = FileText;
+                            let Icon = FileText;
                             let text = "Case Logged";
-                            if (finalDecisionEvent.event.includes("Ombudsman")) { icon = UserX; text = "Ombudsman"; }
-                            if (finalDecisionEvent.event.includes("Grievance")) { icon = UserPlus; text = "Grievance"; }
-                            return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><icon className="h-3 w-3" />{text}</Badge>;
+                            if (finalDecisionEvent.event.includes("Ombudsman")) { Icon = UserX; text = "Ombudsman"; }
+                            if (finalDecisionEvent.event.includes("Grievance")) { Icon = UserPlus; text = "Grievance"; }
+                            return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><Icon className="h-3 w-3" />{text}</Badge>;
                         }
 
                         switch(insightStatus) {
