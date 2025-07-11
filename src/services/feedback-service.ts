@@ -7,7 +7,7 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
-import type { AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
+import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 
 export interface AuditEvent {
   event: string;
@@ -56,6 +56,8 @@ export interface OneOnOneHistoryItem {
     employeeName: string;
     date: string;
     analysis: AnalyzeOneOnOneOutput;
+    // We add a top-level assignedTo for escalation routing outside the insight
+    assignedTo?: Role | null; 
 }
 
 // Client-side submission types
@@ -130,9 +132,9 @@ export async function getOneOnOneHistory(): Promise<OneOnOneHistoryItem[]> {
     return history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id'>): Promise<OneOnOneHistoryItem> {
+export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id' | 'assignedTo'>): Promise<OneOnOneHistoryItem> {
     const history = await getOneOnOneHistory();
-    const newHistoryItem: OneOnOneHistoryItem = { ...item, id: uuidv4() };
+    const newHistoryItem: OneOnOneHistoryItem = { ...item, id: uuidv4(), assignedTo: null };
     history.unshift(newHistoryItem);
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, history);
     return newHistoryItem;
@@ -162,13 +164,25 @@ export async function submitSupervisorInsightResponse(historyId: string, respons
 export async function submitEmployeeAcknowledgement(historyId: string, acknowledgement: string): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const index = allHistory.findIndex(h => h.id === historyId);
-    if (index !== -1 && allHistory[index].analysis.criticalCoachingInsight) {
-        allHistory[index].analysis.criticalCoachingInsight!.employeeAcknowledgement = acknowledgement;
-        allHistory[index].analysis.criticalCoachingInsight!.status = 'resolved';
-        saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
-    } else {
-        throw new Error("Could not find history item or critical insight to update.");
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+         throw new Error("Could not find history item or critical insight to update.");
     }
+    
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    insight.employeeAcknowledgement = acknowledgement;
+
+    // This is the new escalation logic
+    if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
+        insight.status = 'resolved';
+        item.assignedTo = null; // No longer needs routing
+    } else {
+        insight.status = 'pending_am_review';
+        item.assignedTo = 'AM'; // Escalate to Assistant Manager
+    }
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
 
@@ -194,6 +208,8 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const trackingId = uuidv4();
   const submittedAt = new Date();
 
+  // In a real app, this would be an AI call. For the prototype, we use mock data.
+  // const { summary, criticality, criticalityReasoning } = await analyzeFeedback(input);
   const summary = "AI-generated summary of the user's feedback message.";
   const criticality = (['Low', 'Medium', 'High', 'Critical'] as const)[Math.floor(Math.random() * 4)];
   const criticalityReasoning = "AI-generated reasoning for the criticality assessment based on keywords and sentiment.";
@@ -212,13 +228,13 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
       {
         event: 'Submitted',
         timestamp: submittedAt,
-        actor: 'Employee', 
+        actor: 'Employee', // Represents the anonymous user
         details: 'Feedback was received by the system.',
       },
       {
         event: 'AI Analysis Completed',
-        timestamp: new Date(submittedAt.getTime() + 1000), 
-        actor: 'HR Head', 
+        timestamp: new Date(submittedAt.getTime() + 1000), // Simulate a small delay
+        actor: 'HR Head', // Represents the system AI
         details: `AI assessed criticality as ${criticality}.`,
       }
     ]
@@ -238,10 +254,13 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
     return { found: false };
   }
   
+  // Create a version of the audit trail that's safe for public viewing
   const publicAuditTrail = feedback.auditTrail?.map(event => ({
       event: event.event,
       timestamp: new Date(event.timestamp).toISOString(),
       actor: event.actor,
+      // Omit details for privacy unless it's a 'Resolved' event
+      details: event.event === 'Resolved' ? event.details : undefined,
   }));
 
   return {

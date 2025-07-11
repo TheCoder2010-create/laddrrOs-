@@ -124,23 +124,26 @@ Language Locale: {{languageLocale}}
 
 Analysis Instructions:
 
-If the input is empty or non-meaningful (e.g., silence, test phrases), return a JSON with summary "Insufficient input for analysis.", scores set to 1, and an explanation. Otherwise, generate the full report:
+If the input is empty or non-meaningful (e.g., silence, test phrases), return a JSON with a basic explanation. Otherwise, generate the full report:
 
-Session Summary: Quote 1-2 key phrases to anchor the summary. Describe the tone, energy, clarity, and who led the conversation more (employee/supervisor).
-Leadership Score (1-10): Rate based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
-Effectiveness Score (1-10): Rate based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
-Strengths Observed: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
-Coaching Recommendations: Provide 2-3 concrete suggestions for the supervisor to improve, based on weaknesses in this session.
-Action Items: List all concrete tasks for both employee and supervisor, including deadlines if stated.
-Coaching Impact Analysis: (Only if activeDevelopmentGoals are provided) Analyze if the supervisor showed growth towards a goal. If so, summarize the application with a supporting quote. If mastery is shown, return the completedGoalId.
-Missed Signals: Identify any subtle indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore.
-Critical Coaching Insight: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
-Trigger Conditions: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, or potential HR issues.
-Content: Must include a summary (what was missed), reason (why it matters AND a recommended micro-learning action), suggestedAction for the manager, and severity.
-If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
-Bias/Fairness Check: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
-Localization Compliance: If languageLocale is not 'en', note that analysis applied localized norms.
-Legal & Data Compliance: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
+1.  **supervisorSummary**: A comprehensive summary for the supervisor. Quote 1-2 key phrases to anchor the summary. Describe the tone, energy, clarity, and who led the conversation more (employee/supervisor).
+2.  **employeeSummary**: A concise, forward-looking summary for the employee. Focus on key takeaways, agreed-upon action items, and positive reinforcement or growth opportunities discussed. Frame it constructively.
+3.  **employeeSwotAnalysis**: A SWOT analysis for the employee based on the conversation. Be objective and base it on evidence from the inputs.
+4.  **Leadership Score (1-10)**: Rate the supervisor based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
+5.  **Effectiveness Score (1-10)**: Rate the session based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
+6.  **Strengths Observed**: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
+7.  **Coaching Recommendations**: Provide 2-3 concrete suggestions for the supervisor to improve, based on weaknesses in this session.
+8.  **Action Items**: List all concrete tasks for both employee and supervisor, including deadlines if stated.
+9.  **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided) Analyze if the supervisor showed growth towards a goal. If so, summarize the application with a supporting quote. If mastery is shown, return the completedGoalId.
+10. **Missed Signals**: Identify any subtle indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore.
+11. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
+    *   **Trigger Conditions**: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, or potential HR issues.
+    *   **Content**: Must include a \`summary\` (what was missed), \`reason\` (why it matters AND a recommended micro-learning action), and \`severity\`. If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
+    *   The \`status\` field should be set to 'open'. The AI should NOT generate content for \`supervisorResponse\` or \`employeeAcknowledgement\`.
+12. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
+13. **Localization Compliance**: If languageLocale is not 'en', note that analysis applied localized norms.
+14. **Legal & Data Compliance**: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
+
 Generate the complete, compliant, and objective report now.`,
 });
 

@@ -51,17 +51,23 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const assignedCount = feedback.filter(f => f.assignedTo === currentRole && f.status !== 'Resolved').length;
       setActionItemCount(assignedCount);
 
-      // Messages for employees with pending acknowledgements
+      // Messages count logic
+      const history = await getOneOnOneHistory();
+      let count = 0;
       if (currentRole === 'Employee') {
-        const history = await getOneOnOneHistory();
-        const ackCount = history.filter(h => 
+        // For employees, count pending acknowledgements
+        count = history.filter(h => 
           h.employeeName === currentUser.name &&
           h.analysis.criticalCoachingInsight?.status === 'pending_employee_acknowledgement'
         ).length;
-        setMessageCount(ackCount);
-      } else {
-        setMessageCount(0);
+      } else if (currentRole === 'AM') {
+        // For AMs, count pending reviews
+        count = history.filter(h =>
+          h.assignedTo === 'AM' &&
+          h.analysis.criticalCoachingInsight?.status === 'pending_am_review'
+        ).length;
       }
+      setMessageCount(count);
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
@@ -184,5 +190,3 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     </Sidebar>
   );
 }
-
-    

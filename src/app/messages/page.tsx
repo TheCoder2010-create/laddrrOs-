@@ -6,7 +6,7 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight } from 'lucide-react';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 
 function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -27,7 +28,13 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
         try {
             await submitEmployeeAcknowledgement(item.id, employeeAcknowledgement);
             setEmployeeAcknowledgement("");
-            toast({ title: "Acknowledgement Submitted", description: "Thank you for your feedback. This insight is now resolved." });
+            
+            if (employeeAcknowledgement === "The concern was fully addressed to my satisfaction.") {
+                 toast({ title: "Acknowledgement Submitted", description: "Thank you for your feedback. This insight is now resolved." });
+            } else {
+                 toast({ title: "Feedback Escalated", description: "Your feedback has been sent to the next level for review." });
+            }
+
             onUpdate(); // Re-fetch data in parent component
         } catch (error) {
             console.error("Failed to submit acknowledgement", error);
@@ -90,8 +97,45 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
     );
 }
 
+function EscalationWidget({ item }: { item: OneOnOneHistoryItem }) {
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    return (
+        <Card className="border-orange-500/50">
+            <CardHeader className="bg-orange-500/10">
+                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                    <AlertTriangle className="h-6 w-6" />
+                    Critical Escalation Review
+                </CardTitle>
+                <CardDescription>
+                    Escalated from the 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                 <div className="p-3 bg-red-500/10 rounded-md border border-red-500/20">
+                    <p className="font-semibold text-red-700 dark:text-red-500">Original AI Insight</p>
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-1 whitespace-pre-wrap">{insight.summary}</p>
+                 </div>
+                 <div className="p-3 bg-muted/80 rounded-md border">
+                    <p className="font-semibold text-foreground">{item.supervisorName}'s (TL) Response</p>
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
+                </div>
+                <div className="p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
+                    <p className="font-semibold text-blue-700 dark:text-blue-500">{item.employeeName}'s (Employee) Acknowledgement</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                </div>
+                <div className="pt-4 border-t">
+                    <p className="text-sm text-muted-foreground">This case now requires your review and action. Please follow up with both parties to mediate a resolution.</p>
+                    {/* In a future step, we would add action buttons here for the AM */}
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 function MessagesContent({ role }: { role: Role }) {
   const [pendingAcknowledgements, setPendingAcknowledgements] = useState<OneOnOneHistoryItem[]>([]);
+  const [escalatedItems, setEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
@@ -99,22 +143,28 @@ function MessagesContent({ role }: { role: Role }) {
     const history = await getOneOnOneHistory();
     const currentUser = roleUserMapping[role];
 
+    // For Employees: Find items waiting for their acknowledgement
     const pending = history.filter(item => 
         item.employeeName === currentUser.name &&
         item.analysis.criticalCoachingInsight?.status === 'pending_employee_acknowledgement'
     );
     setPendingAcknowledgements(pending);
+
+    // For AMs: Find items escalated to them
+    const escalated = history.filter(item =>
+        item.assignedTo === 'AM' &&
+        item.analysis.criticalCoachingInsight?.status === 'pending_am_review'
+    );
+    setEscalatedItems(escalated);
+    
     setIsLoading(false);
   }, [role]);
 
   useEffect(() => {
-    if (role === 'Employee') {
-        fetchMessages();
-    } else {
-        setIsLoading(false);
-    }
+    fetchMessages();
+    
     const handleDataUpdate = () => {
-        if (role === 'Employee') fetchMessages();
+        fetchMessages();
     }
     window.addEventListener('storage', handleDataUpdate);
     window.addEventListener('feedbackUpdated', handleDataUpdate);
@@ -122,7 +172,9 @@ function MessagesContent({ role }: { role: Role }) {
         window.removeEventListener('storage', handleDataUpdate);
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
     }
-  }, [fetchMessages, role]);
+  }, [fetchMessages]);
+
+  const hasMessages = pendingAcknowledgements.length > 0 || escalatedItems.length > 0;
 
   return (
     <div className="p-4 md:p-8">
@@ -139,10 +191,15 @@ function MessagesContent({ role }: { role: Role }) {
         <CardContent className="space-y-6">
             {isLoading ? (
                  <Skeleton className="h-48 w-full" />
-            ) : pendingAcknowledgements.length > 0 ? (
-                pendingAcknowledgements.map(item => (
-                    <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />
-                ))
+            ) : hasMessages ? (
+                <>
+                    {pendingAcknowledgements.map(item => (
+                        <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />
+                    ))}
+                    {escalatedItems.map(item => (
+                        <EscalationWidget key={item.id} item={item} />
+                    ))}
+                </>
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground text-lg">No new messages or actions.</p>
@@ -184,5 +241,3 @@ export default function MessagesPage() {
     </DashboardLayout>
   );
 }
-
-    

@@ -46,10 +46,27 @@ export const formSchema = z.object({
 export const AnalyzeOneOnOneInputSchema = formSchema;
 export type AnalyzeOneOnOneInput = z.infer<typeof AnalyzeOneOnOneInputSchema>;
 
+export const CriticalCoachingInsightSchema = z.object({
+    summary: z.string().describe("A summary of what was missed or the unaddressed red flag."),
+    reason: z.string().describe("Why the issue is important and a recommended micro-learning action. Prefixed with 'RECURRING ISSUE: ' if it matches a past declined area."),
+    severity: z.enum(["low", "medium", "high"]),
+    status: z.enum(['open', 'pending_employee_acknowledgement', 'resolved', 'pending_am_review']).default('open').describe("The resolution status of the insight."),
+    supervisorResponse: z.string().optional().describe("The supervisor's notes on how they addressed the insight."),
+    employeeAcknowledgement: z.string().optional().describe("The employee's feedback on the resolution."),
+  });
+
+export type CriticalCoachingInsight = z.infer<typeof CriticalCoachingInsightSchema>;
 
 // Zod schema for the new, comprehensive structured output from the AI
 export const AnalyzeOneOnOneOutputSchema = z.object({
-  summary: z.string().describe("A brief summary of the session, including tone, energy, and who led the conversation."),
+  supervisorSummary: z.string().describe("A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback."),
+  employeeSummary: z.string().describe("A concise summary for the employee, focusing on key takeaways, action items, and growth opportunities discussed."),
+  employeeSwotAnalysis: z.object({
+      strengths: z.array(z.string()).describe("List of strengths observed for the employee."),
+      weaknesses: z.array(z.string()).describe("List of weaknesses or areas for improvement for the employee."),
+      opportunities: z.array(z.string()).describe("List of opportunities for the employee's growth."),
+      threats: z.array(z.string()).describe("List of potential threats or challenges for the employee."),
+  }).describe("A SWOT analysis for the employee based on the conversation."),
   leadershipScore: z.number().min(1).max(10).describe("A score from 1-10 rating the supervisor's leadership qualities."),
   effectivenessScore: z.number().min(1).max(10).describe("A score from 1-10 rating the effectiveness of the feedback provided."),
   strengthsObserved: z.array(z.object({
@@ -70,15 +87,7 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
     completedGoalId: z.string().optional().describe("The ID of the development goal if mastery was demonstrated."),
   }).optional().describe("Analysis of coaching impact against active development goals."),
   missedSignals: z.array(z.string()).optional().describe("A list of subtle signals that the supervisor failed to explore."),
-  criticalCoachingInsight: z.object({
-    summary: z.string().describe("A summary of what was missed or the unaddressed red flag."),
-    reason: z.string().describe("Why the issue is important and a recommended micro-learning action. Prefixed with 'RECURRING ISSUE: ' if it matches a past declined area."),
-    suggestedAction: z.string().describe("The suggested next action for the manager."),
-    severity: z.enum(["low", "medium", "high"]),
-    status: z.enum(['open', 'pending_employee_acknowledgement', 'resolved']).default('open').describe("The resolution status of the insight."),
-    supervisorResponse: z.string().optional().describe("The supervisor's notes on how they addressed the insight."),
-    employeeAcknowledgement: z.string().optional().describe("The employee's feedback on the resolution."),
-  }).optional().describe("An insight generated ONLY if an unaddressed red flag is present."),
+  criticalCoachingInsight: CriticalCoachingInsightSchema.optional().describe("An insight generated ONLY if an unaddressed red flag is present."),
   biasFairnessCheck: z.object({
     flag: z.boolean().describe("True if potential bias was detected."),
     details: z.string().optional().describe("Details of the potential bias."),
