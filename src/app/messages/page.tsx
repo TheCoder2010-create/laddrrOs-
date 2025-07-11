@@ -221,9 +221,12 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                         {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
                         {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
                         {renderAuditEntry("Employee Acknowledged", `${item.employeeName}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                        
                         {isManagerWidget && renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+                        {isManagerWidget && renderAuditEntry("AM Responded to Employee", "AM Response to Employee", insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+
                         {isManagerWidget && renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
-                        {isManagerWidget && renderAuditEntry("Employee Acknowledged", "Final Employee Acknowledgement", insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                        {isManagerWidget && renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
                     </div>
                 
                     <CardFooter className={`${bgColor} pt-4 flex-col items-start gap-4`}>
@@ -451,16 +454,19 @@ function MessagesContent({ role }: { role: Role }) {
     const userMessages = history.filter(item => {
         const insight = item.analysis.criticalCoachingInsight;
         if (!insight) return false;
+        
+        // This logic ensures that once a manager/am acts, they can still see the case
+        const actedOnByCurrentUser = insight.auditTrail?.some(e => e.actor === currentUser.name);
 
         switch (role) {
             case 'Employee':
                 return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
             case 'AM':
-                 return insight.status === 'pending_am_review';
+                return insight.status === 'pending_am_review' || (actedOnByCurrentUser && insight.status !== 'resolved');
             case 'Manager':
-                return insight.status === 'pending_manager_review';
+                return insight.status === 'pending_manager_review' || (actedOnByCurrentUser && insight.status !== 'resolved');
             case 'HR Head':
-                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
+                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || (actedOnByCurrentUser && insight.status !== 'resolved');
             default:
                 return false;
         }
@@ -488,19 +494,26 @@ function MessagesContent({ role }: { role: Role }) {
 
   const renderWidget = (item: OneOnOneHistoryItem) => {
     const status = item.analysis.criticalCoachingInsight?.status;
-    switch (status) {
-        case 'pending_employee_acknowledgement':
-            return <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />;
-        case 'pending_am_review':
-             return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
-        case 'pending_manager_review':
-            return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
-        case 'pending_hr_review':
-        case 'pending_final_hr_action':
-             return <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />;
-        default:
-            return null;
+    const currentUser = roleUserMapping[role];
+    const isCurrentUserAssigned = item.assignedTo === currentUser.name;
+    const canEmployeeAcknowledge = role === 'Employee' && status === 'pending_employee_acknowledgement';
+    
+    // Determine which widget to show based on who needs to act, or who is viewing
+    if (canEmployeeAcknowledge) {
+         return <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />;
     }
+
+    if (role === 'AM' && (status === 'pending_am_review' || item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.actor === currentUser.name))) {
+        return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
+    }
+     if (role === 'Manager' && (status === 'pending_manager_review' || item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.actor === currentUser.name))) {
+        return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
+    }
+    if (role === 'HR Head' && (status === 'pending_hr_review' || status === 'pending_final_hr_action' || item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.actor === currentUser.name))) {
+         return <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />;
+    }
+    
+    return null;
   };
 
 

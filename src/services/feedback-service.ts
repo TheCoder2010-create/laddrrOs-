@@ -194,7 +194,8 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
         actor: item.employeeName as Role,
         details: acknowledgement,
     });
-
+    
+    const wasAmResponse = insight.auditTrail?.some(e => e.event === 'AM Responded to Employee');
     const wasRetry = insight.auditTrail?.some(e => e.event === 'Supervisor Retry Action');
     const wasManagerAction = insight.auditTrail?.some(e => e.event === 'Manager Resolution');
     const wasHrAction = insight.auditTrail?.some(e => e.event === 'HR Resolution');
@@ -210,8 +211,8 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
         // After manager intervention, final escalation is to HR for review.
         insight.status = 'pending_hr_review';
         item.assignedTo = 'HR Head';
-    } else if (wasRetry) {
-        // If it was a retry and still not resolved, escalate to Manager
+    } else if (wasRetry || wasAmResponse) {
+        // If it was a retry or an AM response and still not resolved, escalate to Manager
         insight.status = 'pending_manager_review';
         item.assignedTo = 'Manager';
     } else {
