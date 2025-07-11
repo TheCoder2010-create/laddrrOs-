@@ -46,7 +46,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -231,14 +231,18 @@ function HistorySection({ role }: { role: Role }) {
     const handleRetrySubmit = async (itemToUpdate: OneOnOneHistoryItem) => {
         if (!retryResponse) return;
         setIsSubmittingRetry(true);
-        // Placeholder for the service call
-        console.log("Submitting retry for", itemToUpdate.id, "with response:", retryResponse);
-        toast({ title: "Retry Submitted", description: "Your follow-up has been logged."});
-        // await submitSupervisorRetry(itemToUpdate.id, retryResponse); // This function will need to be created
-        setRetryResponse('');
-        setRetryingInsightId(null);
-        setIsSubmittingRetry(false);
-        fetchHistory();
+        try {
+            await submitSupervisorRetry(itemToUpdate.id, retryResponse);
+            toast({ title: "Follow-up Submitted", description: "Your notes have been logged and the employee has been notified to acknowledge again."});
+            setRetryResponse('');
+            setRetryingInsightId(null);
+            fetchHistory();
+        } catch (error) {
+            console.error("Failed to submit retry", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingRetry(false);
+        }
     };
 
 

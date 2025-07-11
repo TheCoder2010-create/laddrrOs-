@@ -177,6 +177,7 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
         insight.status = 'resolved';
     } else {
         insight.status = 'pending_am_review';
+        item.assignedTo = 'AM'; // Assign the whole item to AM for visibility
     }
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
@@ -202,6 +203,32 @@ export async function submitAmCoachingNotes(historyId: string, actor: Role, note
         timestamp: new Date(),
         actor: actor,
         details: notes,
+    });
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+export async function submitSupervisorRetry(historyId: string, retryNotes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+         throw new Error("Could not find history item or critical insight to update.");
+    }
+    
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    // Reset for the next acknowledgement round
+    insight.status = 'pending_employee_acknowledgement';
+    
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: 'Supervisor Retry Action',
+        timestamp: new Date(),
+        actor: item.supervisorName as Role, // Assuming supervisorName is a valid Role
+        details: retryNotes,
     });
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
