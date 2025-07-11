@@ -50,6 +50,8 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
     
     const wasHrAction = item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'HR Resolution');
     const amResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Responded to Employee');
+    const managerResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'Manager Resolution');
+
 
     return (
         <Card className="border-blue-500/50">
@@ -73,6 +75,12 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                      <div className="p-3 bg-orange-500/10 rounded-md border border-orange-500/20">
                         <p className="font-semibold text-orange-700 dark:text-orange-500">{amResponse.actor}'s Response</p>
                         <p className="text-sm text-orange-600 dark:text-orange-400 mt-1 whitespace-pre-wrap">{amResponse.details}</p>
+                    </div>
+                 )}
+                 {managerResponse && (
+                     <div className="p-3 bg-destructive/10 rounded-md border border-destructive/20">
+                        <p className="font-semibold text-destructive">{managerResponse.actor}'s Response</p>
+                        <p className="text-sm text-destructive/90 mt-1 whitespace-pre-wrap">{managerResponse.details}</p>
                     </div>
                  )}
                  {item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'Supervisor Retry Action') && (
@@ -179,7 +187,7 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
         setIsSubmittingManager(true);
         try {
             await submitManagerResolution(item.id, role!, resolutionNotes);
-            toast({ title: "Resolution Submitted", description: "The case has been escalated to HR for final review." });
+            toast({ title: "Resolution Submitted", description: "The case has been sent to the employee for final acknowledgement." });
             onUpdate();
         } catch (error) {
             console.error("Failed to submit manager resolution", error);
@@ -235,7 +243,7 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                         {isManagerWidget ? (
                              <div className="w-full space-y-3">
                                  <p className="text-sm text-muted-foreground">
-                                    This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to HR for final review.
+                                    This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to the employee for final acknowledgement.
                                 </p>
                                  <Textarea 
                                     placeholder="e.g., I have scheduled a mediated session between the TL and employee, and will be implementing a new communication protocol for the team..."
@@ -247,7 +255,7 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                                  <div className="flex gap-2">
                                      <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmittingManager || !resolutionNotes}>
                                         {isSubmittingManager && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                        Submit to HR for Review
+                                        Submit to Employee
                                      </Button>
                                  </div>
                              </div>
@@ -453,7 +461,7 @@ function MessagesContent({ role }: { role: Role }) {
 
     const userMessages = history.filter(item => {
         const insight = item.analysis.criticalCoachingInsight;
-        if (!insight) return false;
+        if (!insight || insight.status === 'resolved') return false;
         
         // This logic ensures that once a manager/am acts, they can still see the case
         const actedOnByCurrentUser = insight.auditTrail?.some(e => e.actor === currentUser.name);
@@ -462,11 +470,11 @@ function MessagesContent({ role }: { role: Role }) {
             case 'Employee':
                 return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
             case 'AM':
-                return insight.status === 'pending_am_review' || (actedOnByCurrentUser && insight.status !== 'resolved');
+                return insight.status === 'pending_am_review';
             case 'Manager':
-                return insight.status === 'pending_manager_review' || (actedOnByCurrentUser && insight.status !== 'resolved');
+                return insight.status === 'pending_manager_review';
             case 'HR Head':
-                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || (actedOnByCurrentUser && insight.status !== 'resolved');
+                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
             default:
                 return false;
         }
@@ -503,13 +511,13 @@ function MessagesContent({ role }: { role: Role }) {
          return <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />;
     }
 
-    if (role === 'AM' && (status === 'pending_am_review' || item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.actor === currentUser.name))) {
+    if (role === 'AM' && status === 'pending_am_review') {
         return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
     }
-     if (role === 'Manager' && (status === 'pending_manager_review' || item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.actor === currentUser.name))) {
+     if (role === 'Manager' && status === 'pending_manager_review') {
         return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
     }
-    if (role === 'HR Head' && (status === 'pending_hr_review' || status === 'pending_final_hr_action' || item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.actor === currentUser.name))) {
+    if (role === 'HR Head' && (status === 'pending_hr_review' || status === 'pending_final_hr_action')) {
          return <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />;
     }
     

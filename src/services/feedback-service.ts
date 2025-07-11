@@ -338,9 +338,9 @@ export async function submitManagerResolution(historyId: string, actor: Role, no
     const item = allHistory[index];
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
 
-    // Directly escalate to HR for review
-    insight.status = 'pending_hr_review';
-    item.assignedTo = 'HR Head';
+    // Send back to employee for acknowledgement
+    insight.status = 'pending_employee_acknowledgement';
+    item.assignedTo = null; // Unassign so it only appears in employee's inbox
     
     if (!insight.auditTrail) {
         insight.auditTrail = [];
