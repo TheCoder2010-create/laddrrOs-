@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import type { AuditEvent } from '@/services/feedback-service';
 
 // Base form schema from the UI
 export const formSchema = z.object({
@@ -50,9 +51,11 @@ export const CriticalCoachingInsightSchema = z.object({
     summary: z.string().describe("A summary of what was missed or the unaddressed red flag."),
     reason: z.string().describe("Why the issue is important and a recommended micro-learning action. Prefixed with 'RECURRING ISSUE: ' if it matches a past declined area."),
     severity: z.enum(["low", "medium", "high"]),
-    status: z.enum(['open', 'pending_employee_acknowledgement', 'resolved', 'pending_am_review']).default('open').describe("The resolution status of the insight."),
+    status: z.enum(['open', 'pending_employee_acknowledgement', 'resolved', 'pending_am_review', 'pending_supervisor_retry']).default('open').describe("The resolution status of the insight."),
     supervisorResponse: z.string().optional().describe("The supervisor's notes on how they addressed the insight."),
     employeeAcknowledgement: z.string().optional().describe("The employee's feedback on the resolution."),
+    // Add audit trail to the insight itself to track its specific journey
+    auditTrail: z.array(z.any()).optional().describe("An audit trail for the insight itself."),
   });
 
 export type CriticalCoachingInsight = z.infer<typeof CriticalCoachingInsightSchema>;

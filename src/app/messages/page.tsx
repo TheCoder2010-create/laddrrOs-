@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
+import { Textarea } from '@/components/ui/textarea';
 
 function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -97,17 +98,44 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
     );
 }
 
-function EscalationWidget({ item }: { item: OneOnOneHistoryItem }) {
+function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
     const { toast } = useToast();
+    const { role } = useRole();
+    const [action, setAction] = useState<'coach' | 'address' | null>(null);
+    const [coachingNotes, setCoachingNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleAmAction = (action: 'coach' | 'address') => {
-        // Placeholder for the next step in the workflow
-        toast({
-            title: "Action Recorded",
-            description: `Next step: ${action === 'coach' ? 'Coach Supervisor' : 'Address Employee'}. This will be implemented next.`
-        })
-    }
+    const handleAmActionSubmit = async () => {
+        if (action === 'coach' && !coachingNotes) return;
+
+        setIsSubmitting(true);
+        try {
+            if (action === 'coach') {
+                await submitAmCoachingNotes(item.id, role!, coachingNotes);
+                toast({ title: "Coaching Notes Submitted", description: "The supervisor has been notified to retry the 1-on-1." });
+            } else if (action === 'address') {
+                 // Placeholder for next step
+                toast({ title: "Action Recorded", description: "Next step: Address Employee directly. This will be implemented next." });
+            }
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit AM action", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+            setAction(null);
+            setCoachingNotes('');
+        }
+    };
+    
+    const handleActionClick = (selectedAction: 'coach' | 'address') => {
+        setAction(selectedAction);
+        if (selectedAction === 'address') {
+            handleAmActionSubmit(); // Immediately submit for 'address' as there's no form
+        }
+    };
+
 
     return (
         <Card className="border-orange-500/50">
@@ -136,17 +164,40 @@ function EscalationWidget({ item }: { item: OneOnOneHistoryItem }) {
             </CardContent>
             <CardFooter className="bg-orange-500/10 pt-4 flex-col items-start gap-4">
                  <Label className="font-semibold text-orange-700 dark:text-orange-400">Your Action</Label>
-                 <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
-                 <div className="flex gap-4">
-                    <Button variant="secondary" onClick={() => handleAmAction('coach')}>
-                        <Users className="mr-2 h-4 w-4" />
-                        Coach Supervisor
-                    </Button>
-                    <Button onClick={() => handleAmAction('address')}>
-                        <User className="mr-2 h-4 w-4" />
-                        Address Employee
-                    </Button>
-                 </div>
+                
+                 {action === 'coach' ? (
+                     <div className="w-full space-y-3">
+                         <p className="text-sm text-muted-foreground">Log your coaching notes for the supervisor. This will be visible to them.</p>
+                         <Textarea 
+                            placeholder="e.g., Coached Ben on active listening and validating concerns before offering solutions. Suggested a follow-up meeting..."
+                            value={coachingNotes}
+                            onChange={(e) => setCoachingNotes(e.target.value)}
+                            rows={4}
+                            className="bg-background"
+                         />
+                         <div className="flex gap-2">
+                             <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !coachingNotes}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Submit Coaching Notes
+                             </Button>
+                             <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
+                         </div>
+                     </div>
+                 ) : (
+                     <>
+                        <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
+                        <div className="flex gap-4">
+                            <Button variant="secondary" onClick={() => handleActionClick('coach')}>
+                                <Users className="mr-2 h-4 w-4" />
+                                Coach Supervisor
+                            </Button>
+                            <Button onClick={() => handleActionClick('address')}>
+                                <User className="mr-2 h-4 w-4" />
+                                Address Employee
+                            </Button>
+                        </div>
+                    </>
+                 )}
             </CardFooter>
         </Card>
     )
@@ -171,10 +222,13 @@ function MessagesContent({ role }: { role: Role }) {
 
     // For AMs: Find items escalated to them
     const escalated = history.filter(item =>
-        item.assignedTo === 'AM' &&
         item.analysis.criticalCoachingInsight?.status === 'pending_am_review'
     );
-    setEscalatedItems(escalated);
+    if(role === 'AM') {
+        setEscalatedItems(escalated);
+    } else {
+        setEscalatedItems([]);
+    }
     
     setIsLoading(false);
   }, [role]);
@@ -216,7 +270,7 @@ function MessagesContent({ role }: { role: Role }) {
                         <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />
                     ))}
                     {escalatedItems.map(item => (
-                        <EscalationWidget key={item.id} item={item} />
+                        <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} />
                     ))}
                 </>
             ) : (

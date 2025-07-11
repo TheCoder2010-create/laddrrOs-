@@ -173,14 +173,36 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
 
     insight.employeeAcknowledgement = acknowledgement;
 
-    // This is the new escalation logic
     if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
         insight.status = 'resolved';
-        item.assignedTo = null; // No longer needs routing
     } else {
         insight.status = 'pending_am_review';
-        item.assignedTo = 'AM'; // Escalate to Assistant Manager
     }
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+export async function submitAmCoachingNotes(historyId: string, actor: Role, notes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+         throw new Error("Could not find history item or critical insight to update.");
+    }
+    
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    insight.status = 'pending_supervisor_retry';
+    
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: 'AM Coaching Notes',
+        timestamp: new Date(),
+        actor: actor,
+        details: notes,
+    });
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
@@ -420,5 +442,3 @@ export async function toggleActionItemStatus(trackingId: string, actionItemId: s
 
     saveFeedbackToStorage(allFeedback);
 }
-
-    

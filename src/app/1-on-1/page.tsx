@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -179,13 +179,18 @@ function HistorySection({ role }: { role: Role }) {
     const [supervisorResponse, setSupervisorResponse] = useState('');
     const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
+    // State for retry flow
+    const [retryingInsightId, setRetryingInsightId] = useState<string | null>(null);
+    const [retryResponse, setRetryResponse] = useState('');
+    const [isSubmittingRetry, setIsSubmittingRetry] = useState(false);
+
+
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
         const historyData = await getOneOnOneHistory();
         
         const currentUser = roleUserMapping[role];
         
-        // Filter history to only include meetings where the current user was a participant.
         const userHistory = historyData.filter(item => {
              return item.supervisorName === currentUser.name || item.employeeName === currentUser.name;
         });
@@ -222,6 +227,19 @@ function HistorySection({ role }: { role: Role }) {
             setIsSubmittingResponse(false);
         }
     };
+    
+    const handleRetrySubmit = async (itemToUpdate: OneOnOneHistoryItem) => {
+        if (!retryResponse) return;
+        setIsSubmittingRetry(true);
+        // Placeholder for the service call
+        console.log("Submitting retry for", itemToUpdate.id, "with response:", retryResponse);
+        toast({ title: "Retry Submitted", description: "Your follow-up has been logged."});
+        // await submitSupervisorRetry(itemToUpdate.id, retryResponse); // This function will need to be created
+        setRetryResponse('');
+        setRetryingInsightId(null);
+        setIsSubmittingRetry(false);
+        fetchHistory();
+    };
 
 
     if (isLoading) {
@@ -249,21 +267,24 @@ function HistorySection({ role }: { role: Role }) {
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
                     const insight = item.analysis.criticalCoachingInsight;
-                    const insightStatus = insight?.status || 'resolved';
+                    const insightStatus = insight?.status;
                     const currentUserName = roleUserMapping[role].name;
                     
                     const isSupervisor = currentUserName === item.supervisorName;
                     const isEmployee = currentUserName === item.employeeName;
 
                     const canSupervisorAct = isSupervisor && insightStatus === 'open';
-                    
+                    const canSupervisorRetry = isSupervisor && insightStatus === 'pending_supervisor_retry';
+
                     const getStatusBadge = () => {
                         if (!insight) return null;
                         switch(insightStatus) {
                             case 'open':
                                 return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Action Required</Badge>;
                             case 'pending_employee_acknowledgement':
-                                return <Badge className="bg-blue-500 text-white flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Pending Acknowledgement</Badge>
+                                return <Badge className="bg-blue-500 text-white flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Pending Acknowledgement</Badge>;
+                             case 'pending_supervisor_retry':
+                                return <Badge className="bg-purple-500 text-white flex items-center gap-1.5"><Repeat className="h-3 w-3" />Retry Required</Badge>;
                             case 'pending_am_review':
                                 return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Escalated to AM</Badge>;
                             case 'resolved':
@@ -272,6 +293,9 @@ function HistorySection({ role }: { role: Role }) {
                                 return null;
                         }
                     }
+                    
+                    const amCoachingNotes = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
+
 
                     return (
                         <AccordionItem value={item.id} key={item.id} className="px-4">
@@ -354,6 +378,56 @@ function HistorySection({ role }: { role: Role }) {
                                                         <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Employee Acknowledgement</p>
                                                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
                                                     </div>
+                                                )}
+
+                                                {canSupervisorRetry && (
+                                                     <div className="mt-4 p-4 border rounded-lg bg-purple-500/10 space-y-4">
+                                                        <h4 className="font-semibold text-lg text-purple-700 dark:text-purple-400">Action Required: Retry 1-on-1</h4>
+                                                        
+                                                        {amCoachingNotes && (
+                                                             <div className="p-3 bg-muted/80 rounded-md border">
+                                                                <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes</p>
+                                                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <p className="text-sm text-muted-foreground">
+                                                          Your AM has reviewed this case and coached you. Please re-engage with the employee to address their remaining concerns.
+                                                        </p>
+
+                                                        {retryingInsightId !== item.id ? (
+                                                            <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setRetryingInsightId(item.id)}>
+                                                                <Repeat className="mr-2 h-4 w-4" /> Log Retry Actions
+                                                            </Button>
+                                                        ) : (
+                                                            <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                                <Label htmlFor={`retry-response-${item.id}`} className="text-foreground font-semibold">
+                                                                    Describe your follow-up actions
+                                                                </Label>
+                                                                <Textarea
+                                                                    id={`retry-response-${item.id}`}
+                                                                    value={retryResponse}
+                                                                    onChange={(e) => setRetryResponse(e.target.value)}
+                                                                    placeholder="e.g., I met with Casey again, apologized for the miscommunication, and we have created a new plan..."
+                                                                    rows={4}
+                                                                    className="bg-background"
+                                                                />
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        onClick={() => handleRetrySubmit(item)}
+                                                                        disabled={isSubmittingRetry || !retryResponse}
+                                                                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                                                                    >
+                                                                        {isSubmittingRetry && <Loader2 className="mr-2 animate-spin" />}
+                                                                        Submit Follow-up
+                                                                    </Button>
+                                                                    <Button variant="ghost" onClick={() => setRetryingInsightId(null)}>
+                                                                        Cancel
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                     </div>
                                                 )}
                                             </div>
                                         )}
