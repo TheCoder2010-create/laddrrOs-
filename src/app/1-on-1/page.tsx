@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -185,13 +185,9 @@ function HistorySection({ role }: { role: Role }) {
         
         const currentUser = roleUserMapping[role];
         
+        // Filter history to only include meetings where the current user was a participant.
         const userHistory = historyData.filter(item => {
-             const supervisorRole = getRoleByName(item.supervisorName);
-             const employeeRole = getRoleByName(item.employeeName);
-             return item.supervisorName === currentUser.name || 
-                    item.employeeName === currentUser.name || 
-                    (role === 'AM' && (supervisorRole === 'Team Lead' || employeeRole === 'Team Lead')) ||
-                    (role === 'Manager' && (supervisorRole === 'Team Lead' || employeeRole === 'Team Lead' || supervisorRole === 'AM' || employeeRole === 'AM'));
+             return item.supervisorName === currentUser.name || item.employeeName === currentUser.name;
         });
         
         setHistory(userHistory.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -233,7 +229,15 @@ function HistorySection({ role }: { role: Role }) {
     }
 
     if (history.length === 0) {
-        return null;
+        return (
+             <div className="mt-12 text-center py-12 border-2 border-dashed rounded-lg">
+                <History className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">No Session History</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Your past 1-on-1 sessions and their analyses will appear here.
+                </p>
+            </div>
+        );
     }
 
     return (
@@ -245,23 +249,23 @@ function HistorySection({ role }: { role: Role }) {
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
                     const insight = item.analysis.criticalCoachingInsight;
-                    if (!insight) return null;
-                    
-                    const insightStatus = insight.status || 'open';
+                    const insightStatus = insight?.status || 'resolved';
                     const currentUserName = roleUserMapping[role].name;
                     
                     const isSupervisor = currentUserName === item.supervisorName;
+                    const isEmployee = currentUserName === item.employeeName;
+
                     const canSupervisorAct = isSupervisor && insightStatus === 'open';
                     
                     const getStatusBadge = () => {
+                        if (!insight) return null;
                         switch(insightStatus) {
                             case 'open':
-                                if (isSupervisor) {
-                                    return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Action Required</Badge>;
-                                }
-                                return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Critical Insight</Badge>;
+                                return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Action Required</Badge>;
                             case 'pending_employee_acknowledgement':
                                 return <Badge className="bg-blue-500 text-white flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Pending Acknowledgement</Badge>
+                            case 'pending_am_review':
+                                return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Escalated to AM</Badge>;
                             case 'resolved':
                                 return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
                             default:
@@ -286,98 +290,121 @@ function HistorySection({ role }: { role: Role }) {
                                     </div>
                                 </div>
                             </AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-2">
+                            <AccordionContent className="space-y-6 pt-2">
                                 
-                                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                                    <h4 className="font-semibold text-destructive flex items-center gap-2">
-                                       <AlertTriangle className="h-4 w-4" />Critical Coaching Insight
-                                    </h4>
-                                    <p className="text-destructive/90 my-2">{insight.summary}</p>
-                                    
-                                    {/* Supervisor's action form */}
-                                    {canSupervisorAct && (
-                                        <div className="mt-4">
-                                            {addressingInsightId !== item.id ? (
-                                                <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
-                                                    Address Insight
-                                                </Button>
-                                            ) : (
-                                                <div className="space-y-2 bg-background/50 p-3 rounded-md">
-                                                    <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
-                                                        How did you address this?
-                                                    </Label>
-                                                    <Textarea
-                                                        id={`supervisor-response-${item.id}`}
-                                                        value={supervisorResponse}
-                                                        onChange={(e) => setSupervisorResponse(e.target.value)}
-                                                        placeholder="Explain the actions you took to resolve this concern..."
-                                                        rows={4}
-                                                        className="bg-background"
-                                                    />
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            onClick={() => handleAddressInsightSubmit(item)}
-                                                            disabled={isSubmittingResponse || !supervisorResponse}
-                                                        >
-                                                            {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
-                                                            Submit for Acknowledgement
-                                                        </Button>
-                                                        <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
-                                                            Cancel
-                                                        </Button>
+                                {isSupervisor && (
+                                    <div className="space-y-4">
+                                        <div className="bg-muted/50 p-4 rounded-lg">
+                                            <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><UserCheck className="h-5 w-5 text-primary"/>Supervisor View</h4>
+                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.analysis.supervisorSummary}</p>
+                                        </div>
+
+                                        {insight && (
+                                            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                                <h4 className="font-semibold text-destructive flex items-center gap-2">
+                                                <AlertTriangle className="h-4 w-4" />Critical Coaching Insight
+                                                </h4>
+                                                <p className="text-destructive/90 my-2 text-sm">{insight.summary}</p>
+                                                
+                                                {canSupervisorAct && (
+                                                    <div className="mt-4">
+                                                        {addressingInsightId !== item.id ? (
+                                                            <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
+                                                                Address Insight
+                                                            </Button>
+                                                        ) : (
+                                                            <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                                <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
+                                                                    How did you address this?
+                                                                </Label>
+                                                                <Textarea
+                                                                    id={`supervisor-response-${item.id}`}
+                                                                    value={supervisorResponse}
+                                                                    onChange={(e) => setSupervisorResponse(e.target.value)}
+                                                                    placeholder="Explain the actions you took to resolve this concern..."
+                                                                    rows={4}
+                                                                    className="bg-background"
+                                                                />
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        onClick={() => handleAddressInsightSubmit(item)}
+                                                                        disabled={isSubmittingResponse || !supervisorResponse}
+                                                                    >
+                                                                        {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
+                                                                        Submit for Acknowledgement
+                                                                    </Button>
+                                                                    <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
+                                                                        Cancel
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {insight.supervisorResponse && (
+                                                    <div className="mt-4 p-3 bg-muted/80 rounded-md border">
+                                                        <p className="font-semibold text-foreground text-sm">Your Response</p>
+                                                        <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
+                                                    </div>
+                                                )}
+
+                                                {insight.employeeAcknowledgement && (
+                                                    <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
+                                                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Employee Acknowledgement</p>
+                                                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                
+                                {isEmployee && (
+                                     <div className="space-y-4">
+                                        <div className="bg-muted/50 p-4 rounded-lg">
+                                            <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><EyeOff className="h-5 w-5 text-primary"/>Employee View</h4>
+                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.analysis.employeeSummary}</p>
+                                        
+                                            {item.analysis.employeeSwotAnalysis && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-muted-foreground">
+                                                    <div className="space-y-1">
+                                                        <h5 className="font-medium flex items-center gap-1.5 text-green-600 dark:text-green-400"><Lightbulb className="h-4 w-4"/>Strengths</h5>
+                                                        <ul className="list-disc pl-5 text-sm">
+                                                            {item.analysis.employeeSwotAnalysis?.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                                                        </ul>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h5 className="font-medium flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400"><TrendingDown className="h-4 w-4"/>Weaknesses</h5>
+                                                        <ul className="list-disc pl-5 text-sm">
+                                                            {item.analysis.employeeSwotAnalysis?.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
+                                                        </ul>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h5 className="font-medium flex items-center gap-1.5 text-blue-600 dark:text-blue-400"><BrainCircuit className="h-4 w-4"/>Opportunities</h5>
+                                                        <ul className="list-disc pl-5 text-sm">
+                                                            {item.analysis.employeeSwotAnalysis?.opportunities.map((s, i) => <li key={i}>{s}</li>)}
+                                                        </ul>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h5 className="font-medium flex items-center gap-1.5 text-red-600 dark:text-red-500"><ShieldCheck className="h-4 w-4"/>Threats</h5>
+                                                        <ul className="list-disc pl-5 text-sm">
+                                                           {item.analysis.employeeSwotAnalysis?.threats.map((s, i) => <li key={i}>{s}</li>)}
+                                                        </ul>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
-                                    )}
 
-                                    {/* Display supervisor's response when pending or resolved */}
-                                    {insight.supervisorResponse && (
-                                         <div className="mt-4 p-3 bg-muted/80 rounded-md border">
-                                            <p className="font-semibold text-foreground">Supervisor's Response</p>
-                                            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
-                                        </div>
-                                    )}
-
-                                    {/* Display employee's acknowledgement when resolved */}
-                                    {insight.employeeAcknowledgement && (
-                                         <div className="mt-4 p-3 bg-green-500/10 rounded-md border border-green-500/20">
-                                            <p className="font-semibold text-green-700 dark:text-green-400">Employee Acknowledgement</p>
-                                            <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div>
-                                    <h4 className="font-semibold">Summary</h4>
-                                    <p className="text-muted-foreground text-sm whitespace-pre-wrap">{item.analysis.summary}</p>
-                                </div>
-
-                                {item.analysis.strengthsObserved && item.analysis.strengthsObserved.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold">Strengths Observed</h4>
-                                        <ul className="list-disc pl-5 text-muted-foreground text-sm">
-                                            {item.analysis.strengthsObserved.map((strength, i) => <li key={i}><strong>{strength.action}:</strong> "{strength.example}"</li>)}
-                                        </ul>
-                                    </div>
-                                )}
-                                
-                                {item.analysis.coachingRecommendations && item.analysis.coachingRecommendations.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold">Coaching Recommendations</h4>
-                                        <ul className="list-disc pl-5 text-muted-foreground text-sm">
-                                            {item.analysis.coachingRecommendations.map((rec, i) => <li key={i}><strong>{rec.recommendation}:</strong> {rec.reason}</li>)}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {item.analysis.actionItems && item.analysis.actionItems.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold">Action Items</h4>
-                                        <ul className="list-disc pl-5 text-muted-foreground text-sm">
-                                            {item.analysis.actionItems.map((action, i) => <li key={i}><strong>{action.owner}:</strong> {action.task}</li>)}
-                                        </ul>
-                                    </div>
+                                        {insight && insightStatus === 'pending_employee_acknowledgement' && (
+                                             <div className="p-4 border rounded-lg bg-blue-500/10">
+                                                <h4 className="font-semibold text-lg text-blue-700 dark:text-blue-400">Action Required</h4>
+                                                <p className="text-sm text-muted-foreground mt-2">
+                                                    Your supervisor has responded to a critical insight from this meeting. Please review their response and acknowledge it in your <Link href="/messages" className="font-bold underline">Messages</Link>.
+                                                </p>
+                                            </div>
+                                        )}
+                                     </div>
                                 )}
                             </AccordionContent>
                         </AccordionItem>
@@ -537,5 +564,3 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-
-    
