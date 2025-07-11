@@ -13,7 +13,7 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback } from '@/services/feedback-service';
@@ -76,6 +76,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
+    { href: '/messages', icon: <MessageSquare />, label: 'Messages' },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
   ];
 
