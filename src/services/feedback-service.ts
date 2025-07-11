@@ -248,6 +248,33 @@ export async function submitAmCoachingNotes(historyId: string, actor: Role, note
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
+export async function submitAmDirectResponse(historyId: string, actor: Role, notes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+         throw new Error("Could not find history item or critical insight to update.");
+    }
+
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    
+    // Send back to employee for acknowledgement
+    insight.status = 'pending_employee_acknowledgement';
+
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: 'AM Responded to Employee',
+        timestamp: new Date(),
+        actor: actor,
+        details: notes,
+    });
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+
 export async function escalateToManager(historyId: string, actor: Role, notes: string): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const index = allHistory.findIndex(h => h.id === historyId);

@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 import { Textarea } from '@/components/ui/textarea';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -48,6 +49,7 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
     };
     
     const wasHrAction = item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'HR Resolution');
+    const amResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Responded to Employee');
 
     return (
         <Card className="border-blue-500/50">
@@ -67,6 +69,12 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                         {item.analysis.criticalCoachingInsight?.supervisorResponse}
                     </p>
                 </div>
+                 {amResponse && (
+                     <div className="p-3 bg-orange-500/10 rounded-md border border-orange-500/20">
+                        <p className="font-semibold text-orange-700 dark:text-orange-500">{amResponse.actor}'s Response</p>
+                        <p className="text-sm text-orange-600 dark:text-orange-400 mt-1 whitespace-pre-wrap">{amResponse.details}</p>
+                    </div>
+                 )}
                  {item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'Supervisor Retry Action') && (
                      <div className="p-3 bg-muted/80 rounded-md border">
                         <p className="font-semibold text-foreground">Supervisor's Follow-up Notes</p>
@@ -126,13 +134,18 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
     );
 }
 
-function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
+function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleColor, bgColor, borderColor }: { item: OneOnOneHistoryItem, onUpdate: () => void, title: string, titleIcon: React.ElementType, titleColor: string, bgColor: string, borderColor: string }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
     const { toast } = useToast();
     const { role } = useRole();
     const [action, setAction] = useState<'coach' | 'address' | null>(null);
     const [actionNotes, setActionNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Specific logic for Manager widget
+    const isManagerWidget = role === 'Manager';
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const [isSubmittingManager, setIsSubmittingManager] = useState(false);
 
     const handleAmActionSubmit = async () => {
         if (!actionNotes) return;
@@ -143,8 +156,8 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
                 await submitAmCoachingNotes(item.id, role!, actionNotes);
                 toast({ title: "Coaching Notes Submitted", description: "The supervisor has been notified to retry the 1-on-1." });
             } else if (action === 'address') {
-                await escalateToManager(item.id, role!, actionNotes);
-                toast({ title: "Case Escalated", description: "The case has been escalated to the Manager for review." });
+                await submitAmDirectResponse(item.id, role!, actionNotes);
+                toast({ title: "Response Submitted", description: "Your response has been sent to the employee for acknowledgement." });
             }
             onUpdate();
         } catch (error) {
@@ -161,98 +174,9 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
         setAction(selectedAction);
     };
 
-
-    return (
-        <Card className="border-orange-500/50">
-            <CardHeader className="bg-orange-500/10">
-                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                    <AlertTriangle className="h-6 w-6" />
-                    Critical Escalation Review
-                </CardTitle>
-                <CardDescription>
-                    Escalated from the 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-                 <div className="p-3 bg-red-500/10 rounded-md border border-red-500/20">
-                    <p className="font-semibold text-red-700 dark:text-red-500">Original AI Insight</p>
-                    <p className="text-sm text-red-600 dark:text-red-400 mt-1 whitespace-pre-wrap">{insight.summary}</p>
-                 </div>
-                 <div className="p-3 bg-muted/80 rounded-md border">
-                    <p className="font-semibold text-foreground">{item.supervisorName}'s (TL) Response</p>
-                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
-                </div>
-                <div className="p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
-                    <p className="font-semibold text-blue-700 dark:text-blue-500">{item.employeeName}'s (Employee) Acknowledgement</p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
-                </div>
-            </CardContent>
-            <CardFooter className="bg-orange-500/10 pt-4 flex-col items-start gap-4">
-                 <Label className="font-semibold text-orange-700 dark:text-orange-400">Your Action</Label>
-                
-                 {action ? (
-                     <div className="w-full space-y-3">
-                         <Label htmlFor={`action-notes-${item.id}`}>
-                            {action === 'coach' ? 'Coaching Notes for Supervisor' : 'Escalation Notes for Manager'}
-                         </Label>
-                         <p className="text-sm text-muted-foreground">
-                            {action === 'coach' 
-                                ? 'Log your coaching notes for the supervisor. This will be visible to them.'
-                                : 'Explain why this case requires manager intervention. This will be visible to the manager.'
-                            }
-                         </p>
-                         <Textarea 
-                            id={`action-notes-${item.id}`}
-                            placeholder={action === 'coach' 
-                                ? "e.g., Coached Ben on active listening and validating concerns before offering solutions..."
-                                : "e.g., This issue involves cross-team dynamics that require manager-level visibility to resolve..."
-                            }
-                            value={actionNotes}
-                            onChange={(e) => setActionNotes(e.target.value)}
-                            rows={4}
-                            className="bg-background"
-                         />
-                         <div className="flex gap-2">
-                             <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                Submit
-                             </Button>
-                             <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
-                         </div>
-                     </div>
-                 ) : (
-                     <>
-                        <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
-                        <div className="flex gap-4">
-                            <Button variant="secondary" onClick={() => handleActionClick('coach')}>
-                                <Users className="mr-2 h-4 w-4" />
-                                Coach Supervisor
-                            </Button>
-                            <Button onClick={() => handleActionClick('address')}>
-                                <ChevronsRight className="mr-2 h-4 w-4" />
-                                Escalate to Manager
-                            </Button>
-                        </div>
-                    </>
-                 )}
-            </CardFooter>
-        </Card>
-    )
-}
-
-function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
-    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
-    const amCoachingNotes = insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
-    const supervisorRetryNotes = insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.details;
-    const { toast } = useToast();
-    const { role } = useRole();
-
-    const [resolutionNotes, setResolutionNotes] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
     const handleManagerSubmit = async () => {
         if (!resolutionNotes) return;
-        setIsSubmitting(true);
+        setIsSubmittingManager(true);
         try {
             await submitManagerResolution(item.id, role!, resolutionNotes);
             toast({ title: "Resolution Submitted", description: "The case has been escalated to HR for final review." });
@@ -261,71 +185,121 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
             console.error("Failed to submit manager resolution", error);
             toast({ variant: 'destructive', title: "Submission Failed" });
         } finally {
-            setIsSubmitting(false);
+            setIsSubmittingManager(false);
         }
+    };
+    
+    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
+        const entry = insight.auditTrail?.find(e => e.event === event);
+        if (!details && !entry?.details) return null;
+        return (
+            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
+                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
+            </div>
+        );
     };
 
     return (
-        <Card className="border-destructive">
-            <CardHeader className="bg-destructive/10">
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                    <Briefcase className="h-6 w-6" />
-                    Manager Level Escalation
-                </CardTitle>
-                <CardDescription>
-                    Final review for the case between {item.supervisorName} and {item.employeeName}.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2 p-3 bg-red-500/10 rounded-md border border-red-500/20">
-                    <p className="font-bold text-red-700 dark:text-red-500 text-sm">Initial AI Insight</p>
-                    <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{insight.summary}</p>
-                </div>
-                <div className="space-y-2 p-3 bg-muted/80 rounded-md border">
-                    <p className="font-bold text-foreground text-sm">TL Response</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{insight.supervisorResponse}</p>
-                </div>
-                 <div className="space-y-2 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
-                    <p className="font-bold text-blue-700 dark:text-blue-500 text-sm">First Employee Acknowledgement</p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{insight.auditTrail?.find(e => e.event === 'Employee Acknowledged')?.details}</p>
-                </div>
-                <div className="space-y-2 p-3 bg-orange-500/10 rounded-md border border-orange-500/20">
-                    <p className="font-bold text-orange-700 dark:text-orange-500 text-sm">AM Coaching Notes</p>
-                    <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amCoachingNotes}</p>
-                </div>
-                <div className="space-y-2 p-3 bg-muted/80 rounded-md border">
-                    <p className="font-bold text-foreground text-sm">TL Retry Notes</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{supervisorRetryNotes}</p>
-                </div>
-                 <div className="space-y-2 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
-                    <p className="font-bold text-blue-700 dark:text-blue-500 text-sm">Final Employee Acknowledgement</p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
-                </div>
-            </CardContent>
-            <CardFooter className="bg-destructive/10 pt-4 flex-col items-start gap-4">
-                <Label className="font-semibold text-destructive">Your Action</Label>
-                <p className="text-sm text-muted-foreground">
-                    This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to HR for final review.
-                </p>
-                <div className="w-full space-y-3">
-                     <Textarea 
-                        placeholder="e.g., I have scheduled a mediated session between the TL and employee, and will be implementing a new communication protocol for the team..."
-                        value={resolutionNotes}
-                        onChange={(e) => setResolutionNotes(e.target.value)}
-                        rows={4}
-                        className="bg-background"
-                     />
-                     <div className="flex gap-2">
-                         <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmitting || !resolutionNotes}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                            Submit to HR for Review
-                         </Button>
-                     </div>
-                 </div>
-            </CardFooter>
-        </Card>
+        <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value={item.id}>
+                <AccordionTrigger>
+                    <div className="flex justify-between items-center w-full pr-4">
+                        <div className="flex items-center gap-2">
+                             <TitleIcon className={`h-5 w-5 ${titleColor}`} />
+                             <span className={`font-semibold ${titleColor}`}>
+                                {title}: {isManagerWidget ? "Manager Review" : "AM Review"}
+                            </span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                            {item.employeeName} & {item.supervisorName}
+                        </span>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-6 pt-4">
+                     <div className="space-y-4">
+                        {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
+                        {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
+                        {renderAuditEntry("Employee Acknowledged", `${item.employeeName}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                        {isManagerWidget && renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+                        {isManagerWidget && renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
+                        {isManagerWidget && renderAuditEntry("Employee Acknowledged", "Final Employee Acknowledgement", insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                    </div>
+                
+                    <CardFooter className={`${bgColor} pt-4 flex-col items-start gap-4`}>
+                        <Label className={`font-semibold ${titleColor}`}>Your Action</Label>
+                        
+                        {isManagerWidget ? (
+                             <div className="w-full space-y-3">
+                                 <p className="text-sm text-muted-foreground">
+                                    This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to HR for final review.
+                                </p>
+                                 <Textarea 
+                                    placeholder="e.g., I have scheduled a mediated session between the TL and employee, and will be implementing a new communication protocol for the team..."
+                                    value={resolutionNotes}
+                                    onChange={(e) => setResolutionNotes(e.target.value)}
+                                    rows={4}
+                                    className="bg-background"
+                                 />
+                                 <div className="flex gap-2">
+                                     <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmittingManager || !resolutionNotes}>
+                                        {isSubmittingManager && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        Submit to HR for Review
+                                     </Button>
+                                 </div>
+                             </div>
+                        ) : action ? (
+                            <div className="w-full space-y-3">
+                                <Label htmlFor={`action-notes-${item.id}`}>
+                                    {action === 'coach' ? 'Coaching Notes for Supervisor' : 'Notes for Employee'}
+                                </Label>
+                                <p className="text-sm text-muted-foreground">
+                                    {action === 'coach' 
+                                        ? 'Log your coaching notes for the supervisor. This will be visible to them.'
+                                        : "Describe the conversation you had with the employee. This will be sent to them for acknowledgement."
+                                    }
+                                </p>
+                                <Textarea 
+                                    id={`action-notes-${item.id}`}
+                                    placeholder={action === 'coach' 
+                                        ? "e.g., Coached Ben on active listening and validating concerns before offering solutions..."
+                                        : "e.g., I spoke with Casey to understand their perspective and we've agreed on a path forward..."
+                                    }
+                                    value={actionNotes}
+                                    onChange={(e) => setActionNotes(e.target.value)}
+                                    rows={4}
+                                    className="bg-background"
+                                />
+                                <div className="flex gap-2">
+                                    <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        Submit
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
+                                <div className="flex gap-4">
+                                    <Button variant="secondary" onClick={() => handleActionClick('coach')}>
+                                        <Users className="mr-2 h-4 w-4" />
+                                        Coach Supervisor
+                                    </Button>
+                                    <Button onClick={() => handleActionClick('address')}>
+                                        <ChevronsRight className="mr-2 h-4 w-4" />
+                                        Address Employee
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+                    </CardFooter>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     );
 }
+
 
 function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
@@ -394,7 +368,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
             <CardContent className="pt-6 space-y-4">
                 {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
                 {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
-                {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor !== 'HR Head')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
                 {renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
                 {renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
                 {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, "bg-muted/80", "text-foreground")}
@@ -466,10 +440,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
 }
 
 function MessagesContent({ role }: { role: Role }) {
-  const [pendingAcknowledgements, setPendingAcknowledgements] = useState<OneOnOneHistoryItem[]>([]);
-  const [amEscalatedItems, setAmEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
-  const [managerEscalatedItems, setManagerEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
-  const [hrEscalatedItems, setHrEscalatedItems] = useState<OneOnOneHistoryItem[]>([]);
+  const [messages, setMessages] = useState<OneOnOneHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
@@ -477,32 +448,25 @@ function MessagesContent({ role }: { role: Role }) {
     const history = await getOneOnOneHistory();
     const currentUser = roleUserMapping[role];
 
-    // For Employees: Find items waiting for their acknowledgement
-    const pending = history.filter(item => 
-        item.employeeName === currentUser.name &&
-        item.analysis.criticalCoachingInsight?.status === 'pending_employee_acknowledgement'
-    );
-    setPendingAcknowledgements(pending);
+    const userMessages = history.filter(item => {
+        const insight = item.analysis.criticalCoachingInsight;
+        if (!insight) return false;
 
-    // For AMs: Find items escalated to them
-    const amEscalated = history.filter(item =>
-        role === 'AM' && item.analysis.criticalCoachingInsight?.status === 'pending_am_review'
-    );
-    setAmEscalatedItems(amEscalated);
+        switch (role) {
+            case 'Employee':
+                return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
+            case 'AM':
+                return insight.status === 'pending_am_review' || (insight.auditTrail?.some(e => e.actor === role) && insight.status !== 'resolved');
+            case 'Manager':
+                return insight.status === 'pending_manager_review' || (insight.auditTrail?.some(e => e.actor === role) && insight.status !== 'resolved');
+            case 'HR Head':
+                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
+            default:
+                return false;
+        }
+    });
 
-    // For Managers: Find items escalated to them
-    const managerEscalated = history.filter(item =>
-        role === 'Manager' && item.analysis.criticalCoachingInsight?.status === 'pending_manager_review'
-    );
-    setManagerEscalatedItems(managerEscalated);
-
-    // For HR Head: Find items escalated to them (both initial and final)
-    const hrEscalated = history.filter(item =>
-        role === 'HR Head' && 
-        (item.analysis.criticalCoachingInsight?.status === 'pending_hr_review' || item.analysis.criticalCoachingInsight?.status === 'pending_final_hr_action')
-    );
-    setHrEscalatedItems(hrEscalated);
-    
+    setMessages(userMessages);
     setIsLoading(false);
   }, [role]);
 
@@ -520,7 +484,32 @@ function MessagesContent({ role }: { role: Role }) {
     }
   }, [fetchMessages]);
 
-  const hasMessages = pendingAcknowledgements.length > 0 || amEscalatedItems.length > 0 || managerEscalatedItems.length > 0 || hrEscalatedItems.length > 0;
+  const hasMessages = messages.length > 0;
+
+  const renderWidget = (item: OneOnOneHistoryItem) => {
+    const status = item.analysis.criticalCoachingInsight?.status;
+    switch (status) {
+        case 'pending_employee_acknowledgement':
+            return <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />;
+        case 'pending_am_review':
+             return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
+        case 'pending_manager_review':
+            return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
+        case 'pending_hr_review':
+        case 'pending_final_hr_action':
+             return <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />;
+        default:
+            // For AM/Manager to see updates on cases they've touched
+            if (role === 'AM' || role === 'Manager') {
+                 if (item.analysis.criticalCoachingInsight?.status === 'pending_manager_review') {
+                     return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
+                 }
+                return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Case Update" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
+            }
+            return null;
+    }
+  };
+
 
   return (
     <div className="p-4 md:p-8">
@@ -538,20 +527,7 @@ function MessagesContent({ role }: { role: Role }) {
             {isLoading ? (
                  <Skeleton className="h-48 w-full" />
             ) : hasMessages ? (
-                <>
-                    {pendingAcknowledgements.map(item => (
-                        <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />
-                    ))}
-                    {amEscalatedItems.map(item => (
-                        <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} />
-                    ))}
-                    {managerEscalatedItems.map(item => (
-                        <ManagerEscalationWidget key={item.id} item={item} onUpdate={fetchMessages} />
-                    ))}
-                    {hrEscalatedItems.map(item => (
-                        <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />
-                    ))}
-                </>
+                messages.map(item => renderWidget(item))
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground text-lg">No new messages or actions.</p>
