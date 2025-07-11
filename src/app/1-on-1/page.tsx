@@ -247,15 +247,17 @@ function HistorySection({ role }: { role: Role }) {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2">
-                                {hasPendingAction ? (
+                                {hasPendingAction && criticalFeedback && (
                                     <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
                                         <h4 className="font-semibold text-destructive">Action Required: Critical Coaching Insight</h4>
-                                        <p className="text-destructive/90 my-2">{item.analysis.criticalCoachingInsight?.summary}</p>
+                                        <p className="text-destructive/90 my-2">{criticalFeedback.summary}</p>
                                         <Button asChild variant="destructive">
                                             <Link href="/action-items">Address Insight</Link>
                                         </Button>
                                     </div>
-                                ) : item.analysis.criticalCoachingInsight && (
+                                )}
+                                
+                                {item.analysis.criticalCoachingInsight && !hasPendingAction && (
                                     <div className="p-3 rounded-md bg-muted/50 border">
                                         <h4 className="font-semibold text-foreground">Critical Coaching Insight Logged</h4>
                                         <p className="text-muted-foreground">{item.analysis.criticalCoachingInsight.summary}</p>
@@ -451,4 +453,3 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-
