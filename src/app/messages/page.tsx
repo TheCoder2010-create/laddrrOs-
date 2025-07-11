@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -25,9 +25,11 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
     const handleEmployeeAckSubmit = async () => {
         if (!employeeAcknowledgement) return;
         setIsSubmittingAck(true);
+        
+        const previousStatus = item.analysis.criticalCoachingInsight?.status;
 
         try {
-            await submitEmployeeAcknowledgement(item.id, employeeAcknowledgement);
+            await submitEmployeeAcknowledgement(item.id, employeeAcknowledgement, previousStatus);
             setEmployeeAcknowledgement("");
             
             if (employeeAcknowledgement === "The concern was fully addressed to my satisfaction.") {
@@ -71,10 +73,18 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                         </p>
                     </div>
                 )}
+                 {item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'Manager Resolution') && (
+                     <div className="p-3 bg-muted/80 rounded-md border">
+                        <p className="font-semibold text-foreground">Manager's Final Resolution</p>
+                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'Manager Resolution')?.details}
+                        </p>
+                    </div>
+                )}
                 <div className="space-y-3">
                     <Label className="font-semibold">Your Acknowledgement</Label>
                     <p className="text-sm text-muted-foreground">
-                        Please review your supervisor's response and provide feedback on the resolution.
+                        Please review the latest response and provide feedback on the resolution.
                     </p>
                     <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
                         <div className="flex items-center space-x-2">
@@ -215,6 +225,26 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
     const amCoachingNotes = insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
     const supervisorRetryNotes = insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.details;
+    const { toast } = useToast();
+    const { role } = useRole();
+
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleManagerSubmit = async () => {
+        if (!resolutionNotes) return;
+        setIsSubmitting(true);
+        try {
+            await submitManagerResolution(item.id, role!, resolutionNotes);
+            toast({ title: "Resolution Submitted", description: "The employee has been notified for a final acknowledgement." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit manager resolution", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <Card className="border-destructive">
@@ -236,6 +266,10 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
                     <p className="font-bold text-foreground text-sm">TL Response</p>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{insight.supervisorResponse}</p>
                 </div>
+                 <div className="space-y-2 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
+                    <p className="font-bold text-blue-700 dark:text-blue-500 text-sm">First Employee Acknowledgement</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{insight.auditTrail?.find(e => e.event === 'Employee Acknowledged')?.details}</p>
+                </div>
                 <div className="space-y-2 p-3 bg-orange-500/10 rounded-md border border-orange-500/20">
                     <p className="font-bold text-orange-700 dark:text-orange-500 text-sm">AM Coaching Notes</p>
                     <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amCoachingNotes}</p>
@@ -249,8 +283,26 @@ function ManagerEscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem
                     <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
                 </div>
             </CardContent>
-            <CardFooter className="bg-destructive/10 pt-4">
-                <p className="text-sm text-destructive/80">This case requires direct intervention. Please follow up outside the system. (Further actions will be implemented in the next step).</p>
+            <CardFooter className="bg-destructive/10 pt-4 flex-col items-start gap-4">
+                <Label className="font-semibold text-destructive">Your Action</Label>
+                <p className="text-sm text-muted-foreground">
+                    This case requires your direct intervention. Document the actions you will take to resolve this situation. The employee will be asked to acknowledge this final resolution.
+                </p>
+                <div className="w-full space-y-3">
+                     <Textarea 
+                        placeholder="e.g., I have scheduled a mediated session between the TL and employee, and will be implementing a new communication protocol for the team..."
+                        value={resolutionNotes}
+                        onChange={(e) => setResolutionNotes(e.target.value)}
+                        rows={4}
+                        className="bg-background"
+                     />
+                     <div className="flex gap-2">
+                         <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmitting || !resolutionNotes}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Submit Final Resolution
+                         </Button>
+                     </div>
+                 </div>
             </CardFooter>
         </Card>
     );

@@ -161,7 +161,7 @@ export async function submitSupervisorInsightResponse(historyId: string, respons
     }
 }
 
-export async function submitEmployeeAcknowledgement(historyId: string, acknowledgement: string): Promise<void> {
+export async function submitEmployeeAcknowledgement(historyId: string, acknowledgement: string, previousStatus?: CriticalCoachingInsight['status']): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const index = allHistory.findIndex(h => h.id === historyId);
     if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
@@ -172,11 +172,26 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
 
     insight.employeeAcknowledgement = acknowledgement;
+    
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: 'Employee Acknowledged',
+        timestamp: new Date(),
+        actor: item.employeeName as Role,
+        details: acknowledgement,
+    });
 
     const wasRetry = insight.auditTrail?.some(e => e.event === 'Supervisor Retry Action');
+    const wasManagerAction = insight.auditTrail?.some(e => e.event === 'Manager Resolution');
 
     if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
         insight.status = 'resolved';
+    } else if (wasManagerAction) {
+        // After manager intervention, final escalation is to HR
+        insight.status = 'resolved'; // Mark as resolved in the system, but flag for HR
+        item.assignedTo = 'HR Head';
     } else if (wasRetry) {
         // If it was a retry and still not resolved, escalate to Manager
         insight.status = 'pending_manager_review';
@@ -236,6 +251,32 @@ export async function submitSupervisorRetry(historyId: string, retryNotes: strin
         timestamp: new Date(),
         actor: item.supervisorName as Role, // Assuming supervisorName is a valid Role
         details: retryNotes,
+    });
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+export async function submitManagerResolution(historyId: string, actor: Role, notes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+         throw new Error("Could not find history item or critical insight to update.");
+    }
+    
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+
+    // Send back to employee for final acknowledgement
+    insight.status = 'pending_employee_acknowledgement';
+    
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: 'Manager Resolution',
+        timestamp: new Date(),
+        actor: actor,
+        details: notes,
     });
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
