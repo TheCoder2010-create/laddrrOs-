@@ -147,6 +147,31 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
 Generate the complete, compliant, and objective report now.`,
 });
 
+async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, initialDelay = 1000): Promise<T> {
+  let lastError: any;
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      // Check for 503 Service Unavailable or similar network/overload errors
+      if (error.status === 503 || (error.message && error.message.includes('503'))) {
+        if (i < retries - 1) {
+          const delay = initialDelay * Math.pow(2, i);
+          console.log(`AI service unavailable. Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      } else {
+        // Not a retryable error, so throw immediately
+        throw error;
+      }
+    }
+  }
+  console.error("AI analysis failed after multiple retries.", lastError);
+  throw new Error(`AI analysis failed after ${retries} retries. Last error: ${lastError.message}`);
+}
+
+
 const analyzeOneOnOneFlow = ai.defineFlow(
   {
     name: 'analyzeOneOnOneFlow',
@@ -154,9 +179,10 @@ const analyzeOneOnOneFlow = ai.defineFlow(
     outputSchema: AnalyzeOneOnOneOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const { output } = await retryWithBackoff(() => prompt(input));
+    
     if (!output) {
-      throw new Error("AI analysis failed to produce an output.");
+      throw new Error("AI analysis failed to produce an output after multiple retries.");
     }
     return output;
   }
