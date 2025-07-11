@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getCriticalFeedbackByOneOnOneId, submitSupervisorUpdate, type Feedback } from '@/services/feedback-service';
+import { saveOneOnOneHistory, updateOneOnOneHistoryItem } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -27,6 +27,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { useRole } from '@/hooks/use-role';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { Lightbulb, BrainCircuit, ShieldCheck, TrendingDown } from 'lucide-react';
 
 // Define meeting type locally as it's not exported from the main page
 interface Meeting {
@@ -94,11 +95,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
   // AI result state
   const [analysisResult, setAnalysisResult] = useState<AnalyzeOneOnOneOutput | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [relatedFeedbackItem, setRelatedFeedbackItem] = useState<Feedback | null>(null);
-  const [showAddressInsight, setShowAddressInsight] = useState(false);
-  const [supervisorResponse, setSupervisorResponse] = useState("");
-  const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
-
+  
   const hasMedia = !!recordedAudioUri || !!audioFile || !!transcriptContent;
 
   useEffect(() => {
@@ -199,9 +196,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setAnalysisResult(null);
     setAnalysisError(null);
-    setRelatedFeedbackItem(null);
-    setShowAddressInsight(false);
-
+    
     startTransition(async () => {
         try {
             const historyItem = await saveOneOnOneHistory({
@@ -209,7 +204,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                 employeeName: meeting.with,
                 date: new Date(meeting.date).toISOString(),
                 // Temporarily store empty analysis
-                analysis: { summary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false } }, 
+                analysis: { supervisorSummary: '', employeeSummary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false } }, 
             });
 
             // Pass the new history ID to the analysis flow
@@ -219,12 +214,6 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
             });
 
             setAnalysisResult(result);
-
-            if (result.escalationAlert) {
-                // Find the newly created feedback item to manage its state
-                const feedbackItem = await getCriticalFeedbackByOneOnOneId(historyItem.id);
-                setRelatedFeedbackItem(feedbackItem);
-            }
             
             // Now update the history item with the real analysis
             await updateOneOnOneHistoryItem({ ...historyItem, analysis: result });
@@ -238,27 +227,9 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     });
   };
 
-  const handleAddressInsightSubmit = async () => {
-    if (!supervisorResponse || !relatedFeedbackItem || !role) return;
-
-    setIsSubmittingResponse(true);
-    try {
-        await submitSupervisorUpdate(relatedFeedbackItem.trackingId, role, supervisorResponse);
-        setSupervisorResponse("");
-        setShowAddressInsight(false);
-        // Refetch the feedback item to update its status locally
-        const updatedFeedbackItem = await getCriticalFeedbackByOneOnOneId(relatedFeedbackItem.oneOnOneId!);
-        setRelatedFeedbackItem(updatedFeedbackItem);
-
-        toast({ title: "Response Submitted", description: "The employee has been notified to acknowledge your response." });
-    } catch (error) {
-        console.error("Failed to submit response", error);
-        toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your response." });
-    } finally {
-        setIsSubmittingResponse(false);
-    }
-  };
-
+  const displayedMissedSignals = analysisResult?.missedSignals?.filter(
+      signal => signal !== analysisResult.criticalCoachingInsight?.summary
+  ) || [];
 
   return (
     <div className="p-4 md:p-8">
@@ -470,11 +441,15 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6 text-primary/90">
-                    <div>
-                        <h4 className="font-semibold text-foreground mb-2">Session Summary</h4>
-                        <p className="whitespace-pre-wrap">{analysisResult.summary}</p>
-                    </div>
-
+                    
+                     {/* Supervisor View */}
+                    {role !== 'Employee' && analysisResult.supervisorSummary && (
+                        <div>
+                            <h4 className="font-semibold text-foreground mb-2">Session Summary for Supervisor</h4>
+                            <p className="whitespace-pre-wrap">{analysisResult.supervisorSummary}</p>
+                        </div>
+                    )}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-3 rounded-md bg-background/50 border">
                             <h4 className="font-semibold text-foreground flex items-center gap-2"><Star /> Leadership Score</h4>
@@ -509,64 +484,27 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                         </div>
                     )}
                     
-                    {analysisResult.missedSignals && analysisResult.missedSignals.length > 0 && (
+                    {displayedMissedSignals.length > 0 && (
                          <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
                             <h4 className="font-semibold text-yellow-700 dark:text-yellow-400">Missed Signals</h4>
                              <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
-                                {analysisResult.missedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
+                                {displayedMissedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
                             </ul>
                         </div>
                     )}
 
-                    {analysisResult.escalationAlert && (
+                    {analysisResult.criticalCoachingInsight && (
                         <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 mt-4">
                             <h4 className="font-semibold text-destructive flex items-center gap-2">
                                 <ShieldAlert /> Critical Coaching Insight
                             </h4>
-                            <p className="text-destructive/90 mt-2"><strong>What was missed:</strong> {analysisResult.escalationAlert.summary}</p>
-                            <p className="text-destructive/90 mt-1"><strong>Why it matters:</strong> {analysisResult.escalationAlert.reason}</p>
-                            <p className="text-destructive/90 mt-1"><strong>Suggested action:</strong> {analysisResult.escalationAlert.suggestedAction}</p>
-
-                             {relatedFeedbackItem?.status === 'Pending Supervisor Action' && (
-                                <div className="mt-4">
-                                    {!showAddressInsight ? (
-                                        <Button variant="destructive" onClick={() => setShowAddressInsight(true)}>
-                                            Address Insight
-                                        </Button>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <Label htmlFor="supervisor-response" className="text-foreground font-semibold">
-                                                How will you address this?
-                                            </Label>
-                                            <Textarea
-                                                id="supervisor-response"
-                                                value={supervisorResponse}
-                                                onChange={(e) => setSupervisorResponse(e.target.value)}
-                                                placeholder="Explain the actions you will take to resolve this concern..."
-                                                rows={4}
-                                                className="bg-background"
-                                            />
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    onClick={handleAddressInsightSubmit}
-                                                    disabled={isSubmittingResponse || !supervisorResponse}
-                                                >
-                                                    {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
-                                                    Submit Response
-                                                </Button>
-                                                <Button variant="ghost" onClick={() => setShowAddressInsight(false)}>
-                                                    Cancel
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {relatedFeedbackItem?.status !== 'Pending Supervisor Action' && relatedFeedbackItem?.supervisorUpdate && (
-                                <div className="mt-4 p-3 bg-muted/50 rounded-md">
-                                    <p className="font-semibold text-foreground">Your response has been submitted and is pending employee acknowledgement.</p>
-                                </div>
-                            )}
+                            <p className="text-destructive/90 mt-2">{analysisResult.criticalCoachingInsight.summary}</p>
+                            <p className="text-destructive/90 mt-1"><strong>Why it matters:</strong> {analysisResult.criticalCoachingInsight.reason}</p>
+                             <div className="mt-4">
+                                <Button variant="destructive" asChild>
+                                    <Link href="/1-on-1">Address Insight in Session History</Link>
+                                </Button>
+                            </div>
                         </div>
                     )}
 
@@ -624,5 +562,7 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
+
+    
 
     
