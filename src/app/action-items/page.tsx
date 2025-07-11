@@ -258,7 +258,12 @@ function ActionItemsContent() {
     setIsLoading(true);
     try {
       const allFeedback = await getAllFeedback();
-      const myFeedback = allFeedback.filter(f => f.assignedTo === role && f.status !== 'Resolved' && f.status !== 'Open');
+      const myFeedback = allFeedback.filter(f => {
+        if (role === 'Employee') {
+            return f.assignedTo === role && f.status === 'Pending Employee Acknowledgement';
+        }
+        return f.assignedTo === role && f.status !== 'Resolved' && f.status !== 'Open';
+      });
       // Sort to show To-Do items first, then by date
       myFeedback.sort((a, b) => {
         if (a.status === 'To-Do' && b.status !== 'To-Do') return -1;
@@ -451,7 +456,7 @@ export default function ActionItemsPage() {
         )
     }
 
-    if (!role || (!availableRolesForAssignment.includes(role) && role !== 'Employee')) {
+    if (!role || (!availableRolesForAssignment.includes(role) && role !== 'Employee' && role !== 'HR Head' && role !== 'Manager')) {
          return (
             <DashboardLayout role={role!} onSwitchRole={setRole}>
                 <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
@@ -475,3 +480,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    

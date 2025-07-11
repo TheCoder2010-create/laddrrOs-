@@ -30,6 +30,7 @@ export default function AcknowledgePage() {
         if (!trackingId || typeof trackingId !== 'string') return;
         setIsLoading(true);
         try {
+            // Note: In a real app, you'd fetch by trackingId, not oneOnOneId
             const item = await getFeedbackById(trackingId);
             setFeedbackItem(item);
         } catch (error) {
@@ -176,3 +177,5 @@ export default function AcknowledgePage() {
         </div>
     )
 }
+
+    

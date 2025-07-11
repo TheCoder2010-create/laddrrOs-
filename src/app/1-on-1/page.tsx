@@ -236,14 +236,11 @@ function HistorySection({ role }: { role: Role }) {
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                    {criticalFeedback && (
-                                        <div className={cn(
-                                            "flex items-center gap-2", 
-                                            hasPendingAction ? "text-destructive" : "text-muted-foreground"
-                                        )}>
+                                    {hasPendingAction && (
+                                        <div className="flex items-center gap-2 text-destructive">
                                             <AlertTriangle className="h-5 w-5" />
                                             <span className="hidden md:inline">
-                                                {hasPendingAction ? "Action Required" : "Critical Insight Logged"}
+                                                Action Required
                                             </span>
                                         </div>
                                     )}

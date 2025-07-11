@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getFeedbackById, submitSupervisorUpdate, type Feedback } from '@/services/feedback-service';
+import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getCriticalFeedbackByOneOnOneId, submitSupervisorUpdate, type Feedback } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -222,7 +222,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
 
             if (result.escalationAlert) {
                 // Find the newly created feedback item to manage its state
-                const feedbackItem = await getFeedbackById(historyItem.id, true);
+                const feedbackItem = await getCriticalFeedbackByOneOnOneId(historyItem.id);
                 setRelatedFeedbackItem(feedbackItem);
             }
             
@@ -247,7 +247,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         setSupervisorResponse("");
         setShowAddressInsight(false);
         // Refetch the feedback item to update its status locally
-        const updatedFeedbackItem = await getFeedbackById(relatedFeedbackItem.oneOnOneId!, true);
+        const updatedFeedbackItem = await getCriticalFeedbackByOneOnOneId(relatedFeedbackItem.oneOnOneId!);
         setRelatedFeedbackItem(updatedFeedbackItem);
 
         toast({ title: "Response Submitted", description: "The employee has been notified to acknowledge your response." });
@@ -624,3 +624,5 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
+
+    
