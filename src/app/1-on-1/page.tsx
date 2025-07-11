@@ -183,8 +183,7 @@ function HistorySection({ role }: { role: Role }) {
         // Check for related critical feedback items to link alerts
         const allFeedback = await getAllFeedback();
         const userHistoryWithAlerts = userHistory.map(item => {
-            const hasEscalationAlert = !!item.analysis.escalationAlert;
-            if (!hasEscalationAlert) return { ...item, hasPendingAction: false };
+            if (!item.analysis.escalationAlert) return { ...item, hasPendingAction: false };
 
             // Find the feedback item linked to this 1-on-1
             const relatedFeedback = allFeedback.find(fb => fb.oneOnOneId === item.id && fb.criticality === 'Critical');
@@ -440,6 +439,3 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-
-    
-
