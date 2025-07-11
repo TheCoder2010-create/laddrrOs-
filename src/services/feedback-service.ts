@@ -1,6 +1,6 @@
 
 /**
- * @fileOverview A service for managing feedback submissions using localStorage.
+ * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
  * This service provides a simple, client-side persistent storage mechanism for feedback,
  * suitable for a prototype. It now includes custom event dispatching for same-tab updates.
@@ -96,26 +96,26 @@ const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
 
 const getFromStorage = <T>(key: string): T[] => {
     if (typeof window === 'undefined') return [];
-    const json = localStorage.getItem(key);
+    const json = sessionStorage.getItem(key);
     if (!json) return [];
     try {
         const data = JSON.parse(json) as any[];
         // Basic data migration/validation
         if (key === FEEDBACK_KEY && data.length > 0 && !data[0].status) {
              console.log("Old feedback data detected, clearing for new structure.");
-             localStorage.removeItem(key);
+             sessionStorage.removeItem(key);
              return [];
         }
         return data as T[];
     } catch (e) {
-        console.error(`Error parsing ${key} from localStorage`, e);
+        console.error(`Error parsing ${key} from sessionStorage`, e);
         return [];
     }
 }
 
 const saveToStorage = (key: string, data: any[]): void => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(key, JSON.stringify(data));
+    sessionStorage.setItem(key, JSON.stringify(data));
     window.dispatchEvent(new CustomEvent('feedbackUpdated'));
     window.dispatchEvent(new Event('storage')); // for wider compatibility
 }
