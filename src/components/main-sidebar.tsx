@@ -72,7 +72,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           statusesToCount.push('pending_manager_review');
           break;
         case 'HR Head':
-            statusesToCount.push('pending_hr_review');
+            statusesToCount.push('pending_hr_review', 'pending_final_hr_action');
             break;
       }
 

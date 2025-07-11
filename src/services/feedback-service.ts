@@ -187,11 +187,15 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
     const wasManagerAction = insight.auditTrail?.some(e => e.event === 'Manager Resolution');
     const wasHrAction = insight.auditTrail?.some(e => e.event === 'HR Resolution');
 
-    if (acknowledgement === "The concern was fully addressed to my satisfaction." || wasHrAction) {
-        // Resolve if employee is satisfied, OR if it's the final HR step (workflow ends here)
+    if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
+        // Resolve if employee is satisfied.
         insight.status = 'resolved';
+    } else if (wasHrAction) {
+        // After HR intervention, if still not satisfied, route for final HR action.
+        insight.status = 'pending_final_hr_action';
+        item.assignedTo = 'HR Head';
     } else if (wasManagerAction) {
-        // After manager intervention, final escalation is to HR for offline review.
+        // After manager intervention, final escalation is to HR for review.
         insight.status = 'pending_hr_review';
         item.assignedTo = 'HR Head';
     } else if (wasRetry) {
@@ -302,6 +306,34 @@ export async function submitHrResolution(historyId: string, actor: Role, notes: 
     }
     insight.auditTrail.push({
         event: 'HR Resolution',
+        timestamp: new Date(),
+        actor: actor,
+        details: notes,
+    });
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+
+export async function submitFinalHrDecision(historyId: string, actor: Role, decision: string, notes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const index = allHistory.findIndex(h => h.id === historyId);
+    if (index === -1 || !allHistory[index].analysis.criticalCoachingInsight) {
+        throw new Error("Could not find history item or critical insight to update.");
+    }
+
+    const item = allHistory[index];
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    
+    // This is the end of the line. Mark as resolved.
+    insight.status = 'resolved';
+    item.assignedTo = null; // No longer assigned to anyone
+
+    if (!insight.auditTrail) {
+        insight.auditTrail = [];
+    }
+    insight.auditTrail.push({
+        event: decision, // e.g., 'Assigned to Ombudsman'
         timestamp: new Date(),
         actor: actor,
         details: notes,

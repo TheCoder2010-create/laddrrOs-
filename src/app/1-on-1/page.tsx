@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -192,10 +192,8 @@ function HistorySection({ role }: { role: Role }) {
         const currentUser = roleUserMapping[role];
         
         const userHistory = historyData.filter(item => {
-             // Show if user is direct participant OR if their role is in the escalation path (TL, AM, Manager)
-             return item.supervisorName === currentUser.name || 
-                    item.employeeName === currentUser.name ||
-                    (item.analysis.criticalCoachingInsight && ['Team Lead', 'AM', 'Manager'].includes(role));
+             // Show if user is direct participant (supervisor or employee)
+             return item.supervisorName === currentUser.name || item.employeeName === currentUser.name;
         });
         
         setHistory(userHistory.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -283,13 +281,26 @@ function HistorySection({ role }: { role: Role }) {
                     const canSupervisorAct = isSupervisor && insightStatus === 'open';
                     const canSupervisorRetry = isSupervisor && insightStatus === 'pending_supervisor_retry';
 
+                    // Final decision states for badging
+                    const finalDecisionEvent = insight?.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
+
+
                     const getStatusBadge = () => {
                         if (!insight) return null;
+
+                        if (finalDecisionEvent) {
+                            let icon = FileText;
+                            let text = "Case Logged";
+                            if (finalDecisionEvent.event.includes("Ombudsman")) { icon = UserX; text = "Ombudsman"; }
+                            if (finalDecisionEvent.event.includes("Grievance")) { icon = UserPlus; text = "Grievance"; }
+                            return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><icon className="h-3 w-3" />{text}</Badge>;
+                        }
+
                         switch(insightStatus) {
                             case 'open':
                                 return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Action Required</Badge>;
                             case 'pending_employee_acknowledgement':
-                                return <Badge className="bg-blue-500 text-white flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Pending Acknowledgement</Badge>;
+                                return <Badge className="bg-blue-500 text-white flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Pending Ack</Badge>;
                              case 'pending_supervisor_retry':
                                 return <Badge className="bg-purple-500 text-white flex items-center gap-1.5"><Repeat className="h-3 w-3" />Retry Required</Badge>;
                             case 'pending_am_review':
@@ -297,6 +308,7 @@ function HistorySection({ role }: { role: Role }) {
                             case 'pending_manager_review':
                                 return <Badge className="bg-red-700 text-white flex items-center gap-1.5"><Briefcase className="h-3 w-3" />Manager Review</Badge>;
                             case 'pending_hr_review':
+                            case 'pending_final_hr_action':
                                 return <Badge className="bg-black text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
                             case 'resolved':
                                 return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;

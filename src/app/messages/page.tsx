@@ -6,8 +6,8 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution } from '@/services/feedback-service';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText } from 'lucide-react';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -324,6 +324,11 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     const { role } = useRole();
     const [resolutionNotes, setResolutionNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // State for the final action step
+    const [finalAction, setFinalAction] = useState<string | null>(null);
+    const [finalActionNotes, setFinalActionNotes] = useState('');
+    const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
 
     const handleHrSubmit = async () => {
         if (!resolutionNotes) return;
@@ -339,6 +344,21 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
             setIsSubmitting(false);
         }
     };
+    
+    const handleFinalHrDecision = async () => {
+        if (!finalAction || !finalActionNotes) return;
+        setIsSubmittingFinal(true);
+        try {
+            await submitFinalHrDecision(item.id, role!, finalAction, finalActionNotes);
+            toast({ title: "Final Action Logged", description: "The case has been closed." });
+            onUpdate();
+        } catch (error) {
+             console.error("Failed to submit final HR decision", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingFinal(false);
+        }
+    }
 
     const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
         const entry = insight.auditTrail?.find(e => e.event === event);
@@ -368,30 +388,69 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                 {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
                 {renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
                 {renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
-                {renderAuditEntry("Employee Acknowledged", "Second Employee Acknowledgement", insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
                 {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, "bg-muted/80", "text-foreground")}
-                 {renderAuditEntry("Employee Acknowledged", `Third Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                 {renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
             </CardContent>
             <CardFooter className="bg-black/10 dark:bg-gray-800/50 pt-4 flex-col items-start gap-4">
-                <Label className="font-semibold text-black dark:text-white">Your Action</Label>
-                 <p className="text-sm text-muted-foreground">
-                    The automated workflow for this case has concluded. Document your final actions to resolve this situation. The employee will be asked for a final acknowledgement.
-                </p>
-                <div className="w-full space-y-3">
-                     <Textarea 
-                        placeholder="e.g., I have met with all parties involved and have put a formal performance improvement plan in place for the supervisor..."
-                        value={resolutionNotes}
-                        onChange={(e) => setResolutionNotes(e.target.value)}
-                        rows={4}
-                        className="bg-background"
-                     />
-                     <div className="flex gap-2">
-                         <Button className="bg-black hover:bg-black/80 text-white" onClick={handleHrSubmit} disabled={isSubmitting || !resolutionNotes}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                            Submit Final HR Resolution
-                         </Button>
-                     </div>
-                 </div>
+                 {insight.status === 'pending_hr_review' && (
+                    <>
+                        <Label className="font-semibold text-black dark:text-white">Your Action</Label>
+                         <p className="text-sm text-muted-foreground">
+                            The automated workflow for this case has concluded. Document your final actions to resolve this situation. The employee will be asked for a final acknowledgement.
+                        </p>
+                        <div className="w-full space-y-3">
+                             <Textarea 
+                                placeholder="e.g., I have met with all parties involved and have put a formal performance improvement plan in place for the supervisor..."
+                                value={resolutionNotes}
+                                onChange={(e) => setResolutionNotes(e.target.value)}
+                                rows={4}
+                                className="bg-background"
+                             />
+                             <div className="flex gap-2">
+                                 <Button className="bg-black hover:bg-black/80 text-white" onClick={handleHrSubmit} disabled={isSubmitting || !resolutionNotes}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                    Submit Final HR Resolution
+                                 </Button>
+                             </div>
+                         </div>
+                    </>
+                )}
+                 {insight.status === 'pending_final_hr_action' && (
+                    <>
+                         <Label className="font-semibold text-black dark:text-white">Final Action Required</Label>
+                         <p className="text-sm text-muted-foreground">
+                            The employee remains dissatisfied. Please select a final action to formally close this case. This is the last step in the automated workflow.
+                         </p>
+
+                         {!finalAction ? (
+                             <div className="flex flex-wrap gap-2">
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
+                                 <Button variant="destructive" onClick={() => setFinalAction('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
+                             </div>
+                         ) : (
+                             <div className="w-full space-y-3">
+                                <p className="font-medium">Action: <span className="text-primary">{finalAction}</span></p>
+                                 <Label htmlFor="final-notes">Reasoning / Notes</Label>
+                                 <Textarea
+                                     id="final-notes"
+                                     placeholder={`Provide reasoning for selecting: ${finalAction}`}
+                                     value={finalActionNotes}
+                                     onChange={(e) => setFinalActionNotes(e.target.value)}
+                                     rows={4}
+                                     className="bg-background"
+                                 />
+                                 <div className="flex gap-2">
+                                     <Button className="bg-black hover:bg-black/80 text-white" onClick={handleFinalHrDecision} disabled={isSubmittingFinal || !finalActionNotes}>
+                                        {isSubmittingFinal && <Loader2 className="mr-2 animate-spin"/>}
+                                        Submit Final Action
+                                     </Button>
+                                     <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
+                                 </div>
+                             </div>
+                         )}
+                    </>
+                 )}
             </CardFooter>
         </Card>
     );
@@ -428,9 +487,10 @@ function MessagesContent({ role }: { role: Role }) {
     );
     setManagerEscalatedItems(managerEscalated);
 
-    // For HR Head: Find items escalated to them
+    // For HR Head: Find items escalated to them (both initial and final)
     const hrEscalated = history.filter(item =>
-        role === 'HR Head' && item.analysis.criticalCoachingInsight?.status === 'pending_hr_review'
+        role === 'HR Head' && 
+        (item.analysis.criticalCoachingInsight?.status === 'pending_hr_review' || item.analysis.criticalCoachingInsight?.status === 'pending_final_hr_action')
     );
     setHrEscalatedItems(hrEscalated);
     
