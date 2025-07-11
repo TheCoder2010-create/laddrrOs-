@@ -189,8 +189,9 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
     if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
         insight.status = 'resolved';
     } else if (wasManagerAction) {
-        // After manager intervention, final escalation is to HR
-        insight.status = 'resolved'; // Mark as resolved in the system, but flag for HR
+        // After manager intervention, final escalation is to HR for offline review.
+        // It lands in their "Action Items" queue.
+        insight.status = 'pending_supervisor_action'; // This status shows up in the 'Action Items' queue
         item.assignedTo = 'HR Head';
     } else if (wasRetry) {
         // If it was a retry and still not resolved, escalate to Manager
