@@ -181,12 +181,11 @@ function HistorySection({ role }: { role: Role }) {
         const currentUser = roleUserMapping[role];
         
         const userHistory = historyData.filter(item => {
-             const employeeRole = getRoleByName(item.employeeName);
              const supervisorRole = getRoleByName(item.supervisorName);
              return item.supervisorName === currentUser.name || 
                     item.employeeName === currentUser.name || 
-                    (role === 'AM' && (employeeRole === 'Team Lead' || supervisorRole === 'Team Lead')) || 
-                    (role === 'Manager' && (employeeRole === 'Team Lead' || supervisorRole === 'Team Lead'));
+                    (role === 'AM' && supervisorRole === 'Team Lead') || 
+                    (role === 'Manager' && supervisorRole === 'Team Lead');
         });
         
         setHistory(userHistory);
@@ -221,8 +220,14 @@ function HistorySection({ role }: { role: Role }) {
             </h2>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
-                    const criticalFeedback = allFeedback.find(f => f.oneOnOneId === item.id && f.criticality === 'Critical');
-                    const hasPendingAction = criticalFeedback && criticalFeedback.status === 'Pending Supervisor Action' && criticalFeedback.assignedTo === role;
+                    // This logic finds if a critical feedback item exists for THIS 1-on-1 AND requires action from the current user.
+                    const criticalFeedback = allFeedback.find(f => 
+                        f.oneOnOneId === item.id && 
+                        f.criticality === 'Critical'
+                    );
+                    const hasPendingAction = criticalFeedback && 
+                                             criticalFeedback.status === 'Pending Supervisor Action' && 
+                                             criticalFeedback.assignedTo === role;
 
                     return (
                         <AccordionItem value={item.id} key={item.id} className="px-4">
@@ -230,7 +235,7 @@ function HistorySection({ role }: { role: Role }) {
                                 <div className="flex justify-between items-center w-full pr-4">
                                     <div className="text-left">
                                         <p className="font-medium">
-                                            1-on-1 with {role === getRoleByName(item.supervisorName)?.role ? item.employeeName : item.supervisorName}
+                                            1-on-1 with {role === getRoleByName(item.supervisorName) ? item.employeeName : item.supervisorName}
                                         </p>
                                         <p className="text-sm text-muted-foreground font-normal">
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
@@ -454,3 +459,5 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
