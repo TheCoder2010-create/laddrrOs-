@@ -97,8 +97,8 @@ export interface TrackFeedbackOutput {
 }
 
 
-const FEEDBACK_KEY = 'accountability_feedback_v1';
-const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v1';
+const FEEDBACK_KEY = 'accountability_feedback_v2';
+const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v2';
 
 
 // ==========================================
@@ -258,16 +258,22 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
 
 /**
  * Retrieves a single feedback item by ID.
- * @param id The ID of the feedback to retrieve. Can be trackingId or oneOnOneId.
- * @param byOneOnOneId Flag to search by oneOnOneId instead of trackingId.
+ * @param id The ID of the feedback to retrieve.
  * @returns A promise that resolves with the feedback item or null.
  */
-export async function getFeedbackById(id: string, byOneOnOneId = false): Promise<Feedback | null> {
+export async function getFeedbackById(id: string): Promise<Feedback | null> {
     const allFeedback = getFeedbackFromStorage();
-    if (byOneOnOneId) {
-        return allFeedback.find(f => f.oneOnOneId === id && f.criticality === 'Critical') || null;
-    }
     return allFeedback.find(f => f.trackingId === id) || null;
+}
+
+/**
+ * Retrieves a single critical feedback item by the 1-on-1 ID it's associated with.
+ * @param oneOnOneId The ID of the 1-on-1 history item.
+ * @returns A promise that resolves with the feedback item or null.
+ */
+export async function getCriticalFeedbackByOneOnOneId(oneOnOneId: string): Promise<Feedback | null> {
+    const allFeedback = getFeedbackFromStorage();
+    return allFeedback.find(f => f.oneOnOneId === oneOnOneId && f.criticality === 'Critical') || null;
 }
 
 
@@ -282,9 +288,15 @@ export async function getAllFeedback(): Promise<Feedback[]> {
 /**
  * Saves a full array of feedback objects to storage.
  * @param feedback The array of feedback to save.
+ * @param append If true, appends the feedback to the existing list instead of overwriting.
  */
-export async function saveFeedback(feedback: Feedback[]): Promise<void> {
-    saveFeedbackToStorage(feedback);
+export async function saveFeedback(feedback: Feedback[], append = false): Promise<void> {
+    if (append) {
+        const existingFeedback = getFeedbackFromStorage();
+        saveFeedbackToStorage([...feedback, ...existingFeedback]);
+    } else {
+        saveFeedbackToStorage(feedback);
+    }
 }
 
 
@@ -380,27 +392,17 @@ export async function submitEmployeeAcknowledgement(trackingId: string, employee
 
     const item = allFeedback[feedbackIndex];
     item.employeeAcknowledgement = { approved, justification };
-
-    if (approved) {
-        item.status = 'Pending AM Review';
-        item.assignedTo = 'AM';
-        item.auditTrail?.push({
-            event: 'Employee Approved',
-            timestamp: new Date(),
-            actor: employee,
-            details: justification,
-        });
-    } else {
-        item.status = 'Pending AM Review'; // AM needs to review the rejection
-        item.assignedTo = 'AM';
-        item.auditTrail?.push({
-            event: 'Employee Rejected',
-            timestamp: new Date(),
-            actor: employee,
-            details: justification,
-        });
-    }
-
+    const event = approved ? 'Employee Approved' : 'Employee Rejected';
+    
+    item.status = 'Pending AM Review';
+    item.assignedTo = 'AM';
+    item.auditTrail?.push({
+        event,
+        timestamp: new Date(),
+        actor: employee,
+        details: justification,
+    });
+   
     saveFeedbackToStorage(allFeedback);
 }
 

@@ -243,7 +243,7 @@ function HistorySection({ role }: { role: Role }) {
                                         )}>
                                             <AlertTriangle className="h-5 w-5" />
                                             <span className="hidden md:inline">
-                                                {hasPendingAction ? "Action Required" : "Critical Insight"}
+                                                {hasPendingAction ? "Action Required" : "Critical Insight Logged"}
                                             </span>
                                         </div>
                                     )}
@@ -260,14 +260,14 @@ function HistorySection({ role }: { role: Role }) {
                                     </div>
                                 ) : item.analysis.escalationAlert && (
                                     <div className="p-3 rounded-md bg-muted/50 border">
-                                        <h4 className="font-semibold text-foreground">Critical Coaching Insight</h4>
+                                        <h4 className="font-semibold text-foreground">Critical Coaching Insight Logged</h4>
                                         <p className="text-muted-foreground">{item.analysis.escalationAlert.summary}</p>
                                     </div>
                                 )}
                                 
                                 <div>
                                     <h4 className="font-semibold">Summary</h4>
-                                    <p className="text-muted-foreground text-sm">{item.analysis.summary}</p>
+                                    <p className="text-muted-foreground text-sm whitespace-pre-wrap">{item.analysis.summary}</p>
                                 </div>
 
                                 {item.analysis.strengthsObserved && item.analysis.strengthsObserved.length > 0 && (

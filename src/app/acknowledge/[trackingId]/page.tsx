@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
@@ -168,7 +168,7 @@ export default function AcknowledgePage() {
                         </Link>
                     </Button>
                     <Button onClick={handleSubmit} disabled={isSubmitting || !acknowledgement || !justification}>
-                        {isSubmitting ? <Skeleton className="h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                         Submit Acknowledgement
                     </Button>
                 </CardFooter>

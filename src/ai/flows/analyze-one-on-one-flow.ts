@@ -8,13 +8,12 @@
 
 import { ai } from '@/ai/genkit';
 import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
-import { getAllFeedback, saveFeedback } from '@/services/feedback-service';
+import { saveFeedback } from '@/services/feedback-service';
 import { v4 as uuidv4 } from 'uuid';
 import { getRoleByName } from '@/lib/role-mapping';
 
 export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
   const result = await analyzeOneOnOneFlow(input);
-  const allFeedback = await getAllFeedback();
   const submittedAt = new Date();
   
   const supervisorRole = getRoleByName(input.supervisorName);
@@ -27,6 +26,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
 
   // If a critical insight is found, create a new feedback record to trigger the critical workflow.
   if (result.escalationAlert && input.oneOnOneId) {
+      const allFeedback = [];
       const newFeedback = {
           trackingId: uuidv4(),
           oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
@@ -62,11 +62,13 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           ],
       };
       
-      allFeedback.unshift(newFeedback);
+      allFeedback.unshift(newFeedback as any);
+      await saveFeedback(allFeedback, true); // Use append mode
   }
   
   // If there are action items, create a "To-Do" feedback item for the supervisor.
   if (result.actionItems && result.actionItems.length > 0) {
+      const allFeedback = [];
       const newActionItemRecord = {
           trackingId: uuidv4(),
           oneOnOneId: input.oneOnOneId,
@@ -81,7 +83,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           viewed: true,
           actionItems: result.actionItems.map(itemText => ({
               id: uuidv4(),
-              text: itemText.task, // Updated to use 'task' from new schema
+              text: itemText.task,
               status: 'pending' as const,
               owner: itemText.owner === 'Supervisor' ? supervisorRole : employeeRole,
           })),
@@ -95,10 +97,8 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           ]
       };
       allFeedback.unshift(newActionItemRecord as any);
+      await saveFeedback(allFeedback, true); // Use append mode
   }
-
-  // Save all new feedback items created in this flow
-  await saveFeedback(allFeedback);
   
   return result;
 }

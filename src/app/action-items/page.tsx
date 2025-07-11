@@ -114,7 +114,7 @@ function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () =>
                             htmlFor={`action-${item.id}`}
                             className={cn("text-sm font-medium leading-none", item.status === 'completed' && "line-through text-muted-foreground")}
                         >
-                            {item.text}
+                           ({item.owner}) {item.text}
                         </label>
                     </div>
                 ))}
@@ -345,7 +345,7 @@ function ActionItemsContent() {
                                   <Card key={item.trackingId} className="p-4">
                                       <CardTitle>{item.subject}</CardTitle>
                                       <CardDescription className="mt-2">Your supervisor, {item.supervisor}, has provided the following update regarding your concern:</CardDescription>
-                                      <blockquote className="mt-2 p-4 bg-muted/50 border-l-4 rounded-md">
+                                      <blockquote className="mt-2 p-4 bg-muted/50 border-l-4 rounded-md whitespace-pre-wrap">
                                           {item.supervisorUpdate}
                                       </blockquote>
                                       <div className="mt-4">
