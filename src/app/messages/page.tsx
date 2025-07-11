@@ -456,9 +456,9 @@ function MessagesContent({ role }: { role: Role }) {
             case 'Employee':
                 return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
             case 'AM':
-                return insight.status === 'pending_am_review' || (insight.auditTrail?.some(e => e.actor === role) && insight.status !== 'resolved');
+                 return insight.status === 'pending_am_review';
             case 'Manager':
-                return insight.status === 'pending_manager_review' || (insight.auditTrail?.some(e => e.actor === role) && insight.status !== 'resolved');
+                return insight.status === 'pending_manager_review';
             case 'HR Head':
                 return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
             default:
@@ -499,13 +499,6 @@ function MessagesContent({ role }: { role: Role }) {
         case 'pending_final_hr_action':
              return <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />;
         default:
-            // For AM/Manager to see updates on cases they've touched
-            if (role === 'AM' || role === 'Manager') {
-                 if (item.analysis.criticalCoachingInsight?.status === 'pending_manager_review') {
-                     return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
-                 }
-                return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Case Update" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
-            }
             return null;
     }
   };
