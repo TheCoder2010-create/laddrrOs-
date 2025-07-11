@@ -181,8 +181,12 @@ function HistorySection({ role }: { role: Role }) {
         const currentUser = roleUserMapping[role];
         
         const userHistory = historyData.filter(item => {
-            const participantRole = getRoleByName(item.employeeName) || getRoleByName(item.supervisorName);
-            return item.supervisorName === currentUser.name || item.employeeName === currentUser.name || (role === 'AM' && participantRole === 'Team Lead') || (role === 'Manager' && participantRole === 'Team Lead');
+             const employeeRole = getRoleByName(item.employeeName);
+             const supervisorRole = getRoleByName(item.supervisorName);
+             return item.supervisorName === currentUser.name || 
+                    item.employeeName === currentUser.name || 
+                    (role === 'AM' && (employeeRole === 'Team Lead' || supervisorRole === 'Team Lead')) || 
+                    (role === 'Manager' && (employeeRole === 'Team Lead' || supervisorRole === 'Team Lead'));
         });
         
         setHistory(userHistory);
@@ -249,34 +253,47 @@ function HistorySection({ role }: { role: Role }) {
                                 {hasPendingAction ? (
                                     <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
                                         <h4 className="font-semibold text-destructive">Action Required: Critical Coaching Insight</h4>
-                                        <p className="text-destructive/90 my-2">{item.analysis.criticalCoachingInsight}</p>
+                                        <p className="text-destructive/90 my-2">{item.analysis.escalationAlert?.summary}</p>
                                         <Button asChild variant="destructive">
                                             <Link href="/action-items">Address Insight</Link>
                                         </Button>
                                     </div>
-                                ) : item.analysis.criticalCoachingInsight && (
+                                ) : item.analysis.escalationAlert && (
                                     <div className="p-3 rounded-md bg-muted/50 border">
                                         <h4 className="font-semibold text-foreground">Critical Coaching Insight</h4>
-                                        <p className="text-muted-foreground">{item.analysis.criticalCoachingInsight}</p>
+                                        <p className="text-muted-foreground">{item.analysis.escalationAlert.summary}</p>
+                                    </div>
+                                )}
+                                
+                                <div>
+                                    <h4 className="font-semibold">Summary</h4>
+                                    <p className="text-muted-foreground text-sm">{item.analysis.summary}</p>
+                                </div>
+
+                                {item.analysis.strengthsObserved && item.analysis.strengthsObserved.length > 0 && (
+                                    <div>
+                                        <h4 className="font-semibold">Strengths Observed</h4>
+                                        <ul className="list-disc pl-5 text-muted-foreground text-sm">
+                                            {item.analysis.strengthsObserved.map((strength, i) => <li key={i}><strong>{strength.action}:</strong> "{strength.example}"</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                
+                                {item.analysis.coachingRecommendations && item.analysis.coachingRecommendations.length > 0 && (
+                                    <div>
+                                        <h4 className="font-semibold">Coaching Recommendations</h4>
+                                        <ul className="list-disc pl-5 text-muted-foreground text-sm">
+                                            {item.analysis.coachingRecommendations.map((rec, i) => <li key={i}><strong>{rec.recommendation}:</strong> {rec.reason}</li>)}
+                                        </ul>
                                     </div>
                                 )}
 
-                                <div>
-                                    <h4 className="font-semibold">Key Themes</h4>
-                                    <ul className="list-disc pl-5 text-muted-foreground text-sm">
-                                        {item.analysis.keyThemes.map((theme, i) => <li key={i}>{theme}</li>)}
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold">Action Items</h4>
-                                    <ul className="list-disc pl-5 text-muted-foreground text-sm">
-                                        {item.analysis.actionItems.map((action, i) => <li key={i}>{action}</li>)}
-                                    </ul>
-                                </div>
-                                {item.analysis.coachingImpactAnalysis && (
+                                {item.analysis.actionItems && item.analysis.actionItems.length > 0 && (
                                     <div>
-                                        <h4 className="font-semibold">Coaching Impact Analysis</h4>
-                                        <p className="text-muted-foreground text-sm">{item.analysis.coachingImpactAnalysis}</p>
+                                        <h4 className="font-semibold">Action Items</h4>
+                                        <ul className="list-disc pl-5 text-muted-foreground text-sm">
+                                            {item.analysis.actionItems.map((action, i) => <li key={i}><strong>{action.owner}:</strong> {action.task}</li>)}
+                                        </ul>
                                     </div>
                                 )}
                             </AccordionContent>
