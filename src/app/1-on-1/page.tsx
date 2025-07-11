@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -46,8 +46,9 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, getAllFeedback, Feedback } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, getAllFeedback, Feedback, updateOneOnOneHistoryItem } from '@/services/feedback-service';
 import Link from 'next/link';
+import { Textarea } from '@/components/ui/textarea';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];
@@ -168,15 +169,17 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
 
 function HistorySection({ role }: { role: Role }) {
     const [history, setHistory] = useState<OneOnOneHistoryItem[]>([]);
-    const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
 
-    const fetchHistoryAndFeedback = useCallback(async () => {
+    // State for inline insight addressing
+    const [addressingInsightId, setAddressingInsightId] = useState<string | null>(null);
+    const [supervisorResponse, setSupervisorResponse] = useState('');
+    const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
+
+    const fetchHistory = useCallback(async () => {
         setIsLoading(true);
-        const [historyData, feedbackData] = await Promise.all([
-            getOneOnOneHistory(),
-            getAllFeedback()
-        ]);
+        const historyData = await getOneOnOneHistory();
         
         const currentUser = roleUserMapping[role];
         
@@ -190,27 +193,56 @@ function HistorySection({ role }: { role: Role }) {
         });
         
         setHistory(userHistory);
-        setAllFeedback(feedbackData);
         setIsLoading(false);
     }, [role]);
 
     useEffect(() => {
-        fetchHistoryAndFeedback();
-        const handleDataUpdate = () => fetchHistoryAndFeedback();
+        fetchHistory();
+        const handleDataUpdate = () => fetchHistory();
         window.addEventListener('storage', handleDataUpdate);
-        window.addEventListener('feedbackUpdated', handleDataUpdate); // Listen for custom event
+        window.addEventListener('feedbackUpdated', handleDataUpdate);
         return () => {
             window.removeEventListener('storage', handleDataUpdate);
             window.removeEventListener('feedbackUpdated', handleDataUpdate);
         }
-    }, [fetchHistoryAndFeedback]);
+    }, [fetchHistory]);
+
+    const handleAddressInsightSubmit = async (itemToUpdate: OneOnOneHistoryItem) => {
+        if (!supervisorResponse) return;
+        setIsSubmittingResponse(true);
+
+        const updatedItem = {
+            ...itemToUpdate,
+            analysis: {
+                ...itemToUpdate.analysis,
+                criticalCoachingInsight: {
+                    ...itemToUpdate.analysis.criticalCoachingInsight!,
+                    supervisorResponse: supervisorResponse,
+                }
+            }
+        };
+
+        try {
+            await updateOneOnOneHistoryItem(updatedItem);
+            setSupervisorResponse("");
+            setAddressingInsightId(null);
+            toast({ title: "Response Submitted", description: "Your notes have been saved to the session history." });
+            fetchHistory(); // Re-fetch to update UI
+        } catch (error) {
+            console.error("Failed to submit response", error);
+            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your response." });
+        } finally {
+            setIsSubmittingResponse(false);
+        }
+    };
+
 
     if (isLoading) {
         return <Skeleton className="h-24 w-full mt-8" />;
     }
 
     if (history.length === 0) {
-        return null; // Don't show the section if there's no history
+        return null;
     }
 
     return (
@@ -221,8 +253,9 @@ function HistorySection({ role }: { role: Role }) {
             </h2>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
-                    const criticalFeedback = allFeedback.find(f => f.oneOnOneId === item.id && f.criticality === 'Critical');
-                    const hasPendingAction = criticalFeedback && criticalFeedback.status === 'Pending Supervisor Action' && criticalFeedback.assignedTo === role;
+                    const hasCriticalInsight = !!item.analysis.criticalCoachingInsight;
+                    const isInsightAddressed = !!item.analysis.criticalCoachingInsight?.supervisorResponse;
+                    const canSupervisorAct = role === getRoleByName(item.supervisorName);
 
                     return (
                         <AccordionItem value={item.id} key={item.id} className="px-4">
@@ -236,7 +269,7 @@ function HistorySection({ role }: { role: Role }) {
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                    {hasPendingAction && (
+                                    {hasCriticalInsight && !isInsightAddressed && canSupervisorAct && (
                                         <div className="flex items-center gap-2 text-destructive">
                                             <AlertTriangle className="h-5 w-5" />
                                             <span className="hidden md:inline">
@@ -247,20 +280,52 @@ function HistorySection({ role }: { role: Role }) {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2">
-                                {hasPendingAction && criticalFeedback && (
-                                    <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                                        <h4 className="font-semibold text-destructive">Action Required: Critical Coaching Insight</h4>
-                                        <p className="text-destructive/90 my-2">{criticalFeedback.summary}</p>
-                                        <Button asChild variant="destructive">
-                                            <Link href="/action-items">Address Insight</Link>
-                                        </Button>
-                                    </div>
-                                )}
                                 
-                                {item.analysis.criticalCoachingInsight && !hasPendingAction && (
-                                    <div className="p-3 rounded-md bg-muted/50 border">
-                                        <h4 className="font-semibold text-foreground">Critical Coaching Insight Logged</h4>
-                                        <p className="text-muted-foreground">{item.analysis.criticalCoachingInsight.summary}</p>
+                                {item.analysis.criticalCoachingInsight && (
+                                    <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                        <h4 className="font-semibold text-destructive">Critical Coaching Insight Logged</h4>
+                                        <p className="text-destructive/90 my-2">{item.analysis.criticalCoachingInsight.summary}</p>
+                                        {canSupervisorAct && !isInsightAddressed && (
+                                            <div className="mt-4">
+                                                {addressingInsightId !== item.id ? (
+                                                    <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
+                                                        Address Insight
+                                                    </Button>
+                                                ) : (
+                                                    <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                        <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
+                                                            How will you address this?
+                                                        </Label>
+                                                        <Textarea
+                                                            id={`supervisor-response-${item.id}`}
+                                                            value={supervisorResponse}
+                                                            onChange={(e) => setSupervisorResponse(e.target.value)}
+                                                            placeholder="Explain the actions you will take to resolve this concern..."
+                                                            rows={4}
+                                                            className="bg-background"
+                                                        />
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                onClick={() => handleAddressInsightSubmit(item)}
+                                                                disabled={isSubmittingResponse || !supervisorResponse}
+                                                            >
+                                                                {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
+                                                                Submit Update
+                                                            </Button>
+                                                            <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        {isInsightAddressed && (
+                                             <div className="mt-4 p-3 bg-green-500/10 rounded-md border border-green-500/20">
+                                                <p className="font-semibold text-green-700 dark:text-green-400">Your Response</p>
+                                                <p className="text-sm text-green-600 dark:text-green-300 mt-1 whitespace-pre-wrap">{item.analysis.criticalCoachingInsight.supervisorResponse}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                                 

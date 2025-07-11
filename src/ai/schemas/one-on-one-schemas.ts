@@ -75,6 +75,7 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
     reason: z.string().describe("Why the issue is important and a recommended micro-learning action. Prefixed with 'RECURRING ISSUE: ' if it matches a past declined area."),
     suggestedAction: z.string().describe("The suggested next action for the manager."),
     severity: z.enum(["low", "medium", "high"]),
+    supervisorResponse: z.string().optional().describe("The supervisor's notes on how they addressed the insight."),
   }).optional().describe("An insight generated ONLY if an unaddressed red flag is present."),
   biasFairnessCheck: z.object({
     flag: z.boolean().describe("True if potential bias was detected."),
