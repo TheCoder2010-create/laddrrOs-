@@ -46,7 +46,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, getAllFeedback } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem } from '@/services/feedback-service';
 import Link from 'next/link';
 
 const getMeetingDataForRole = (role: Role) => {
@@ -180,25 +180,7 @@ function HistorySection({ role }: { role: Role }) {
             item.supervisorName === currentUser.name || item.employeeName === currentUser.name
         );
         
-        // Check for related critical feedback items to link alerts
-        const allFeedback = await getAllFeedback();
-        const userHistoryWithAlerts = userHistory.map(item => {
-            if (!item.analysis.escalationAlert) return { ...item, hasPendingAction: false };
-
-            // Find the feedback item linked to this 1-on-1
-            const relatedFeedback = allFeedback.find(fb => fb.oneOnOneId === item.id && fb.criticality === 'Critical');
-
-            const hasPendingAction = !!relatedFeedback && 
-                relatedFeedback.status === 'Pending Supervisor Action' && 
-                relatedFeedback.assignedTo === role;
-
-            return {
-                ...item,
-                hasPendingAction,
-            };
-        });
-
-        setHistory(userHistoryWithAlerts as any);
+        setHistory(userHistory);
         setIsLoading(false);
     }, [role]);
 
@@ -240,7 +222,7 @@ function HistorySection({ role }: { role: Role }) {
                                     </p>
                                 </div>
                                  {item.analysis.escalationAlert && (
-                                    <div className={cn("flex items-center gap-2", (item as any).hasPendingAction ? "text-destructive" : "text-muted-foreground")}>
+                                    <div className="flex items-center gap-2 text-destructive">
                                         <AlertTriangle className="h-5 w-5" />
                                         <span className="hidden md:inline">Critical Insight</span>
                                     </div>
@@ -248,19 +230,10 @@ function HistorySection({ role }: { role: Role }) {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-2">
-                            {(item as any).hasPendingAction && (
-                                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-center">
-                                    <h4 className="font-semibold text-destructive">Action Required</h4>
-                                    <p className="text-destructive/90 text-sm mb-2">{item.analysis.escalationAlert}</p>
-                                     <Button variant="destructive" size="sm" asChild>
-                                        <Link href="/action-items">Address Insight</Link>
-                                    </Button>
-                                </div>
-                            )}
-                             {!((item as any).hasPendingAction) && item.analysis.escalationAlert && (
-                                <div className="p-3 rounded-md bg-muted/50 border">
-                                    <h4 className="font-semibold text-muted-foreground">Critical Insight Logged</h4>
-                                    <p className="text-muted-foreground text-sm">{item.analysis.escalationAlert}</p>
+                             {item.analysis.escalationAlert && (
+                                <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                    <h4 className="font-semibold text-destructive">Critical Insight Logged</h4>
+                                    <p className="text-destructive/90">{item.analysis.escalationAlert}</p>
                                 </div>
                              )}
 

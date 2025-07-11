@@ -258,13 +258,18 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
 
 /**
  * Retrieves a single feedback item by ID.
- * @param trackingId The ID of the feedback to retrieve.
+ * @param id The ID of the feedback to retrieve. Can be trackingId or oneOnOneId.
+ * @param byOneOnOneId Flag to search by oneOnOneId instead of trackingId.
  * @returns A promise that resolves with the feedback item or null.
  */
-export async function getFeedbackById(trackingId: string): Promise<Feedback | null> {
+export async function getFeedbackById(id: string, byOneOnOneId = false): Promise<Feedback | null> {
     const allFeedback = getFeedbackFromStorage();
-    return allFeedback.find(f => f.trackingId === trackingId) || null;
+    if (byOneOnOneId) {
+        return allFeedback.find(f => f.oneOnOneId === id && f.criticality === 'Critical') || null;
+    }
+    return allFeedback.find(f => f.trackingId === id) || null;
 }
+
 
 /**
  * Retrieves all feedback submissions from localStorage.

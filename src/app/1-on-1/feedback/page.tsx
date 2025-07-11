@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, getOneOnOneHistory, updateOneOnOneHistoryItem } from '@/services/feedback-service';
+import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getFeedbackById, submitSupervisorUpdate, type Feedback } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -66,6 +66,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
 
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const { role } = useRole();
   
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -82,6 +83,10 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
   // AI result state
   const [analysisResult, setAnalysisResult] = useState<AnalyzeOneOnOneOutput | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [relatedFeedbackItem, setRelatedFeedbackItem] = useState<Feedback | null>(null);
+  const [showAddressInsight, setShowAddressInsight] = useState(false);
+  const [supervisorResponse, setSupervisorResponse] = useState("");
+  const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
   const hasMedia = !!recordedAudioUri || !!audioFile || !!transcriptContent;
 
@@ -176,6 +181,9 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setAnalysisResult(null);
     setAnalysisError(null);
+    setRelatedFeedbackItem(null);
+    setShowAddressInsight(false);
+
     startTransition(async () => {
         try {
             const historyItem = await saveOneOnOneHistory({
@@ -193,6 +201,12 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
             });
 
             setAnalysisResult(result);
+
+            if (result.escalationAlert) {
+                // Find the newly created feedback item to manage its state
+                const feedbackItem = await getFeedbackById(historyItem.id, true);
+                setRelatedFeedbackItem(feedbackItem);
+            }
             
             // Now update the history item with the real analysis
             historyItem.analysis = result;
@@ -206,6 +220,28 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         }
     });
   };
+
+  const handleAddressInsightSubmit = async () => {
+    if (!supervisorResponse || !relatedFeedbackItem || !role) return;
+
+    setIsSubmittingResponse(true);
+    try {
+        await submitSupervisorUpdate(relatedFeedbackItem.trackingId, role, supervisorResponse);
+        setSupervisorResponse("");
+        setShowAddressInsight(false);
+        // Refetch the feedback item to update its status locally
+        const updatedFeedbackItem = await getFeedbackById(relatedFeedbackItem.oneOnOneId!, true);
+        setRelatedFeedbackItem(updatedFeedbackItem);
+
+        toast({ title: "Response Submitted", description: "The employee has been notified to acknowledge your response." });
+    } catch (error) {
+        console.error("Failed to submit response", error);
+        toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your response." });
+    } finally {
+        setIsSubmittingResponse(false);
+    }
+  };
+
 
   return (
     <div className="p-4 md:p-8">
@@ -423,13 +459,53 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                         </div>
                     )}
                     {analysisResult.escalationAlert && (
-                        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                            <h4 className="font-semibold text-destructive">Escalation Alert</h4>
+                        <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 mt-4">
+                            <h4 className="font-semibold text-destructive">Critical Insight Logged</h4>
                             <p className="text-destructive/90">{analysisResult.escalationAlert}</p>
+                             {relatedFeedbackItem?.status === 'Pending Supervisor Action' && (
+                                <div className="mt-4">
+                                    {!showAddressInsight ? (
+                                        <Button variant="destructive" onClick={() => setShowAddressInsight(true)}>
+                                            Address Insight
+                                        </Button>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="supervisor-response" className="text-foreground font-semibold">
+                                                How will you address this?
+                                            </Label>
+                                            <Textarea
+                                                id="supervisor-response"
+                                                value={supervisorResponse}
+                                                onChange={(e) => setSupervisorResponse(e.target.value)}
+                                                placeholder="Explain the actions you will take to resolve this concern..."
+                                                rows={4}
+                                                className="bg-background"
+                                            />
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    onClick={handleAddressInsightSubmit}
+                                                    disabled={isSubmittingResponse || !supervisorResponse}
+                                                >
+                                                    {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
+                                                    Submit Response
+                                                </Button>
+                                                <Button variant="ghost" onClick={() => setShowAddressInsight(false)}>
+                                                    Cancel
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {relatedFeedbackItem?.status !== 'Pending Supervisor Action' && relatedFeedbackItem?.supervisorUpdate && (
+                                <div className="mt-4 p-3 bg-muted/50 rounded-md">
+                                    <p className="font-semibold text-foreground">Your response has been submitted and is pending employee acknowledgement.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                     {analysisResult.coachingImpactAnalysis && (
-                        <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20">
+                        <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 mt-4">
                             <h4 className="font-semibold text-green-700 dark:text-green-400">Coaching Impact Analysis</h4>
                             <p className="text-green-600 dark:text-green-300">{analysisResult.coachingImpactAnalysis}</p>
                         </div>
