@@ -715,12 +715,12 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    const actor = item.submittedBy || 'Anonymous'; // Should be the employee's role
-    const currentAssignee = item.assignedTo;
+    const actor = item.submittedBy || 'Anonymous';
+    const lastResponder = item.auditTrail?.slice().reverse().find(e => e.event === 'Supervisor Responded')?.actor as Role | undefined;
 
     if (accepted) {
         item.status = 'Resolved';
-        item.resolution = item.supervisorUpdate; // The supervisor's update is the final resolution
+        item.resolution = item.supervisorUpdate;
         item.auditTrail?.push({
             event: 'Employee Accepted Resolution',
             timestamp: new Date(),
@@ -737,16 +737,17 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         const escalationDetails = `Resolution not accepted. Escalating further.${comments ? `\nComments: ${comments}` : ''}`;
         let nextAssignee: Role | undefined = undefined;
 
-        if (currentAssignee === 'Team Lead') {
+        // Determine next escalation level based on the last responder
+        if (lastResponder === 'Team Lead') {
             nextAssignee = 'AM';
-        } else if (currentAssignee === 'AM') {
+        } else if (lastResponder === 'AM') {
             nextAssignee = 'Manager';
-        } else if (currentAssignee === 'Manager') {
+        } else if (lastResponder === 'Manager') {
             nextAssignee = 'HR Head';
         }
 
         if (nextAssignee) {
-             item.status = 'Pending Manager Action'; // Generic status for AM/Manager/HR
+             item.status = 'Pending Manager Action'; 
              if(nextAssignee === 'Team Lead') item.status = 'Pending Supervisor Action'
              if(nextAssignee === 'HR Head') item.status = 'Pending HR Action'
 
@@ -758,9 +759,8 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
                 details: `Concern escalated to ${nextAssignee}. ${escalationDetails}`
             });
         } else {
-             // If there's no next assignee (e.g., HR is last stop), we might consider a final state
              item.status = 'Closed';
-             item.resolution = `Case closed after final escalation attempt. Employee remained unsatisfied. Supervisor comment: ${item.supervisorUpdate}`;
+             item.resolution = `Case closed after final escalation attempt. Employee remained unsatisfied. Last response: ${item.supervisorUpdate}`;
              item.auditTrail?.push({
                 event: 'Case Closed, Not Resolved',
                 timestamp: new Date(),
