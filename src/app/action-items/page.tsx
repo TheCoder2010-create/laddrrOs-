@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
@@ -23,6 +23,8 @@ import DashboardLayout from '@/components/dashboard-layout';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -129,16 +131,16 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     const [resolution, setResolution] = useState('');
 
     const handleRequestIdentity = async () => {
-        if (!revealReason) return;
-        await requestIdentityReveal(feedback.trackingId, role!, revealReason);
+        if (!revealReason || !role) return;
+        await requestIdentityReveal(feedback.trackingId, role, revealReason);
         setRevealReason('');
         toast({ title: "Request Submitted", description: "The user has been notified of your request."});
         onUpdate();
     }
 
     const handleResolveDirectly = async () => {
-        if (!resolution) return;
-        await resolveFeedback(feedback.trackingId, role!, resolution);
+        if (!resolution || !role) return;
+        await resolveFeedback(feedback.trackingId, role, resolution);
         setResolution('');
         toast({ title: "Case Resolved", description: "You have resolved the anonymous concern."});
         onUpdate();
@@ -176,7 +178,25 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                     onChange={(e) => setRevealReason(e.target.value)}
                     rows={4}
                 />
-                <Button onClick={handleRequestIdentity} disabled={!revealReason}>Request Identity Reveal</Button>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button disabled={!revealReason}>Request Identity Reveal</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                By requesting the user's identity, you acknowledge your responsibility to protect the employee from any form of bias or retaliation. This conversation must be handled with the utmost confidentiality and fairness. This acknowledgment will be logged.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
+                                Acknowledge & Continue
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );
@@ -188,8 +208,8 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     const [supervisorUpdate, setSupervisorUpdate] = useState('');
 
     const handleSupervisorUpdate = async () => {
-        if (!supervisorUpdate) return;
-        await submitSupervisorUpdate(feedback.trackingId, role!, supervisorUpdate);
+        if (!supervisorUpdate || !role) return;
+        await submitSupervisorUpdate(feedback.trackingId, role, supervisorUpdate);
         setSupervisorUpdate('');
         toast({ title: "Update Submitted", description: "You have addressed the critical insight. The case is now resolved." });
         onUpdate();
@@ -417,3 +437,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
