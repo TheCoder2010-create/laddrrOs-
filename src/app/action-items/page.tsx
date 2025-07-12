@@ -14,7 +14,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -285,7 +285,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         if (!supervisorUpdate || !role) return;
         await submitSupervisorUpdate(feedback.trackingId, role, supervisorUpdate);
         setSupervisorUpdate('');
-        toast({ title: "Update Submitted", description: "You have addressed the critical insight. The case is now resolved." });
+        toast({ title: "Update Submitted", description: "The employee has been notified to acknowledge your response." });
         onUpdate();
     }
     
@@ -303,16 +303,16 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
-    // Supervisor's action panel for critical insights
+    // Supervisor's action panel for critical insights from 1-on-1s or identified concerns
     if (feedback.status === 'Pending Supervisor Action') {
         return (
             <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
                 <Label className="text-base font-semibold">Your Action Required</Label>
                  <p className="text-sm text-muted-foreground">
-                    A critical insight was flagged in your 1-on-1. Please review the details and provide a summary of the actions you have taken or will take to address the concern.
+                    A critical insight or identified concern requires your attention. Please review the details and provide a summary of the actions you have taken or will take to address the concern. This will be sent to the employee for acknowledgment.
                 </p>
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                    <Label htmlFor="supervisorUpdate" className="font-medium">Resolution Summary</Label>
+                    <Label htmlFor="supervisorUpdate">Resolution Summary</Label>
                     <Textarea 
                         id="supervisorUpdate"
                         placeholder="e.g., 'I spoke with the employee to clarify the issue and we have agreed on the following steps...'"
@@ -320,7 +320,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         onChange={(e) => setSupervisorUpdate(e.target.value)}
                         rows={4}
                     />
-                    <Button onClick={handleSupervisorUpdate} disabled={!supervisorUpdate}>Submit Update</Button>
+                    <Button onClick={handleSupervisorUpdate} disabled={!supervisorUpdate}>Submit for Acknowledgement</Button>
                 </div>
             </div>
         );
@@ -409,6 +409,7 @@ function ActionItemsContent() {
         case 'To-Do': return 'default';
         case 'Pending Supervisor Action': return 'destructive';
         case 'Pending Manager Action': return 'destructive';
+        case 'Pending Employee Acknowledgment': return 'destructive';
         case 'Pending HR Action': return 'default';
         case 'Pending Identity Reveal': return 'secondary';
         default: return 'secondary';

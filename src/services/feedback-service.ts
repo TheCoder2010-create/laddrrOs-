@@ -24,6 +24,7 @@ export type FeedbackStatus =
   | 'Pending Manager Action'
   | 'Pending Identity Reveal'
   | 'Pending HR Action'
+  | 'Pending Employee Acknowledgment' // New status for identified concerns
   | 'To-Do'
   | 'Resolved'
   | 'Closed';
@@ -682,6 +683,7 @@ export async function submitCollaborativeResolution(trackingId: string, actor: R
 
 /**
  * Supervisor submits an update for a critical insight.
+ * This now sends it back to the employee for acknowledgment.
  */
 export async function submitSupervisorUpdate(trackingId: string, supervisor: Role, update: string): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
@@ -690,20 +692,57 @@ export async function submitSupervisorUpdate(trackingId: string, supervisor: Rol
 
     const item = allFeedback[feedbackIndex];
     item.supervisorUpdate = update;
-    item.status = 'Resolved'; // For now, the supervisor's action resolves it.
-    item.assignedTo = 'HR Head'; // Goes back to HR for archival.
+    item.status = 'Pending Employee Acknowledgment'; // Send for acknowledgment
+    item.assignedTo = undefined; // Unset assignee so it leaves the manager's queue
+    
     item.auditTrail?.push({
         event: 'Supervisor Responded',
         timestamp: new Date(),
         actor: supervisor,
         details: update,
     });
-    item.auditTrail?.push({
-        event: 'Resolved',
-        timestamp: new Date(),
-        actor: supervisor,
-        details: 'Case resolved after supervisor action.',
-    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+/**
+ * Handles the employee's acknowledgment of a feedback resolution.
+ * Can resolve the case or escalate it.
+ */
+export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, accepted: boolean, comments: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    const actor = item.submittedBy || 'Anonymous'; // Should be the employee's role
+
+    if (accepted) {
+        item.status = 'Resolved';
+        item.resolution = item.supervisorUpdate; // The supervisor's update is the final resolution
+        item.auditTrail?.push({
+            event: 'Employee Accepted Resolution',
+            timestamp: new Date(),
+            actor: actor,
+            details: `Resolution accepted.${comments ? `\nComments: ${comments}` : ''}`
+        });
+        item.auditTrail?.push({
+            event: 'Resolved',
+            timestamp: new Date(),
+            actor: actor,
+            details: 'Case resolved after employee acknowledgment.',
+        });
+    } else {
+        // Escalate to the next level, e.g., AM
+        item.status = 'Pending Manager Action'; // Assuming next level is Manager for simplicity
+        item.assignedTo = 'AM';
+        item.auditTrail?.push({
+            event: 'Employee Escalated Concern',
+            timestamp: new Date(),
+            actor: actor,
+            details: `Resolution not accepted. Escalating to AM.${comments ? `\nComments: ${comments}` : ''}`
+        });
+    }
 
     saveFeedbackToStorage(allFeedback);
 }

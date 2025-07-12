@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -137,11 +137,11 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
         setIsSubmitting(true);
         try {
             const result = await submitIdentifiedConcern({
-                subject,
-                message: concern,
                 submittedBy: roleUserMapping[role].name,
                 submittedByRole: role,
                 recipient: recipientRole,
+                subject,
+                message: concern,
                 criticality,
             });
 
@@ -334,6 +334,58 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
     )
 }
 
+function AcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const [comments, setComments] = useState('');
+
+    const supervisorResponse = item.auditTrail?.find(e => e.event === 'Supervisor Responded');
+
+    const handleAcknowledge = async (accepted: boolean) => {
+        await submitEmployeeFeedbackAcknowledgement(item.trackingId, accepted, comments);
+        if (accepted) {
+            toast({ title: "Resolution Accepted", description: "The case has been closed." });
+        } else {
+            toast({ title: "Concern Escalated", description: "Your feedback has been escalated to the next level." });
+        }
+        onUpdate();
+    }
+
+    return (
+        <Card className="border-blue-500/50 my-4">
+            <CardHeader className="bg-blue-500/10">
+                <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                    <MessageCircleQuestion className="h-6 w-6" />
+                    Action Required: Please Acknowledge
+                </CardTitle>
+                <CardDescription>
+                    Your manager has responded to your concern. Please review and provide your feedback.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                <div className="p-3 bg-muted/80 rounded-md border">
+                    <p className="font-semibold text-foreground">{supervisorResponse?.actor}'s Response:</p>
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{supervisorResponse?.details}</p>
+                </div>
+                <div className="space-y-2 pt-2">
+                    <Label htmlFor={`ack-comments-${item.trackingId}`}>Additional Comments (Optional)</Label>
+                    <Textarea
+                        id={`ack-comments-${item.trackingId}`}
+                        value={comments}
+                        onChange={(e) => setComments(e.target.value)}
+                        placeholder="Provide more detail about your selection..."
+                        rows={3}
+                        className="bg-background"
+                    />
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                    <Button onClick={() => handleAcknowledge(true)} variant="success">Accept Resolution</Button>
+                    <Button onClick={() => handleAcknowledge(false)} variant="destructive">I'm Not Satisfied, Escalate</Button>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, storageKey: string | null, title: string }) {
     const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
@@ -381,6 +433,7 @@ function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, 
             case 'Pending Supervisor Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Reviewing</Badge>;
             case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
             case 'Pending HR Action': return <Badge className="bg-black text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
+            case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
             case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Closed</Badge>;
             default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
         }
@@ -411,6 +464,9 @@ function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, 
                         <AccordionContent className="space-y-4 pt-2">
                            {item.status === 'Pending Identity Reveal' && (
                                <RevealIdentityWidget item={item} onUpdate={fetchCases} />
+                           )}
+                           {item.status === 'Pending Employee Acknowledgment' && (
+                                <AcknowledgementWidget item={item} onUpdate={fetchCases} />
                            )}
                            <div className="space-y-2">
                                 <Label>Original Submission</Label>
