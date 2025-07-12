@@ -288,7 +288,7 @@ export async function submitAmDirectResponse(historyId: string, actor: Role, not
         details: notes,
     });
 
-    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+    saveToStorage(ONE_ON-ONE_HISTORY_KEY, allHistory);
 }
 
 
@@ -787,10 +787,12 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
             event: "Employee acknowledged manager's assurance message",
             timestamp: new Date(),
             actor: user.role,
-            details: `User ${user.name} has read and acknowledged the manager's message and assurance of a non-retaliatory process.`
+            details: `The user has read and acknowledged the manager's message and assurance of a non-retaliatory process.`
         });
         saveFeedbackToStorage(allFeedback);
     }
 }
+
+    
 
     
