@@ -37,6 +37,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { roleUserMapping } from '@/lib/role-mapping';
 
 
 const getAnonymousCaseKey = (role: string | null) => role ? `anonymous_cases_${role.replace(/\s/g, '_')}` : null;
@@ -117,6 +118,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void
 
 function IdentifiedConcernForm() {
     const { toast } = useToast();
+    const [recipient, setRecipient] = useState('');
     const [subject, setSubject] = useState('');
     const [concern, setConcern] = useState('');
     const [criticality, setCriticality] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
@@ -128,11 +130,28 @@ function IdentifiedConcernForm() {
         toast({ title: "Not Implemented", description: "This feature is for demonstration purposes." });
     }
 
+    const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence');
+
     return (
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
             <p className="text-sm text-muted-foreground">
-                Use this form to confidentially report a concern directly to HR. Your identity will be attached to this submission.
+                Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
+             <div className="space-y-2">
+                <Label htmlFor="recipient">Raise Concern To</Label>
+                 <Select onValueChange={setRecipient} value={recipient}>
+                    <SelectTrigger id="recipient">
+                        <SelectValue placeholder="Select a person to direct your concern to..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableRecipients.map(user => (
+                             <SelectItem key={user.name} value={user.name}>
+                                {user.name} ({user.role})
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
             <div className="space-y-2">
                 <Label htmlFor="subject">Subject</Label>
                 <Input 
@@ -169,9 +188,9 @@ function IdentifiedConcernForm() {
                 </Select>
             </div>
             <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting || !recipient}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Submit Concern to HR
+                    Submit Concern
                 </Button>
             </div>
         </form>
@@ -215,65 +234,68 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
     }
 
     return (
-        <div className="p-4 border-2 border-destructive/50 bg-destructive/5 rounded-lg space-y-4">
-            <h4 className="font-bold text-lg text-destructive">Action Required: Your manager has requested you reveal your identity</h4>
-            
-            {!hasAcknowledged ? (
-                 <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 text-blue-800 dark:text-blue-300">
-                     <div className="flex items-start gap-3">
-                        <ShieldCheck className="h-5 w-5 mt-1 flex-shrink-0 text-blue-500" />
-                        <div>
-                            <h5 className="font-bold">Your Manager's Commitment & Request</h5>
-                            <p className="text-sm mt-2 text-muted-foreground whitespace-pre-wrap">{revealRequest?.details}</p>
-                            <h5 className="font-bold mt-4">Please Acknowledge This Message</h5>
-                            <p className="text-sm mt-1">
-                                Your identity has <span className="font-bold">not</span> been revealed. Clicking the button below only confirms that you have read this message. You will decide whether to reveal your identity on the next step.
-                            </p>
-                            <div className="mt-4">
-                                <Button onClick={handleAcknowledge}>I Understand, Show Me My Options</Button>
+        <Card className="border-2 border-blue-500/50 bg-blue-500/5 rounded-lg">
+            <CardHeader>
+                 <CardTitle className="text-lg text-blue-700 dark:text-blue-400">Action Required: Your manager has requested you reveal your identity</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 {!hasAcknowledged ? (
+                     <div className="p-4 bg-background/50 rounded-lg border border-blue-500/20 text-blue-800 dark:text-blue-300">
+                         <div className="flex items-start gap-3">
+                            <ShieldCheck className="h-5 w-5 mt-1 flex-shrink-0 text-blue-500" />
+                            <div>
+                                <h3 className="font-bold text-base text-foreground">Your Manager's Commitment & Request</h3>
+                                <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap">{revealRequest?.details}</div>
+                                <h3 className="font-bold mt-4 text-base text-foreground">Please Acknowledge This Message</h3>
+                                <p className="text-sm mt-1">
+                                    Your identity has <span className="font-bold">not</span> been revealed. Clicking the button below only confirms that you have read this message. You will decide whether to reveal your identity on the next step.
+                                </p>
+                                <div className="mt-4">
+                                    <Button onClick={handleAcknowledge} className="bg-blue-600 hover:bg-blue-700">I Understand, Show Me My Options</Button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            ) : (
-                <>
-                     <div className="p-3 bg-background/50 rounded-md border">
-                        <p className="font-semibold text-foreground">Manager's Message:</p>
-                        <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{revealRequest?.details}</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                        To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be escalated to HR for a final review while your identity remains anonymous.
-                    </p>
-                    <div className="flex gap-4">
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button>Reveal Identity & Proceed</Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                ) : (
+                    <>
+                        <div className="p-3 bg-background/50 rounded-md border">
+                            <p className="font-semibold text-foreground">Manager's Message:</p>
+                            <div className="text-muted-foreground mt-1 whitespace-pre-wrap prose prose-sm prose-p:my-1">{revealRequest?.details}</div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be escalated to HR for a final review while your identity remains anonymous.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button>Reveal Identity & Proceed</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
 
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="secondary">Decline & Escalate to HR</Button>
-                            </AlertDialogTrigger>
-                             <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Confirm Escalation</AlertDialogTitle><AlertDialogDescription>This will keep your identity anonymous but escalate the case, along with its history, to the HR Head for final review. This is the final step for this case.</AlertDialogDescription></AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleResponse(false)} className={cn(buttonVariants({variant: 'destructive'}))}>Yes, Decline and Escalate</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </>
-            )}
-        </div>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="secondary">Decline & Escalate to HR</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Confirm Escalation</AlertDialogTitle><AlertDialogDescription>This will keep your identity anonymous but escalate the case, along with its history, to the HR Head for final review. This is the final step for this case.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleResponse(false)} className={cn(buttonVariants({variant: 'destructive'}))}>Yes, Decline and Escalate</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
     )
 }
 
@@ -377,10 +399,10 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
 }
 
 function MyConcernsContent() {
-  const [key, setKey] = useState(0);
+  const [remountKey, setRemountKey] = useState(0);
 
   const remountSubmissions = useCallback(() => {
-    setKey(prevKey => prevKey + 1);
+    setRemountKey(prevKey => prevKey + 1);
   }, []);
 
   return (
@@ -411,7 +433,7 @@ function MyConcernsContent() {
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={remountSubmissions} />
-                    <MyAnonymousSubmissions onUpdate={remountSubmissions} key={key} />
+                    <MyAnonymousSubmissions onUpdate={remountSubmissions} key={remountKey} />
                 </TabsContent>
             </Tabs>
         </CardContent>
