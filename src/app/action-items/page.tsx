@@ -150,7 +150,7 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
         <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
             <Label className="text-base font-semibold">Your Action Required</Label>
             <p className="text-sm text-muted-foreground">
-                This anonymous case has been escalated for joint review. Both Manager and HR Head can add updates and resolve the case.
+                This anonymous case has been escalated for joint review. Both Manager and HR Head can add updates. Only the HR Head can resolve the case.
             </p>
              <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
                 <Label htmlFor="add-update" className="font-medium">Add Update</Label>
@@ -166,20 +166,22 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                 />
                 <Button onClick={handleAddUpdate} disabled={!update}>Add Update</Button>
             </div>
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="resolve-case" className="font-medium">Resolve Case</Label>
-                 <p className="text-xs text-muted-foreground">
-                    Provide a final resolution summary. This will close the case and be visible to the anonymous user.
-                </p>
-                <Textarea 
-                    id="resolve-case"
-                    placeholder="e.g., 'Thank you for this feedback. We have implemented new guidelines...'"
-                    value={resolution}
-                    onChange={(e) => setResolution(e.target.value)}
-                    rows={4}
-                />
-                <Button variant="success" onClick={handleResolve} disabled={!resolution}>Resolve Case</Button>
-            </div>
+            {role === 'HR Head' && (
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                    <Label htmlFor="resolve-case" className="font-medium">Resolve Case</Label>
+                     <p className="text-xs text-muted-foreground">
+                        Provide a final resolution summary. This will close the case and be visible to the anonymous user.
+                    </p>
+                    <Textarea 
+                        id="resolve-case"
+                        placeholder="e.g., 'Thank you for this feedback. We have implemented new guidelines...'"
+                        value={resolution}
+                        onChange={(e) => setResolution(e.target.value)}
+                        rows={4}
+                    />
+                    <Button variant="success" onClick={handleResolve} disabled={!resolution}>Resolve Case</Button>
+                </div>
+            )}
         </div>
     )
 }
