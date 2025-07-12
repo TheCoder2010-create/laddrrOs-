@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, requestIdentityReveal } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, requestIdentityReveal, employeeAcknowledgeMessageRead } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
@@ -183,6 +182,24 @@ function IdentifiedConcernForm() {
 function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void}) {
     const { role } = useRole();
     const { toast } = useToast();
+    const [hasAcknowledged, setHasAcknowledged] = useState(false);
+
+    const revealRequest = item.auditTrail?.find(e => e.event === 'Identity Reveal Requested');
+    const employeeHasRead = item.auditTrail?.some(e => e.event === "Employee acknowledged manager's assurance message");
+
+    useEffect(() => {
+        if (employeeHasRead) {
+            setHasAcknowledged(true);
+        }
+    }, [employeeHasRead]);
+
+    const handleAcknowledge = async () => {
+        if (!role) return;
+        await employeeAcknowledgeMessageRead(item.trackingId, role);
+        setHasAcknowledged(true);
+        toast({ title: "Message Acknowledged", description: "You may now respond to the request." });
+        onUpdate();
+    }
 
     const handleResponse = async (accept: boolean) => {
         if (!role) return;
@@ -204,8 +221,6 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
         onUpdate();
     }
 
-    const revealRequest = item.auditTrail?.find(e => e.event === 'Identity Reveal Requested');
-
     return (
         <Alert variant="destructive">
             <AlertTitle>Action Required: Manager has requested you reveal your identity</AlertTitle>
@@ -214,36 +229,46 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                     <p className="font-semibold text-foreground">Manager's Message:</p>
                     <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{revealRequest?.details}</p>
                 </div>
-                <p>
-                    To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be closed.
-                </p>
-                <div className="flex gap-4">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button>Reveal Identity & Proceed</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                
+                {!hasAcknowledged ? (
+                    <>
+                        <p>Please read the manager's message above. Click the button below to acknowledge that you have read it before you can proceed.</p>
+                        <Button onClick={handleAcknowledge}>Acknowledge & Continue</Button>
+                    </>
+                ) : (
+                    <>
+                        <p>
+                            To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be closed.
+                        </p>
+                        <div className="flex gap-4">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button>Reveal Identity & Proceed</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
 
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="secondary">Decline & Close Case</Button>
-                        </AlertDialogTrigger>
-                         <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>If you decline, this case will be closed and no further action can be taken. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleResponse(false)} className={cn(buttonVariants({variant: 'destructive'}))}>Yes, Decline and Close</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="secondary">Decline & Close Case</Button>
+                                </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>If you decline, this case will be closed and no further action can be taken. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleResponse(false)} className={cn(buttonVariants({variant: 'destructive'}))}>Yes, Decline and Close</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </>
+                )}
             </AlertDescription>
         </Alert>
     )

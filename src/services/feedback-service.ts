@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -769,4 +768,26 @@ export async function respondToIdentityReveal(trackingId: string, actor: Role, a
     }
 
     saveFeedbackToStorage(allFeedback);
+}
+
+export async function employeeAcknowledgeMessageRead(trackingId: string, actor: Role): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    const user = roleUserMapping[actor];
+
+    // Check if this event already exists to prevent duplicates
+    const alreadyAcknowledged = item.auditTrail?.some(e => e.event === "Employee acknowledged manager's assurance message");
+
+    if (!alreadyAcknowledged) {
+        item.auditTrail?.push({
+            event: "Employee acknowledged manager's assurance message",
+            timestamp: new Date(),
+            actor: user.role,
+            details: `User ${user.name} has read and acknowledged the manager's message and assurance of a non-retaliatory process.`
+        });
+        saveFeedbackToStorage(allFeedback);
+    }
 }
