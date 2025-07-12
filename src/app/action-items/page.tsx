@@ -342,6 +342,7 @@ function ActionItemsContent() {
     try {
       const allFeedback = await getAllFeedback();
       const myFeedback = allFeedback.filter(f => {
+        // A case is relevant if user is assigned OR it's a collaborative HR case and user is the Manager or HR Head.
         const isAssignedToMe = f.assignedTo === role;
         const isCollaborator = f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
         const isActive = f.status !== 'Resolved' && f.status !== 'Open' && f.status !== 'Closed';

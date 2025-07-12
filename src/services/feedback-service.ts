@@ -81,6 +81,7 @@ export interface AnonymousFeedbackOutput {
 export interface IdentifiedConcernInput {
     submittedBy: string;
     submittedByRole: Role;
+    recipient: Role;
     subject: string;
     message: string;
     criticality: 'Low' | 'Medium' | 'High' | 'Critical';
@@ -511,29 +512,31 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
     return { trackingId };
 }
 
-export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<void> {
+export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
+    const trackingId = uuidv4();
     const newFeedback: Feedback = {
-        trackingId: uuidv4(),
+        trackingId: trackingId,
         subject: input.subject,
         message: input.message,
         submittedAt: new Date(),
         submittedBy: input.submittedByRole,
         criticality: input.criticality,
-        status: 'Open',
-        assignedTo: 'HR Head', // All identified concerns go to HR first
+        status: 'Pending Supervisor Action', 
+        assignedTo: input.recipient,
         viewed: false,
         auditTrail: [
             {
                 event: 'Identified Concern Submitted',
                 timestamp: new Date(),
                 actor: input.submittedByRole,
-                details: `Concern submitted by ${input.submittedBy} (${input.submittedByRole}).`
+                details: `Concern submitted by ${input.submittedBy} (${input.submittedByRole}) to ${input.recipient}.`
             }
         ]
     };
     allFeedback.unshift(newFeedback);
     saveFeedbackToStorage(allFeedback);
+    return { trackingId };
 }
 
 

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
@@ -23,7 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
@@ -37,10 +37,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { roleUserMapping } from '@/lib/role-mapping';
+import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 
 
 const getAnonymousCaseKey = (role: string | null) => role ? `anonymous_cases_${role.replace(/\s/g, '_')}` : null;
+const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
 
 function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
     const { toast } = useToast();
@@ -116,8 +117,9 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void
 }
 
 
-function IdentifiedConcernForm() {
+function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
     const { toast } = useToast();
+    const { role } = useRole();
     const [recipient, setRecipient] = useState('');
     const [subject, setSubject] = useState('');
     const [concern, setConcern] = useState('');
@@ -126,11 +128,44 @@ function IdentifiedConcernForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // This functionality is not fully wired up in the prototype as it's not the primary flow.
-        toast({ title: "Not Implemented", description: "This feature is for demonstration purposes." });
+        const recipientRole = getRoleByName(recipient);
+        if (!subject || !concern || !role || !recipient || !recipientRole) {
+            toast({ variant: 'destructive', title: "Missing Information", description: "Please fill out all fields and select a recipient."});
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const result = await submitIdentifiedConcern({
+                subject,
+                message: concern,
+                submittedBy: roleUserMapping[role].name,
+                submittedByRole: role,
+                recipient: recipientRole,
+                criticality,
+            });
+
+            const key = getIdentifiedCaseKey(role);
+            if (key) {
+                const existingIds = JSON.parse(localStorage.getItem(key) || '[]');
+                existingIds.push(result.trackingId);
+                localStorage.setItem(key, JSON.stringify(existingIds));
+            }
+
+            toast({ title: "Concern Submitted", description: `Your concern has been sent to ${recipient}.` });
+            setSubject('');
+            setConcern('');
+            setRecipient('');
+            onCaseSubmitted();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
-    const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence');
+    const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence' && user.role !== role);
 
     return (
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
@@ -139,7 +174,7 @@ function IdentifiedConcernForm() {
             </p>
              <div className="space-y-2">
                 <Label htmlFor="recipient">Raise Concern To</Label>
-                 <Select onValueChange={setRecipient} value={recipient}>
+                 <Select onValueChange={setRecipient} value={recipient} required>
                     <SelectTrigger id="recipient">
                         <SelectValue placeholder="Select a person to direct your concern to..." />
                     </SelectTrigger>
@@ -299,16 +334,15 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
     )
 }
 
-function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
+function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, storageKey: string | null, title: string }) {
     const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchCases = useCallback(async () => {
         setIsLoading(true);
-        const key = getAnonymousCaseKey(role);
-        if (key) {
-            const caseIds = JSON.parse(localStorage.getItem(key) || '[]');
+        if (storageKey) {
+            const caseIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
             if (caseIds.length > 0) {
                 const fetchedCases = await getFeedbackByIds(caseIds);
                 setCases(fetchedCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
@@ -317,7 +351,7 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
             }
         }
         setIsLoading(false);
-    }, [role]);
+    }, [storageKey]);
 
     useEffect(() => {
         fetchCases();
@@ -335,7 +369,7 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
     if (cases.length === 0) {
         return (
             <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">You have not submitted any anonymous concerns yet.</p>
+                <p className="text-muted-foreground">You have not submitted any concerns of this type yet.</p>
             </div>
         );
     }
@@ -344,6 +378,7 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
         switch(status) {
             case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
             case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
+            case 'Pending Supervisor Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Reviewing</Badge>;
             case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
             case 'Pending HR Action': return <Badge className="bg-black text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
             case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Closed</Badge>;
@@ -355,7 +390,7 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
         <div className="mt-6 space-y-4">
              <h3 className="text-lg font-semibold flex items-center gap-2 text-muted-foreground">
                 <List className="h-5 w-5" />
-                My Anonymous Submissions
+                {title}
             </h3>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                  {cases.map(item => (
@@ -381,6 +416,23 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
                                 <Label>Original Submission</Label>
                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
                             </div>
+                            <div className="space-y-2">
+                                <Label>Case History</Label>
+                                <div className="p-4 border rounded-md bg-muted/50 space-y-4">
+                                    {item.auditTrail?.map((event, index) => (
+                                        <div key={index} className="flex items-start gap-3">
+                                            <Info className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-sm">
+                                                    {event.event} by <span className="text-primary">{event.actor}</span>
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                                {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                              {item.resolution && (
                                 <div className="space-y-2">
                                     <Label>Manager's Final Resolution</Label>
@@ -400,6 +452,7 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
 
 function MyConcernsContent() {
   const [remountKey, setRemountKey] = useState(0);
+  const { role } = useRole();
 
   const remountSubmissions = useCallback(() => {
     setRemountKey(prevKey => prevKey + 1);
@@ -429,11 +482,12 @@ function MyConcernsContent() {
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="identity-revealed">
-                    <IdentifiedConcernForm />
+                    <IdentifiedConcernForm onCaseSubmitted={remountSubmissions} />
+                     <MySubmissions onUpdate={remountSubmissions} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} />
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={remountSubmissions} />
-                    <MyAnonymousSubmissions onUpdate={remountSubmissions} key={remountKey} />
+                    <MySubmissions onUpdate={remountSubmissions} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -461,5 +515,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    
