@@ -8,13 +8,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate } from '@/services/feedback-service';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -140,20 +140,26 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
 
     const handleResolve = async () => {
         if (!resolution || !role) return;
-        await resolveFeedback(feedback.trackingId, role, resolution);
-        setResolution('');
-        toast({ title: "Case Resolved", description: "The case has been formally closed." });
+        await submitCollaborativeResolution(feedback.trackingId, role, resolution);
+        toast({ title: "Resolution Statement Submitted", description: "The case will be resolved once all parties submit their statements." });
         onUpdate();
     }
     
+    const managerHasResolved = !!feedback.managerResolution;
+    const hrHasResolved = !!feedback.hrHeadResolution;
+    const isManager = role === 'Manager';
+    const isHrHead = role === 'HR Head';
+    const canManagerAct = isManager && !managerHasResolved;
+    const canHrAct = isHrHead && !hrHasResolved;
+
     return (
         <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-            <Label className="text-base font-semibold">Your Action Required</Label>
+            <Label className="text-base font-semibold">Collaborative Action Required</Label>
             <p className="text-sm text-muted-foreground">
-                This anonymous case has been escalated for joint review. Both Manager and HR Head can add updates. Only the HR Head can resolve the case.
+                This anonymous case has been escalated for joint review. Both Manager and HR Head must add a resolution summary to close the case. Regular updates can be added at any time.
             </p>
              <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="add-update" className="font-medium">Add Update</Label>
+                <Label htmlFor="add-update" className="font-medium">Add Interim Update</Label>
                 <p className="text-xs text-muted-foreground">
                     Add notes, observations, or actions taken. This will be visible in the case history.
                 </p>
@@ -166,12 +172,17 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                 />
                 <Button onClick={handleAddUpdate} disabled={!update}>Add Update</Button>
             </div>
-            {role === 'HR Head' && (
-                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                    <Label htmlFor="resolve-case" className="font-medium">Resolve Case</Label>
-                     <p className="text-xs text-muted-foreground">
-                        Provide a final resolution summary. This will close the case and be visible to the anonymous user.
-                    </p>
+            
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor="resolve-case" className="font-medium">Submit Final Resolution</Label>
+                 <p className="text-xs text-muted-foreground">
+                    Provide your final resolution summary. The case will be closed once both Manager and HR Head have submitted their statements.
+                </p>
+
+                {(isManager && managerHasResolved) && <p className="text-sm font-semibold text-green-600">Your resolution has been submitted. Waiting for HR Head.</p>}
+                {(isHrHead && hrHasResolved) && <p className="text-sm font-semibold text-green-600">Your resolution has been submitted. Waiting for Manager.</p>}
+
+                {(canManagerAct || canHrAct) && (
                     <Textarea 
                         id="resolve-case"
                         placeholder="e.g., 'Thank you for this feedback. We have implemented new guidelines...'"
@@ -179,9 +190,10 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                         onChange={(e) => setResolution(e.target.value)}
                         rows={4}
                     />
-                    <Button variant="success" onClick={handleResolve} disabled={!resolution}>Resolve Case</Button>
-                </div>
-            )}
+                )}
+                
+                <Button variant="success" onClick={handleResolve} disabled={!resolution || (isManager && managerHasResolved) || (isHrHead && hrHasResolved)}>Submit Resolution</Button>
+            </div>
         </div>
     )
 }
@@ -319,7 +331,8 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
 
 function ActionItemsContent() {
-  const [assignedFeedback, setAssignedFeedback] = useState<Feedback[]>([]);
+  const [activeItems, setActiveItems] = useState<Feedback[]>([]);
+  const [closedItems, setClosedItems] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
 
@@ -330,18 +343,25 @@ function ActionItemsContent() {
       const allFeedback = await getAllFeedback();
       const myFeedback = allFeedback.filter(f => {
         const isAssignedToMe = f.assignedTo === role;
-        const isEscalatedToHR = f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
+        const isCollaborator = f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
         const isActive = f.status !== 'Resolved' && f.status !== 'Open' && f.status !== 'Closed';
 
-        return isActive && (isAssignedToMe || isEscalatedToHR);
+        return (isActive && (isAssignedToMe || isCollaborator)) || f.status === 'Resolved';
       });
-      // Sort to show To-Do items first, then by date
-      myFeedback.sort((a, b) => {
+
+      const active = myFeedback.filter(f => f.status !== 'Resolved');
+      const closed = myFeedback.filter(f => f.status === 'Resolved');
+      
+      active.sort((a, b) => {
         if (a.status === 'To-Do' && b.status !== 'To-Do') return -1;
         if (b.status === 'To-Do' && a.status !== 'To-Do') return 1;
         return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
       });
-      setAssignedFeedback(myFeedback);
+
+      closed.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+
+      setActiveItems(active);
+      setClosedItems(closed);
     } catch (error) {
       console.error("Failed to fetch feedback", error);
     } finally {
@@ -394,6 +414,64 @@ function ActionItemsContent() {
     }
   }
 
+  const renderFeedbackList = (items: Feedback[], defaultOpenId?: string) => {
+    return (
+        <Accordion type="single" collapsible className="w-full" defaultValue={defaultOpenId}>
+        {items.map((feedback) => {
+            const config = criticalityConfig[feedback.criticality || 'Low'];
+            const Icon = feedback.isAnonymous ? UserX : (config?.icon || Info);
+            return (
+            <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
+                <AccordionTrigger>
+                <div className="flex justify-between items-center w-full pr-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <Badge variant={config?.badge as any || 'secondary'}>{feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A')}</Badge>
+                        <span className="font-medium text-left truncate">{feedback.subject}</span>
+                    </div>
+                    <div className="flex items-center gap-4 ml-4">
+                         {feedback.status === 'Pending HR Action' ? (
+                            <Badge className="bg-black text-white"><ShieldCheckIcon className="mr-2 h-4 w-4" />HR Review</Badge>
+                         ) : (
+                            <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
+                         )}
+                        <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
+                            Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created' || a.event.includes("Submitted"))?.timestamp || feedback.submittedAt), { addSuffix: true })}
+                        </span>
+                    </div>
+                </div>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-6 pt-4">
+                     {feedback.status !== 'To-Do' && (
+                        <>
+                            <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
+                                <div className="flex items-center gap-2 font-bold">
+                                    <Icon className="h-5 w-5" />
+                                    <span>{feedback.isAnonymous ? 'Anonymous Submission' : `AI Analysis: ${feedback.criticality}`}</span>
+                                </div>
+                                {feedback.summary && <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-base">Original Submission Context</Label>
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
+                            </div>
+                        </>
+                     )}
+
+                    {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
+
+                    {feedback.status !== 'Resolved' && <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />}
+
+                    <div className="text-xs text-muted-foreground/80 pt-4 border-t">
+                        Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+            )
+        })}
+        </Accordion>
+    );
+  }
+
   return (
     <div className="p-4 md:p-8">
       <Card>
@@ -406,70 +484,36 @@ function ActionItemsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {assignedFeedback.length === 0 ? (
+          {activeItems.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground text-lg">Your action item list is empty.</p>
+              <p className="text-muted-foreground text-lg">Your active action item list is empty.</p>
               <p className="text-sm text-muted-foreground mt-2">
                 New cases assigned to you will appear here.
               </p>
             </div>
           ) : (
-                <Accordion type="single" collapsible className="w-full" defaultValue={assignedFeedback[0]?.trackingId}>
-                {assignedFeedback.map((feedback) => {
-                    const config = criticalityConfig[feedback.criticality || 'Low'];
-                    const Icon = feedback.isAnonymous ? UserX : (config?.icon || Info);
-                    return (
-                    <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
-                        <AccordionTrigger>
-                        <div className="flex justify-between items-center w-full pr-4">
-                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                                <Badge variant={config?.badge as any || 'secondary'}>{feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A')}</Badge>
-                                <span className="font-medium text-left truncate">{feedback.subject}</span>
-                            </div>
-                            <div className="flex items-center gap-4 ml-4">
-                                 {feedback.status === 'Pending HR Action' ? (
-                                    <Badge className="bg-black text-white"><ShieldCheckIcon className="mr-2 h-4 w-4" />HR Review</Badge>
-                                 ) : (
-                                    <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
-                                 )}
-                                <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
-                                    Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created' || a.event.includes("Submitted"))?.timestamp || feedback.submittedAt), { addSuffix: true })}
-                                </span>
-                            </div>
-                        </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4">
-                             {feedback.status !== 'To-Do' && (
-                                <>
-                                    <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
-                                        <div className="flex items-center gap-2 font-bold">
-                                            <Icon className="h-5 w-5" />
-                                            <span>{feedback.isAnonymous ? 'Anonymous Submission' : `AI Analysis: ${feedback.criticality}`}</span>
-                                        </div>
-                                        {feedback.summary && <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-base">Original Submission Context</Label>
-                                        <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
-                                    </div>
-                                </>
-                             )}
-
-                            {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
-
-                            <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />
-
-                            <div className="text-xs text-muted-foreground/80 pt-4 border-t">
-                                Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                    )
-                })}
-                </Accordion>
+                renderFeedbackList(activeItems, activeItems[0]?.trackingId)
           )}
         </CardContent>
       </Card>
+
+      {closedItems.length > 0 && (
+          <div className="mt-8">
+            <Accordion type="single" collapsible className="w-full border rounded-lg">
+                <AccordionItem value="closed-items">
+                    <AccordionTrigger className="px-4 py-3">
+                        <div className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
+                           <FolderClosed />
+                           Closed Items ({closedItems.length})
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-2">
+                        {renderFeedbackList(closedItems)}
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+          </div>
+      )}
     </div>
   );
 }

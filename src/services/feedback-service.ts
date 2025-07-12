@@ -55,6 +55,8 @@ export interface Feedback {
   supervisorUpdate?: string;
   actionItems?: ActionItem[];
   isAnonymous?: boolean; // Flag for anonymous submissions from dashboard
+  managerResolution?: string; // For collaborative resolution
+  hrHeadResolution?: string;  // For collaborative resolution
 }
 
 export interface OneOnOneHistoryItem {
@@ -288,7 +290,7 @@ export async function submitAmDirectResponse(historyId: string, actor: Role, not
         details: notes,
     });
 
-    saveToStorage(ONE_ON-ONE_HISTORY_KEY, allHistory);
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
 
@@ -643,6 +645,37 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
     saveFeedbackToStorage(allFeedback);
 }
 
+/**
+ * Submits a collaborative resolution from a Manager or HR Head.
+ * The case is only resolved when both parties have submitted their resolution.
+ */
+export async function submitCollaborativeResolution(trackingId: string, actor: Role, comment: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+
+    if (actor === 'HR Head') {
+        item.hrHeadResolution = comment;
+        item.auditTrail?.push({ event: 'HR Head provided resolution', timestamp: new Date(), actor, details: comment });
+    } else if (actor === 'Manager') {
+        item.managerResolution = comment;
+        item.auditTrail?.push({ event: 'Manager provided resolution', timestamp: new Date(), actor, details: comment });
+    }
+
+    // Check if both have provided their resolutions
+    if (item.hrHeadResolution && item.managerResolution) {
+        item.status = 'Resolved';
+        const finalResolution = `JOINT RESOLUTION:\n\nManager: ${item.managerResolution}\n\nHR Head: ${item.hrHeadResolution}`;
+        item.resolution = finalResolution;
+        item.auditTrail?.push({ event: 'Resolved', timestamp: new Date(), actor: 'System', details: 'Case resolved by joint agreement.' });
+    }
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+
 
 /**
  * Supervisor submits an update for a critical insight.
@@ -764,7 +797,7 @@ export async function respondToIdentityReveal(trackingId: string, actor: Role, a
         item.auditTrail?.push({
             event: 'Identity Reveal Declined; Escalated to HR',
             timestamp: new Date(),
-            actor: user.role,
+            actor: 'Anonymous',
             details: `User declined the request to reveal their identity. Case has been escalated to HR Head for final review.`,
         });
     }
@@ -778,7 +811,6 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    const user = roleUserMapping[actor];
 
     // Check if this event already exists to prevent duplicates
     const alreadyAcknowledged = item.auditTrail?.some(e => e.event === "Employee acknowledged manager's assurance message");
@@ -787,7 +819,7 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         item.auditTrail?.push({
             event: "Employee acknowledged manager's assurance message",
             timestamp: new Date(),
-            actor: user.role,
+            actor: 'Anonymous',
             details: `The user has read and acknowledged the manager's message and assurance of a non-retaliatory process.`
         });
         saveFeedbackToStorage(allFeedback);
