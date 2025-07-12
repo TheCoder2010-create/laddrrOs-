@@ -723,11 +723,15 @@ export async function requestIdentityReveal(trackingId: string, actor: Role, rea
 
     const item = allFeedback[feedbackIndex];
     item.status = 'Pending Identity Reveal';
+
+    const acknowledgmentText = "Manager Acknowledgment: I acknowledge my responsibility to protect the employee from bias or retaliation in this process.";
+    const fullDetails = `${acknowledgmentText}\n\nManager's Reason: ${reason}`;
+
     item.auditTrail?.push({
         event: 'Identity Reveal Requested',
         timestamp: new Date(),
         actor: actor,
-        details: reason,
+        details: fullDetails,
     });
 
     saveFeedbackToStorage(allFeedback);
