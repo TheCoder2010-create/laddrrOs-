@@ -759,7 +759,8 @@ export async function respondToIdentityReveal(trackingId: string, actor: Role, a
         });
     } else {
         item.status = 'Pending HR Action';
-        item.assignedTo = 'HR Head';
+        // Keep assignedTo as Manager so they can see the escalated case too.
+        // The filtering logic in action-items page will show it to HR Head as well.
         item.auditTrail?.push({
             event: 'Identity Reveal Declined; Escalated to HR',
             timestamp: new Date(),
@@ -792,7 +793,3 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         saveFeedbackToStorage(allFeedback);
     }
 }
-
-    
-
-    
