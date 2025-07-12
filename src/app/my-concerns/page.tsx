@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitIdentifiedConcern, IdentifiedConcernInput } from '@/services/feedback-service';
+import { submitIdentifiedConcern, IdentifiedConcernInput, submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { roleUserMapping } from '@/lib/role-mapping';
@@ -22,11 +22,90 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Link from 'next/link';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
 
-function RaiseConcernForm() {
-    const { role, setRole } = useRole();
+const getAnonymousCaseKey = (role: string | null) => role ? `anonymous_cases_${role.replace(/\s/g, '_')}` : null;
+
+function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [subject, setSubject] = useState('');
+    const [concern, setConcern] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!subject || !concern || !role) {
+            toast({ variant: 'destructive', title: "Missing Information", description: "Please fill out all fields."});
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const result = await submitAnonymousConcernFromDashboard({ subject, message: concern });
+            
+            // Store the tracking ID in localStorage for the current user
+            const key = getAnonymousCaseKey(role);
+            if (key) {
+                const existingIds = JSON.parse(localStorage.getItem(key) || '[]');
+                existingIds.push(result.trackingId);
+                localStorage.setItem(key, JSON.stringify(existingIds));
+            }
+
+            toast({ title: "Anonymous Concern Submitted", description: "Your concern has been confidentially routed to management." });
+            setSubject('');
+            setConcern('');
+            onCaseSubmitted(); // Trigger re-fetch of anonymous cases
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+            <p className="text-sm text-muted-foreground">
+                Your name and role will NOT be attached to this submission. It will be routed anonymously to management for review. You can track its status on this page.
+            </p>
+            <div className="space-y-2">
+                <Label htmlFor="anon-subject">Subject</Label>
+                <Input 
+                    id="anon-subject" 
+                    value={subject} 
+                    onChange={e => setSubject(e.target.value)} 
+                    placeholder="e.g., Suggestion for team workflow, Unfair treatment concern" 
+                    required 
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="anon-concern">Details of Concern</Label>
+                <Textarea 
+                    id="anon-concern" 
+                    value={concern} 
+                    onChange={e => setConcern(e.target.value)} 
+                    placeholder="Please describe the situation in detail without revealing your identity. Include examples, dates, and impact if possible." 
+                    rows={8} 
+                    required 
+                />
+            </div>
+            <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Submit Anonymously
+                </Button>
+            </div>
+        </form>
+    );
+}
+
+
+function IdentifiedConcernForm() {
+    const { role } = useRole();
     const { toast } = useToast();
     const [subject, setSubject] = useState('');
     const [concern, setConcern] = useState('');
@@ -113,8 +192,94 @@ function RaiseConcernForm() {
     )
 }
 
+function MyAnonymousSubmissions() {
+    const { role } = useRole();
+    const [cases, setCases] = useState<Feedback[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchCases = useCallback(async () => {
+        setIsLoading(true);
+        const key = getAnonymousCaseKey(role);
+        if (key) {
+            const caseIds = JSON.parse(localStorage.getItem(key) || '[]');
+            if (caseIds.length > 0) {
+                const fetchedCases = await getFeedbackByIds(caseIds);
+                setCases(fetchedCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
+            } else {
+                setCases([]);
+            }
+        }
+        setIsLoading(false);
+    }, [role]);
+
+    useEffect(() => {
+        fetchCases();
+    }, [fetchCases]);
+    
+    if (isLoading) return <Skeleton className="h-24 w-full" />;
+
+    if (cases.length === 0) {
+        return (
+            <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">You have not submitted any anonymous concerns yet.</p>
+            </div>
+        );
+    }
+    
+    const getStatusBadge = (status?: string) => {
+        switch(status) {
+            case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
+            case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
+            default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
+        }
+    }
+
+    return (
+        <div className="mt-6 space-y-4">
+             <h3 className="text-lg font-semibold flex items-center gap-2 text-muted-foreground">
+                <List className="h-5 w-5" />
+                My Anonymous Submissions
+            </h3>
+            <Accordion type="single" collapsible className="w-full border rounded-lg">
+                 {cases.map(item => (
+                    <AccordionItem value={item.trackingId} key={item.trackingId} className="px-4">
+                        <AccordionTrigger>
+                            <div className="flex justify-between items-center w-full pr-4">
+                                <div className="text-left">
+                                    <p className="font-medium truncate">{item.subject}</p>
+                                    <p className="text-sm text-muted-foreground font-normal">
+                                        Submitted {formatDistanceToNow(new Date(item.submittedAt), { addSuffix: true })}
+                                    </p>
+                                </div>
+                                <div className="hidden md:flex items-center gap-2">
+                                    {getStatusBadge(item.status)}
+                                </div>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                           <div className="space-y-2">
+                                <Label>Original Submission</Label>
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
+                            </div>
+                             {item.resolution && (
+                                <div className="space-y-2">
+                                    <Label>Manager's Final Resolution</Label>
+                                    <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{item.resolution}</p>
+                                </div>
+                            )}
+                             <div className="text-xs text-muted-foreground/80 pt-2 border-t">
+                                Tracking ID: <code className="font-mono">{item.trackingId}</code>
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                 ))}
+            </Accordion>
+        </div>
+    );
+}
+
 function MyConcernsContent() {
-  const { setRole } = useRole();
+  const [key, setKey] = useState(0); // Used to force-remount the tracking component
 
   return (
     <div className="p-4 md:p-8">
@@ -140,25 +305,11 @@ function MyConcernsContent() {
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="identity-revealed">
-                    <RaiseConcernForm />
+                    <IdentifiedConcernForm />
                 </TabsContent>
                 <TabsContent value="anonymous">
-                    <div className="text-center py-8 px-4 space-y-4">
-                        <h3 className="text-xl font-semibold">For Full Anonymity</h3>
-                        <p className="text-muted-foreground">
-                            To ensure your submission is completely anonymous, we need to make sure you are logged out. Please use the "Voice – in Silence" feature available from the main login screen.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                            <Button onClick={() => setRole(null)}>
-                                Log Out and Go to Anonymous Form
-                            </Button>
-                             <Button variant="outline" asChild>
-                                <Link href="/voice-in-silence">
-                                    Learn More About Anonymity
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
+                    <AnonymousConcernForm onCaseSubmitted={() => setKey(k => k + 1)} />
+                    <MyAnonymousSubmissions key={key} />
                 </TabsContent>
             </Tabs>
         </CardContent>

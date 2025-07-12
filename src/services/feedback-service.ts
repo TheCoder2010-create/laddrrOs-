@@ -19,6 +19,7 @@ export interface AuditEvent {
 export type FeedbackStatus = 
   | 'Open' 
   | 'Pending Supervisor Action'
+  | 'Pending Manager Action'
   | 'To-Do'
   | 'Resolved';
   
@@ -47,6 +48,7 @@ export interface Feedback {
   employee?: Role;
   supervisorUpdate?: string;
   actionItems?: ActionItem[];
+  isAnonymous?: boolean; // Flag for anonymous submissions from dashboard
 }
 
 export interface OneOnOneHistoryItem {
@@ -478,6 +480,29 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   return { trackingId };
 }
 
+export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
+    const allFeedback = getFeedbackFromStorage();
+    const trackingId = uuidv4();
+    const newFeedback: Feedback = {
+        ...input,
+        trackingId,
+        submittedAt: new Date(),
+        isAnonymous: true,
+        status: 'Pending Manager Action', // Route directly to Manager
+        assignedTo: 'Manager',
+        criticality: 'Medium', // Default criticality
+        auditTrail: [{
+            event: 'Anonymous Concern Submitted',
+            timestamp: new Date(),
+            actor: 'System',
+            details: 'A concern was submitted anonymously from a user dashboard.'
+        }]
+    };
+    allFeedback.unshift(newFeedback);
+    saveFeedbackToStorage(allFeedback);
+    return { trackingId };
+}
+
 export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const newFeedback: Feedback = {
@@ -538,6 +563,12 @@ export async function getFeedbackById(id: string): Promise<Feedback | null> {
     const allFeedback = getFeedbackFromStorage();
     return allFeedback.find(f => f.trackingId === id) || null;
 }
+
+export async function getFeedbackByIds(ids: string[]): Promise<Feedback[]> {
+    const allFeedback = getFeedbackFromStorage();
+    return allFeedback.filter(f => ids.includes(f.trackingId));
+}
+
 
 export async function getCriticalFeedbackByOneOnOneId(oneOnOneId: string): Promise<Feedback | null> {
     const allFeedback = getFeedbackFromStorage();
