@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -6,6 +7,7 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
+import { roleUserMapping } from '@/lib/role-mapping';
 import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 
 export interface AuditEvent {
@@ -20,8 +22,10 @@ export type FeedbackStatus =
   | 'Open' 
   | 'Pending Supervisor Action'
   | 'Pending Manager Action'
+  | 'Pending Identity Reveal'
   | 'To-Do'
-  | 'Resolved';
+  | 'Resolved'
+  | 'Closed';
   
 export interface ActionItem {
     id: string;
@@ -35,6 +39,7 @@ export interface Feedback {
   subject: string;
   message: string;
   submittedAt: Date | string; 
+  submittedBy?: Role; // For identified concerns
   summary?: string;
   criticality?: 'Low' | 'Medium' | 'High' | 'Critical';
   criticalityReasoning?: string;
@@ -462,7 +467,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
       {
         event: 'Submitted',
         timestamp: submittedAt,
-        actor: 'Employee', // Represents the anonymous user
+        actor: 'Anonymous',
         details: 'Feedback was received by the system.',
       },
       {
@@ -494,7 +499,7 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
         auditTrail: [{
             event: 'Anonymous Concern Submitted',
             timestamp: new Date(),
-            actor: 'System',
+            actor: 'Anonymous',
             details: 'A concern was submitted anonymously from a user dashboard.'
         }]
     };
@@ -510,6 +515,7 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
         subject: input.subject,
         message: input.message,
         submittedAt: new Date(),
+        submittedBy: input.submittedByRole,
         criticality: input.criticality,
         status: 'Open',
         assignedTo: 'HR Head', // All identified concerns go to HR first
@@ -705,6 +711,58 @@ export async function toggleActionItemStatus(trackingId: string, actionItemId: s
 
     const currentStatus = feedback.actionItems[actionItemIndex].status;
     feedback.actionItems[actionItemIndex].status = currentStatus === 'pending' ? 'completed' : 'pending';
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+
+export async function requestIdentityReveal(trackingId: string, actor: Role, reason: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.status = 'Pending Identity Reveal';
+    item.auditTrail?.push({
+        event: 'Identity Reveal Requested',
+        timestamp: new Date(),
+        actor: actor,
+        details: reason,
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+
+export async function respondToIdentityReveal(trackingId: string, actor: Role, accepted: boolean): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    const user = roleUserMapping[actor];
+
+    if (accepted) {
+        item.isAnonymous = false;
+        item.submittedBy = user.role;
+        item.status = 'Pending Manager Action'; // Return to manager's queue, now identified
+        item.auditTrail?.push({
+            event: 'Identity Revealed',
+            timestamp: new Date(),
+            actor: user.role,
+            details: `User ${user.name} accepted the request and revealed their identity.`,
+        });
+    } else {
+        item.status = 'Closed'; // Case is closed if user declines
+        item.assignedTo = undefined;
+        item.resolution = 'Case closed by user after declining identity reveal request.';
+        item.auditTrail?.push({
+            event: 'Identity Reveal Declined',
+            timestamp: new Date(),
+            actor: user.role,
+            details: `User declined the request to reveal their identity. Case has been closed.`,
+        });
+    }
 
     saveFeedbackToStorage(allFeedback);
 }

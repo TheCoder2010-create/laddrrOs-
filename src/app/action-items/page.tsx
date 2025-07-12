@@ -9,12 +9,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -122,6 +122,44 @@ function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () =>
     )
 }
 
+function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [revealReason, setRevealReason] = useState('');
+
+    const handleRequestIdentity = async () => {
+        if (!revealReason) return;
+        await requestIdentityReveal(feedback.trackingId, role!, revealReason);
+        setRevealReason('');
+        toast({ title: "Request Submitted", description: "The user has been notified of your request."});
+        onUpdate();
+    }
+    
+    return (
+        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+            <Label className="text-base font-semibold">Your Action Required</Label>
+            <p className="text-sm text-muted-foreground">
+                This is an anonymous submission. You can resolve it directly or request the user reveal their identity if more information is needed.
+            </p>
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor="revealReason" className="font-medium">Request Identity Reveal</Label>
+                 <p className="text-xs text-muted-foreground">
+                    Explain why you need to know their identity to resolve this. This message will be shown to the user.
+                </p>
+                <Textarea 
+                    id="revealReason"
+                    placeholder="e.g., 'Thank you for raising this. To investigate fully, I need to speak with you directly. I assure you this will be handled with confidentiality and without retaliation.'"
+                    value={revealReason}
+                    onChange={(e) => setRevealReason(e.target.value)}
+                    rows={4}
+                />
+                <Button onClick={handleRequestIdentity} disabled={!revealReason}>Request Identity Reveal</Button>
+            </div>
+            {/* Add direct resolution option here in the future */}
+        </div>
+    );
+}
+
 function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -140,8 +178,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     if (feedback.status === 'To-Do') {
         return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />
     }
+    
+    if (feedback.isAnonymous) {
+        return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
 
-    // Supervisor's action panel
+    // Supervisor's action panel for critical insights
     if (feedback.status === 'Pending Supervisor Action') {
         return (
             <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
@@ -233,6 +275,8 @@ function ActionItemsContent() {
         case 'Resolved': return 'success';
         case 'To-Do': return 'default';
         case 'Pending Supervisor Action': return 'destructive';
+        case 'Pending Manager Action': return 'destructive';
+        case 'Pending Identity Reveal': return 'secondary';
         default: return 'secondary';
     }
   }
@@ -260,19 +304,19 @@ function ActionItemsContent() {
                 <Accordion type="single" collapsible className="w-full" defaultValue={assignedFeedback[0]?.trackingId}>
                 {assignedFeedback.map((feedback) => {
                     const config = criticalityConfig[feedback.criticality || 'Low'];
-                    const Icon = config?.icon || Info;
+                    const Icon = feedback.isAnonymous ? UserX : (config?.icon || Info);
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
                         <AccordionTrigger>
                         <div className="flex justify-between items-center w-full pr-4">
                             <div className="flex items-center gap-4 flex-1 min-w-0">
-                                <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality || 'N/A'}</Badge>
+                                <Badge variant={config?.badge as any || 'secondary'}>{feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A')}</Badge>
                                 <span className="font-medium text-left truncate">{feedback.subject}</span>
                             </div>
                             <div className="flex items-center gap-4 ml-4">
                                  <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
                                 <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
-                                    Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created')?.timestamp || feedback.submittedAt), { addSuffix: true })}
+                                    Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created' || a.event.includes("Submitted"))?.timestamp || feedback.submittedAt), { addSuffix: true })}
                                 </span>
                             </div>
                         </div>
@@ -283,9 +327,9 @@ function ActionItemsContent() {
                                     <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
                                         <div className="flex items-center gap-2 font-bold">
                                             <Icon className="h-5 w-5" />
-                                            <span>AI Analysis: {feedback.criticality}</span>
+                                            <span>{feedback.isAnonymous ? 'Anonymous Submission' : `AI Analysis: ${feedback.criticality}`}</span>
                                         </div>
-                                        <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>
+                                        {feedback.summary && <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-base">Original Submission Context</Label>
@@ -351,4 +395,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-

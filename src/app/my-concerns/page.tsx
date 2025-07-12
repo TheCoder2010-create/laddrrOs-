@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitIdentifiedConcern, IdentifiedConcernInput, submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback } from '@/services/feedback-service';
+import { submitIdentifiedConcern, IdentifiedConcernInput, submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
@@ -25,6 +25,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 
 const getAnonymousCaseKey = (role: string | null) => role ? `anonymous_cases_${role.replace(/\s/g, '_')}` : null;
@@ -192,7 +205,76 @@ function IdentifiedConcernForm() {
     )
 }
 
-function MyAnonymousSubmissions() {
+function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void}) {
+    const { role } = useRole();
+    const { toast } = useToast();
+
+    const handleResponse = async (accept: boolean) => {
+        if (!role) return;
+        
+        await respondToIdentityReveal(item.trackingId, role, accept);
+
+        if (accept) {
+            toast({ title: "Identity Revealed", description: "Your identity has been attached to the case. The manager has been notified."});
+        } else {
+            const key = getAnonymousCaseKey(role);
+            if (key) {
+                let ids = JSON.parse(localStorage.getItem(key) || '[]');
+                ids = ids.filter((id: string) => id !== item.trackingId);
+                localStorage.setItem(key, JSON.stringify(ids));
+            }
+             toast({ variant: 'destructive', title: "Request Declined", description: "The case has been closed as you have declined to reveal your identity."});
+        }
+        
+        onUpdate();
+    }
+
+    const revealRequest = item.auditTrail?.find(e => e.event === 'Identity Reveal Requested');
+
+    return (
+        <Alert variant="destructive">
+            <AlertTitle>Action Required: Manager has requested you reveal your identity</AlertTitle>
+            <AlertDescription className="mt-2 space-y-4">
+                <div className="p-3 bg-background/50 rounded-md border">
+                    <p className="font-semibold text-foreground">Manager's Reason:</p>
+                    <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{revealRequest?.details}</p>
+                </div>
+                <p>
+                    To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be closed.
+                </p>
+                <div className="flex gap-4">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button>Reveal Identity & Proceed</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="secondary">Decline & Close Case</Button>
+                        </AlertDialogTrigger>
+                         <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>If you decline, this case will be closed and no further action can be taken. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleResponse(false)} className={cn(Button.getVariant({variant: 'destructive'}))}>Yes, Decline and Close</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </AlertDescription>
+        </Alert>
+    )
+}
+
+function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
     const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -214,7 +296,7 @@ function MyAnonymousSubmissions() {
 
     useEffect(() => {
         fetchCases();
-    }, [fetchCases]);
+    }, [fetchCases, onUpdate]);
     
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
@@ -230,6 +312,7 @@ function MyAnonymousSubmissions() {
         switch(status) {
             case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
             case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
+            case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
             default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
         }
     }
@@ -257,6 +340,9 @@ function MyAnonymousSubmissions() {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-2">
+                           {item.status === 'Pending Identity Reveal' && (
+                               <RevealIdentityWidget item={item} onUpdate={fetchCases} />
+                           )}
                            <div className="space-y-2">
                                 <Label>Original Submission</Label>
                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
@@ -309,7 +395,7 @@ function MyConcernsContent() {
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={() => setKey(k => k + 1)} />
-                    <MyAnonymousSubmissions key={key} />
+                    <MyAnonymousSubmissions onUpdate={() => setKey(k => k + 1)} />
                 </TabsContent>
             </Tabs>
         </CardContent>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Voice – In Silence';
+export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Voice – In Silence' | 'Anonymous';
 
 export const availableRoles: Role[] = ['Employee', 'Team Lead', 'AM', 'Manager', 'HR Head'];
 export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM'];
@@ -53,5 +53,3 @@ export const useRole = () => {
 
     return { role, setRole: setCurrentRole, isLoading, availableRoles: allAvailableRoles };
 };
-
-    
