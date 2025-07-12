@@ -27,8 +27,9 @@ export type FeedbackStatus =
   | 'Pending Employee Acknowledgment' // New status for identified concerns
   | 'To-Do'
   | 'Resolved'
-  | 'Closed';
-  
+  | 'Closed'
+  | 'Retaliation Claim'; // New status for child cases
+
 export interface ActionItem {
     id: string;
     text: string;
@@ -58,6 +59,12 @@ export interface Feedback {
   isAnonymous?: boolean; // Flag for anonymous submissions from dashboard
   managerResolution?: string; // For collaborative resolution
   hrHeadResolution?: string;  // For collaborative resolution
+  parentCaseId?: string; // For retaliation claims
+  attachment?: {
+    name: string;
+    type: string;
+    size: number;
+  };
 }
 
 export interface OneOnOneHistoryItem {
@@ -86,6 +93,13 @@ export interface IdentifiedConcernInput {
     subject: string;
     message: string;
     criticality: 'Low' | 'Medium' | 'High' | 'Critical';
+}
+
+export interface RetaliationReportInput {
+    parentCaseId: string;
+    submittedBy: Role;
+    description: string;
+    fileName?: string;
 }
 
 // Client-side tracking types
@@ -540,6 +554,46 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
     return { trackingId };
 }
 
+export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
+    const allFeedback = getFeedbackFromStorage();
+    const parentCaseIndex = allFeedback.findIndex(f => f.trackingId === input.parentCaseId);
+
+    // Create the new child case for the retaliation claim
+    const trackingId = uuidv4();
+    const newRetaliationCase: Feedback = {
+        trackingId,
+        parentCaseId: input.parentCaseId,
+        subject: `Retaliation Claim (Parent Case: ...${input.parentCaseId.slice(-6)})`,
+        message: input.description,
+        submittedAt: new Date(),
+        submittedBy: input.submittedBy,
+        criticality: 'Critical',
+        status: 'Retaliation Claim',
+        assignedTo: 'HR Head',
+        viewed: false,
+        auditTrail: [{
+            event: 'Retaliation Claim Submitted',
+            timestamp: new Date(),
+            actor: input.submittedBy,
+            details: `Claim submitted for case ${input.parentCaseId}.${input.fileName ? `\nAttachment: ${input.fileName}` : ''}`
+        }],
+    };
+    allFeedback.unshift(newRetaliationCase);
+
+    // Add an audit trail to the parent case
+    if (parentCaseIndex !== -1) {
+        allFeedback[parentCaseIndex].auditTrail?.push({
+            event: 'Retaliation Claim Filed',
+            timestamp: new Date(),
+            actor: input.submittedBy,
+            details: `A new retaliation claim has been filed and linked to this case. New Case ID: ${trackingId}`
+        });
+    }
+
+    saveFeedbackToStorage(allFeedback);
+    return { trackingId };
+}
+
 
 export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFeedbackOutput> {
   const allFeedback = getFeedbackFromStorage();
@@ -741,15 +795,19 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         let nextAssignee: Role | undefined = undefined;
         let nextStatus: FeedbackStatus = 'Pending Manager Action';
 
+        const lastResponderRole = Object.values(roleUserMapping).find(u => u.name === lastResponder)?.role || lastResponder;
+
         // Determine next escalation level based on the last responder
-        if (lastResponder === 'Team Lead') {
+        if (lastResponderRole === 'Team Lead') {
             nextAssignee = 'AM';
-        } else if (lastResponder === 'AM') {
+            nextStatus = 'Pending Manager Action'
+        } else if (lastResponderRole === 'AM') {
             nextAssignee = 'Manager';
-        } else if (lastResponder === 'Manager') {
+            nextStatus = 'Pending Manager Action'
+        } else if (lastResponderRole === 'Manager') {
             nextAssignee = 'HR Head';
             nextStatus = 'Pending HR Action';
-        } else if (lastResponder === 'HR Head') {
+        } else if (lastResponderRole === 'HR Head') {
             // After HR responds and is rejected, it goes back to HR for final disposition
             nextAssignee = 'HR Head';
             nextStatus = 'Pending HR Action'; 
@@ -764,7 +822,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
                 actor: actor,
                 details: `Concern escalated to ${nextAssignee}. ${escalationDetails}`
             });
-             if (lastResponder === 'HR Head') {
+             if (lastResponderRole === 'HR Head') {
                  item.auditTrail?.push({
                     event: 'Final Disposition Required',
                     timestamp: new Date(),
@@ -939,5 +997,3 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         saveFeedbackToStorage(allFeedback);
     }
 }
-
-    

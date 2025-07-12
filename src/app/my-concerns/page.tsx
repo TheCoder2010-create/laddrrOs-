@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -392,10 +402,85 @@ function AcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: (
     )
 }
 
+function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, onSubmitted: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [description, setDescription] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!description || !role) {
+            toast({ variant: 'destructive', title: "Missing Information", description: "Please provide a detailed description." });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            await submitRetaliationReport({
+                parentCaseId,
+                submittedBy: role,
+                description,
+                fileName: file?.name,
+            });
+            toast({ title: "Retaliation Report Submitted", description: "Your report has been sent directly to the HR Head for immediate review." });
+            onSubmitted();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your report." });
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="retaliation-description">Description of Incident</Label>
+                <Textarea
+                    id="retaliation-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe the retaliation or bias you observed. Please include dates, individuals involved, specific actions or comments, and the impact on you or your work."
+                    rows={8}
+                    required
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="retaliation-file">Attach Evidence (Optional)</Label>
+                <Input
+                    id="retaliation-file"
+                    type="file"
+                    onChange={handleFileChange}
+                    accept="image/*,application/pdf,.doc,.docx,.mp3,.wav"
+                />
+                <p className="text-xs text-muted-foreground">You can attach screenshots, documents, or audio recordings.</p>
+            </div>
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                </DialogClose>
+                <Button type="submit" variant="destructive" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Submit to HR Head
+                </Button>
+            </DialogFooter>
+        </form>
+    );
+}
+
+
 function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, storageKey: string | null, title: string }) {
     const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
 
     const fetchCases = useCallback(async () => {
         setIsLoading(true);
@@ -504,10 +589,29 @@ function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, 
 
                             {!item.isAnonymous && (
                                 <div className="pt-4 border-t border-dashed">
-                                    <Button variant="destructive" disabled>
-                                        <AlertTriangle className="mr-2 h-4 w-4" />
-                                        Retaliation/Bias Observed
-                                    </Button>
+                                    <Dialog open={retaliationDialogOpen} onOpenChange={setRetaliationDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="destructive">
+                                                <AlertTriangle className="mr-2 h-4 w-4" />
+                                                Retaliation/Bias Observed
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Report Retaliation or Bias</DialogTitle>
+                                                <DialogDescription>
+                                                    This will create a new, separate case linked to this one and assign it directly to the HR Head for immediate review. All information will be handled with the highest level of confidentiality.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <RetaliationForm 
+                                                parentCaseId={item.trackingId} 
+                                                onSubmitted={() => {
+                                                    setRetaliationDialogOpen(false);
+                                                    fetchCases(); // Refresh cases to show updates
+                                                }} 
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
                                 </div>
                             )}
                              
@@ -587,5 +691,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    
