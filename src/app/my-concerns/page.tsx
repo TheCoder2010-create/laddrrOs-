@@ -306,7 +306,13 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                                     <Button>Reveal Identity & Proceed</Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure you want to reveal your identity?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            <p>This action cannot be undone. Once revealed, your name will be attached to this case.</p>
+                                            <p className="font-bold mt-4">A new "Retaliation/Bias Observed" button will become available for you on this case. You can use this button at any time, even after the case is closed, to report any unfair treatment. Please provide any information that would substantiate your claim when using this feature.</p>
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                                         <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
@@ -581,3 +587,5 @@ export default function MyConcernsPage() {
 
     
 }
+
+    

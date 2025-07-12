@@ -893,6 +893,12 @@ export async function respondToIdentityReveal(trackingId: string, actor: Role, a
         item.submittedBy = user.role;
         item.status = 'Pending Manager Action'; // Return to manager's queue, now identified
         item.auditTrail?.push({
+            event: 'User acknowledged retaliation/bias feature',
+            timestamp: new Date(),
+            actor: user.role,
+            details: 'User was informed of the retaliation/bias reporting feature and acknowledged this before revealing their identity.',
+        });
+        item.auditTrail?.push({
             event: 'Identity Revealed',
             timestamp: new Date(),
             actor: user.role,
@@ -933,3 +939,5 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         saveFeedbackToStorage(allFeedback);
     }
 }
+
+    
