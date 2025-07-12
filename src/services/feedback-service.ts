@@ -750,8 +750,9 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
             nextAssignee = 'HR Head';
             nextStatus = 'Pending HR Action';
         } else if (lastResponder === 'HR Head') {
-            // This is the final escalation. The case is closed but not resolved.
-            nextAssignee = undefined; 
+            // After HR responds and is rejected, it goes back to HR for final disposition
+            nextAssignee = 'HR Head';
+            nextStatus = 'Pending HR Action'; 
         }
 
         if (nextAssignee) {
@@ -763,8 +764,16 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
                 actor: actor,
                 details: `Concern escalated to ${nextAssignee}. ${escalationDetails}`
             });
+             if (lastResponder === 'HR Head') {
+                 item.auditTrail?.push({
+                    event: 'Final Disposition Required',
+                    timestamp: new Date(),
+                    actor: 'System',
+                    details: 'Case returned to HR for final action after employee rejected resolution.'
+                 });
+             }
         } else {
-             // Final step after HR response was not accepted.
+             // Fallback/end of the line, shouldn't normally be hit with the new logic
              item.status = 'Closed';
              item.resolution = `Case closed after final escalation attempt. Employee remained unsatisfied. Last response from ${lastResponder}: ${item.supervisorUpdate}`;
              item.auditTrail?.push({
@@ -798,6 +807,31 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
         timestamp: new Date(),
         actor,
         details: resolution
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+export async function submitFinalDisposition(trackingId: string, actor: Role, disposition: string, notes: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.status = 'Resolved';
+    item.resolution = `Final Disposition: ${disposition}.\n\nHR Notes: ${notes}`;
+    item.assignedTo = undefined;
+    item.auditTrail?.push({
+        event: 'Final Disposition',
+        timestamp: new Date(),
+        actor: actor,
+        details: `Case routed to ${disposition}. Notes: ${notes}`
+    });
+     item.auditTrail?.push({
+        event: 'Resolved',
+        timestamp: new Date(),
+        actor: 'System',
+        details: 'Case closed after final disposition by HR.'
     });
 
     saveFeedbackToStorage(allFeedback);

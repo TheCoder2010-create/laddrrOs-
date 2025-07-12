@@ -9,12 +9,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2 } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -276,6 +276,65 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     );
 }
 
+function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [disposition, setDisposition] = useState<string | null>(null);
+    const [notes, setNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!disposition || !notes || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitFinalDisposition(feedback.trackingId, role, disposition, notes);
+            toast({ title: "Final Action Logged", description: "The case has been closed." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit final disposition", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+            <Label className="text-base font-semibold text-destructive">Final Disposition Required</Label>
+            <p className="text-sm text-muted-foreground">
+                The employee rejected the previous resolution. This is the final step. Please select a formal disposition to close this case. This action is irreversible.
+            </p>
+            {!disposition ? (
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" onClick={() => setDisposition('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
+                    <Button variant="secondary" onClick={() => setDisposition('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
+                    <Button variant="destructive" onClick={() => setDisposition('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
+                </div>
+            ) : (
+                <div className="w-full space-y-3 p-3 bg-muted/50 rounded-lg">
+                    <p className="font-medium">Action: <span className="text-primary">{disposition}</span></p>
+                    <Label htmlFor="final-notes">Reasoning / Final Notes</Label>
+                    <Textarea
+                        id="final-notes"
+                        placeholder={`Provide reasoning for selecting: ${disposition}`}
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        rows={4}
+                        className="bg-background"
+                    />
+                    <div className="flex gap-2">
+                        <Button className="bg-black hover:bg-black/80 text-white" onClick={handleSubmit} disabled={isSubmitting || !notes}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit Final Action
+                        </Button>
+                        <Button variant="ghost" onClick={() => setDisposition(null)}>Cancel</Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -294,6 +353,11 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
+    // For identified concerns that were rejected by employee at HR level
+    if (role === 'HR Head' && feedback.auditTrail?.some(e => e.event === 'Final Disposition Required')) {
+        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+    
     if (feedback.assignedTo !== role) return null;
     
     if (feedback.status === 'To-Do') {
@@ -316,8 +380,11 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
         if (feedback.status === 'Pending Manager Action') {
             title = 'Escalation: Review Required';
-            description = "This concern has been escalated to you. Please review the case history and provide your resolution summary.";
+            description = `This concern has been escalated to you as the ${role}. Please review the case history and provide your resolution summary.`;
         } else if (feedback.status === 'Pending HR Action') {
+             if (feedback.isAnonymous) { // The collaborative case
+                return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
+            }
             title = 'Final Escalation: HR Review Required';
             description = "This concern has been escalated to HR for final review. Provide your resolution summary to be sent to the employee for their final acknowledgment."
         }
@@ -369,8 +436,8 @@ function ActionItemsContent() {
         return (isActive && (isAssignedToMe || isCollaboratorOnAnonymousCase)) || f.status === 'Resolved';
       });
 
-      const active = myFeedback.filter(f => f.status !== 'Resolved');
-      const closed = myFeedback.filter(f => f.status === 'Resolved');
+      const active = myFeedback.filter(f => f.status !== 'Resolved' && f.status !== 'Closed');
+      const closed = myFeedback.filter(f => f.status === 'Resolved' || f.status === 'Closed');
       
       active.sort((a, b) => {
         if (a.status === 'To-Do' && b.status !== 'To-Do') return -1;
@@ -432,6 +499,7 @@ function ActionItemsContent() {
         case 'Pending HR Action': 
             return 'default';
         case 'Pending Identity Reveal': return 'secondary';
+        case 'Closed': return 'secondary';
         default: return 'secondary';
     }
   }
@@ -485,7 +553,14 @@ function ActionItemsContent() {
 
                     {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
 
-                    {feedback.status !== 'Resolved' && <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />}
+                    {(feedback.status !== 'Resolved' && feedback.status !== 'Closed') && <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />}
+                    
+                    {feedback.resolution && (
+                         <div className="space-y-2">
+                            <Label className="text-base">Final Resolution</Label>
+                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{feedback.resolution}</p>
+                        </div>
+                    )}
 
                     <div className="text-xs text-muted-foreground/80 pt-4 border-t">
                         Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
