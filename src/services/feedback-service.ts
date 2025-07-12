@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -67,6 +66,14 @@ export interface AnonymousFeedbackInput {
 }
 export interface AnonymousFeedbackOutput {
   trackingId: string;
+}
+
+export interface IdentifiedConcernInput {
+    submittedBy: string;
+    submittedByRole: Role;
+    subject: string;
+    message: string;
+    criticality: 'Low' | 'Medium' | 'High' | 'Critical';
 }
 
 // Client-side tracking types
@@ -470,6 +477,31 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   
   return { trackingId };
 }
+
+export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const newFeedback: Feedback = {
+        trackingId: uuidv4(),
+        subject: input.subject,
+        message: input.message,
+        submittedAt: new Date(),
+        criticality: input.criticality,
+        status: 'Open',
+        assignedTo: 'HR Head', // All identified concerns go to HR first
+        viewed: false,
+        auditTrail: [
+            {
+                event: 'Identified Concern Submitted',
+                timestamp: new Date(),
+                actor: input.submittedByRole,
+                details: `Concern submitted by ${input.submittedBy} (${input.submittedByRole}).`
+            }
+        ]
+    };
+    allFeedback.unshift(newFeedback);
+    saveFeedbackToStorage(allFeedback);
+}
+
 
 export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFeedbackOutput> {
   const allFeedback = getFeedbackFromStorage();

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,17 +7,31 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getOneOnOneHistory, OneOnOneHistoryItem } from '@/services/feedback-service';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitIdentifiedConcern, IdentifiedConcernInput } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, AlertTriangle, CheckCircle, MessageCircleQuestion, Repeat, Briefcase, FileText, UserX, UserPlus, EyeOff, UserCheck } from 'lucide-react';
+import { ShieldQuestion, AlertTriangle, CheckCircle, MessageCircleQuestion, Repeat, Briefcase, FileText, UserX, UserPlus, EyeOff, UserCheck, Send, Loader2 } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import DashboardLayout from '@/components/dashboard-layout';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-function MyConcernsContent() {
+
+function PastConcernsList() {
   const [concerns, setConcerns] = useState<OneOnOneHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
@@ -33,7 +46,7 @@ function MyConcernsContent() {
       const myConcerns = allHistory.filter(item => {
         const isParticipant = item.supervisorName === currentUser.name || item.employeeName === currentUser.name;
         return isParticipant && !!item.analysis.criticalCoachingInsight;
-      });
+      }).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setConcerns(myConcerns);
     } catch (error) {
@@ -57,17 +70,9 @@ function MyConcernsContent() {
 
   if (isLoading) {
     return (
-        <div className="p-4 md:p-8">
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-48 mb-2" />
-                    <Skeleton className="h-6 w-72" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                </CardContent>
-            </Card>
+        <div className="space-y-4 mt-6">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
         </div>
     );
   }
@@ -105,6 +110,165 @@ function MyConcernsContent() {
     }
   }
 
+  if (concerns.length === 0) {
+    return (
+      <div className="text-center py-12 border-2 border-dashed rounded-lg mt-6">
+        <p className="text-muted-foreground text-lg">You have no active or past concerns.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Critical insights from your 1-on-1s will appear here.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <Accordion type="single" collapsible className="w-full mt-6">
+    {concerns.map((item) => {
+        const insight = item.analysis.criticalCoachingInsight;
+        if (!insight) return null;
+        const isSupervisor = roleUserMapping[role!].name === item.supervisorName;
+
+        return (
+        <AccordionItem value={item.id} key={item.id} className="px-4">
+            <AccordionTrigger>
+            <div className="flex justify-between items-center w-full pr-4">
+                <div className="text-left">
+                    <p className="font-medium">
+                        Concern from 1-on-1 with {isSupervisor ? item.employeeName : item.supervisorName}
+                    </p>
+                    <p className="text-sm text-muted-foreground font-normal">
+                        {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
+                    </p>
+                </div>
+                <div className="hidden md:flex items-center gap-2">
+                    {getStatusBadge(insight)}
+                </div>
+            </div>
+            </AccordionTrigger>
+            <AccordionContent className="space-y-6 pt-2">
+               <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                    <h4 className="font-semibold text-destructive flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />Critical Insight Summary
+                    </h4>
+                    <p className="text-destructive/90 my-2 text-sm">{insight.summary}</p>
+                </div>
+
+                 {insight.supervisorResponse && (
+                    <div className="mt-4 p-3 bg-muted/80 rounded-md border">
+                        <p className="font-semibold text-foreground text-sm flex items-center gap-2"><UserCheck />Supervisor's Response</p>
+                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
+                    </div>
+                )}
+
+                {insight.employeeAcknowledgement && (
+                    <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
+                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm flex items-center gap-2"><EyeOff />Employee's Acknowledgement</p>
+                        <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                    </div>
+                )}
+                
+                <div className="space-y-2 text-xs text-muted-foreground/80 pt-4 border-t">
+                    <p>This is a read-only view of the case history.</p>
+                    <p>Tracking ID: <code className="font-mono">{item.id}</code></p>
+                </div>
+
+            </AccordionContent>
+        </AccordionItem>
+        )
+    })}
+    </Accordion>
+  )
+}
+
+function RaiseConcernForm() {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [subject, setSubject] = useState('');
+    const [concern, setConcern] = useState('');
+    const [criticality, setCriticality] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!subject || !concern || !role) {
+            toast({ variant: 'destructive', title: "Missing Information", description: "Please fill out all fields."});
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const submitter = roleUserMapping[role];
+            const input: IdentifiedConcernInput = {
+                submittedBy: submitter.name,
+                submittedByRole: submitter.role,
+                subject,
+                message: concern,
+                criticality,
+            }
+            await submitIdentifiedConcern(input);
+            toast({ title: "Concern Submitted", description: "Your concern has been confidentially routed to HR." });
+            setSubject('');
+            setConcern('');
+            setCriticality('Medium');
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+            <p className="text-sm text-muted-foreground">
+                Use this form to confidentially report a concern directly to HR. Your identity will be attached to this submission. If you wish to remain anonymous, please log out and use the "Voice – In Silence" feature.
+            </p>
+            <div className="space-y-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Input 
+                    id="subject" 
+                    value={subject} 
+                    onChange={e => setSubject(e.target.value)} 
+                    placeholder="e.g., Unfair project assignment, Issue with team communication" 
+                    required 
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="concern">Details of Concern</Label>
+                <Textarea 
+                    id="concern" 
+                    value={concern} 
+                    onChange={e => setConcern(e.target.value)} 
+                    placeholder="Please describe the situation in detail. Include specific examples, dates, and impact if possible." 
+                    rows={8} 
+                    required 
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="criticality">Perceived Criticality</Label>
+                 <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
+                    <SelectTrigger id="criticality">
+                        <SelectValue placeholder="Select a criticality level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Low">Low - Needs attention but not urgent</SelectItem>
+                        <SelectItem value="Medium">Medium - Affecting work or morale</SelectItem>
+                        <SelectItem value="High">High - Significant impact, needs prompt review</SelectItem>
+                        <SelectItem value="Critical">Critical - Urgent issue, potential policy violation</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Submit Concern to HR
+                </Button>
+            </div>
+        </form>
+    )
+}
+
+function MyConcernsContent() {
   return (
     <div className="p-4 md:p-8">
       <Card>
@@ -113,74 +277,22 @@ function MyConcernsContent() {
             <ShieldQuestion className="h-8 w-8" /> My Concerns
           </CardTitle>
            <CardDescription className="text-lg text-muted-foreground">
-            A record of all critical insights you have been involved in, either as a supervisor or an employee.
+            Track AI-flagged insights you are involved in or raise a new concern directly to HR.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {concerns.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground text-lg">You have no active or past concerns.</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Critical insights from your 1-on-1s will appear here.
-              </p>
-            </div>
-          ) : (
-            <Accordion type="single" collapsible className="w-full">
-            {concerns.map((item) => {
-                const insight = item.analysis.criticalCoachingInsight;
-                if (!insight) return null;
-                const isSupervisor = roleUserMapping[role!].name === item.supervisorName;
-
-                return (
-                <AccordionItem value={item.id} key={item.id} className="px-4">
-                    <AccordionTrigger>
-                    <div className="flex justify-between items-center w-full pr-4">
-                        <div className="text-left">
-                            <p className="font-medium">
-                                Concern from 1-on-1 with {isSupervisor ? item.employeeName : item.supervisorName}
-                            </p>
-                            <p className="text-sm text-muted-foreground font-normal">
-                                {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
-                            </p>
-                        </div>
-                        <div className="hidden md:flex items-center gap-2">
-                            {getStatusBadge(insight)}
-                        </div>
-                    </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-6 pt-2">
-                       <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                            <h4 className="font-semibold text-destructive flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4" />Critical Insight Summary
-                            </h4>
-                            <p className="text-destructive/90 my-2 text-sm">{insight.summary}</p>
-                        </div>
-
-                         {insight.supervisorResponse && (
-                            <div className="mt-4 p-3 bg-muted/80 rounded-md border">
-                                <p className="font-semibold text-foreground text-sm flex items-center gap-2"><UserCheck />Supervisor's Response</p>
-                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
-                            </div>
-                        )}
-
-                        {insight.employeeAcknowledgement && (
-                            <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
-                                <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm flex items-center gap-2"><EyeOff />Employee's Acknowledgement</p>
-                                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
-                            </div>
-                        )}
-                        
-                        <div className="space-y-2 text-xs text-muted-foreground/80 pt-4 border-t">
-                            <p>This is a read-only view of the case history.</p>
-                            <p>Tracking ID: <code className="font-mono">{item.id}</code></p>
-                        </div>
-
-                    </AccordionContent>
-                </AccordionItem>
-                )
-            })}
-            </Accordion>
-          )}
+            <Tabs defaultValue="past-concerns" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="past-concerns">My Past Concerns</TabsTrigger>
+                    <TabsTrigger value="raise-concern">Raise a New Concern</TabsTrigger>
+                </TabsList>
+                <TabsContent value="past-concerns">
+                    <PastConcernsList />
+                </TabsContent>
+                <TabsContent value="raise-concern">
+                    <RaiseConcernForm />
+                </TabsContent>
+            </Tabs>
         </CardContent>
       </Card>
     </div>
