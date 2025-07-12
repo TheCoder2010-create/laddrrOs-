@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, requestIdentityReveal, employeeAcknowledgeMessageRead } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { roleUserMapping } from '@/lib/role-mapping';
@@ -222,55 +223,69 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
     }
 
     return (
-        <Alert variant="destructive">
-            <AlertTitle>Action Required: Manager has requested you reveal your identity</AlertTitle>
-            <AlertDescription className="mt-2 space-y-4">
-                <div className="p-3 bg-background/50 rounded-md border">
-                    <p className="font-semibold text-foreground">Manager's Message:</p>
-                    <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{revealRequest?.details}</p>
-                </div>
-                
-                {!hasAcknowledged ? (
-                    <>
-                        <p>Please read the manager's message above. Click the button below to acknowledge that you have read it before you can proceed.</p>
-                        <Button onClick={handleAcknowledge}>Acknowledge & Continue</Button>
-                    </>
-                ) : (
-                    <>
-                        <p>
-                            To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be closed.
-                        </p>
-                        <div className="flex gap-4">
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button>Reveal Identity & Proceed</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="secondary">Decline & Close Case</Button>
-                                </AlertDialogTrigger>
-                                 <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>If you decline, this case will be closed and no further action can be taken. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleResponse(false)} className={cn(buttonVariants({variant: 'destructive'}))}>Yes, Decline and Close</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+        <div className="p-4 border-2 border-destructive/50 bg-destructive/5 rounded-lg space-y-4">
+            <h4 className="font-bold text-lg text-destructive">Action Required: Your manager has requested you reveal your identity</h4>
+            
+            {!hasAcknowledged ? (
+                <>
+                    <div className="p-4 bg-background/50 rounded-md border">
+                        <p className="font-semibold text-foreground">Manager's Message:</p>
+                        <p className="text-muted-foreground mt-2 whitespace-pre-wrap">{revealRequest?.details}</p>
+                    </div>
+                    <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 text-blue-800 dark:text-blue-300">
+                         <div className="flex items-start gap-3">
+                            <ShieldCheck className="h-5 w-5 mt-1 flex-shrink-0 text-blue-500" />
+                            <div>
+                                <h5 className="font-bold">Please Acknowledge This Message</h5>
+                                <p className="text-sm mt-1">
+                                    Your identity has <span className="font-bold">not</span> been revealed. Clicking the button below only confirms that you have read this message. You will decide whether to reveal your identity on the next step.
+                                </p>
+                            </div>
                         </div>
-                    </>
-                )}
-            </AlertDescription>
-        </Alert>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button onClick={handleAcknowledge}>I Understand, Show Me My Options</Button>
+                    </div>
+                </>
+            ) : (
+                <>
+                     <div className="p-3 bg-background/50 rounded-md border">
+                        <p className="font-semibold text-foreground">Manager's Message:</p>
+                        <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{revealRequest?.details}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be closed.
+                    </p>
+                    <div className="flex gap-4">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button>Reveal Identity & Proceed</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will reveal your name to the manager and permanently attach it to this case. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleResponse(true)}>Yes, Reveal My Identity</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="secondary">Decline & Close Case</Button>
+                            </AlertDialogTrigger>
+                             <AlertDialogContent>
+                                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>If you decline, this case will be closed and no further action can be taken. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleResponse(false)} className={cn(buttonVariants({variant: 'destructive'}))}>Yes, Decline and Close</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </>
+            )}
+        </div>
     )
 }
 
@@ -375,6 +390,10 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
 function MyConcernsContent() {
   const [key, setKey] = useState(0);
 
+  const remountSubmissions = useCallback(() => {
+    setKey(prevKey => prevKey + 1);
+  }, []);
+
   return (
     <div className="p-4 md:p-8">
       <Card>
@@ -402,8 +421,8 @@ function MyConcernsContent() {
                     <IdentifiedConcernForm />
                 </TabsContent>
                 <TabsContent value="anonymous">
-                    <AnonymousConcernForm onCaseSubmitted={() => setKey(k => k + 1)} />
-                    <MyAnonymousSubmissions onUpdate={() => setKey(k => k + 1)} key={key} />
+                    <AnonymousConcernForm onCaseSubmitted={remountSubmissions} />
+                    <MyAnonymousSubmissions onUpdate={remountSubmissions} key={key} />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -428,4 +447,5 @@ export default function MyConcernsPage() {
             <MyConcernsContent />
         </DashboardLayout>
     );
-}
+
+    
