@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -22,6 +23,7 @@ export type FeedbackStatus =
   | 'Pending Supervisor Action'
   | 'Pending Manager Action'
   | 'Pending Identity Reveal'
+  | 'Pending HR Action'
   | 'To-Do'
   | 'Resolved'
   | 'Closed';
@@ -756,14 +758,13 @@ export async function respondToIdentityReveal(trackingId: string, actor: Role, a
             details: `User ${user.name} accepted the request and revealed their identity.`,
         });
     } else {
-        item.status = 'Closed'; // Case is closed if user declines
-        item.assignedTo = undefined;
-        item.resolution = 'Case closed by user after declining identity reveal request.';
+        item.status = 'Pending HR Action';
+        item.assignedTo = 'HR Head';
         item.auditTrail?.push({
-            event: 'Identity Reveal Declined',
+            event: 'Identity Reveal Declined; Escalated to HR',
             timestamp: new Date(),
             actor: user.role,
-            details: `User declined the request to reveal their identity. Case has been closed.`,
+            details: `User declined the request to reveal their identity. Case has been escalated to HR Head for final review.`,
         });
     }
 
@@ -791,3 +792,5 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         saveFeedbackToStorage(allFeedback);
     }
 }
+
+    

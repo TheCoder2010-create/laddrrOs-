@@ -14,7 +14,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -318,6 +318,7 @@ function ActionItemsContent() {
         case 'To-Do': return 'default';
         case 'Pending Supervisor Action': return 'destructive';
         case 'Pending Manager Action': return 'destructive';
+        case 'Pending HR Action': return 'default';
         case 'Pending Identity Reveal': return 'secondary';
         default: return 'secondary';
     }
@@ -356,7 +357,11 @@ function ActionItemsContent() {
                                 <span className="font-medium text-left truncate">{feedback.subject}</span>
                             </div>
                             <div className="flex items-center gap-4 ml-4">
-                                 <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
+                                 {feedback.status === 'Pending HR Action' ? (
+                                    <Badge className="bg-black text-white"><ShieldCheckIcon className="mr-2 h-4 w-4" />HR Review</Badge>
+                                 ) : (
+                                    <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
+                                 )}
                                 <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
                                     Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created' || a.event.includes("Submitted"))?.timestamp || feedback.submittedAt), { addSuffix: true })}
                                 </span>
