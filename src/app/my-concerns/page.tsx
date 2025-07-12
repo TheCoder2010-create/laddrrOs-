@@ -217,6 +217,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
         if (accept) {
             toast({ title: "Identity Revealed", description: "Your identity has been attached to the case. The manager has been notified."});
         } else {
+             // If user declines, we now remove it from local storage so it disappears
             const key = getAnonymousCaseKey(role);
             if (key) {
                 let ids = JSON.parse(localStorage.getItem(key) || '[]');
@@ -296,6 +297,13 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
 
     useEffect(() => {
         fetchCases();
+        
+        const handleFeedbackUpdate = () => fetchCases();
+        window.addEventListener('feedbackUpdated', handleFeedbackUpdate);
+
+        return () => {
+            window.removeEventListener('feedbackUpdated', handleFeedbackUpdate);
+        };
     }, [fetchCases, onUpdate]);
     
     if (isLoading) return <Skeleton className="h-24 w-full" />;
@@ -395,7 +403,7 @@ function MyConcernsContent() {
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={() => setKey(k => k + 1)} />
-                    <MyAnonymousSubmissions onUpdate={() => setKey(k => k + 1)} />
+                    <MyAnonymousSubmissions onUpdate={() => setKey(k => k + 1)} key={key} />
                 </TabsContent>
             </Tabs>
         </CardContent>
