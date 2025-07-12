@@ -497,7 +497,7 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
         assignedTo: 'Manager',
         criticality: 'Medium', // Default criticality
         auditTrail: [{
-            event: 'Anonymous Concern Submitted',
+            event: 'Submitted',
             timestamp: new Date(),
             actor: 'Anonymous',
             details: 'A concern was submitted anonymously from a user dashboard.'
@@ -684,7 +684,7 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
     const feedback = allFeedback[feedbackIndex];
     feedback.status = 'Resolved';
     feedback.resolution = resolution;
-    feedback.assignedTo = 'HR Head'; // Final state belongs to HR
+    feedback.assignedTo = undefined;
     feedback.auditTrail?.push({
         event: 'Resolved',
         timestamp: new Date(),

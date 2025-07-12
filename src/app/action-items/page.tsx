@@ -126,6 +126,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     const { role } = useRole();
     const { toast } = useToast();
     const [revealReason, setRevealReason] = useState('');
+    const [resolution, setResolution] = useState('');
 
     const handleRequestIdentity = async () => {
         if (!revealReason) return;
@@ -134,17 +135,39 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
         toast({ title: "Request Submitted", description: "The user has been notified of your request."});
         onUpdate();
     }
+
+    const handleResolveDirectly = async () => {
+        if (!resolution) return;
+        await resolveFeedback(feedback.trackingId, role!, resolution);
+        setResolution('');
+        toast({ title: "Case Resolved", description: "You have resolved the anonymous concern."});
+        onUpdate();
+    }
     
     return (
         <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
             <Label className="text-base font-semibold">Your Action Required</Label>
             <p className="text-sm text-muted-foreground">
-                This is an anonymous submission. You can resolve it directly or request the user reveal their identity if more information is needed.
+                This is an anonymous submission. You can resolve it directly with a closing statement, or request the user reveal their identity if more information is needed.
             </p>
             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="revealReason" className="font-medium">Request Identity Reveal</Label>
+                <Label htmlFor="resolve-directly" className="font-medium">Option 1: Resolve Directly</Label>
+                <p className="text-xs text-muted-foreground">
+                    If you have enough information to close this case, provide a final resolution summary. This will be visible to the anonymous user.
+                </p>
+                <Textarea 
+                    id="resolve-directly"
+                    placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines for project planning to ensure equitable task distribution...'"
+                    value={resolution}
+                    onChange={(e) => setResolution(e.target.value)}
+                    rows={4}
+                />
+                <Button onClick={handleResolveDirectly} disabled={!resolution}>Resolve Case</Button>
+            </div>
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor="revealReason" className="font-medium">Option 2: Request Identity Reveal</Label>
                  <p className="text-xs text-muted-foreground">
-                    Explain why you need to know their identity to resolve this. This message will be shown to the user.
+                    If you cannot proceed without more details, explain why you need to know their identity. This message will be shown to the user.
                 </p>
                 <Textarea 
                     id="revealReason"
@@ -155,7 +178,6 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                 />
                 <Button onClick={handleRequestIdentity} disabled={!revealReason}>Request Identity Reveal</Button>
             </div>
-            {/* Add direct resolution option here in the future */}
         </div>
     );
 }
@@ -221,7 +243,7 @@ function ActionItemsContent() {
     try {
       const allFeedback = await getAllFeedback();
       const myFeedback = allFeedback.filter(f => {
-        return f.assignedTo === role && f.status !== 'Resolved' && f.status !== 'Open';
+        return f.assignedTo === role && f.status !== 'Resolved' && f.status !== 'Open' && f.status !== 'Closed';
       });
       // Sort to show To-Do items first, then by date
       myFeedback.sort((a, b) => {
