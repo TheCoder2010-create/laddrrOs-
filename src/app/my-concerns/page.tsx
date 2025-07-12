@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -495,6 +495,16 @@ function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, 
                                     <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{item.resolution}</p>
                                 </div>
                             )}
+
+                            {!item.isAnonymous && (
+                                <div className="pt-4 border-t border-dashed">
+                                    <Button variant="destructive" disabled>
+                                        <AlertTriangle className="mr-2 h-4 w-4" />
+                                        Retaliation/Bias Observed
+                                    </Button>
+                                </div>
+                            )}
+                             
                              <div className="text-xs text-muted-foreground/80 pt-2 border-t">
                                 Tracking ID: <code className="font-mono">{item.trackingId}</code>
                             </div>
