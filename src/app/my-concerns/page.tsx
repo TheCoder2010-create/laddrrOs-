@@ -12,7 +12,7 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -249,7 +249,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
     )
 }
 
-function MyAnonymousSubmissions({ onUpdate, key: remountKey }: { onUpdate: () => void, key: number }) {
+function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
     const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -278,7 +278,7 @@ function MyAnonymousSubmissions({ onUpdate, key: remountKey }: { onUpdate: () =>
         return () => {
             window.removeEventListener('feedbackUpdated', handleFeedbackUpdate);
         };
-    }, [fetchCases, remountKey]);
+    }, [fetchCases]);
     
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
@@ -295,6 +295,7 @@ function MyAnonymousSubmissions({ onUpdate, key: remountKey }: { onUpdate: () =>
             case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
             case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
             case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
+            case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Closed</Badge>;
             default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
         }
     }
