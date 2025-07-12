@@ -682,7 +682,7 @@ export async function submitCollaborativeResolution(trackingId: string, actor: R
 
 
 /**
- * Supervisor submits an update for a critical insight.
+ * Supervisor submits an update for a critical insight or identified concern.
  * This now sends it back to the employee for acknowledgment.
  */
 export async function submitSupervisorUpdate(trackingId: string, supervisor: Role, update: string): Promise<void> {
@@ -716,7 +716,10 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
 
     const item = allFeedback[feedbackIndex];
     const actor = item.submittedBy || 'Anonymous';
-    const lastResponder = item.auditTrail?.slice().reverse().find(e => e.event === 'Supervisor Responded')?.actor as Role | undefined;
+    
+    // Find the last responder in the audit trail to determine current level
+    const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => e.event === 'Supervisor Responded');
+    const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
     if (accepted) {
         item.status = 'Resolved';
@@ -736,6 +739,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     } else {
         const escalationDetails = `Resolution not accepted. Escalating further.${comments ? `\nComments: ${comments}` : ''}`;
         let nextAssignee: Role | undefined = undefined;
+        let nextStatus: FeedbackStatus = 'Pending Manager Action';
 
         // Determine next escalation level based on the last responder
         if (lastResponder === 'Team Lead') {
@@ -744,13 +748,14 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
             nextAssignee = 'Manager';
         } else if (lastResponder === 'Manager') {
             nextAssignee = 'HR Head';
+            nextStatus = 'Pending HR Action';
+        } else if (lastResponder === 'HR Head') {
+            // This is the final escalation. The case is closed but not resolved.
+            nextAssignee = undefined; 
         }
 
         if (nextAssignee) {
-             item.status = 'Pending Manager Action'; 
-             if(nextAssignee === 'Team Lead') item.status = 'Pending Supervisor Action'
-             if(nextAssignee === 'HR Head') item.status = 'Pending HR Action'
-
+             item.status = nextStatus;
              item.assignedTo = nextAssignee;
              item.auditTrail?.push({
                 event: 'Employee Escalated Concern',
@@ -759,8 +764,9 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
                 details: `Concern escalated to ${nextAssignee}. ${escalationDetails}`
             });
         } else {
+             // Final step after HR response was not accepted.
              item.status = 'Closed';
-             item.resolution = `Case closed after final escalation attempt. Employee remained unsatisfied. Last response: ${item.supervisorUpdate}`;
+             item.resolution = `Case closed after final escalation attempt. Employee remained unsatisfied. Last response from ${lastResponder}: ${item.supervisorUpdate}`;
              item.auditTrail?.push({
                 event: 'Case Closed, Not Resolved',
                 timestamp: new Date(),

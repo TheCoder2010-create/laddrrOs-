@@ -289,7 +289,8 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         onUpdate();
     }
     
-    if (feedback.status === 'Pending HR Action') {
+    // For anonymous concerns escalated to HR, show the collaborative panel
+    if (feedback.status === 'Pending HR Action' && feedback.isAnonymous) {
         return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
@@ -303,12 +304,24 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
-    // Supervisor's action panel for critical insights or identified concerns
-    if (feedback.status === 'Pending Supervisor Action' || feedback.status === 'Pending Manager Action') {
-        const title = feedback.status === 'Pending Supervisor Action' ? 'Your Action Required' : 'Escalation: Your Action Required';
-        const description = feedback.status === 'Pending Supervisor Action' 
-            ? "A critical insight or identified concern requires your attention. Please review the details and provide a summary of the actions you have taken or will take to address the concern. This will be sent to the employee for acknowledgment."
-            : "This concern has been escalated to you. Please review the case history and provide your resolution summary. This will be sent back to the employee for their acknowledgement.";
+    // This handles all identified concerns for TL, AM, Manager, and HR Head
+    const isEscalatedConcern = 
+        feedback.status === 'Pending Supervisor Action' ||
+        feedback.status === 'Pending Manager Action' ||
+        (feedback.status === 'Pending HR Action' && !feedback.isAnonymous);
+        
+    if (isEscalatedConcern) {
+        let title = 'Your Action Required';
+        let description = "A concern requires your attention. Please review the details and provide a summary of the actions you have taken or will take to address it. This will be sent to the employee for acknowledgment.";
+
+        if (feedback.status === 'Pending Manager Action') {
+            title = 'Escalation: Review Required';
+            description = "This concern has been escalated to you. Please review the case history and provide your resolution summary.";
+        } else if (feedback.status === 'Pending HR Action') {
+            title = 'Final Escalation: HR Review Required';
+            description = "This concern has been escalated to HR for final review. Provide your resolution summary to be sent to the employee for their final acknowledgment."
+        }
+
 
         return (
             <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
@@ -347,10 +360,13 @@ function ActionItemsContent() {
       const myFeedback = allFeedback.filter(f => {
         // A case is relevant if user is assigned OR it's a collaborative HR case and user is the Manager or HR Head.
         const isAssignedToMe = f.assignedTo === role;
-        const isCollaborator = f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
-        const isActive = f.status !== 'Resolved' && f.status !== 'Open' && f.status !== 'Closed';
+        
+        // This is the new logic for collaborative anonymous cases
+        const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
 
-        return (isActive && (isAssignedToMe || isCollaborator)) || f.status === 'Resolved';
+        const isActive = f.status !== 'Resolved' && f.status !== 'Open' && f.status !== 'Closed';
+        
+        return (isActive && (isAssignedToMe || isCollaboratorOnAnonymousCase)) || f.status === 'Resolved';
       });
 
       const active = myFeedback.filter(f => f.status !== 'Resolved');
@@ -413,7 +429,8 @@ function ActionItemsContent() {
         case 'Pending Supervisor Action': return 'destructive';
         case 'Pending Manager Action': return 'destructive';
         case 'Pending Employee Acknowledgment': return 'destructive';
-        case 'Pending HR Action': return 'default';
+        case 'Pending HR Action': 
+            return 'default';
         case 'Pending Identity Reveal': return 'secondary';
         default: return 'secondary';
     }
@@ -425,6 +442,14 @@ function ActionItemsContent() {
         {items.map((feedback) => {
             const config = criticalityConfig[feedback.criticality || 'Low'];
             const Icon = feedback.isAnonymous ? UserX : (config?.icon || Info);
+            let statusBadge;
+            
+            if (feedback.status === 'Pending HR Action') {
+                statusBadge = <Badge className="bg-black text-white"><ShieldCheckIcon className="mr-2 h-4 w-4" />HR Review</Badge>;
+            } else {
+                statusBadge = <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>;
+            }
+
             return (
             <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
                 <AccordionTrigger>
@@ -434,11 +459,7 @@ function ActionItemsContent() {
                         <span className="font-medium text-left truncate">{feedback.subject}</span>
                     </div>
                     <div className="flex items-center gap-4 ml-4">
-                         {feedback.status === 'Pending HR Action' ? (
-                            <Badge className="bg-black text-white"><ShieldCheckIcon className="mr-2 h-4 w-4" />HR Review</Badge>
-                         ) : (
-                            <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>
-                         )}
+                         {statusBadge}
                         <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
                             Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created' || a.event.includes("Submitted"))?.timestamp || feedback.submittedAt), { addSuffix: true })}
                         </span>
