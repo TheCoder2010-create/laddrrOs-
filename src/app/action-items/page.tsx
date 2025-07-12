@@ -303,14 +303,17 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
-    // Supervisor's action panel for critical insights from 1-on-1s or identified concerns
-    if (feedback.status === 'Pending Supervisor Action') {
+    // Supervisor's action panel for critical insights or identified concerns
+    if (feedback.status === 'Pending Supervisor Action' || feedback.status === 'Pending Manager Action') {
+        const title = feedback.status === 'Pending Supervisor Action' ? 'Your Action Required' : 'Escalation: Your Action Required';
+        const description = feedback.status === 'Pending Supervisor Action' 
+            ? "A critical insight or identified concern requires your attention. Please review the details and provide a summary of the actions you have taken or will take to address the concern. This will be sent to the employee for acknowledgment."
+            : "This concern has been escalated to you. Please review the case history and provide your resolution summary. This will be sent back to the employee for their acknowledgement.";
+
         return (
             <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-                <Label className="text-base font-semibold">Your Action Required</Label>
-                 <p className="text-sm text-muted-foreground">
-                    A critical insight or identified concern requires your attention. Please review the details and provide a summary of the actions you have taken or will take to address the concern. This will be sent to the employee for acknowledgment.
-                </p>
+                <Label className="text-base font-semibold">{title}</Label>
+                 <p className="text-sm text-muted-foreground">{description}</p>
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
                     <Label htmlFor="supervisorUpdate">Resolution Summary</Label>
                     <Textarea 
