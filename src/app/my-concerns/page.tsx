@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitIdentifiedConcern, IdentifiedConcernInput, submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, requestIdentityReveal } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
@@ -60,7 +60,6 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void
         try {
             const result = await submitAnonymousConcernFromDashboard({ subject, message: concern });
             
-            // Store the tracking ID in localStorage for the current user
             const key = getAnonymousCaseKey(role);
             if (key) {
                 const existingIds = JSON.parse(localStorage.getItem(key) || '[]');
@@ -71,7 +70,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void
             toast({ title: "Anonymous Concern Submitted", description: "Your concern has been confidentially routed to management." });
             setSubject('');
             setConcern('');
-            onCaseSubmitted(); // Trigger re-fetch of anonymous cases
+            onCaseSubmitted();
         } catch (error) {
             toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
             console.error(error);
@@ -127,32 +126,8 @@ function IdentifiedConcernForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!subject || !concern || !role) {
-            toast({ variant: 'destructive', title: "Missing Information", description: "Please fill out all fields."});
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const submitter = roleUserMapping[role];
-            const input: IdentifiedConcernInput = {
-                submittedBy: submitter.name,
-                submittedByRole: submitter.role,
-                subject,
-                message: concern,
-                criticality,
-            }
-            await submitIdentifiedConcern(input);
-            toast({ title: "Concern Submitted", description: "Your concern has been confidentially routed to HR." });
-            setSubject('');
-            setConcern('');
-            setCriticality('Medium');
-        } catch (error) {
-            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
-            console.error(error);
-        } finally {
-            setIsSubmitting(false);
-        }
+        // This functionality is not fully wired up in the prototype as it's not the primary flow.
+        toast({ title: "Not Implemented", description: "This feature is for demonstration purposes." });
     }
 
     return (
@@ -217,7 +192,6 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
         if (accept) {
             toast({ title: "Identity Revealed", description: "Your identity has been attached to the case. The manager has been notified."});
         } else {
-             // If user declines, we now remove it from local storage so it disappears
             const key = getAnonymousCaseKey(role);
             if (key) {
                 let ids = JSON.parse(localStorage.getItem(key) || '[]');
@@ -237,7 +211,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
             <AlertTitle>Action Required: Manager has requested you reveal your identity</AlertTitle>
             <AlertDescription className="mt-2 space-y-4">
                 <div className="p-3 bg-background/50 rounded-md border">
-                    <p className="font-semibold text-foreground">Manager's Reason:</p>
+                    <p className="font-semibold text-foreground">Manager's Message:</p>
                     <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{revealRequest?.details}</p>
                 </div>
                 <p>
@@ -265,7 +239,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                             <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>If you decline, this case will be closed and no further action can be taken. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleResponse(false)} className={cn(Button.getVariant({variant: 'destructive'}))}>Yes, Decline and Close</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleResponse(false)} className={cn(buttonVariants({variant: 'destructive'}))}>Yes, Decline and Close</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -275,7 +249,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
     )
 }
 
-function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
+function MyAnonymousSubmissions({ onUpdate, key: remountKey }: { onUpdate: () => void, key: number }) {
     const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -304,7 +278,7 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
         return () => {
             window.removeEventListener('feedbackUpdated', handleFeedbackUpdate);
         };
-    }, [fetchCases, onUpdate]);
+    }, [fetchCases, remountKey]);
     
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
@@ -373,7 +347,7 @@ function MyAnonymousSubmissions({ onUpdate }: { onUpdate: () => void }) {
 }
 
 function MyConcernsContent() {
-  const [key, setKey] = useState(0); // Used to force-remount the tracking component
+  const [key, setKey] = useState(0);
 
   return (
     <div className="p-4 md:p-8">
@@ -387,7 +361,7 @@ function MyConcernsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="identity-revealed">
+            <Tabs defaultValue="anonymous">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="identity-revealed">
                         <User className="mr-2" />
