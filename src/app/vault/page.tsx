@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2 } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { availableRolesForAssignment } from '@/hooks/use-role';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -179,24 +187,45 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
             {role === 'HR Head' && (
                 <div className="p-4 border rounded-lg bg-background space-y-3">
                     <Label className="font-medium">Assign Case</Label>
-                    <div className="space-y-2">
-                        {availableRolesForAssignment.map(r => (
-                            <div key={r} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={`assign-${r}-${feedback.trackingId}`}
-                                    checked={assignees.includes(r)}
-                                    onCheckedChange={() => handleAssigneeChange(r)}
-                                />
-                                <Label htmlFor={`assign-${r}-${feedback.trackingId}`} className="font-normal">{r}</Label>
-                            </div>
-                        ))}
+                    <p className="text-sm text-muted-foreground">
+                        Select one or more roles to investigate this case.
+                        {assignees.length > 0 && (
+                            <span className="block mt-1">
+                                Currently assigned to: <span className="font-semibold text-primary">{assignees.join(', ')}</span>
+                            </span>
+                        )}
+                    </p>
+                    <div className="flex gap-2 items-start">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline">
+                                    Select Roles <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                                <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {availableRolesForAssignment.map(r => (
+                                     <DropdownMenuCheckboxItem
+                                        key={r}
+                                        checked={assignees.includes(r)}
+                                        onCheckedChange={() => handleAssigneeChange(r)}
+                                    >
+                                        {r}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <div className="flex-1 space-y-2">
+                            <Textarea 
+                                placeholder="Add an assignment note (optional)..."
+                                value={assignmentComment}
+                                onChange={(e) => setAssignmentComment(e.target.value)}
+                                className="w-full"
+                            />
+                            <Button onClick={handleAssign} disabled={assignees.length === 0}>Assign</Button>
+                        </div>
                     </div>
-                    <Textarea 
-                        placeholder="Add an assignment note (optional)..."
-                        value={assignmentComment}
-                        onChange={(e) => setAssignmentComment(e.target.value)}
-                    />
-                    <Button onClick={handleAssign} disabled={assignees.length === 0}>Assign</Button>
                 </div>
             )}
 
