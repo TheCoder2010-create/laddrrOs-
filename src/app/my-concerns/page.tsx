@@ -563,22 +563,21 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.find(e => e.event === 'HR Responded to Retaliation Claim');
 
                     return (
-                        <AccordionItem value={item.trackingId} key={item.trackingId} className="px-4">
-                            <AccordionTrigger>
-                                <div className="flex flex-wrap justify-between items-center w-full pr-4 gap-2">
+                        <AccordionItem value={item.trackingId} key={item.trackingId}>
+                             <div className="flex items-center w-full px-4">
+                                <AccordionTrigger className="flex-1 text-left">
                                     <div className="flex items-center gap-4 flex-1 min-w-0">
                                         <p className="font-medium truncate">{item.subject}</p>
                                     </div>
-                                    <div className="flex items-center gap-4 ml-auto">
-                                        <span 
-                                            className="text-xs text-muted-foreground font-mono cursor-text"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >ID: {item.trackingId}</span>
-                                        {getStatusBadge(item.status)}
-                                    </div>
+                                </AccordionTrigger>
+                                <div className="flex items-center gap-4 ml-auto pl-4">
+                                    <span className="text-xs text-muted-foreground font-mono cursor-text">
+                                        ID: {item.trackingId}
+                                    </span>
+                                    {getStatusBadge(item.status)}
                                 </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="space-y-4 pt-2">
+                            </div>
+                            <AccordionContent className="space-y-4 pt-2 px-4">
                                {item.status === 'Pending Identity Reveal' && (
                                    <RevealIdentityWidget item={item} onUpdate={onUpdate} />
                                )}
@@ -671,10 +670,9 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                                             <div className="flex flex-wrap justify-between items-center gap-2">
                                                 <Label>Claim Status</Label>
                                                 <div className="flex items-center gap-4">
-                                                    <span 
-                                                        className="text-xs text-muted-foreground font-mono cursor-text"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >ID: {retaliationCase.trackingId}</span>
+                                                    <span className="text-xs text-muted-foreground font-mono cursor-text">
+                                                       ID: {retaliationCase.trackingId}
+                                                    </span>
                                                     {getRetaliationStatusBadge(retaliationCase.status)}
                                                 </div>
                                             </div>

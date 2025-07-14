@@ -322,9 +322,9 @@ function HistorySection({ role }: { role: Role }) {
 
                     return (
                         <AccordionItem value={item.id} key={item.id} className="px-4">
-                            <AccordionTrigger>
-                                <div className="flex justify-between items-center w-full pr-4">
-                                    <div className="text-left">
+                            <div className="flex justify-between items-center w-full pr-4">
+                                <AccordionTrigger className="flex-1 text-left">
+                                    <div>
                                         <p className="font-medium">
                                             1-on-1 with {isSupervisor ? item.employeeName : item.supervisorName}
                                         </p>
@@ -332,15 +332,14 @@ function HistorySection({ role }: { role: Role }) {
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <span 
-                                            className="text-xs text-muted-foreground font-mono cursor-text"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >ID: {item.id}</span>
-                                        {getStatusBadge()}
-                                    </div>
+                                </AccordionTrigger>
+                                <div className="flex items-center gap-4 pl-4">
+                                    <span className="text-xs text-muted-foreground font-mono cursor-text">
+                                        ID: {item.id}
+                                    </span>
+                                    {getStatusBadge()}
                                 </div>
-                            </AccordionTrigger>
+                            </div>
                             <AccordionContent className="space-y-6 pt-2">
                                 
                                 {isSupervisor && (

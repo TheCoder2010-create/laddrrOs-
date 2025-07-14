@@ -646,22 +646,21 @@ function ActionItemsContent() {
 
             return (
             <AccordionItem value={feedback.trackingId} key={feedback.trackingId} id={feedback.trackingId}>
-                <AccordionTrigger>
-                <div className="flex flex-wrap justify-between items-center w-full pr-4 gap-2">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <Badge variant={config?.badge as any || 'secondary'}>{feedback.status === 'Retaliation Claim' ? 'Retaliation' : (feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A'))}</Badge>
-                        <span className="font-medium text-left truncate">{feedback.subject}</span>
-                    </div>
-                    <div className="flex items-center gap-4 ml-auto">
-                        <span 
-                            className="text-xs text-muted-foreground font-mono cursor-text"
-                            onClick={(e) => e.stopPropagation()}
-                        >ID: {feedback.trackingId}</span>
+                 <div className="flex items-center w-full px-4">
+                    <AccordionTrigger className="flex-1 text-left">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <Badge variant={config?.badge as any || 'secondary'}>{feedback.status === 'Retaliation Claim' ? 'Retaliation' : (feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A'))}</Badge>
+                            <span className="font-medium truncate">{feedback.subject}</span>
+                        </div>
+                    </AccordionTrigger>
+                    <div className="flex items-center gap-4 ml-auto pl-4">
+                        <span className="text-xs text-muted-foreground font-mono cursor-text">
+                           ID: {feedback.trackingId}
+                        </span>
                         {statusBadge}
                     </div>
                 </div>
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6 pt-4">
+                <AccordionContent className="space-y-6 pt-4 px-4">
                      {feedback.status !== 'To-Do' && (
                         <>
                              <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
