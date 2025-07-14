@@ -144,7 +144,7 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
 
 function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
-    const [assignees, setAssignees] = useState<Role[]>(feedback.assignedTo || []);
+    const [assignees, setAssignees] = useState<Role[]>([]);
     const [assignmentComment, setAssignmentComment] = useState('');
     const [updateComment, setUpdateComment] = useState('');
     const [resolutionComment, setResolutionComment] = useState('');
@@ -159,6 +159,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         if (assignees.length === 0) return;
         await assignFeedback(feedback.trackingId, assignees, role!, assignmentComment);
         setAssignmentComment('');
+        setAssignees([]);
         onUpdate();
     }
 
@@ -189,9 +190,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     <Label className="font-medium">Assign Case</Label>
                     <p className="text-sm text-muted-foreground">
                         Select one or more roles to investigate this case.
-                        {assignees.length > 0 && (
+                        {feedback.assignedTo && feedback.assignedTo.length > 0 && (
                             <span className="block mt-1">
-                                Currently assigned to: <span className="font-semibold text-primary">{assignees.join(', ')}</span>
+                                Currently assigned to: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
                             </span>
                         )}
                     </p>
@@ -410,18 +411,12 @@ function VaultContent() {
                                 <div className="flex justify-between items-center gap-4">
                                     <div className="flex items-center gap-2">
                                         <Label className="text-base">Original Submission</Label>
-                                         <span 
-                                            className="text-xs text-muted-foreground font-mono cursor-text"
-                                        >
-                                           ID: {feedback.trackingId}
-                                        </span>
-                                    </div>
-                                    {!feedback.summary && (
-                                        <Button
+                                         <Button
                                             size="sm"
                                             onClick={() => handleSummarize(feedback.trackingId)}
-                                            disabled={isSummarizingThis}
-                                        >
+                                            disabled={isSummarizingThis || !!feedback.summary}
+                                            variant="ghost"
+                                         >
                                             {isSummarizingThis ? (
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             ) : (
@@ -429,7 +424,12 @@ function VaultContent() {
                                             )}
                                             Summarize
                                         </Button>
-                                    )}
+                                    </div>
+                                    <span 
+                                        className="text-xs text-muted-foreground font-mono cursor-text"
+                                    >
+                                       ID: {feedback.trackingId}
+                                    </span>
                                 </div>
                                 <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
                             </div>
