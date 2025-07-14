@@ -332,7 +332,7 @@ function HistorySection({ role }: { role: Role }) {
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-4 mr-2">
                                         {getStatusBadge()}
                                     </div>
                                 </div>
@@ -344,7 +344,9 @@ function HistorySection({ role }: { role: Role }) {
                                         <div className="bg-muted/50 p-4 rounded-lg">
                                             <div className="flex justify-between items-center mb-2">
                                                 <h4 className="font-semibold text-lg flex items-center gap-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
-                                                <span className="text-xs text-muted-foreground font-mono cursor-text">
+                                                <span 
+                                                    className="text-xs text-muted-foreground font-mono cursor-text"
+                                                >
                                                     ID: {item.id}
                                                 </span>
                                             </div>
@@ -733,5 +735,7 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
 
     
