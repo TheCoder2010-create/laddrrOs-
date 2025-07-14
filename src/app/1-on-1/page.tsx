@@ -177,11 +177,11 @@ function ToDoSection({ role }: { role: Role }) {
     const fetchToDos = useCallback(async () => {
         setIsLoading(true);
         const allFeedback = await getAllFeedback();
-        const currentUser = roleUserMapping[role];
         
+        // A "To-Do" item is primarily for the supervisor, but both participants should see it.
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
-            (item.supervisor === currentUser.name || item.employee === currentUser.name)
+            (item.supervisor === role || item.employee === role)
         );
         
         setToDoItems(userToDos.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
@@ -411,7 +411,6 @@ function HistorySection({ role }: { role: Role }) {
                                                 <h4 className="font-semibold text-lg flex items-center gap-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
                                                 <span 
                                                     className="text-xs text-muted-foreground font-mono cursor-text"
-                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     ID: {item.id}
                                                 </span>
@@ -770,8 +769,8 @@ function OneOnOnePage({ role }: { role: Role }) {
         )}
       </div>
 
-      <ToDoSection role={role} />
       <HistorySection role={role} />
+      <ToDoSection role={role} />
     </div>
   );
 }
@@ -806,3 +805,4 @@ export default function Home() {
     
 
     
+
