@@ -195,35 +195,38 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             </span>
                         )}
                     </p>
-                    <div className="flex gap-2 items-start">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    Select Roles <ChevronDown className="ml-2 h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                                <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {availableRolesForAssignment.map(r => (
-                                     <DropdownMenuCheckboxItem
-                                        key={r}
-                                        checked={assignees.includes(r)}
-                                        onCheckedChange={() => handleAssigneeChange(r)}
-                                    >
-                                        {r}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="flex gap-4 items-start">
+                        <div className="flex flex-col gap-2">
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        Select Roles <ChevronDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56">
+                                    <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {availableRolesForAssignment.map(r => (
+                                         <DropdownMenuCheckboxItem
+                                            key={r}
+                                            checked={assignees.includes(r)}
+                                            onCheckedChange={() => handleAssigneeChange(r)}
+                                        >
+                                            {r}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button onClick={handleAssign} disabled={assignees.length === 0}>Assign</Button>
+                        </div>
                         <div className="flex-1 space-y-2">
                             <Textarea 
                                 placeholder="Add an assignment note (optional)..."
                                 value={assignmentComment}
                                 onChange={(e) => setAssignmentComment(e.target.value)}
                                 className="w-full"
+                                rows={4}
                             />
-                            <Button onClick={handleAssign} disabled={assignees.length === 0}>Assign</Button>
                         </div>
                     </div>
                 </div>
@@ -407,7 +410,7 @@ function VaultContent() {
                                 <div className="flex justify-between items-center gap-4">
                                     <div className="flex items-center gap-2">
                                         <Label className="text-base">Original Submission</Label>
-                                        <span 
+                                         <span 
                                             className="text-xs text-muted-foreground font-mono cursor-text"
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -489,3 +492,4 @@ export default function VaultPage() {
       </div>
     );
 }
+
