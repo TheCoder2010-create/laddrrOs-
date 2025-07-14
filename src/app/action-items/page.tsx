@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -14,7 +14,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2 } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,7 @@ const criticalityConfig = {
     'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' },
     'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' },
     'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' },
+    'Retaliation Claim': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
 };
 
 const auditEventIcons = {
@@ -418,6 +419,8 @@ function ActionItemsContent() {
   const [closedItems, setClosedItems] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
+  const accordionRef = useRef<HTMLDivElement>(null);
+  const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
@@ -428,7 +431,7 @@ function ActionItemsContent() {
       const myFeedback = allFeedback.filter(f => {
         // A case is relevant if the user is currently assigned, is a collaborator, or was ever involved in the audit trail.
         const isCurrentlyAssigned = f.assignedTo === role;
-        const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
+        const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === 'Manager');
         const wasInvolved = f.auditTrail?.some(e => e.actor === role) ?? false;
         
         return isCurrentlyAssigned || isCollaboratorOnAnonymousCase || wasInvolved;
@@ -451,12 +454,15 @@ function ActionItemsContent() {
 
       setActiveItems(active);
       setClosedItems(closed);
+      if (active.length > 0 && !openAccordionItem) {
+        setOpenAccordionItem(active[0].trackingId);
+      }
     } catch (error) {
       console.error("Failed to fetch feedback", error);
     } finally {
       setIsLoading(false);
     }
-  }, [role]);
+  }, [role, openAccordionItem]);
 
   useEffect(() => {
     fetchFeedback();
@@ -501,17 +507,42 @@ function ActionItemsContent() {
         case 'Pending HR Action': 
             return 'default';
         case 'Pending Identity Reveal': return 'secondary';
+        case 'Retaliation Claim': return 'destructive';
         case 'Closed': return 'secondary';
         default: return 'secondary';
     }
   }
 
-  const renderFeedbackList = (items: Feedback[], defaultOpenId?: string) => {
+  const handleOpenParentCase = (parentId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the accordion from toggling
+    const parentElement = document.getElementById(parentId);
+    if (parentElement) {
+        // Find the accordion trigger for the parent and click it
+        const trigger = parentElement.querySelector('[data-radix-collection-item]');
+        if (trigger instanceof HTMLElement) {
+             trigger.scrollIntoView({ behavior: 'smooth', block: 'center' });
+             // A brief timeout helps ensure the item is visible before clicking
+             setTimeout(() => trigger.click(), 200);
+        }
+    }
+  };
+
+  const renderFeedbackList = (items: Feedback[], isClosedList = false) => {
     return (
-        <Accordion type="single" collapsible className="w-full" defaultValue={defaultOpenId}>
+        <Accordion 
+            type="single" 
+            collapsible 
+            className="w-full" 
+            value={openAccordionItem}
+            onValueChange={setOpenAccordionItem}
+        >
         {items.map((feedback) => {
             const config = criticalityConfig[feedback.criticality || 'Low'];
-            const Icon = feedback.isAnonymous ? UserX : (config?.icon || Info);
+            let Icon = Info;
+            if (feedback.status === 'Retaliation Claim') Icon = ShieldAlert;
+            else if (feedback.isAnonymous) Icon = UserX;
+            else if (config?.icon) Icon = config.icon;
+            
             let statusBadge;
             
             if (feedback.status === 'Pending HR Action') {
@@ -521,11 +552,11 @@ function ActionItemsContent() {
             }
 
             return (
-            <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
+            <AccordionItem value={feedback.trackingId} key={feedback.trackingId} id={feedback.trackingId}>
                 <AccordionTrigger>
                 <div className="flex justify-between items-center w-full pr-4">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <Badge variant={config?.badge as any || 'secondary'}>{feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A')}</Badge>
+                        <Badge variant={config?.badge as any || 'secondary'}>{feedback.status === 'Retaliation Claim' ? 'Retaliation' : (feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A'))}</Badge>
                         <span className="font-medium text-left truncate">{feedback.subject}</span>
                     </div>
                     <div className="flex items-center gap-4 ml-4">
@@ -539,12 +570,31 @@ function ActionItemsContent() {
                 <AccordionContent className="space-y-6 pt-4">
                      {feedback.status !== 'To-Do' && (
                         <>
-                            <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
+                             <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
                                 <div className="flex items-center gap-2 font-bold">
                                     <Icon className="h-5 w-5" />
-                                    <span>{feedback.isAnonymous ? 'Anonymous Submission' : `AI Analysis: ${feedback.criticality}`}</span>
+                                    <span>
+                                        {feedback.status === 'Retaliation Claim'
+                                            ? 'Retaliation Claim'
+                                            : feedback.isAnonymous
+                                            ? 'Anonymous Submission'
+                                            : `AI Analysis: ${feedback.criticality}`}
+                                    </span>
                                 </div>
                                 {feedback.summary && <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>}
+                                
+                                {feedback.parentCaseId && (
+                                     <Button variant="outline" size="sm" onClick={(e) => handleOpenParentCase(feedback.parentCaseId!, e)}>
+                                        <LinkIcon className="mr-2" /> View Parent Case
+                                    </Button>
+                                )}
+                                {feedback.attachment && (
+                                    <Button variant="outline" size="sm" asChild>
+                                        <a href="#" onClick={(e) => e.preventDefault()}>
+                                            <Paperclip className="mr-2" /> View Attachment ({feedback.attachment.name})
+                                        </a>
+                                    </Button>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-base">Original Submission Context</Label>
@@ -555,7 +605,7 @@ function ActionItemsContent() {
 
                     {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
 
-                    {(feedback.status !== 'Resolved' && feedback.status !== 'Closed') && <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />}
+                    {(!isClosedList) && <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />}
                     
                     {feedback.resolution && (
                          <div className="space-y-2">
@@ -576,7 +626,7 @@ function ActionItemsContent() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8" ref={accordionRef}>
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground">
@@ -595,7 +645,7 @@ function ActionItemsContent() {
               </p>
             </div>
           ) : (
-                renderFeedbackList(activeItems, activeItems[0]?.trackingId)
+                renderFeedbackList(activeItems)
           )}
         </CardContent>
       </Card>
@@ -611,7 +661,7 @@ function ActionItemsContent() {
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-2">
-                        {renderFeedbackList(closedItems)}
+                        {renderFeedbackList(closedItems, true)}
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -659,5 +709,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    

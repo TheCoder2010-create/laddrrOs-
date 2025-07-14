@@ -99,7 +99,7 @@ export interface RetaliationReportInput {
     parentCaseId: string;
     submittedBy: Role;
     description: string;
-    fileName?: string;
+    file?: File;
 }
 
 // Client-side tracking types
@@ -567,7 +567,7 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
         message: input.description,
         submittedAt: new Date(),
         submittedBy: input.submittedBy,
-        criticality: 'Critical',
+        criticality: 'Retaliation Claim',
         status: 'Retaliation Claim',
         assignedTo: 'HR Head',
         viewed: false,
@@ -575,8 +575,9 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `Claim submitted for case ${input.parentCaseId}.${input.fileName ? `\nAttachment: ${input.fileName}` : ''}`
+            details: `Claim submitted for case ${input.parentCaseId}.${input.file ? `\nAttachment: ${input.file.name}` : ''}`
         }],
+        attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
     };
     allFeedback.unshift(newRetaliationCase);
 

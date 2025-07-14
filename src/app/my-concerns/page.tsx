@@ -439,7 +439,7 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                 parentCaseId,
                 submittedBy: role,
                 description,
-                fileName: file?.name,
+                file,
             });
             toast({ title: "Retaliation Report Submitted", description: "Your report has been sent directly to the HR Head for immediate review." });
             onSubmitted();
@@ -703,7 +703,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    
-
-    
