@@ -181,7 +181,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     if (!canTakeAction || feedback.status === 'Resolved') return null;
 
     return (
-        <div className="p-4 border-t mt-4 space-y-6">
+        <div className="p-4 border-t mt-4 space-y-4">
             <Label className="text-base font-semibold">Case Management</Label>
             
             {role === 'HR Head' && (
@@ -196,7 +196,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         )}
                     </p>
                     <div className="flex gap-4 items-start">
-                        <div className="flex flex-col gap-2">
+                         <div className="flex flex-col gap-2">
                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline">
@@ -387,7 +387,7 @@ function VaultContent() {
                                 </div>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-6 pt-4 px-4">
+                        <AccordionContent className="space-y-4 pt-4 px-4">
                             {feedback.assignedTo && feedback.assignedTo.length > 0 && (
                                  <div className="flex items-center gap-2 text-sm font-medium p-2 bg-muted rounded-md w-fit">
                                     <Users className="h-4 w-4 text-muted-foreground"/>
@@ -412,7 +412,6 @@ function VaultContent() {
                                         <Label className="text-base">Original Submission</Label>
                                          <span 
                                             className="text-xs text-muted-foreground font-mono cursor-text"
-                                            onClick={(e) => e.stopPropagation()}
                                         >
                                            ID: {feedback.trackingId}
                                         </span>
@@ -492,4 +491,3 @@ export default function VaultPage() {
       </div>
     );
 }
-
