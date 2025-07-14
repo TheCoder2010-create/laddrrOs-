@@ -3,7 +3,7 @@
 /**
  * @fileOverview An AI flow for analyzing 1-on-1 feedback sessions.
  *
- * - analyzeOneOnOne - A function that takes form data from a 1-on-1 and returns a structured analysis.
+ * - analyzeOneOnOne - a function that takes form data from a 1-on-1 and returns a structured analysis.
  */
 
 import { ai } from '@/ai/genkit';
@@ -77,7 +77,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           submittedAt: submittedAt,
           criticality: 'Low' as const,
           status: 'To-Do' as const,
-          assignedTo: supervisorRole,
+          assignedTo: supervisorRole, // Supervisor owns the To-Do list
           supervisor: supervisorRole,
           employee: employeeRole,
           viewed: true,

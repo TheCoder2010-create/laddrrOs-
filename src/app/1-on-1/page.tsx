@@ -177,12 +177,11 @@ function ToDoSection({ role }: { role: Role }) {
     const fetchToDos = useCallback(async () => {
         setIsLoading(true);
         const allFeedback = await getAllFeedback();
-        
-        const currentUser = roleUserMapping[role];
+        const currentUserRole = role;
 
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
-            (item.supervisor === currentUser.role || item.employee === currentUser.role)
+            (item.supervisor === currentUserRole || item.employee === currentUserRole)
         );
         
         setToDoItems(userToDos.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
