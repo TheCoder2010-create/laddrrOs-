@@ -348,10 +348,10 @@ function VaultContent() {
     <div className="p-4 md:p-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground">
+          <CardTitle className="text-2xl font-bold font-headline mb-2 text-foreground">
             🔒 Feedback Vault
           </CardTitle>
-           <CardDescription className="text-lg text-muted-foreground italic">
+           <CardDescription className="text-base text-muted-foreground italic">
             Confidential submissions from Voice – in Silence, with AI-powered analysis.
           </CardDescription>
         </CardHeader>
@@ -382,8 +382,8 @@ function VaultContent() {
                                     )}
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
-                                <div className="flex items-center gap-2 mr-2">
-                                    <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'Open'}</Badge>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant={getStatusVariant(feedback.status)} className="mr-2">{feedback.status || 'Open'}</Badge>
                                 </div>
                             </div>
                         </AccordionTrigger>
