@@ -120,6 +120,11 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
     piiOmitted: z.boolean().describe("True if PII was detected and theoretically removed."),
     privacyRequest: z.boolean().describe("True if the employee expressed a desire for privacy."),
   }).describe("Notes on legal and data compliance."),
+  dataHandling: z.object({
+    analysisTimestamp: z.string().describe("The ISO 8601 timestamp of when the analysis was generated."),
+    recordingDeleted: z.boolean().describe("Confirms if the source audio recording was deleted after analysis."),
+    deletionTimestamp: z.string().describe("The ISO 8601 timestamp of when the source audio recording was deleted."),
+  }).optional().describe("Metadata about data processing and privacy."),
 });
 
 export type AnalyzeOneOnOneOutput = z.infer<typeof AnalyzeOneOnOneOutputSchema>;

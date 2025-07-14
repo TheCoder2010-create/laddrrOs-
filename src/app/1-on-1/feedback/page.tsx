@@ -21,7 +21,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useRole } from '@/hooks/use-role';
@@ -504,6 +504,18 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                                 <Button variant="destructive" asChild>
                                     <Link href="/1-on-1">Address Insight in Session History</Link>
                                 </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {analysisResult.dataHandling && (
+                        <div className="p-3 rounded-md bg-muted/50 border mt-4 text-xs text-muted-foreground">
+                            <h4 className="font-semibold text-foreground flex items-center gap-2 mb-2"><DatabaseZap className="h-4 w-4" /> Data Handling</h4>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'Pp')}</p>
+                                {analysisResult.dataHandling.recordingDeleted && (
+                                    <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'Pp')}</p>
+                                )}
                             </div>
                         </div>
                     )}

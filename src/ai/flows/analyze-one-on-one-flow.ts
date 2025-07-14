@@ -179,11 +179,21 @@ const analyzeOneOnOneFlow = ai.defineFlow(
     outputSchema: AnalyzeOneOnOneOutputSchema,
   },
   async (input) => {
+    const analysisTime = new Date();
     const { output } = await retryWithBackoff(() => prompt(input));
     
     if (!output) {
       throw new Error("AI analysis failed to produce an output after multiple retries.");
     }
+    
+    // Add data handling metadata after the fact.
+    // The recording is transient and doesn't persist beyond this flow execution.
+    output.dataHandling = {
+        analysisTimestamp: analysisTime.toISOString(),
+        recordingDeleted: !!input.conversationRecordingDataUri,
+        deletionTimestamp: new Date().toISOString(), // Deleted upon completion of this flow
+    };
+
     return output;
   }
 );
