@@ -260,7 +260,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         <AlertDialogHeader>
                             <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
                             <AlertDialogDescription>
-                                By requesting the user's identity, you acknowledge your responsibility to protect the employee from any form of bias or retaliation. This conversation must be handled with the utmost confidentiality and fairness. This acknowledgment will be logged.
+                                By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -657,3 +657,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
