@@ -8,7 +8,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
-import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
+import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { summarizeAnonymousFeedback } from '@/ai/flows/summarize-anonymous-feedback-flow';
 
 export interface AuditEvent {
@@ -446,6 +446,32 @@ export async function submitFinalHrDecision(historyId: string, actor: Role, deci
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
+export async function updateCoachingRecommendationStatus(
+    historyId: string, 
+    recommendationId: string, 
+    status: 'accepted' | 'declined', 
+    rejectionReason?: string
+): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const historyIndex = allHistory.findIndex(h => h.id === historyId);
+    if (historyIndex === -1) {
+        throw new Error("History item not found.");
+    }
+    
+    const item = allHistory[historyIndex];
+    const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
+    if (recIndex === -1) {
+        throw new Error("Coaching recommendation not found.");
+    }
+    
+    item.analysis.coachingRecommendations[recIndex].status = status;
+    if (status === 'declined' && rejectionReason) {
+        item.analysis.coachingRecommendations[recIndex].rejectionReason = rejectionReason;
+    }
+    
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
 
 // ==========================================
 // Feedback Service
@@ -475,7 +501,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
     submittedAt,
     viewed: false,
     status: 'Open',
-    assignedTo: ['HR Head'],
+    assignedTo: [],
     source: 'Voice – In Silence',
     auditTrail: [
       {
@@ -505,7 +531,7 @@ export async function summarizeFeedback(trackingId: string): Promise<void> {
         return; // Already summarized
     }
 
-    // Call the new on-demand summarization flow
+    // Call the on-demand summarization flow
     const analysis = await summarizeAnonymousFeedback({
         subject: feedback.subject,
         message: feedback.message,

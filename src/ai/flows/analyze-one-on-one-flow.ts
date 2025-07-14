@@ -43,7 +43,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           criticalityReasoning: result.criticalCoachingInsight.reason,
           viewed: false,
           status: 'Pending Supervisor Action' as const,
-          assignedTo: supervisorRole,
+          assignedTo: [supervisorRole],
           supervisor: input.supervisorName,
           employee: input.employeeName,
           auditTrail: [
@@ -77,7 +77,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           submittedAt: submittedAt,
           criticality: 'Low' as const,
           status: 'To-Do' as const,
-          assignedTo: supervisorRole, // Supervisor owns the To-Do list
+          assignedTo: [supervisorRole], // Supervisor owns the To-Do list
           supervisor: input.supervisorName,
           employee: input.employeeName,
           viewed: true,
@@ -132,7 +132,14 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
 4.  **Leadership Score (1-10)**: Rate the supervisor based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
 5.  **Effectiveness Score (1-10)**: Rate the session based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
 6.  **Strengths Observed**: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
-7.  **Coaching Recommendations**: Provide 2-3 concrete suggestions for the supervisor to improve, based on weaknesses in this session.
+7.  **Coaching Recommendations**: This is the MOST IMPORTANT part of your analysis. Provide 2-3 concrete, structured coaching recommendations based on weaknesses observed in this session. For each recommendation:
+    *   Generate a unique UUID for the \`id\` field.
+    *   Identify a clear \`area\` for improvement (e.g., "Active Listening," "Delivering Corrective Feedback," "Setting Clear Expectations").
+    *   Write a concise \`recommendation\` for the supervisor.
+    *   Choose a resource \`type\`: "Book", "Podcast", "Article", or "Course".
+    *   Provide the name of a REAL, SPECIFIC \`resource\` (e.g., book title: "Crucial Conversations"; podcast: "HBR IdeaCast").
+    *   Write a compelling \`justification\` explaining why this resource is a good fit.
+    *   The \`status\` must be "pending".
 8.  **Action Items**: List all concrete tasks for both employee and supervisor, including deadlines if stated.
 9.  **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided) Analyze if the supervisor showed growth towards a goal. If so, summarize the application with a supporting quote. If mastery is shown, return the completedGoalId.
 10. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.

@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
-import { formSchema, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
+import { formSchema, type AnalyzeOneOnOneOutput, type CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { saveOneOnOneHistory, updateOneOnOneHistoryItem } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -21,13 +21,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock, Timer } from 'lucide-react';
+import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock, Timer, BookOpen, Podcast, Newspaper, GraduationCap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useRole } from '@/hooks/use-role';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { Lightbulb, BrainCircuit, ShieldCheck, TrendingDown } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 
 // Define meeting type locally as it's not exported from the main page
 interface Meeting {
@@ -45,6 +45,16 @@ const dataUriFromFile = (file: File): Promise<string> => {
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
+}
+
+const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
+    switch (type) {
+        case 'Book': return <BookOpen className="h-4 w-4" />;
+        case 'Podcast': return <Podcast className="h-4 w-4" />;
+        case 'Article': return <Newspaper className="h-4 w-4" />;
+        case 'Course': return <GraduationCap className="h-4 w-4" />;
+        default: return <Lightbulb className="h-4 w-4" />;
+    }
 }
 
 function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, supervisor: string }) {
@@ -205,7 +215,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                 employeeName: meeting.with,
                 date: new Date(meeting.date).toISOString(),
                 // Temporarily store empty analysis
-                analysis: { supervisorSummary: '', employeeSummary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false } }, 
+                analysis: { supervisorSummary: '', employeeSummary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false }, employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] } }, 
             });
 
             // Pass the new history ID to the analysis flow
@@ -479,9 +489,21 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                     {analysisResult.coachingRecommendations.length > 0 && (
                         <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 mt-4">
                             <h4 className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2"><Zap /> Coaching Recommendations</h4>
-                            <ul className="list-disc pl-5 mt-2 space-y-1 text-green-600 dark:text-green-300">
-                                {analysisResult.coachingRecommendations.map((rec, i) => <li key={i}><strong>{rec.recommendation}:</strong> {rec.reason}</li>)}
-                            </ul>
+                            <div className="space-y-3 mt-3">
+                                {analysisResult.coachingRecommendations.map((rec) => (
+                                    <div key={rec.id} className="p-3 bg-background/60 rounded-lg border">
+                                        <p className="font-semibold">{rec.area}</p>
+                                        <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                                        <div className="mt-3 pt-3 border-t">
+                                            <div className="flex items-center gap-2 text-sm text-foreground mb-2">
+                                                <RecommendationIcon type={rec.type} />
+                                                <strong>{rec.type}:</strong> {rec.resource}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground italic">"{rec.justification}"</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                     

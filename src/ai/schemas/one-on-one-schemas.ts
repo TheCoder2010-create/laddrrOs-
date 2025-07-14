@@ -77,6 +77,19 @@ export const CriticalCoachingInsightSchema = z.object({
 
 export type CriticalCoachingInsight = z.infer<typeof CriticalCoachingInsightSchema>;
 
+export const CoachingRecommendationSchema = z.object({
+  id: z.string().uuid().describe("A unique identifier for this recommendation."),
+  area: z.string().describe("The specific area or weakness identified for coaching, e.g., 'Active Listening'."),
+  recommendation: z.string().describe("A concise, actionable recommendation for the supervisor to improve in the identified area."),
+  type: z.enum(["Book", "Podcast", "Article", "Course", "Other"]).describe("The type of resource being recommended."),
+  resource: z.string().describe("The title of the recommended book, podcast episode, article, or course."),
+  justification: z.string().describe("A brief explanation of why this specific resource is recommended and how it addresses the area of improvement."),
+  status: z.enum(["pending", "accepted", "declined"]).default("pending").describe("The supervisor's response to the recommendation."),
+  rejectionReason: z.string().optional().describe("If declined, the supervisor's reason for not accepting the recommendation."),
+});
+
+export type CoachingRecommendation = z.infer<typeof CoachingRecommendationSchema>;
+
 // Zod schema for the new, comprehensive structured output from the AI
 export const AnalyzeOneOnOneOutputSchema = z.object({
   supervisorSummary: z.string().describe("A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback."),
@@ -93,10 +106,7 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
     action: z.string().describe("The positive action taken by the supervisor."),
     example: z.string().describe("A supporting quote or example."),
   })).describe("A list of 2-3 observed strengths of the supervisor during the session."),
-  coachingRecommendations: z.array(z.object({
-    recommendation: z.string().describe("A concrete suggestion for supervisor improvement."),
-    reason: z.string().describe("The reason this recommendation is being made, based on the session."),
-  })).describe("A list of 2-3 coaching recommendations for the supervisor."),
+  coachingRecommendations: z.array(CoachingRecommendationSchema).describe("A list of 2-3 structured coaching recommendations for the supervisor, including specific learning resources."),
   actionItems: z.array(z.object({
     owner: z.enum(["Employee", "Supervisor"]),
     task: z.string(),
