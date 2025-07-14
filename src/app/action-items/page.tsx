@@ -444,11 +444,7 @@ function ParentCaseModal({ parentCase, open, onOpenChange }: { parentCase: Feedb
                         )}
                     </div>
                 </ScrollArea>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="secondary">Close</Button>
-                    </DialogClose>
-                </DialogFooter>
+                <DialogFooter className="pt-0" />
             </DialogContent>
         </Dialog>
     );
