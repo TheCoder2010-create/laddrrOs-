@@ -208,7 +208,7 @@ function ToDoSection({ role }: { role: Role }) {
         <div className="mt-8">
             <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-2">
                 <ListTodo className="h-5 w-5" />
-                Action Items & To-Dos
+                To-Do
             </h2>
             {toDoItems.length > 0 ? (
                 <div className="space-y-4">
@@ -418,6 +418,7 @@ function HistorySection({ role }: { role: Role }) {
                                                 <h4 className="font-semibold text-lg flex items-center gap-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
                                                 <span 
                                                     className="text-xs text-muted-foreground font-mono cursor-text"
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     ID: {item.id}
                                                 </span>
@@ -776,8 +777,8 @@ function OneOnOnePage({ role }: { role: Role }) {
         )}
       </div>
 
-      <ToDoSection role={role} />
       <HistorySection role={role} />
+      <ToDoSection role={role} />
     </div>
   );
 }
@@ -815,3 +816,6 @@ export default function Home() {
 
 
 
+
+
+    
