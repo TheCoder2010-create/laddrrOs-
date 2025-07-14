@@ -177,11 +177,11 @@ function ToDoSection({ role }: { role: Role }) {
     const fetchToDos = useCallback(async () => {
         setIsLoading(true);
         const allFeedback = await getAllFeedback();
-        const currentUserRole = role;
+        const currentUserName = roleUserMapping[role].name;
 
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
-            (item.supervisor === currentUserRole || item.employee === currentUserRole)
+            (item.supervisor === currentUserName || item.employee === currentUserName)
         );
         
         setToDoItems(userToDos.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
@@ -775,7 +775,7 @@ function OneOnOnePage({ role }: { role: Role }) {
           </div>
         )}
       </div>
-
+      
       <HistorySection role={role} />
       <ToDoSection role={role} />
     </div>
@@ -808,7 +808,6 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-
     
 
     
@@ -818,3 +817,4 @@ export default function Home() {
 
 
     
+

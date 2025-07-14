@@ -34,7 +34,7 @@ export interface ActionItem {
     id: string;
     text: string;
     status: 'pending' | 'completed';
-    owner: Role;
+    owner: Role | string;
 }
 
 export interface Feedback {
@@ -52,8 +52,8 @@ export interface Feedback {
   assignedTo?: Role;
   resolution?: string;
   oneOnOneId?: string; // Link back to the 1-on-1 history item
-  supervisor?: Role; 
-  employee?: Role;
+  supervisor?: Role | string; 
+  employee?: Role | string;
   supervisorUpdate?: string;
   actionItems?: ActionItem[];
   isAnonymous?: boolean; // Flag for anonymous submissions from dashboard
