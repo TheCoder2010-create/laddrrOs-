@@ -321,10 +321,10 @@ function HistorySection({ role }: { role: Role }) {
                     }
 
                     return (
-                        <AccordionItem value={item.id} key={item.id} className="px-4">
-                            <div className="flex justify-between items-center w-full pr-4">
-                                <AccordionTrigger className="flex-1 text-left">
-                                    <div>
+                        <AccordionItem value={item.id} key={item.id} className="border-b">
+                            <AccordionTrigger className="px-4 py-3 w-full">
+                                <div className="flex justify-between items-center w-full">
+                                    <div className="text-left">
                                         <p className="font-medium">
                                             1-on-1 with {isSupervisor ? item.employeeName : item.supervisorName}
                                         </p>
@@ -332,20 +332,22 @@ function HistorySection({ role }: { role: Role }) {
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                </AccordionTrigger>
-                                <div className="flex items-center gap-4 pl-4">
-                                    <span className="text-xs text-muted-foreground font-mono cursor-text">
-                                        ID: {item.id}
-                                    </span>
-                                    {getStatusBadge()}
+                                    <div className="flex items-center gap-4">
+                                        {getStatusBadge()}
+                                    </div>
                                 </div>
-                            </div>
-                            <AccordionContent className="space-y-6 pt-2">
+                            </AccordionTrigger>
+                            <AccordionContent className="space-y-6 pt-2 px-4 pb-4">
                                 
                                 {isSupervisor && (
                                     <div className="space-y-4">
                                         <div className="bg-muted/50 p-4 rounded-lg">
-                                            <h4 className="font-semibold text-lg flex items-center gap-2 mb-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <h4 className="font-semibold text-lg flex items-center gap-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
+                                                <span className="text-xs text-muted-foreground font-mono cursor-text">
+                                                    ID: {item.id}
+                                                </span>
+                                            </div>
                                             
                                             <div className="space-y-6 text-primary/90">
                                                 {analysisResult.supervisorSummary && (
@@ -731,3 +733,5 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
