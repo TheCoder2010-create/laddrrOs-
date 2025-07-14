@@ -406,7 +406,7 @@ export async function submitHrResolution(historyId: string, actor: Role, notes: 
         insight.auditTrail = [];
     }
     insight.auditTrail.push({
-        event: 'HR Resolution',
+        event: 'HR Responded to Retaliation Claim',
         timestamp: new Date(),
         actor: actor,
         details: notes,
