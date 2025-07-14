@@ -213,7 +213,7 @@ function ToDoSection({ role }: { role: Role }) {
                 <div className="space-y-4">
                     {toDoItems.map(item => (
                         <div key={item.trackingId} className="border rounded-lg p-4">
-                            <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
+                            <h3 className="font-medium">From 1-on-1 with {item.employee === roleUserMapping[role].name ? item.supervisor : item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
                             <div className="space-y-2 mt-3">
                                 {item.actionItems?.map(action => (
                                     <div key={action.id} className="flex items-center space-x-3">
@@ -817,4 +817,5 @@ export default function Home() {
 
 
     
+
 

@@ -44,8 +44,8 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           viewed: false,
           status: 'Pending Supervisor Action' as const,
           assignedTo: supervisorRole,
-          supervisor: supervisorRole,
-          employee: employeeRole,
+          supervisor: input.supervisorName,
+          employee: input.employeeName,
           auditTrail: [
               {
                   event: 'Critical Insight Identified',
@@ -78,8 +78,8 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           criticality: 'Low' as const,
           status: 'To-Do' as const,
           assignedTo: supervisorRole, // Supervisor owns the To-Do list
-          supervisor: supervisorRole,
-          employee: employeeRole,
+          supervisor: input.supervisorName,
+          employee: input.employeeName,
           viewed: true,
           actionItems: result.actionItems.map(itemText => ({
               id: uuidv4(),
