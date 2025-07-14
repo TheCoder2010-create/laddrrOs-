@@ -288,12 +288,21 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                      <div className="p-4 bg-background/50 rounded-lg border border-blue-500/20 text-blue-800 dark:text-blue-300">
                          <div className="flex items-start gap-3">
                             <ShieldCheck className="h-5 w-5 mt-1 flex-shrink-0 text-blue-500" />
-                            <div>
-                                <h3 className="font-bold text-base text-foreground">Your Manager's Commitment & Request</h3>
-                                <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap">{revealRequest?.details}</div>
+                            <div className="w-full">
+                                <h3 className="font-bold text-base text-foreground">Your Manager's Commitment &amp; Request</h3>
+                                <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap">
+                                    <p className="font-semibold">Manager’s Acknowledgment:</p>
+                                    <blockquote className="border-l-2 pl-4 italic">
+                                        "I acknowledge my responsibility to protect the employee from any form of bias, retaliation, or adverse consequence during this process. I am committed to handling this matter with fairness, discretion, and confidentiality."
+                                    </blockquote>
+                                    <p className="font-semibold mt-4">Manager’s Reason:</p>
+                                    <blockquote className="border-l-2 pl-4 italic">
+                                        {revealRequest?.details}
+                                    </blockquote>
+                                </div>
                                 <h3 className="font-bold mt-4 text-base text-foreground">Please Acknowledge This Message</h3>
                                 <p className="text-sm mt-1">
-                                    Your identity has <span className="font-bold">not</span> been revealed. Clicking the button below only confirms that you have read this message. You will decide whether to reveal your identity on the next step.
+                                    Your identity has <strong>not</strong> been revealed. By clicking the button below, you are only confirming that you’ve read this message.<br/>You will decide whether or not to reveal your identity in the next step.
                                 </p>
                                 <div className="mt-4">
                                     <Button onClick={handleAcknowledge} className="bg-blue-600 hover:bg-blue-700">I Understand, Show Me My Options</Button>
@@ -691,5 +700,7 @@ export default function MyConcernsPage() {
 
     
 }
+
+    
 
     
