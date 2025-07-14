@@ -647,16 +647,14 @@ function ActionItemsContent() {
             return (
             <AccordionItem value={feedback.trackingId} key={feedback.trackingId} id={feedback.trackingId}>
                 <AccordionTrigger>
-                <div className="flex justify-between items-center w-full pr-4">
+                <div className="flex flex-wrap justify-between items-center w-full pr-4 gap-2">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                         <Badge variant={config?.badge as any || 'secondary'}>{feedback.status === 'Retaliation Claim' ? 'Retaliation' : (feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A'))}</Badge>
                         <span className="font-medium text-left truncate">{feedback.subject}</span>
                     </div>
-                    <div className="flex items-center gap-4 ml-4">
-                        <div className="hidden md:flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground font-mono">ID: ...{feedback.trackingId.slice(-6)}</span>
-                            {statusBadge}
-                        </div>
+                    <div className="flex items-center gap-4 ml-auto">
+                        <span className="text-xs text-muted-foreground font-mono">ID: {feedback.trackingId}</span>
+                        {statusBadge}
                     </div>
                 </div>
                 </AccordionTrigger>

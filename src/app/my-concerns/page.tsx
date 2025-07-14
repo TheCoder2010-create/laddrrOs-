@@ -565,12 +565,12 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                     return (
                         <AccordionItem value={item.trackingId} key={item.trackingId} className="px-4">
                             <AccordionTrigger>
-                                <div className="flex justify-between items-center w-full pr-4">
+                                <div className="flex flex-wrap justify-between items-center w-full pr-4 gap-2">
                                     <div className="flex items-center gap-4 flex-1 min-w-0">
                                         <p className="font-medium truncate">{item.subject}</p>
                                     </div>
-                                    <div className="hidden md:flex items-center gap-2">
-                                        <span className="text-xs text-muted-foreground font-mono">ID: ...{item.trackingId.slice(-6)}</span>
+                                    <div className="flex items-center gap-4 ml-auto">
+                                        <span className="text-xs text-muted-foreground font-mono">ID: {item.trackingId}</span>
                                         {getStatusBadge(item.status)}
                                     </div>
                                 </div>
