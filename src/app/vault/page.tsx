@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { availableRolesForAssignment } from '@/hooks/use-role';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
@@ -135,15 +135,20 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
 
 function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
-    const [assignTo, setAssignTo] = useState<Role | ''>('');
+    const [assignees, setAssignees] = useState<Role[]>(feedback.assignedTo || []);
     const [assignmentComment, setAssignmentComment] = useState('');
     const [updateComment, setUpdateComment] = useState('');
     const [resolutionComment, setResolutionComment] = useState('');
 
+    const handleAssigneeChange = (role: Role) => {
+        setAssignees(prev => 
+            prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+        );
+    };
+
     const handleAssign = async () => {
-        if (!assignTo) return;
-        await assignFeedback(feedback.trackingId, assignTo as Role, role!, assignmentComment);
-        setAssignTo('');
+        if (assignees.length === 0) return;
+        await assignFeedback(feedback.trackingId, assignees, role!, assignmentComment);
         setAssignmentComment('');
         onUpdate();
     }
@@ -163,7 +168,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     }
     
     // Only HR Head can assign or resolve. Any assignee can add an update.
-    const canTakeAction = role === 'HR Head' || role === feedback.assignedTo;
+    const canTakeAction = role === 'HR Head' || feedback.assignedTo?.includes(role!);
 
     if (!canTakeAction || feedback.status === 'Resolved') return null;
 
@@ -175,21 +180,24 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
             {role === 'HR Head' && (
                 <div className="p-4 border rounded-lg bg-background space-y-3">
                     <Label className="font-medium">Assign Case</Label>
-                    <Select value={assignTo} onValueChange={(val) => setAssignTo(val as Role)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a role to assign..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableRolesForAssignment.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                            <SelectItem value="HR Head">HR Head (Return to me)</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                        {availableRolesForAssignment.map(r => (
+                            <div key={r} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`assign-${r}`}
+                                    checked={assignees.includes(r)}
+                                    onCheckedChange={() => handleAssigneeChange(r)}
+                                />
+                                <Label htmlFor={`assign-${r}`} className="font-normal">{r}</Label>
+                            </div>
+                        ))}
+                    </div>
                     <Textarea 
                         placeholder="Add an assignment note (optional)..."
                         value={assignmentComment}
                         onChange={(e) => setAssignmentComment(e.target.value)}
                     />
-                    <Button onClick={handleAssign} disabled={!assignTo}>Assign</Button>
+                    <Button onClick={handleAssign} disabled={assignees.length === 0}>Assign</Button>
                 </div>
             )}
 
@@ -229,8 +237,13 @@ function VaultContent() {
     setIsLoading(true);
     try {
       const feedback = await getAllFeedback();
-      setAllFeedback(feedback);
-      await markAllFeedbackAsViewed();
+      const vaultItems = feedback.filter(f => f.source === 'Voice – In Silence');
+      setAllFeedback(vaultItems);
+      // Mark only vault items as viewed
+      const unreadVaultIds = vaultItems.filter(c => !c.viewed).map(c => c.trackingId);
+      if (unreadVaultIds.length > 0) {
+        await markAllFeedbackAsViewed(unreadVaultIds);
+      }
     } catch (error) {
       console.error("Failed to fetch feedback", error);
     } finally {
@@ -307,25 +320,28 @@ function VaultContent() {
                     const Icon = config?.icon || Info;
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
-                        <div className="flex items-center w-full px-4">
-                            <AccordionTrigger className="flex-1 text-left">
+                        <div className="flex items-center w-full">
+                            <AccordionTrigger className="flex-1 text-left px-4 py-3">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality || 'N/A'}</Badge>
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
                             </AccordionTrigger>
-                            <div className="flex items-center gap-4 ml-auto pl-4">
-                                <span className="text-xs text-muted-foreground font-mono cursor-text">
-                                    ID: {feedback.trackingId}
+                            <div className="flex items-center gap-4 ml-auto px-4">
+                                <span 
+                                    className="text-xs text-muted-foreground font-mono cursor-text"
+                                    onClick={(e) => { e.stopPropagation(); }}
+                                >
+                                   ID: {feedback.trackingId}
                                 </span>
                                 <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'Open'}</Badge>
                             </div>
                         </div>
                         <AccordionContent className="space-y-6 pt-4 px-4">
-                            {feedback.assignedTo && (
+                            {feedback.assignedTo && feedback.assignedTo.length > 0 && (
                                  <div className="flex items-center gap-2 text-sm font-medium p-2 bg-muted rounded-md w-fit">
-                                    <User className="h-4 w-4 text-muted-foreground"/>
-                                    <span>Assigned to: <span className="text-primary">{feedback.assignedTo}</span></span>
+                                    <Users className="h-4 w-4 text-muted-foreground"/>
+                                    <span>Assigned to: <span className="text-primary">{feedback.assignedTo.join(', ')}</span></span>
                                 </div>
                             )}
 

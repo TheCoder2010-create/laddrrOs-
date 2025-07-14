@@ -83,7 +83,8 @@ function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () =>
     }
     
     const handleResolve = async () => {
-        await resolveFeedback(feedback.trackingId, feedback.assignedTo!, "All action items completed.");
+        if (!feedback.assignedTo || feedback.assignedTo.length === 0) return;
+        await resolveFeedback(feedback.trackingId, feedback.assignedTo[0], "All action items completed.");
         toast({ title: "To-Do List Completed", description: "You've completed all action items." });
         onUpdate();
     }
@@ -412,7 +413,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
     
-    if (feedback.assignedTo !== role) return null;
+    if (!feedback.assignedTo?.includes(role!)) return null;
     
     if (feedback.status === 'To-Do') {
         return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />
@@ -527,8 +528,8 @@ function ActionItemsContent() {
         if (f.source === 'Voice – In Silence') {
             return false;
         }
-
-        const isCurrentlyAssigned = f.assignedTo === role;
+        
+        const isCurrentlyAssigned = f.assignedTo?.includes(role);
         const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === 'Manager');
         const wasInvolved = f.auditTrail?.some(e => e.actor === role) ?? false;
         
@@ -651,7 +652,7 @@ function ActionItemsContent() {
 
             return (
             <AccordionItem value={feedback.trackingId} key={feedback.trackingId} id={feedback.trackingId}>
-                 <div className="flex items-center w-full">
+                <div className="flex items-center w-full">
                     <AccordionTrigger className="flex-1 text-left px-4 py-3">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                             <Badge variant={config?.badge as any || 'secondary'}>{feedback.status === 'Retaliation Claim' ? 'Retaliation' : (feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A'))}</Badge>
@@ -661,7 +662,7 @@ function ActionItemsContent() {
                     <div className="flex items-center gap-4 ml-auto px-4">
                         <span 
                             className="text-xs text-muted-foreground font-mono cursor-text"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); }}
                         >
                            ID: {feedback.trackingId}
                         </span>

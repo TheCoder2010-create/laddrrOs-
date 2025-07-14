@@ -20,6 +20,7 @@ export interface AuditEvent {
 // Simplified status for the first level of escalation
 export type FeedbackStatus = 
   | 'Open' 
+  | 'In Progress'
   | 'Pending Supervisor Action'
   | 'Pending Manager Action'
   | 'Pending Identity Reveal'
@@ -49,7 +50,7 @@ export interface Feedback {
   auditTrail?: AuditEvent[];
   viewed?: boolean;
   status?: FeedbackStatus;
-  assignedTo?: Role;
+  assignedTo?: Role[];
   resolution?: string;
   oneOnOneId?: string; // Link back to the 1-on-1 history item
   supervisor?: Role | string; 
@@ -112,7 +113,7 @@ export interface TrackedFeedback {
   subject: string;
   submittedAt: string;
   status?: FeedbackStatus;
-  assignedTo?: Role;
+  assignedTo?: Role[];
   auditTrail?: AuditEvent[];
   resolution?: string;
 }
@@ -482,7 +483,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
     criticalityReasoning,
     viewed: false,
     status: 'Open',
-    assignedTo: 'HR Head',
+    assignedTo: ['HR Head'],
     source: 'Voice – In Silence',
     auditTrail: [
       {
@@ -515,7 +516,7 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
         submittedAt: new Date(),
         isAnonymous: true,
         status: 'Pending Manager Action', // Route directly to Manager
-        assignedTo: 'Manager',
+        assignedTo: ['Manager'],
         criticality: 'Medium', // Default criticality
         auditTrail: [{
             event: 'Submitted',
@@ -540,7 +541,7 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
         submittedBy: input.submittedByRole,
         criticality: input.criticality,
         status: 'Pending Supervisor Action', 
-        assignedTo: input.recipient,
+        assignedTo: [input.recipient],
         viewed: false,
         auditTrail: [
             {
@@ -571,7 +572,7 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
         submittedBy: input.submittedBy,
         criticality: 'Retaliation Claim',
         status: 'Retaliation Claim',
-        assignedTo: 'HR Head',
+        assignedTo: ['HR Head'],
         viewed: false,
         auditTrail: [{
             event: 'Retaliation Claim Submitted',
@@ -605,7 +606,7 @@ export async function submitHrRetaliationResponse(trackingId: string, actor: Rol
     const item = allFeedback[feedbackIndex];
     item.status = 'Pending Employee Acknowledgment';
     item.supervisorUpdate = response; // Re-use this field for the response
-    item.assignedTo = undefined; // Unassign from HR so it leaves their action queue
+    item.assignedTo = []; // Unassign from HR so it leaves their action queue
 
     item.auditTrail?.push({
         event: 'HR Responded to Retaliation Claim',
@@ -678,10 +679,26 @@ export async function saveFeedback(feedback: Feedback[], append = false): Promis
     }
 }
 
-export async function markAllFeedbackAsViewed(): Promise<void> {
+export async function markAllFeedbackAsViewed(idsToMark?: string[]): Promise<void> {
   let allFeedback = getFeedbackFromStorage();
-  if (allFeedback.some(c => !c.viewed)) {
-    allFeedback = allFeedback.map(c => ({ ...c, viewed: true }));
+  let changed = false;
+
+  if (idsToMark) {
+    allFeedback = allFeedback.map(c => {
+        if (idsToMark.includes(c.trackingId) && !c.viewed) {
+            changed = true;
+            return { ...c, viewed: true };
+        }
+        return c;
+    });
+  } else { // Fallback to old behavior if no IDs are passed
+      if (allFeedback.some(c => !c.viewed)) {
+        changed = true;
+        allFeedback = allFeedback.map(c => ({ ...c, viewed: true }));
+      }
+  }
+  
+  if (changed) {
     saveFeedbackToStorage(allFeedback);
   }
 }
@@ -689,19 +706,19 @@ export async function markAllFeedbackAsViewed(): Promise<void> {
 /**
  * Assigns a feedback item to a new role.
  */
-export async function assignFeedback(trackingId: string, assignTo: Role, actor: Role, comment: string): Promise<void> {
+export async function assignFeedback(trackingId: string, assignees: Role[], actor: Role, comment: string): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    item.assignedTo = assignTo;
-    item.status = 'Pending Supervisor Action';
+    item.assignedTo = assignees;
+    item.status = 'In Progress';
     item.auditTrail?.push({
         event: 'Assigned',
         timestamp: new Date(),
         actor,
-        details: `Case assigned to ${assignTo}.${comment ? `\nNote: "${comment}"` : ''}`,
+        details: `Case assigned to ${assignees.join(', ')}.${comment ? `\nNote: "${comment}"` : ''}`,
     });
 
     saveFeedbackToStorage(allFeedback);
@@ -770,7 +787,7 @@ export async function submitSupervisorUpdate(trackingId: string, supervisor: Rol
     const item = allFeedback[feedbackIndex];
     item.supervisorUpdate = update;
     item.status = 'Pending Employee Acknowledgment'; // Send for acknowledgment
-    item.assignedTo = undefined; // Unset assignee so it leaves the manager's queue
+    item.assignedTo = []; // Unset assignee so it leaves the manager's queue
     
     item.auditTrail?.push({
         event: 'Supervisor Responded',
@@ -819,7 +836,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         // If it's a retaliation claim being rejected, route it back to HR for final disposition.
         if(item.criticality === 'Retaliation Claim') {
             item.status = 'Pending HR Action';
-            item.assignedTo = 'HR Head';
+            item.assignedTo = ['HR Head'];
              item.auditTrail?.push({
                 event: 'Final Disposition Required',
                 timestamp: new Date(),
@@ -854,7 +871,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
 
         if (nextAssignee) {
              item.status = nextStatus;
-             item.assignedTo = nextAssignee;
+             item.assignedTo = [nextAssignee];
              item.auditTrail?.push({
                 event: 'Employee Escalated Concern',
                 timestamp: new Date(),
@@ -898,7 +915,7 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
     const feedback = allFeedback[feedbackIndex];
     feedback.status = 'Resolved';
     feedback.resolution = resolution;
-    feedback.assignedTo = undefined;
+    feedback.assignedTo = [];
     feedback.auditTrail?.push({
         event: 'Resolved',
         timestamp: new Date(),
@@ -917,7 +934,7 @@ export async function submitFinalDisposition(trackingId: string, actor: Role, di
     const item = allFeedback[feedbackIndex];
     item.status = 'Resolved';
     item.resolution = `Final Disposition: ${disposition}.\n\nHR Notes: ${notes}`;
-    item.assignedTo = undefined;
+    item.assignedTo = [];
     item.auditTrail?.push({
         event: 'Final Disposition',
         timestamp: new Date(),
