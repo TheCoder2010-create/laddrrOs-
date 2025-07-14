@@ -332,7 +332,8 @@ function HistorySection({ role }: { role: Role }) {
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-xs text-muted-foreground font-mono">ID: {item.id}</span>
                                         {getStatusBadge()}
                                     </div>
                                 </div>
@@ -402,6 +403,7 @@ function HistorySection({ role }: { role: Role }) {
                                                             <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'PPP p')}</p>
                                                             {analysisResult.dataHandling.recordingDeleted && (
                                                                 <>
+                                                                    <p className="flex items-center gap-1.5"><Timer className="h-3 w-3" /><strong>Session Duration:</strong> {analysisResult.dataHandling.deletionTimestamp}</p>
                                                                     <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'PPP p')}</p>
                                                                 </>
                                                             )}
