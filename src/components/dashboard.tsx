@@ -1,9 +1,11 @@
+
 import type { Role } from '@/hooks/use-role';
 import ManagerDashboard from './dashboards/manager-dashboard';
 import LeadDashboard from './dashboards/lead-dashboard';
 import EmployeeDashboard from './dashboards/employee-dashboard';
 import HRHeadDashboard from './dashboards/hr-head-dashboard';
 import AmDashboard from './dashboards/am-dashboard';
+import CoachingWidget from './coaching-widget';
 
 interface DashboardProps {
   role: Role;

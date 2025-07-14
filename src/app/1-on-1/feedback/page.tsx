@@ -47,16 +47,6 @@ const dataUriFromFile = (file: File): Promise<string> => {
     });
 }
 
-const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
-    switch (type) {
-        case 'Book': return <BookOpen className="h-4 w-4" />;
-        case 'Podcast': return <Podcast className="h-4 w-4" />;
-        case 'Article': return <Newspaper className="h-4 w-4" />;
-        case 'Course': return <GraduationCap className="h-4 w-4" />;
-        default: return <Lightbulb className="h-4 w-4" />;
-    }
-}
-
 function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, supervisor: string }) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -485,28 +475,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                             {analysisResult.actionItems.map((item, i) => <li key={i}><strong>{item.owner}:</strong> {item.task} {item.deadline && `(by ${item.deadline})`}</li>)}
                         </ul>
                     </div>
-                    
-                    {analysisResult.coachingRecommendations.length > 0 && (
-                        <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 mt-4">
-                            <h4 className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2"><Zap /> Coaching Recommendations</h4>
-                            <div className="space-y-3 mt-3">
-                                {analysisResult.coachingRecommendations.map((rec) => (
-                                    <div key={rec.id} className="p-3 bg-background/60 rounded-lg border">
-                                        <p className="font-semibold">{rec.area}</p>
-                                        <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                                        <div className="mt-3 pt-3 border-t">
-                                            <div className="flex items-center gap-2 text-sm text-foreground mb-2">
-                                                <RecommendationIcon type={rec.type} />
-                                                <strong>{rec.type}:</strong> {rec.resource}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground italic">"{rec.justification}"</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    
+                                        
                     {displayedMissedSignals.length > 0 && (
                          <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
                             <h4 className="font-semibold text-yellow-700 dark:text-yellow-400">Missed Signals</h4>

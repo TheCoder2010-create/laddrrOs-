@@ -241,16 +241,6 @@ function ToDoSection({ role }: { role: Role }) {
     );
 }
 
-const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
-    switch (type) {
-        case 'Book': return <BookOpen className="h-4 w-4" />;
-        case 'Podcast': return <Podcast className="h-4 w-4" />;
-        case 'Article': return <Newspaper className="h-4 w-4" />;
-        case 'Course': return <GraduationCap className="h-4 w-4" />;
-        default: return <Lightbulb className="h-4 w-4" />;
-    }
-}
-
 function HistorySection({ role }: { role: Role }) {
     const [history, setHistory] = useState<OneOnOneHistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -265,12 +255,6 @@ function HistorySection({ role }: { role: Role }) {
     const [retryingInsightId, setRetryingInsightId] = useState<string | null>(null);
     const [retryResponse, setRetryResponse] = useState('');
     const [isSubmittingRetry, setIsSubmittingRetry] = useState(false);
-    
-    // State for declining coaching recommendation
-    const [decliningRec, setDecliningRec] = useState<{historyId: string, recommendation: CoachingRecommendation} | null>(null);
-    const [rejectionReason, setRejectionReason] = useState('');
-    const [isSubmittingDecline, setIsSubmittingDecline] = useState(false);
-
 
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
@@ -332,31 +316,6 @@ function HistorySection({ role }: { role: Role }) {
             setIsSubmittingRetry(false);
         }
     };
-    
-    const handleCoachingRecAction = async (historyId: string, recommendationId: string, status: 'accepted' | 'declined', reason?: string) => {
-        try {
-            await updateCoachingRecommendationStatus(historyId, recommendationId, status, reason);
-            toast({
-                title: `Recommendation ${status}`,
-                description: `The coaching recommendation has been updated.`,
-            });
-            fetchHistory();
-        } catch (error) {
-            console.error(`Failed to ${status} recommendation`, error);
-            toast({ variant: 'destructive', title: 'Update Failed' });
-        }
-    }
-    
-    const handleDeclineSubmit = () => {
-        if (!decliningRec || !rejectionReason) return;
-        setIsSubmittingDecline(true);
-        handleCoachingRecAction(decliningRec.historyId, decliningRec.recommendation.id, 'declined', rejectionReason).finally(() => {
-            setIsSubmittingDecline(false);
-            setDecliningRec(null);
-            setRejectionReason('');
-        });
-    };
-
 
     if (isLoading) {
         return <Skeleton className="h-24 w-full mt-8" />;
@@ -380,32 +339,6 @@ function HistorySection({ role }: { role: Role }) {
                 <History className="h-5 w-5" />
                 Session History
             </h2>
-             <Dialog open={!!decliningRec} onOpenChange={() => setDecliningRec(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Decline Recommendation</DialogTitle>
-                        <DialogDescription>
-                            Please provide a reason for declining this coaching recommendation. This helps in understanding your needs better.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="rejection-reason">Justification</Label>
-                        <Textarea
-                            id="rejection-reason"
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                            placeholder="e.g., I have already read this book, I prefer a different learning style, etc."
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setDecliningRec(null)}>Cancel</Button>
-                        <Button variant="destructive" onClick={handleDeclineSubmit} disabled={!rejectionReason || isSubmittingDecline}>
-                            {isSubmittingDecline && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit Justification
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
                     const analysisResult = item.analysis;
@@ -521,49 +454,6 @@ function HistorySection({ role }: { role: Role }) {
                                                         {analysisResult.actionItems.map((item, i) => <li key={i}><strong>{item.owner}:</strong> {item.task} {item.deadline && `(by ${item.deadline})`}</li>)}
                                                     </ul>
                                                 </div>
-                                                
-                                                {analysisResult.coachingRecommendations.length > 0 && (
-                                                    <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 mt-4">
-                                                        <h4 className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2"><Zap /> Coaching Recommendations</h4>
-                                                        <div className="space-y-3 mt-3">
-                                                            {analysisResult.coachingRecommendations.map((rec) => (
-                                                                <div key={`${item.id}-${rec.id}`} className="p-3 bg-background/60 rounded-lg border">
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div>
-                                                                            <p className="font-semibold">{rec.area}</p>
-                                                                            <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                                                                        </div>
-                                                                         <Badge variant={rec.status === 'accepted' ? 'success' : rec.status === 'declined' ? 'destructive' : 'secondary'} className="capitalize">{rec.status}</Badge>
-                                                                    </div>
-                                                                    <div className="mt-3 pt-3 border-t">
-                                                                        <div className="flex items-center gap-2 text-sm text-foreground mb-2">
-                                                                            <RecommendationIcon type={rec.type} />
-                                                                            <strong>{rec.type}:</strong> {rec.resource}
-                                                                        </div>
-                                                                        <p className="text-xs text-muted-foreground italic">"{rec.justification}"</p>
-                                                                    </div>
-
-                                                                    {rec.status === 'pending' && (
-                                                                        <div className="flex gap-2 mt-3 pt-3 border-t">
-                                                                            <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(item.id, rec.id, 'accepted')}>
-                                                                                <ThumbsUp className="mr-2" /> Accept
-                                                                            </Button>
-                                                                            <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ historyId: item.id, recommendation: rec })}>
-                                                                                <ThumbsDown className="mr-2" /> Decline
-                                                                            </Button>
-                                                                        </div>
-                                                                    )}
-                                                                    {rec.status === 'declined' && rec.rejectionReason && (
-                                                                        <div className="mt-2 pt-2 border-t text-xs">
-                                                                            <p className="font-semibold">Your reason:</p>
-                                                                            <p className="text-muted-foreground italic">"{rec.rejectionReason}"</p>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
                                                 
                                                 {displayedMissedSignals.length > 0 && (
                                                      <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
@@ -908,18 +798,3 @@ export default function Home() {
     </DashboardLayout>
   );
 }
-    
-
-    
-
-
-
-
-
-    
-
-
-
-
-    
-
