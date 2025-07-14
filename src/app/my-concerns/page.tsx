@@ -570,7 +570,10 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                                         <p className="font-medium truncate">{item.subject}</p>
                                     </div>
                                     <div className="flex items-center gap-4 ml-auto">
-                                        <span className="text-xs text-muted-foreground font-mono">ID: {item.trackingId}</span>
+                                        <span 
+                                            className="text-xs text-muted-foreground font-mono cursor-text"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >ID: {item.trackingId}</span>
                                         {getStatusBadge(item.status)}
                                     </div>
                                 </div>
@@ -668,7 +671,10 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                                             <div className="flex flex-wrap justify-between items-center gap-2">
                                                 <Label>Claim Status</Label>
                                                 <div className="flex items-center gap-4">
-                                                    <span className="text-xs text-muted-foreground font-mono">ID: {retaliationCase.trackingId}</span>
+                                                    <span 
+                                                        className="text-xs text-muted-foreground font-mono cursor-text"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >ID: {retaliationCase.trackingId}</span>
                                                     {getRetaliationStatusBadge(retaliationCase.status)}
                                                 </div>
                                             </div>

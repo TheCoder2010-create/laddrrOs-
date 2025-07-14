@@ -314,7 +314,10 @@ function VaultContent() {
                                 <span className="font-medium text-left truncate">{feedback.subject}</span>
                             </div>
                             <div className="flex items-center gap-4 ml-auto">
-                                <span className="text-xs text-muted-foreground font-mono">ID: {feedback.trackingId}</span>
+                                <span 
+                                    className="text-xs text-muted-foreground font-mono cursor-text"
+                                    onClick={(e) => e.stopPropagation()}
+                                >ID: {feedback.trackingId}</span>
                                 <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'Open'}</Badge>
                             </div>
                         </div>

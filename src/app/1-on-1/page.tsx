@@ -333,7 +333,10 @@ function HistorySection({ role }: { role: Role }) {
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <span className="text-xs text-muted-foreground font-mono">ID: {item.id}</span>
+                                        <span 
+                                            className="text-xs text-muted-foreground font-mono cursor-text"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >ID: {item.id}</span>
                                         {getStatusBadge()}
                                     </div>
                                 </div>
