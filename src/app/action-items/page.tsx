@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -125,6 +125,53 @@ function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () =>
         </div>
     )
 }
+
+function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [response, setResponse] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!response || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitHrRetaliationResponse(feedback.trackingId, role, response);
+            setResponse('');
+            toast({ title: "Response Submitted", description: "The employee has been notified to acknowledge your response." });
+            onUpdate();
+        } catch (error) {
+            console.error(error);
+            toast({ variant: "destructive", title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+            <Label className="text-base font-semibold text-destructive">Action Required: Retaliation Claim</Label>
+            <p className="text-sm text-muted-foreground">
+                A retaliation claim has been filed. Please investigate thoroughly. Document your findings and the resolution steps taken below. This will be sent to the employee for acknowledgment.
+            </p>
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor="hr-response">HR Resolution Summary</Label>
+                <Textarea
+                    id="hr-response"
+                    placeholder="e.g., 'After reviewing the case, we have spoken with all parties involved and have implemented the following corrective actions...'"
+                    value={response}
+                    onChange={(e) => setResponse(e.target.value)}
+                    rows={4}
+                />
+                <Button onClick={handleSubmit} disabled={!response || isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit for Employee Acknowledgment
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 
 function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
@@ -350,6 +397,11 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         onUpdate();
     }
     
+    // Retaliation claims are handled by a specific panel for HR Head
+    if (role === 'HR Head' && feedback.status === 'Retaliation Claim') {
+        return <RetaliationActionPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+
     // For anonymous concerns escalated to HR, show the collaborative panel
     if (feedback.status === 'Pending HR Action' && feedback.isAnonymous) {
         return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;

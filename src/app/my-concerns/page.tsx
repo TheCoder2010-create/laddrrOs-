@@ -366,17 +366,23 @@ function AcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: (
     const { toast } = useToast();
     const [comments, setComments] = useState('');
 
-    const supervisorResponse = item.auditTrail?.find(e => e.event === 'Supervisor Responded');
+    const responderEvent = item.auditTrail?.find(e => e.event === 'Supervisor Responded' || e.event === 'HR Responded to Retaliation Claim');
 
     const handleAcknowledge = async (accepted: boolean) => {
         await submitEmployeeFeedbackAcknowledgement(item.trackingId, accepted, comments);
         if (accepted) {
             toast({ title: "Resolution Accepted", description: "The case has been closed." });
         } else {
-            toast({ title: "Concern Escalated", description: "Your feedback has been escalated to the next level." });
+            if (item.criticality === 'Retaliation Claim') {
+                toast({ title: "Feedback Submitted", description: "The case has been closed with your feedback noted." });
+            } else {
+                toast({ title: "Concern Escalated", description: "Your feedback has been escalated to the next level." });
+            }
         }
         onUpdate();
     }
+    
+    if (!responderEvent) return null;
 
     return (
         <Card className="border-blue-500/50 my-4">
@@ -386,13 +392,13 @@ function AcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: (
                     Action Required: Please Acknowledge
                 </CardTitle>
                 <CardDescription>
-                    Your manager has responded to your concern. Please review and provide your feedback.
+                    A response has been provided for your concern. Please review and provide your feedback.
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
                 <div className="p-3 bg-muted/80 rounded-md border">
-                    <p className="font-semibold text-foreground">{supervisorResponse?.actor}'s Response:</p>
-                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{supervisorResponse?.details}</p>
+                    <p className="font-semibold text-foreground">{responderEvent.actor}'s Response:</p>
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{responderEvent.details}</p>
                 </div>
                 <div className="space-y-2 pt-2">
                     <Label htmlFor={`ack-comments-${item.trackingId}`}>Additional Comments (Optional)</Label>

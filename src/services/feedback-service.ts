@@ -44,7 +44,7 @@ export interface Feedback {
   submittedAt: Date | string; 
   submittedBy?: Role; // For identified concerns
   summary?: string;
-  criticality?: 'Low' | 'Medium' | 'High' | 'Critical';
+  criticality?: 'Low' | 'Medium' | 'High' | 'Critical' | 'Retaliation Claim';
   criticalityReasoning?: string;
   auditTrail?: AuditEvent[];
   viewed?: boolean;
@@ -99,7 +99,7 @@ export interface RetaliationReportInput {
     parentCaseId: string;
     submittedBy: Role;
     description: string;
-    file?: File;
+    file?: File | null;
 }
 
 // Client-side tracking types
@@ -595,6 +595,26 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
     return { trackingId };
 }
 
+export async function submitHrRetaliationResponse(trackingId: string, actor: Role, response: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.status = 'Pending Employee Acknowledgment';
+    item.supervisorUpdate = response; // Re-use this field for the response
+    item.assignedTo = undefined; // Unassign from HR so it leaves their action queue
+
+    item.auditTrail?.push({
+        event: 'HR Responded to Retaliation Claim',
+        timestamp: new Date(),
+        actor,
+        details: response,
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
 
 export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFeedbackOutput> {
   const allFeedback = getFeedbackFromStorage();
@@ -773,7 +793,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     const actor = item.submittedBy || 'Anonymous';
     
     // Find the last responder in the audit trail to determine current level
-    const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => e.event === 'Supervisor Responded');
+    const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => e.event === 'Supervisor Responded' || e.event === 'HR Responded to Retaliation Claim');
     const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
     if (accepted) {
@@ -793,6 +813,22 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         });
     } else {
         const escalationDetails = `Resolution not accepted. Escalating further.${comments ? `\nComments: ${comments}` : ''}`;
+        
+        // If it's a retaliation claim being rejected, it closes.
+        if(item.criticality === 'Retaliation Claim') {
+            item.status = 'Closed';
+            item.resolution = `Case closed after employee rejected HR's resolution. Last response from HR: ${item.supervisorUpdate}`;
+            item.auditTrail?.push({
+                event: 'Case Closed, Not Resolved',
+                timestamp: new Date(),
+                actor: 'System',
+                details: `Retaliation claim workflow concluded without employee satisfaction. ${escalationDetails}`
+             });
+
+            saveFeedbackToStorage(allFeedback);
+            return;
+        }
+
         let nextAssignee: Role | undefined = undefined;
         let nextStatus: FeedbackStatus = 'Pending Manager Action';
 
