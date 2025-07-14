@@ -135,9 +135,9 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
 7.  **Coaching Recommendations**: Provide 2-3 concrete suggestions for the supervisor to improve, based on weaknesses in this session.
 8.  **Action Items**: List all concrete tasks for both employee and supervisor, including deadlines if stated.
 9.  **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided) Analyze if the supervisor showed growth towards a goal. If so, summarize the application with a supporting quote. If mastery is shown, return the completedGoalId.
-10. **Missed Signals**: Identify any subtle indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore.
+10. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
 11. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
-    *   **Trigger Conditions**: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, or potential HR issues.
+    *   **Trigger Conditions**: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, potential HR issues (e.g., statements like "I hate this workplace" or personal attacks like "you are a bad TL"). If a signal meets these conditions, it MUST be a Critical Coaching Insight and NOT a Missed Signal.
     *   **Content**: Must include a \`summary\` (what was missed), \`reason\` (why it matters AND a recommended micro-learning action), and \`severity\`. If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
     *   The \`status\` field should be set to 'open'. The AI should NOT generate content for \`supervisorResponse\` or \`employeeAcknowledgement\`.
 12. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
@@ -188,3 +188,4 @@ const analyzeOneOnOneFlow = ai.defineFlow(
   }
 );
     
+
