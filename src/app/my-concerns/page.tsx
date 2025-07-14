@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -362,11 +362,9 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
     )
 }
 
-function AcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void }) {
+function AcknowledgementWidget({ item, onUpdate, title, description, responderEventDetails, responderEventActor }: { item: Feedback, onUpdate: () => void, title: string, description: string, responderEventDetails?: string, responderEventActor?: string }) {
     const { toast } = useToast();
     const [comments, setComments] = useState('');
-
-    const responderEvent = item.auditTrail?.find(e => e.event === 'Supervisor Responded' || e.event === 'HR Responded to Retaliation Claim');
 
     const handleAcknowledge = async (accepted: boolean) => {
         await submitEmployeeFeedbackAcknowledgement(item.trackingId, accepted, comments);
@@ -382,23 +380,23 @@ function AcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: (
         onUpdate();
     }
     
-    if (!responderEvent) return null;
+    if (!responderEventDetails) return null;
 
     return (
         <Card className="border-blue-500/50 my-4">
             <CardHeader className="bg-blue-500/10">
                 <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                     <MessageCircleQuestion className="h-6 w-6" />
-                    Action Required: Please Acknowledge
+                    {title}
                 </CardTitle>
                 <CardDescription>
-                    A response has been provided for your concern. Please review and provide your feedback.
+                   {description}
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
                 <div className="p-3 bg-muted/80 rounded-md border">
-                    <p className="font-semibold text-foreground">{responderEvent.actor}'s Response:</p>
-                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{responderEvent.details}</p>
+                    <p className="font-semibold text-foreground">{responderEventActor}'s Response:</p>
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{responderEventDetails}</p>
                 </div>
                 <div className="space-y-2 pt-2">
                     <Label htmlFor={`ack-comments-${item.trackingId}`}>Additional Comments (Optional)</Label>
@@ -494,36 +492,29 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
 }
 
 
-function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, storageKey: string | null, title: string }) {
-    const { role } = useRole();
+function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[] }) {
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
-
-    const fetchCases = useCallback(async () => {
-        setIsLoading(true);
-        if (storageKey) {
-            const caseIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            if (caseIds.length > 0) {
-                const fetchedCases = await getFeedbackByIds(caseIds);
-                setCases(fetchedCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
-            } else {
-                setCases([]);
-            }
-        }
-        setIsLoading(false);
-    }, [storageKey]);
+    const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchCases();
-        
-        const handleFeedbackUpdate = () => fetchCases();
-        window.addEventListener('feedbackUpdated', handleFeedbackUpdate);
-
-        return () => {
-            window.removeEventListener('feedbackUpdated', handleFeedbackUpdate);
+        const loadCases = async () => {
+            setIsLoading(true);
+            if (storageKey) {
+                const caseIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                if (caseIds.length > 0) {
+                    const fetchedCases = await getFeedbackByIds(caseIds);
+                    const nonRetaliationCases = fetchedCases.filter(c => c.criticality !== 'Retaliation Claim');
+                    setCases(nonRetaliationCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
+                } else {
+                    setCases([]);
+                }
+            }
+            setIsLoading(false);
         };
-    }, [fetchCases]);
+        loadCases();
+    }, [storageKey, allCases]); // Rerun when allCases changes
     
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
@@ -547,6 +538,16 @@ function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, 
             default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
         }
     }
+    
+    const getRetaliationStatusBadge = (status?: string) => {
+        switch(status) {
+            case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Claim Resolved</Badge>;
+            case 'Retaliation Claim': return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3"/>HR Reviewing Claim</Badge>;
+            case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Your Ack. Required</Badge>;
+            case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Claim Closed</Badge>;
+            default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Claim Submitted</Badge>;
+        }
+    }
 
     return (
         <div className="mt-6 space-y-4">
@@ -555,90 +556,167 @@ function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, 
                 {title}
             </h3>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
-                 {cases.map(item => (
-                    <AccordionItem value={item.trackingId} key={item.trackingId} className="px-4">
-                        <AccordionTrigger>
-                            <div className="flex justify-between items-center w-full pr-4">
-                                <div className="text-left">
-                                    <p className="font-medium truncate">{item.subject}</p>
-                                    <p className="text-sm text-muted-foreground font-normal">
-                                        Submitted {formatDistanceToNow(new Date(item.submittedAt), { addSuffix: true })}
-                                    </p>
+                 {cases.map(item => {
+                    const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
+                    
+                    const responderEvent = item.auditTrail?.find(e => e.event === 'Supervisor Responded');
+                    const retaliationResponderEvent = retaliationCase?.auditTrail?.find(e => e.event === 'HR Responded to Retaliation Claim');
+
+                    return (
+                        <AccordionItem value={item.trackingId} key={item.trackingId} className="px-4">
+                            <AccordionTrigger>
+                                <div className="flex justify-between items-center w-full pr-4">
+                                    <div className="text-left">
+                                        <p className="font-medium truncate">{item.subject}</p>
+                                        <p className="text-sm text-muted-foreground font-normal">
+                                            Submitted {formatDistanceToNow(new Date(item.submittedAt), { addSuffix: true })}
+                                        </p>
+                                    </div>
+                                    <div className="hidden md:flex items-center gap-2">
+                                        {getStatusBadge(item.status)}
+                                    </div>
                                 </div>
-                                <div className="hidden md:flex items-center gap-2">
-                                    {getStatusBadge(item.status)}
+                            </AccordionTrigger>
+                            <AccordionContent className="space-y-4 pt-2">
+                               {item.status === 'Pending Identity Reveal' && (
+                                   <RevealIdentityWidget item={item} onUpdate={onUpdate} />
+                               )}
+                               {item.status === 'Pending Employee Acknowledgment' && (
+                                    <AcknowledgementWidget 
+                                        item={item} 
+                                        onUpdate={onUpdate}
+                                        title="Action Required: Acknowledge Response"
+                                        description="A response has been provided for your concern. Please review and provide your feedback."
+                                        responderEventActor={responderEvent?.actor}
+                                        responderEventDetails={responderEvent?.details}
+                                    />
+                               )}
+                               <div className="space-y-2">
+                                    <Label>Original Submission</Label>
+                                    <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
                                 </div>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="space-y-4 pt-2">
-                           {item.status === 'Pending Identity Reveal' && (
-                               <RevealIdentityWidget item={item} onUpdate={fetchCases} />
-                           )}
-                           {item.status === 'Pending Employee Acknowledgment' && (
-                                <AcknowledgementWidget item={item} onUpdate={fetchCases} />
-                           )}
-                           <div className="space-y-2">
-                                <Label>Original Submission</Label>
-                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Case History</Label>
-                                <div className="p-4 border rounded-md bg-muted/50 space-y-4">
-                                    {item.auditTrail?.map((event, index) => (
-                                        <div key={index} className="flex items-start gap-3">
-                                            <Info className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                                            <div className="flex-1">
-                                                <p className="font-medium text-sm">
-                                                    {event.event} by <span className="text-primary">{event.actor}</span>
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
-                                                {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                <div className="space-y-2">
+                                    <Label>Case History</Label>
+                                    <div className="p-4 border rounded-md bg-muted/50 space-y-4">
+                                        {item.auditTrail?.map((event, index) => (
+                                            <div key={index} className="flex items-start gap-3">
+                                                <Info className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-sm">
+                                                        {event.event} by <span className="text-primary">{event.actor}</span>
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                                    {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                 {item.resolution && (
+                                    <div className="space-y-2">
+                                        <Label>Manager's Final Resolution</Label>
+                                        <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{item.resolution}</p>
+                                    </div>
+                                )}
+
+                                {!item.isAnonymous && (
+                                    <div className="pt-4 border-t border-dashed">
+                                        <Dialog open={retaliationDialogOpen && activeCaseId === item.trackingId} onOpenChange={(open) => {
+                                            if (!open) setRetaliationDialogOpen(false);
+                                        }}>
+                                            <DialogTrigger asChild>
+                                                <Button variant="destructive" onClick={() => { setActiveCaseId(item.trackingId); setRetaliationDialogOpen(true); }}>
+                                                    <AlertTriangle className="mr-2 h-4 w-4" />
+                                                    Retaliation/Bias Observed
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Report Retaliation or Bias</DialogTitle>
+                                                    <DialogDescription>
+                                                        This will create a new, separate case linked to this one and assign it directly to the HR Head for immediate review. All information will be handled with the highest level of confidentiality.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <RetaliationForm 
+                                                    parentCaseId={item.trackingId} 
+                                                    onSubmitted={() => {
+                                                        setRetaliationDialogOpen(false);
+                                                        onUpdate();
+                                                    }} 
+                                                />
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
+                                )}
+                                 
+                                {retaliationCase && (
+                                    <div className="mt-4 pt-4 border-t-2 border-destructive/50 space-y-4">
+                                        <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
+                                            <GitMerge /> Linked Retaliation Claim
+                                        </h4>
+                                        
+                                        {retaliationCase.status === 'Pending Employee Acknowledgment' && (
+                                            <AcknowledgementWidget 
+                                                item={retaliationCase} 
+                                                onUpdate={onUpdate}
+                                                title="Action Required: Acknowledge HR Response"
+                                                description="HR has responded to your retaliation claim. Please review their resolution."
+                                                responderEventActor={retaliationResponderEvent?.actor}
+                                                responderEventDetails={retaliationResponderEvent?.details}
+                                            />
+                                        )}
+                                        
+                                        <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <Label>Claim Status</Label>
+                                                {getRetaliationStatusBadge(retaliationCase.status)}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Your Claim Description</Label>
+                                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
+                                            </div>
+
+                                            {retaliationCase.attachment && (
+                                                <div className="space-y-2">
+                                                    <Label>Your Attachment</Label>
+                                                    <div>
+                                                        <Button variant="outline" size="sm" asChild>
+                                                            <a href="#" onClick={(e) => e.preventDefault()}>
+                                                                <LinkIcon className="mr-2 h-4 w-4" /> View Attachment ({retaliationCase.attachment.name})
+                                                            </a>
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="space-y-2">
+                                                <Label>Claim Case History</Label>
+                                                <div className="p-3 border rounded-md bg-background space-y-3">
+                                                    {retaliationCase.auditTrail?.map((event, index) => (
+                                                        <div key={index} className="flex items-start gap-3">
+                                                            <Info className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-sm">
+                                                                    {event.event} by <span className="text-primary">{event.actor}</span>
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                                                {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-                                    ))}
+                                    </div>
+                                )}
+                                 <div className="text-xs text-muted-foreground/80 pt-2 border-t">
+                                    Tracking ID: <code className="font-mono">{item.trackingId}</code>
                                 </div>
-                            </div>
-                             {item.resolution && (
-                                <div className="space-y-2">
-                                    <Label>Manager's Final Resolution</Label>
-                                    <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{item.resolution}</p>
-                                </div>
-                            )}
-
-                            {!item.isAnonymous && (
-                                <div className="pt-4 border-t border-dashed">
-                                    <Dialog open={retaliationDialogOpen} onOpenChange={setRetaliationDialogOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="destructive">
-                                                <AlertTriangle className="mr-2 h-4 w-4" />
-                                                Retaliation/Bias Observed
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Report Retaliation or Bias</DialogTitle>
-                                                <DialogDescription>
-                                                    This will create a new, separate case linked to this one and assign it directly to the HR Head for immediate review. All information will be handled with the highest level of confidentiality.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <RetaliationForm 
-                                                parentCaseId={item.trackingId} 
-                                                onSubmitted={() => {
-                                                    setRetaliationDialogOpen(false);
-                                                    fetchCases(); // Refresh cases to show updates
-                                                }} 
-                                            />
-                                        </DialogContent>
-                                    </Dialog>
-                                </div>
-                            )}
-                             
-                             <div className="text-xs text-muted-foreground/80 pt-2 border-t">
-                                Tracking ID: <code className="font-mono">{item.trackingId}</code>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                 ))}
+                            </AccordionContent>
+                        </AccordionItem>
+                    );
+                })}
             </Accordion>
         </div>
     );
@@ -647,10 +725,26 @@ function MySubmissions({ onUpdate, storageKey, title }: { onUpdate: () => void, 
 function MyConcernsContent() {
   const [remountKey, setRemountKey] = useState(0);
   const { role } = useRole();
+  const [allCases, setAllCases] = useState<Feedback[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const remountSubmissions = useCallback(() => {
-    setRemountKey(prevKey => prevKey + 1);
+  const fetchAllCases = useCallback(() => {
+    setIsLoading(true);
+    getAllFeedback().then(data => {
+        setAllCases(data);
+        setIsLoading(false);
+    });
   }, []);
+
+  useEffect(() => {
+    fetchAllCases();
+  }, [fetchAllCases]);
+
+
+  const handleCaseSubmitted = useCallback(() => {
+    // Re-fetch all cases after a new submission
+    fetchAllCases();
+  }, [fetchAllCases]);
 
   return (
     <div className="p-4 md:p-8">
@@ -676,12 +770,12 @@ function MyConcernsContent() {
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="identity-revealed">
-                    <IdentifiedConcernForm onCaseSubmitted={remountSubmissions} />
-                     <MySubmissions onUpdate={remountSubmissions} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} />
+                    <IdentifiedConcernForm onCaseSubmitted={handleCaseSubmitted} />
+                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} allCases={allCases} />
                 </TabsContent>
                 <TabsContent value="anonymous">
-                    <AnonymousConcernForm onCaseSubmitted={remountSubmissions} />
-                    <MySubmissions onUpdate={remountSubmissions} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} />
+                    <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -709,3 +803,5 @@ export default function MyConcernsPage() {
 
     
 }
+
+    
