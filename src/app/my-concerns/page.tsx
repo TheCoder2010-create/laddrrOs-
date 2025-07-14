@@ -289,7 +289,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                          <div className="flex items-start gap-3">
                             <ShieldCheck className="h-5 w-5 mt-1 flex-shrink-0 text-blue-500" />
                             <div className="w-full">
-                                <h3 className="font-bold text-base text-foreground">Your Manager's Commitment &amp; Request</h3>
+                                <h3 className="font-bold text-base text-foreground">Your Manager's Commitment & Request</h3>
                                 <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap">
                                     <p className="font-semibold">Manager’s Acknowledgment:</p>
                                     <blockquote className="border-l-2 pl-4 italic">
@@ -665,9 +665,12 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                                         )}
                                         
                                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
-                                            <div className="flex justify-between items-center">
+                                            <div className="flex flex-wrap justify-between items-center gap-2">
                                                 <Label>Claim Status</Label>
-                                                {getRetaliationStatusBadge(retaliationCase.status)}
+                                                <div className="flex items-center gap-4">
+                                                    <span className="text-xs text-muted-foreground font-mono">ID: {retaliationCase.trackingId}</span>
+                                                    {getRetaliationStatusBadge(retaliationCase.status)}
+                                                </div>
                                             </div>
 
                                             <div className="space-y-2">
