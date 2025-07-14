@@ -24,7 +24,8 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -413,26 +414,75 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     return null; // No action panel for other statuses
 }
 
+function ParentCaseModal({ parentCase, open, onOpenChange }: { parentCase: Feedback | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    if (!parentCase) return null;
+
+    const config = criticalityConfig[parentCase.criticality || 'Low'];
+    const Icon = config?.icon || Info;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>Parent Case Details: {parentCase.subject}</DialogTitle>
+                    <DialogDescription>
+                        Tracking ID: {parentCase.trackingId}
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[70vh] pr-6">
+                    <div className="space-y-6 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-base">Original Submission Context</Label>
+                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{parentCase.message}</p>
+                        </div>
+                        {parentCase.auditTrail && <AuditTrail trail={parentCase.auditTrail} />}
+                        {parentCase.resolution && (
+                             <div className="space-y-2">
+                                <Label className="text-base">Final Resolution</Label>
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{parentCase.resolution}</p>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Close</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 function ActionItemsContent() {
+  const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [activeItems, setActiveItems] = useState<Feedback[]>([]);
   const [closedItems, setClosedItems] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
   const accordionRef = useRef<HTMLDivElement>(null);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
+  
+  const [parentCaseInModal, setParentCaseInModal] = useState<Feedback | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
     setIsLoading(true);
     try {
-      const allFeedback = await getAllFeedback();
+      const fetchedFeedback = await getAllFeedback();
+      setAllFeedback(fetchedFeedback); // Store all for modal lookup
 
-      const myFeedback = allFeedback.filter(f => {
-        // A case is relevant if the user is currently assigned, is a collaborator, or was ever involved in the audit trail.
+      const myFeedback = fetchedFeedback.filter(f => {
         const isCurrentlyAssigned = f.assignedTo === role;
         const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === 'Manager');
         const wasInvolved = f.auditTrail?.some(e => e.actor === role) ?? false;
+        
+        // Include closed cases if the user was ever involved.
+        if (f.status === 'Resolved' || f.status === 'Closed') {
+            return wasInvolved;
+        }
         
         return isCurrentlyAssigned || isCollaboratorOnAnonymousCase || wasInvolved;
       });
@@ -514,16 +564,11 @@ function ActionItemsContent() {
   }
 
   const handleOpenParentCase = (parentId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent the accordion from toggling
-    const parentElement = document.getElementById(parentId);
-    if (parentElement) {
-        // Find the accordion trigger for the parent and click it
-        const trigger = parentElement.querySelector('[data-radix-collection-item]');
-        if (trigger instanceof HTMLElement) {
-             trigger.scrollIntoView({ behavior: 'smooth', block: 'center' });
-             // A brief timeout helps ensure the item is visible before clicking
-             setTimeout(() => trigger.click(), 200);
-        }
+    e.stopPropagation();
+    const parentCase = allFeedback.find(f => f.trackingId === parentId);
+    if (parentCase) {
+        setParentCaseInModal(parentCase);
+        setIsModalOpen(true);
     }
   };
 
@@ -649,6 +694,8 @@ function ActionItemsContent() {
           )}
         </CardContent>
       </Card>
+      
+      <ParentCaseModal parentCase={parentCaseInModal} open={isModalOpen} onOpenChange={setIsModalOpen} />
 
       {closedItems.length > 0 && (
           <div className="mt-8">
