@@ -267,7 +267,7 @@ function HistorySection({ role }: { role: Role }) {
     const [isSubmittingRetry, setIsSubmittingRetry] = useState(false);
     
     // State for declining coaching recommendation
-    const [decliningRec, setDecliningRec] = useState<CoachingRecommendation | null>(null);
+    const [decliningRec, setDecliningRec] = useState<{historyId: string, recommendation: CoachingRecommendation} | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [isSubmittingDecline, setIsSubmittingDecline] = useState(false);
 
@@ -350,7 +350,7 @@ function HistorySection({ role }: { role: Role }) {
     const handleDeclineSubmit = () => {
         if (!decliningRec || !rejectionReason) return;
         setIsSubmittingDecline(true);
-        handleCoachingRecAction(decliningRec.id, decliningRec.id, 'declined', rejectionReason).finally(() => {
+        handleCoachingRecAction(decliningRec.historyId, decliningRec.recommendation.id, 'declined', rejectionReason).finally(() => {
             setIsSubmittingDecline(false);
             setDecliningRec(null);
             setRejectionReason('');
@@ -527,7 +527,7 @@ function HistorySection({ role }: { role: Role }) {
                                                         <h4 className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2"><Zap /> Coaching Recommendations</h4>
                                                         <div className="space-y-3 mt-3">
                                                             {analysisResult.coachingRecommendations.map((rec) => (
-                                                                <div key={rec.id} className="p-3 bg-background/60 rounded-lg border">
+                                                                <div key={`${item.id}-${rec.id}`} className="p-3 bg-background/60 rounded-lg border">
                                                                     <div className="flex justify-between items-start">
                                                                         <div>
                                                                             <p className="font-semibold">{rec.area}</p>
@@ -548,7 +548,7 @@ function HistorySection({ role }: { role: Role }) {
                                                                             <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(item.id, rec.id, 'accepted')}>
                                                                                 <ThumbsUp className="mr-2" /> Accept
                                                                             </Button>
-                                                                            <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ ...rec, id: item.id })}>
+                                                                            <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ historyId: item.id, recommendation: rec })}>
                                                                                 <ThumbsDown className="mr-2" /> Decline
                                                                             </Button>
                                                                         </div>
@@ -922,3 +922,4 @@ export default function Home() {
 
 
     
+
