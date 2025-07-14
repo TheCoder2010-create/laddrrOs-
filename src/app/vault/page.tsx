@@ -369,26 +369,21 @@ function VaultContent() {
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
-                        <div className="flex items-center w-full">
-                            <AccordionTrigger className="flex-1 text-left px-4 py-3">
+                        <AccordionTrigger className="w-full px-4 py-3 text-left">
+                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    {feedback.criticality ?
+                                    {feedback.criticality ? (
                                         <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality}</Badge>
-                                        : <Badge variant="outline">Unanalyzed</Badge>
-                                    }
+                                    ) : (
+                                        <Badge variant="outline">Unanalyzed</Badge>
+                                    )}
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
-                            </AccordionTrigger>
-                            <div className="flex items-center gap-4 ml-auto px-4">
-                                <span 
-                                    className="text-xs text-muted-foreground font-mono cursor-text"
-                                    onClick={(e) => { e.stopPropagation(); }}
-                                >
-                                   ID: {feedback.trackingId}
-                                </span>
-                                <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'Open'}</Badge>
+                                <div className="flex items-center gap-2">
+                                    <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'Open'}</Badge>
+                                </div>
                             </div>
-                        </div>
+                        </AccordionTrigger>
                         <AccordionContent className="space-y-6 pt-4 px-4">
                             {feedback.assignedTo && feedback.assignedTo.length > 0 && (
                                  <div className="flex items-center gap-2 text-sm font-medium p-2 bg-muted rounded-md w-fit">
@@ -409,8 +404,16 @@ function VaultContent() {
                             )}
                             
                             <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <Label className="text-base">Original Submission</Label>
+                                <div className="flex justify-between items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Label className="text-base">Original Submission</Label>
+                                        <span 
+                                            className="text-xs text-muted-foreground font-mono cursor-text"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                           ID: {feedback.trackingId}
+                                        </span>
+                                    </div>
                                     {!feedback.summary && (
                                         <Button
                                             size="sm"
