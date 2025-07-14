@@ -653,10 +653,10 @@ function ActionItemsContent() {
                         <span className="font-medium text-left truncate">{feedback.subject}</span>
                     </div>
                     <div className="flex items-center gap-4 ml-4">
-                         {statusBadge}
-                        <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
-                            Assigned {formatDistanceToNow(new Date(feedback.auditTrail?.find(a => a.event === 'Assigned' || a.event === 'To-Do List Created' || a.event.includes("Submitted"))?.timestamp || feedback.submittedAt), { addSuffix: true })}
-                        </span>
+                        <div className="hidden md:flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground font-mono">ID: ...{feedback.trackingId.slice(-6)}</span>
+                            {statusBadge}
+                        </div>
                     </div>
                 </div>
                 </AccordionTrigger>
@@ -706,10 +706,6 @@ function ActionItemsContent() {
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{feedback.resolution}</p>
                         </div>
                     )}
-
-                    <div className="text-xs text-muted-foreground/80 pt-4 border-t">
-                        Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
-                    </div>
                 </AccordionContent>
             </AccordionItem>
             )
@@ -804,5 +800,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    

@@ -566,13 +566,11 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                         <AccordionItem value={item.trackingId} key={item.trackingId} className="px-4">
                             <AccordionTrigger>
                                 <div className="flex justify-between items-center w-full pr-4">
-                                    <div className="text-left">
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
                                         <p className="font-medium truncate">{item.subject}</p>
-                                        <p className="text-sm text-muted-foreground font-normal">
-                                            Submitted {formatDistanceToNow(new Date(item.submittedAt), { addSuffix: true })}
-                                        </p>
                                     </div>
                                     <div className="hidden md:flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground font-mono">ID: ...{item.trackingId.slice(-6)}</span>
                                         {getStatusBadge(item.status)}
                                     </div>
                                 </div>
@@ -710,9 +708,6 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                                         </div>
                                     </div>
                                 )}
-                                 <div className="text-xs text-muted-foreground/80 pt-2 border-t">
-                                    Tracking ID: <code className="font-mono">{item.trackingId}</code>
-                                </div>
                             </AccordionContent>
                         </AccordionItem>
                     );
@@ -803,5 +798,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    

@@ -314,10 +314,8 @@ function VaultContent() {
                                 <span className="font-medium text-left truncate">{feedback.subject}</span>
                             </div>
                             <div className="flex items-center gap-4 ml-4">
+                                <span className="text-xs text-muted-foreground font-mono">ID: ...{feedback.trackingId.slice(-6)}</span>
                                 <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'Open'}</Badge>
-                                <span className="text-sm text-muted-foreground font-normal hidden md:inline-block">
-                                    {formatDistanceToNow(new Date(feedback.submittedAt), { addSuffix: true })}
-                                </span>
                             </div>
                         </div>
                         </AccordionTrigger>
@@ -348,10 +346,6 @@ function VaultContent() {
                             {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
 
                             <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />
-
-                            <div className="text-xs text-muted-foreground/80 pt-4 border-t">
-                                Tracking ID: <code className="font-mono">{feedback.trackingId}</code>
-                            </div>
                         </AccordionContent>
                     </AccordionItem>
                     )
