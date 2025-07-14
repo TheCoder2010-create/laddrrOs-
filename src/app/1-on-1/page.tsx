@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -46,11 +46,12 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];
@@ -167,6 +168,70 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
       </DialogFooter>
     </DialogContent>
   )
+}
+
+function ToDoSection({ role }: { role: Role }) {
+    const [toDoItems, setToDoItems] = useState<Feedback[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchToDos = useCallback(async () => {
+        setIsLoading(true);
+        const allFeedback = await getAllFeedback();
+        const currentUser = roleUserMapping[role];
+        
+        const userToDos = allFeedback.filter(item => 
+            item.status === 'To-Do' &&
+            (item.supervisor === currentUser.name || item.employee === currentUser.name)
+        );
+        
+        setToDoItems(userToDos.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
+        setIsLoading(false);
+    }, [role]);
+
+    useEffect(() => {
+        fetchToDos();
+        const handleDataUpdate = () => fetchToDos();
+        window.addEventListener('storage', handleDataUpdate);
+        window.addEventListener('feedbackUpdated', handleDataUpdate);
+        return () => {
+            window.removeEventListener('storage', handleDataUpdate);
+            window.removeEventListener('feedbackUpdated', handleDataUpdate);
+        }
+    }, [fetchToDos]);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full mt-8" />;
+    }
+
+    if (toDoItems.length === 0) {
+        return null; // Don't show the section if there are no to-dos
+    }
+
+    return (
+        <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-2">
+                <ListTodo className="h-5 w-5" />
+                Action Items & To-Dos
+            </h2>
+            <div className="space-y-4">
+                {toDoItems.map(item => (
+                    <div key={item.trackingId} className="border rounded-lg p-4">
+                        <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
+                        <div className="space-y-2 mt-3">
+                            {item.actionItems?.map(action => (
+                                <div key={action.id} className="flex items-center space-x-3">
+                                    <Checkbox id={`action-${action.id}`} checked={action.status === 'completed'} />
+                                    <label htmlFor={`action-${action.id}`} className={cn("text-sm leading-none", action.status === 'completed' && "line-through text-muted-foreground")}>
+                                        ({action.owner}) {action.text}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 }
 
 function HistorySection({ role }: { role: Role }) {
@@ -346,6 +411,7 @@ function HistorySection({ role }: { role: Role }) {
                                                 <h4 className="font-semibold text-lg flex items-center gap-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
                                                 <span 
                                                     className="text-xs text-muted-foreground font-mono cursor-text"
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     ID: {item.id}
                                                 </span>
@@ -704,6 +770,7 @@ function OneOnOnePage({ role }: { role: Role }) {
         )}
       </div>
 
+      <ToDoSection role={role} />
       <HistorySection role={role} />
     </div>
   );
