@@ -178,9 +178,11 @@ function ToDoSection({ role }: { role: Role }) {
         setIsLoading(true);
         const allFeedback = await getAllFeedback();
         
+        const currentUser = roleUserMapping[role];
+
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
-            (item.supervisor === role || item.employee === role)
+            (item.supervisor === currentUser.role || item.employee === currentUser.role)
         );
         
         setToDoItems(userToDos.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
@@ -202,33 +204,39 @@ function ToDoSection({ role }: { role: Role }) {
         return <Skeleton className="h-24 w-full mt-8" />;
     }
 
-    if (toDoItems.length === 0) {
-        return null;
-    }
-
     return (
         <div className="mt-8">
             <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-2">
                 <ListTodo className="h-5 w-5" />
                 Action Items & To-Dos
             </h2>
-            <div className="space-y-4">
-                {toDoItems.map(item => (
-                    <div key={item.trackingId} className="border rounded-lg p-4">
-                        <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
-                        <div className="space-y-2 mt-3">
-                            {item.actionItems?.map(action => (
-                                <div key={action.id} className="flex items-center space-x-3">
-                                    <Checkbox id={`action-${action.id}`} checked={action.status === 'completed'} />
-                                    <label htmlFor={`action-${action.id}`} className={cn("text-sm leading-none", action.status === 'completed' && "line-through text-muted-foreground")}>
-                                        ({action.owner}) {action.text}
-                                    </label>
-                                </div>
-                            ))}
+            {toDoItems.length > 0 ? (
+                <div className="space-y-4">
+                    {toDoItems.map(item => (
+                        <div key={item.trackingId} className="border rounded-lg p-4">
+                            <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
+                            <div className="space-y-2 mt-3">
+                                {item.actionItems?.map(action => (
+                                    <div key={action.id} className="flex items-center space-x-3">
+                                        <Checkbox id={`action-${action.id}`} checked={action.status === 'completed'} />
+                                        <label htmlFor={`action-${action.id}`} className={cn("text-sm leading-none", action.status === 'completed' && "line-through text-muted-foreground")}>
+                                            ({action.owner}) {action.text}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="mt-4 text-center py-12 border-2 border-dashed rounded-lg">
+                    <ListTodo className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold text-foreground">No Action Items</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Action items from your 1-on-1 sessions will appear here.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
@@ -804,5 +812,6 @@ export default function Home() {
     
 
     
+
 
 
