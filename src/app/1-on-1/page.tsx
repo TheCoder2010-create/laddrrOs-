@@ -332,7 +332,7 @@ function HistorySection({ role }: { role: Role }) {
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
                                         </p>
                                     </div>
-                                    <div className="hidden md:flex items-center gap-2">
+                                    <div className="flex items-center gap-2">
                                         {getStatusBadge()}
                                     </div>
                                 </div>

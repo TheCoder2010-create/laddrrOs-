@@ -21,7 +21,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock } from 'lucide-react';
+import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock, Timer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useRole } from '@/hooks/use-role';
@@ -46,7 +46,6 @@ const dataUriFromFile = (file: File): Promise<string> => {
         reader.readAsDataURL(file);
     });
 }
-
 
 function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, supervisor: string }) {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -95,6 +94,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
   // AI result state
   const [analysisResult, setAnalysisResult] = useState<AnalyzeOneOnOneOutput | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [finalRecordingDuration, setFinalRecordingDuration] = useState(0);
   
   const hasMedia = !!recordedAudioUri || !!audioFile || !!transcriptContent;
 
@@ -136,6 +136,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
         setRecordedAudioUri(audioUrl);
+        setFinalRecordingDuration(recordingTime);
         
         const audioDataUri = await dataUriFromFile(new File([audioBlob], "recording.webm"));
         form.setValue('conversationRecordingDataUri', audioDataUri);
@@ -512,9 +513,12 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                         <div className="p-3 rounded-md bg-muted/50 border mt-4 text-xs text-muted-foreground">
                             <h4 className="font-semibold text-foreground flex items-center gap-2 mb-2"><DatabaseZap className="h-4 w-4" /> Data Handling</h4>
                             <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'Pp')}</p>
+                                <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'PPP p')}</p>
                                 {analysisResult.dataHandling.recordingDeleted && (
-                                    <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'Pp')}</p>
+                                    <>
+                                        {finalRecordingDuration > 0 && <p className="flex items-center gap-1.5"><Timer className="h-3 w-3" /><strong>Session Duration:</strong> {formatRecordingTime(finalRecordingDuration)}</p>}
+                                        <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'PPP p')}</p>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -574,7 +578,3 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
-
-    
-
-    

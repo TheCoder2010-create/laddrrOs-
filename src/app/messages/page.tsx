@@ -50,7 +50,7 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
         }
     };
     
-    const wasHrAction = item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'HR Resolution');
+    const wasHrAction = item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'HR Responded to Retaliation Claim');
     const amResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Responded to Employee');
     const managerResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'Manager Resolution');
 
@@ -105,7 +105,7 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                      <div className="p-3 bg-muted/80 rounded-md border">
                         <p className="font-semibold text-foreground">HR Head's Final Resolution</p>
                         <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'HR Resolution')?.details}
+                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'HR Responded to Retaliation Claim')?.details}
                         </p>
                     </div>
                 )}
@@ -449,7 +449,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                                  />
                                  <div className="flex gap-2">
                                      <Button className="bg-black hover:bg-black/80 text-white" onClick={handleFinalHrDecision} disabled={isSubmittingFinal || !finalActionNotes}>
-                                        {isSubmittingFinal && <Loader2 className="mr-2 animate-spin"/>}
+                                        {isSubmittingFinal && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                                         Submit Final Action
                                      </Button>
                                      <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
