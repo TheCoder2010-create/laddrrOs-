@@ -370,7 +370,7 @@ function VaultContent() {
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
                         <AccordionTrigger className="w-full px-4 py-3 text-left">
-                            <div className="flex justify-between items-center w-full">
+                           <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     {feedback.criticality ? (
                                         <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality}</Badge>
@@ -379,7 +379,7 @@ function VaultContent() {
                                     )}
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 mr-2">
                                     <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'Open'}</Badge>
                                 </div>
                             </div>
