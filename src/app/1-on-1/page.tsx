@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -271,7 +271,8 @@ function HistorySection({ role }: { role: Role }) {
             </h2>
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 {history.map(item => {
-                    const insight = item.analysis.criticalCoachingInsight;
+                    const analysisResult = item.analysis;
+                    const insight = analysisResult.criticalCoachingInsight;
                     const insightStatus = insight?.status;
                     const currentUserName = roleUserMapping[role].name;
                     
@@ -280,10 +281,12 @@ function HistorySection({ role }: { role: Role }) {
 
                     const canSupervisorAct = isSupervisor && insightStatus === 'open';
                     const canSupervisorRetry = isSupervisor && insightStatus === 'pending_supervisor_retry';
-
-                    // Final decision states for badging
                     const finalDecisionEvent = insight?.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
+                    const amCoachingNotes = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
 
+                    const displayedMissedSignals = analysisResult?.missedSignals?.filter(
+                        signal => signal !== analysisResult.criticalCoachingInsight?.summary
+                    ) || [];
 
                     const getStatusBadge = () => {
                         if (!insight) return null;
@@ -316,9 +319,6 @@ function HistorySection({ role }: { role: Role }) {
                                 return null;
                         }
                     }
-                    
-                    const amCoachingNotes = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
-
 
                     return (
                         <AccordionItem value={item.id} key={item.id} className="px-4">
@@ -339,11 +339,77 @@ function HistorySection({ role }: { role: Role }) {
                             </AccordionTrigger>
                             <AccordionContent className="space-y-6 pt-2">
                                 
-                                {role !== 'Employee' && (
+                                {isSupervisor && (
                                     <div className="space-y-4">
                                         <div className="bg-muted/50 p-4 rounded-lg">
-                                            <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><UserCheck className="h-5 w-5 text-primary"/>Supervisor View</h4>
-                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.analysis.supervisorSummary}</p>
+                                            <h4 className="font-semibold text-lg flex items-center gap-2 mb-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
+                                            
+                                            <div className="space-y-6 text-primary/90">
+                                                {analysisResult.supervisorSummary && (
+                                                    <div>
+                                                        <h4 className="font-semibold text-foreground mb-2">Session Summary for Supervisor</h4>
+                                                        <p className="whitespace-pre-wrap">{analysisResult.supervisorSummary}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="p-3 rounded-md bg-background/50 border">
+                                                        <h4 className="font-semibold text-foreground flex items-center gap-2"><Star /> Leadership Score</h4>
+                                                        <p className="text-2xl font-bold">{analysisResult.leadershipScore}/10</p>
+                                                    </div>
+                                                    <div className="p-3 rounded-md bg-background/50 border">
+                                                        <h4 className="font-semibold text-foreground flex items-center gap-2"><BarChart /> Effectiveness Score</h4>
+                                                        <p className="text-2xl font-bold">{analysisResult.effectivenessScore}/10</p>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <h4 className="font-semibold text-foreground">Strengths Observed</h4>
+                                                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                                                        {analysisResult.strengthsObserved.map((strength, i) => <li key={i}><strong>{strength.action}:</strong> "{strength.example}"</li>)}
+                                                    </ul>
+                                                </div>
+
+                                                <div>
+                                                    <h4 className="font-semibold text-foreground">Action Items</h4>
+                                                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                                                        {analysisResult.actionItems.map((item, i) => <li key={i}><strong>{item.owner}:</strong> {item.task} {item.deadline && `(by ${item.deadline})`}</li>)}
+                                                    </ul>
+                                                </div>
+                                                
+                                                {analysisResult.coachingRecommendations.length > 0 && (
+                                                    <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 mt-4">
+                                                        <h4 className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2"><Zap /> Coaching Recommendations</h4>
+                                                        <ul className="list-disc pl-5 mt-2 space-y-1 text-green-600 dark:text-green-300">
+                                                            {analysisResult.coachingRecommendations.map((rec, i) => <li key={i}><strong>{rec.recommendation}:</strong> {rec.reason}</li>)}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                                
+                                                {displayedMissedSignals.length > 0 && (
+                                                     <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
+                                                        <h4 className="font-semibold text-yellow-700 dark:text-yellow-400">Missed Signals</h4>
+                                                         <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
+                                                            {displayedMissedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
+                                                        </ul>
+                                                    </div>
+                                                )}
+
+                                                {analysisResult.dataHandling && (
+                                                    <div className="p-3 rounded-md bg-muted/50 border mt-4 text-xs text-muted-foreground">
+                                                        <h4 className="font-semibold text-foreground flex items-center gap-2 mb-2"><DatabaseZap className="h-4 w-4" /> Data Handling</h4>
+                                                        <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                                            <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'PPP p')}</p>
+                                                            {analysisResult.dataHandling.recordingDeleted && (
+                                                                <>
+                                                                    <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'PPP p')}</p>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                            </div>
                                         </div>
 
                                         {insight && (
@@ -461,32 +527,32 @@ function HistorySection({ role }: { role: Role }) {
                                      <div className="space-y-4">
                                         <div className="bg-muted/50 p-4 rounded-lg">
                                             <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><EyeOff className="h-5 w-5 text-primary"/>Employee View</h4>
-                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.analysis.employeeSummary}</p>
+                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{analysisResult.employeeSummary}</p>
                                         
-                                            {item.analysis.employeeSwotAnalysis && (
+                                            {analysisResult.employeeSwotAnalysis && (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-muted-foreground">
                                                     <div className="space-y-1">
                                                         <h5 className="font-medium flex items-center gap-1.5 text-green-600 dark:text-green-400"><Lightbulb className="h-4 w-4"/>Strengths</h5>
                                                         <ul className="list-disc pl-5 text-sm">
-                                                            {item.analysis.employeeSwotAnalysis?.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                                                            {analysisResult.employeeSwotAnalysis?.strengths.map((s, i) => <li key={i}>{s}</li>)}
                                                         </ul>
                                                     </div>
                                                     <div className="space-y-1">
                                                         <h5 className="font-medium flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400"><TrendingDown className="h-4 w-4"/>Weaknesses</h5>
                                                         <ul className="list-disc pl-5 text-sm">
-                                                            {item.analysis.employeeSwotAnalysis?.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
+                                                            {analysisResult.employeeSwotAnalysis?.weaknesses.map((s, i) => <li key={i}>{s}</li>)}
                                                         </ul>
                                                     </div>
                                                     <div className="space-y-1">
                                                         <h5 className="font-medium flex items-center gap-1.5 text-blue-600 dark:text-blue-400"><BrainCircuit className="h-4 w-4"/>Opportunities</h5>
                                                         <ul className="list-disc pl-5 text-sm">
-                                                            {item.analysis.employeeSwotAnalysis?.opportunities.map((s, i) => <li key={i}>{s}</li>)}
+                                                            {analysisResult.employeeSwotAnalysis?.opportunities.map((s, i) => <li key={i}>{s}</li>)}
                                                         </ul>
                                                     </div>
                                                     <div className="space-y-1">
                                                         <h5 className="font-medium flex items-center gap-1.5 text-red-600 dark:text-red-500"><ShieldCheck className="h-4 w-4"/>Threats</h5>
                                                         <ul className="list-disc pl-5 text-sm">
-                                                           {item.analysis.employeeSwotAnalysis?.threats.map((s, i) => <li key={i}>{s}</li>)}
+                                                           {analysisResult.employeeSwotAnalysis?.threats.map((s, i) => <li key={i}>{s}</li>)}
                                                         </ul>
                                                     </div>
                                                 </div>
