@@ -424,16 +424,14 @@ function ActionItemsContent() {
     setIsLoading(true);
     try {
       const allFeedback = await getAllFeedback();
-      const myFeedback = allFeedback.filter(f => {
-        // A case is relevant if user is assigned OR it's a collaborative HR case and user is the Manager or HR Head.
-        const isAssignedToMe = f.assignedTo === role;
-        
-        // This is the new logic for collaborative anonymous cases
-        const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
 
-        const isActive = f.status !== 'Resolved' && f.status !== 'Open' && f.status !== 'Closed';
+      const myFeedback = allFeedback.filter(f => {
+        // A case is relevant if the user is currently assigned, is a collaborator, or was ever involved in the audit trail.
+        const isCurrentlyAssigned = f.assignedTo === role;
+        const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === f.assignedTo);
+        const wasInvolved = f.auditTrail?.some(e => e.actor === role) ?? false;
         
-        return (isActive && (isAssignedToMe || isCollaboratorOnAnonymousCase)) || f.status === 'Resolved';
+        return isCurrentlyAssigned || isCollaboratorOnAnonymousCase || wasInvolved;
       });
 
       const active = myFeedback.filter(f => f.status !== 'Resolved' && f.status !== 'Closed');
@@ -445,7 +443,11 @@ function ActionItemsContent() {
         return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
       });
 
-      closed.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      closed.sort((a, b) => {
+        const bDate = b.auditTrail?.find(e => e.event === 'Resolved' || e.event === 'Closed')?.timestamp || b.submittedAt;
+        const aDate = a.auditTrail?.find(e => e.event === 'Resolved' || e.event === 'Closed')?.timestamp || a.submittedAt;
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      });
 
       setActiveItems(active);
       setClosedItems(closed);
