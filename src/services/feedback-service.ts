@@ -814,15 +814,15 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     } else {
         const escalationDetails = `Resolution not accepted. Escalating further.${comments ? `\nComments: ${comments}` : ''}`;
         
-        // If it's a retaliation claim being rejected, it closes.
+        // If it's a retaliation claim being rejected, route it back to HR for final disposition.
         if(item.criticality === 'Retaliation Claim') {
-            item.status = 'Closed';
-            item.resolution = `Case closed after employee rejected HR's resolution. Last response from HR: ${item.supervisorUpdate}`;
-            item.auditTrail?.push({
-                event: 'Case Closed, Not Resolved',
+            item.status = 'Pending HR Action';
+            item.assignedTo = 'HR Head';
+             item.auditTrail?.push({
+                event: 'Final Disposition Required',
                 timestamp: new Date(),
                 actor: 'System',
-                details: `Retaliation claim workflow concluded without employee satisfaction. ${escalationDetails}`
+                details: `Case returned to HR for final action after employee rejected resolution. ${escalationDetails}`
              });
 
             saveFeedbackToStorage(allFeedback);
