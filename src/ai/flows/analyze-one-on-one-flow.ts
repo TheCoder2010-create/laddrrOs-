@@ -126,7 +126,7 @@ Analysis Instructions:
 
 If the input is empty or non-meaningful (e.g., silence, test phrases), return a JSON with a basic explanation. Otherwise, generate the full report:
 
-1.  **supervisorSummary**: A comprehensive summary for the supervisor. Quote 1-2 key phrases to anchor the summary. Describe the tone, energy, clarity, and who led the conversation more (employee/supervisor).
+1.  **supervisorSummary**: A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback.
 2.  **employeeSummary**: A concise, forward-looking summary for the employee. Focus on key takeaways, agreed-upon action items, and positive reinforcement or growth opportunities discussed. Frame it constructively.
 3.  **employeeSwotAnalysis**: A SWOT analysis for the employee based on the conversation. Be objective and base it on evidence from the inputs.
 4.  **Leadership Score (1-10)**: Rate the supervisor based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
@@ -188,4 +188,3 @@ const analyzeOneOnOneFlow = ai.defineFlow(
   }
 );
     
-
