@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
+import { summarizeAnonymousFeedback } from '@/ai/flows/summarize-anonymous-feedback-flow';
 
 export interface AuditEvent {
   event: string;
@@ -468,19 +469,10 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const trackingId = uuidv4();
   const submittedAt = new Date();
 
-  // In a real app, this would be an AI call. For the prototype, we use mock data.
-  // const { summary, criticality, criticalityReasoning } = await analyzeFeedback(input);
-  const summary = "AI-generated summary of the user's feedback message.";
-  const criticality = (['Low', 'Medium', 'High', 'Critical'] as const)[Math.floor(Math.random() * 4)];
-  const criticalityReasoning = "AI-generated reasoning for the criticality assessment based on keywords and sentiment.";
-
   const newFeedback: Feedback = {
     ...input,
     trackingId,
     submittedAt,
-    summary,
-    criticality,
-    criticalityReasoning,
     viewed: false,
     status: 'Open',
     assignedTo: ['HR Head'],
@@ -492,12 +484,6 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
         actor: 'Anonymous',
         details: 'Feedback was received by the system.',
       },
-      {
-        event: 'AI Analysis Completed',
-        timestamp: new Date(submittedAt.getTime() + 1000), // Simulate a small delay
-        actor: 'HR Head', // Represents the system AI
-        details: `AI assessed criticality as ${criticality}.`,
-      }
     ]
   };
 
@@ -505,6 +491,42 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   saveFeedbackToStorage(allFeedback);
   
   return { trackingId };
+}
+
+export async function summarizeFeedback(trackingId: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) {
+        throw new Error("Feedback item not found.");
+    }
+
+    const feedback = allFeedback[feedbackIndex];
+    if (feedback.summary) {
+        return; // Already summarized
+    }
+
+    // Call the new on-demand summarization flow
+    const analysis = await summarizeAnonymousFeedback({
+        subject: feedback.subject,
+        message: feedback.message,
+    });
+
+    // Update the feedback item with the analysis results
+    feedback.summary = analysis.summary;
+    feedback.criticality = analysis.criticality;
+    feedback.criticalityReasoning = analysis.criticalityReasoning;
+
+    if (!feedback.auditTrail) {
+        feedback.auditTrail = [];
+    }
+    feedback.auditTrail.push({
+        event: 'AI Analysis Completed',
+        timestamp: new Date(),
+        actor: 'HR Head', // Attributed to the user who triggered it
+        details: `AI assessed criticality as ${analysis.criticality}.`,
+    });
+    
+    saveFeedbackToStorage(allFeedback);
 }
 
 export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {

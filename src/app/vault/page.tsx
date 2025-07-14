@@ -10,13 +10,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, assignFeedback, addFeedbackUpdate, resolveFeedback, markAllFeedbackAsViewed } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, assignFeedback, addFeedbackUpdate, resolveFeedback, markAllFeedbackAsViewed, summarizeFeedback } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2 } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { availableRolesForAssignment } from '@/hooks/use-role';
+import { useToast } from '@/hooks/use-toast';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -232,6 +233,8 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 function VaultContent() {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true);
@@ -266,6 +269,27 @@ function VaultContent() {
         window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
   }, [fetchFeedback]);
+  
+  const handleSummarize = async (trackingId: string) => {
+    setIsSummarizing(trackingId);
+    try {
+        await summarizeFeedback(trackingId);
+        toast({
+            title: "Analysis Complete",
+            description: "AI summary and criticality have been added to the case.",
+        });
+        fetchFeedback(); // Refresh data to show new summary
+    } catch (error) {
+        console.error("Failed to summarize feedback", error);
+        toast({
+            variant: "destructive",
+            title: "Analysis Failed",
+            description: "The AI summary could not be generated.",
+        });
+    } finally {
+        setIsSummarizing(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -318,12 +342,16 @@ function VaultContent() {
                 {allFeedback.map((feedback) => {
                     const config = criticalityConfig[feedback.criticality || 'Low'];
                     const Icon = config?.icon || Info;
+                    const isSummarizingThis = isSummarizing === feedback.trackingId;
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
                         <div className="flex items-center w-full">
                             <AccordionTrigger className="flex-1 text-left px-4 py-3">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality || 'N/A'}</Badge>
+                                    {feedback.criticality ?
+                                        <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality}</Badge>
+                                        : <Badge variant="outline">Unanalyzed</Badge>
+                                    }
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
                             </AccordionTrigger>
@@ -355,9 +383,25 @@ function VaultContent() {
                                      <p><span className="font-semibold">Reasoning:</span> {feedback.criticalityReasoning}</p>
                                 </div>
                             )}
-
+                            
                             <div className="space-y-2">
-                                <Label className="text-base">Original Submission</Label>
+                                <div className="flex justify-between items-center">
+                                    <Label className="text-base">Original Submission</Label>
+                                    {!feedback.summary && (
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleSummarize(feedback.trackingId)}
+                                            disabled={isSummarizingThis}
+                                        >
+                                            {isSummarizingThis ? (
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Bot className="mr-2 h-4 w-4" />
+                                            )}
+                                            Summarize
+                                        </Button>
+                                    )}
+                                </div>
                                 <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
                             </div>
 
