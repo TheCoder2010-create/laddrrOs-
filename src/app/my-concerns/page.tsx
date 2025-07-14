@@ -328,8 +328,11 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Are you sure you want to reveal your identity?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This action cannot be undone. Once revealed, your name will be attached to this case.
-                                            <span className="block font-bold mt-4">A new "Retaliation/Bias Observed" button will become available for you on this case. You can use this button at any time, even after the case is closed, to report any unfair treatment. Please provide any information that would substantiate your claim when using this feature.</span>
+                                            This action is permanent — once revealed, your name will be attached to this case.
+                                            <br /><br />
+                                            To protect you, a new button labeled "Report Retaliation or Bias" will become available on this case. You may use this feature at any time, even after the case is closed, to report any unfair treatment.
+                                            <br /><br />
+                                            When reporting, please include any information that can help support your concern.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
