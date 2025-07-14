@@ -168,7 +168,6 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         onUpdate();
     }
     
-    // Only HR Head can assign or resolve. Any assignee can add an update.
     const canTakeAction = role === 'HR Head' || feedback.assignedTo?.includes(role!);
 
     if (!canTakeAction || feedback.status === 'Resolved') return null;
@@ -177,7 +176,6 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         <div className="p-4 border-t mt-4 space-y-6">
             <Label className="text-base font-semibold">Case Management</Label>
             
-            {/* Assignment Section (HR Head only) */}
             {role === 'HR Head' && (
                 <div className="p-4 border rounded-lg bg-background space-y-3">
                     <Label className="font-medium">Assign Case</Label>
@@ -185,11 +183,11 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         {availableRolesForAssignment.map(r => (
                             <div key={r} className="flex items-center space-x-2">
                                 <Checkbox
-                                    id={`assign-${r}`}
+                                    id={`assign-${r}-${feedback.trackingId}`}
                                     checked={assignees.includes(r)}
                                     onCheckedChange={() => handleAssigneeChange(r)}
                                 />
-                                <Label htmlFor={`assign-${r}`} className="font-normal">{r}</Label>
+                                <Label htmlFor={`assign-${r}-${feedback.trackingId}`} className="font-normal">{r}</Label>
                             </div>
                         ))}
                     </div>
@@ -202,7 +200,6 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                 </div>
             )}
 
-            {/* Update Section (All assignees) */}
             <div className="p-4 border rounded-lg bg-background space-y-3">
                 <Label className="font-medium">Add Update</Label>
                 <Textarea 
@@ -213,7 +210,6 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                 <Button onClick={handleAddUpdate} disabled={!updateComment}>Add Update</Button>
             </div>
 
-            {/* Resolution Section (HR Head only) */}
             {role === 'HR Head' && (
                 <div className="p-4 border rounded-lg bg-background space-y-3">
                     <Label className="font-medium">Resolve Case</Label>
@@ -242,7 +238,6 @@ function VaultContent() {
       const feedback = await getAllFeedback();
       const vaultItems = feedback.filter(f => f.source === 'Voice – In Silence');
       setAllFeedback(vaultItems);
-      // Mark only vault items as viewed
       const unreadVaultIds = vaultItems.filter(c => !c.viewed).map(c => c.trackingId);
       if (unreadVaultIds.length > 0) {
         await markAllFeedbackAsViewed(unreadVaultIds);
@@ -278,7 +273,7 @@ function VaultContent() {
             title: "Analysis Complete",
             description: "AI summary and criticality have been added to the case.",
         });
-        fetchFeedback(); // Refresh data to show new summary
+        fetchFeedback();
     } catch (error) {
         console.error("Failed to summarize feedback", error);
         toast({
@@ -426,7 +421,6 @@ export default function VaultPage() {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const { role } = useRole();
 
-    // This effect ensures that if the user logs out or switches role, they must re-authenticate to the vault.
     useEffect(() => {
         setIsUnlocked(false);
     }, [role]);
