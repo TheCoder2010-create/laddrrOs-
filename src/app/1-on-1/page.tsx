@@ -178,7 +178,6 @@ function ToDoSection({ role }: { role: Role }) {
         setIsLoading(true);
         const allFeedback = await getAllFeedback();
         
-        // A "To-Do" item is primarily for the supervisor, but both participants should see it.
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
             (item.supervisor === role || item.employee === role)
@@ -204,7 +203,7 @@ function ToDoSection({ role }: { role: Role }) {
     }
 
     if (toDoItems.length === 0) {
-        return null; // Don't show the section if there are no to-dos
+        return null;
     }
 
     return (
@@ -769,8 +768,8 @@ function OneOnOnePage({ role }: { role: Role }) {
         )}
       </div>
 
-      <HistorySection role={role} />
       <ToDoSection role={role} />
+      <HistorySection role={role} />
     </div>
   );
 }
@@ -805,4 +804,5 @@ export default function Home() {
     
 
     
+
 
