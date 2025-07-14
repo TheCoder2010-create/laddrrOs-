@@ -413,7 +413,7 @@ function AcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: (
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                     <Button onClick={() => handleAcknowledge(true)} variant="success">Accept Resolution</Button>
-                    <Button onClick={() => handleAcknowledge(false)} variant="destructive">I'm Not Satisfied, Escalate</Button>
+                    <Button onClick={() => handleAcknowledge(false)} variant="destructive">I'm Not Satisfied, {item.criticality === 'Retaliation Claim' ? 'Close Case' : 'Escalate'}</Button>
                 </div>
             </CardContent>
         </Card>
