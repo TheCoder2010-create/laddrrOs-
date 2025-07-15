@@ -76,7 +76,14 @@ export default function DevelopmentPlanWidget() {
     const debouncedProgressUpdate = useDebouncedCallback((historyId: string, recId: string, newProgress: number) => {
         const plan = activePlans.find(p => p.historyId === historyId && p.rec.id === recId);
         if (plan) {
-            setCheckInRec({ historyId, rec: plan.rec, newProgress });
+            // Only trigger check-in if progress has increased
+            if (newProgress > (plan.rec.progress ?? 0)) {
+                setCheckInRec({ historyId, rec: plan.rec, newProgress });
+            } else {
+                // If user slides backward, reset the UI by re-fetching
+                // This will snap the slider back to its saved state.
+                fetchActivePlans();
+            }
         }
     }, 500);
 
@@ -98,9 +105,16 @@ export default function DevelopmentPlanWidget() {
             setCheckInRec(null);
             setCheckInNotes('');
             setIsSubmittingCheckIn(false);
-            fetchActivePlans(); // re-fetch for consistency
+            fetchActivePlans();
         });
     }
+    
+    const handleCheckInCancel = () => {
+        setCheckInRec(null);
+        // Re-fetch to reset slider state to last saved value
+        fetchActivePlans();
+    }
+
 
     if (isLoading) {
         return <Skeleton className="h-48 w-full" />;
@@ -112,7 +126,7 @@ export default function DevelopmentPlanWidget() {
 
     return (
         <>
-            <Dialog open={!!checkInRec} onOpenChange={() => setCheckInRec(null)}>
+            <Dialog open={!!checkInRec} onOpenChange={(isOpen) => !isOpen && handleCheckInCancel()}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>How is it going?</DialogTitle>
@@ -131,7 +145,7 @@ export default function DevelopmentPlanWidget() {
                         />
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setCheckInRec(null)}>Cancel</Button>
+                        <Button variant="ghost" onClick={handleCheckInCancel}>Cancel</Button>
                         <Button onClick={handleCheckInSubmit} disabled={isSubmittingCheckIn || !checkInNotes}>
                             {isSubmittingCheckIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Check-in
@@ -140,7 +154,7 @@ export default function DevelopmentPlanWidget() {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={!!historyInView} onOpenChange={() => setHistoryInView(null)}>
+            <Dialog open={!!historyInView} onOpenChange={setHistoryInView}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Check-in History</DialogTitle>
@@ -148,7 +162,7 @@ export default function DevelopmentPlanWidget() {
                             Your progress journal for "{historyInView?.area}".
                         </DialogDescription>
                     </DialogHeader>
-                    <ScrollArea className="max-h-[60vh] pr-4">
+                     <ScrollArea className="max-h-[60vh] pr-4">
                         <div className="py-4 space-y-4">
                             {historyInView?.checkIns && historyInView.checkIns.length > 0 ? (
                                 historyInView.checkIns.slice().reverse().map(checkIn => (
@@ -184,23 +198,27 @@ export default function DevelopmentPlanWidget() {
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-4 border rounded-lg bg-muted/50 flex flex-col justify-between min-h-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
+                                className="p-4 border rounded-lg bg-muted/50 flex flex-col justify-between min-h-[140px] cursor-pointer hover:bg-muted/80 transition-colors"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
                                 tabIndex={0}
                             >
                                 <div className="flex-1 space-y-2">
-                                    <div className="flex justify-between items-start gap-4">
-                                        <p className="font-semibold text-foreground leading-tight truncate">{rec.area}</p>
-                                        <p className="text-xl font-bold text-primary flex-shrink-0">{rec.progress ?? 0}%</p>
+                                     <div className="flex justify-between items-start gap-2">
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-foreground leading-tight truncate">{rec.area}</p>
+                                        </div>
+                                        <div className="flex-shrink-0">
+                                             <p className="text-2xl font-bold text-primary text-right">{rec.progress ?? 0}%</p>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <RecommendationIcon type={rec.type} />
                                         <span className="truncate">{rec.type}: {rec.resource}</span>
                                     </div>
                                 </div>
-                                <div className="pt-3" onClick={(e) => e.stopPropagation()}>
+                                <div className="pt-3 w-1/2 mx-auto" onClick={(e) => e.stopPropagation()}>
                                     <Slider
                                         defaultValue={[rec.progress ?? 0]}
                                         max={100}
