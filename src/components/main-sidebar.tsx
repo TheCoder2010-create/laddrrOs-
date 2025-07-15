@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -52,8 +53,10 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       // Action items count
       setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole as any) && f.status !== 'Resolved' && f.status !== 'Closed').length);
 
-      // Messages count (Critical Insights)
-      const messageNotifications = history.filter(h => {
+      // Messages count
+      let totalMessages = 0;
+      // Critical Insights
+      totalMessages += history.filter(h => {
           const insight = h.analysis.criticalCoachingInsight;
           if (!insight || insight.status === 'resolved') return false;
 
@@ -64,7 +67,11 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           
           return isEmployeeMatch || isAmMatch || isManagerMatch || isHrMatch;
       }).length;
-      setMessageCount(messageNotifications);
+      
+      // General Notifications
+      totalMessages += feedback.filter(f => f.status === 'Pending Acknowledgement' && f.assignedTo?.includes(currentRole as any)).length;
+      
+      setMessageCount(totalMessages);
       
       // Coaching & Development Count
       let devCount = 0;

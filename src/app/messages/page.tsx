@@ -7,8 +7,8 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, acknowledgeDeclinedRecommendation } from '@/services/feedback-service';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon, Info } from 'lucide-react';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, acknowledgeDeclinedRecommendation, getAllFeedback, Feedback, resolveFeedback } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -464,19 +464,64 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     );
 }
 
+function GeneralNotificationWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleAcknowledge = async () => {
+        setIsSubmitting(true);
+        try {
+            // Resolve the feedback item, which serves as acknowledging it
+            await resolveFeedback(item.trackingId, role!, "Notification acknowledged.");
+            toast({ title: "Notification Acknowledged" });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to acknowledge notification", error);
+            toast({ variant: 'destructive', title: "Acknowledgement Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    return (
+        <Card className="border-green-500/50">
+            <CardHeader className="bg-green-500/10">
+                <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                    <Info className="h-6 w-6" />
+                    For Your Information
+                </CardTitle>
+                <CardDescription>
+                   {item.subject}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.message}</p>
+            </CardContent>
+             <CardFooter>
+                <Button variant="success" onClick={handleAcknowledge} disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Acknowledge
+                </Button>
+            </CardFooter>
+        </Card>
+    )
+}
+
 function MessagesContent({ role }: { role: Role }) {
-  const [messages, setMessages] = useState<OneOnOneHistoryItem[]>([]);
+  const [messages, setMessages] = useState<(OneOnOneHistoryItem | Feedback)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
     setIsLoading(true);
     const history = await getOneOnOneHistory();
+    const feedback = await getAllFeedback();
     const currentUser = roleUserMapping[role];
 
-    const userMessages: OneOnOneHistoryItem[] = [];
+    const userMessages: (OneOnOneHistoryItem | Feedback)[] = [];
 
+    // Critical Insight Escalations
     history.forEach(item => {
-        // Critical Insight Escalations
         const insight = item.analysis.criticalCoachingInsight;
         if (insight && insight.status !== 'resolved') {
             let include = false;
@@ -500,7 +545,20 @@ function MessagesContent({ role }: { role: Role }) {
         }
     });
 
-    setMessages(userMessages.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    // General notifications (e.g., from accepted coaching plans)
+    feedback.forEach(item => {
+        if (item.status === 'Pending Acknowledgement' && item.assignedTo?.includes(role)) {
+            userMessages.push(item);
+        }
+    });
+
+    userMessages.sort((a, b) => {
+        const dateA = 'submittedAt' in a ? a.submittedAt : a.date;
+        const dateB = 'submittedAt' in b ? b.submittedAt : b.date;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+    setMessages(userMessages);
     setIsLoading(false);
   }, [role]);
 
@@ -520,16 +578,24 @@ function MessagesContent({ role }: { role: Role }) {
 
   const hasMessages = messages.length > 0;
 
-  const renderWidgets = (item: OneOnOneHistoryItem) => {
-    // Critical Insight Escalation Widget
-    const insight = item.analysis.criticalCoachingInsight;
-    if (insight && insight.status !== 'resolved') {
-        const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
-        if (canEmployeeAcknowledge) {
-            return <AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
+  const renderWidgets = (item: OneOnOneHistoryItem | Feedback) => {
+    // Check if it's a OneOnOneHistoryItem (has 'analysis' property)
+    if ('analysis' in item) {
+        const insight = item.analysis.criticalCoachingInsight;
+        if (insight && insight.status !== 'resolved') {
+            const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
+            if (canEmployeeAcknowledge) {
+                return <AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
+            }
+            if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
+                return <HrReviewWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
+            }
         }
-        if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
-            return <HrReviewWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
+    } 
+    // Check if it's a Feedback item (has 'trackingId' property)
+    else if ('trackingId' in item) {
+        if (item.status === 'Pending Acknowledgement') {
+            return <GeneralNotificationWidget key={item.trackingId} item={item} onUpdate={fetchMessages} />;
         }
     }
     return null;

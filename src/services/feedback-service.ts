@@ -27,6 +27,7 @@ export type FeedbackStatus =
   | 'Pending Identity Reveal'
   | 'Pending HR Action'
   | 'Pending Employee Acknowledgment' // New status for identified concerns
+  | 'Pending Acknowledgement' // For FYI notifications
   | 'To-Do'
   | 'Resolved'
   | 'Closed'
@@ -516,6 +517,28 @@ export async function updateCoachingRecommendationStatus(
             timestamp: new Date().toISOString(),
             details: `Plan set from ${data?.startDate ? new Date(data.startDate).toLocaleDateString() : 'N/A'} to ${data?.endDate ? new Date(data.endDate).toLocaleDateString() : 'N/A'}.`
         });
+
+        // Create notification for AM and Manager
+        const allFeedback = getFeedbackFromStorage();
+        const notification: Feedback = {
+            trackingId: uuidv4(),
+            subject: `Development Plan Started by ${supervisorName}`,
+            message: `${supervisorName} has accepted a coaching recommendation and started a new development plan for the area: "${recommendation.area}".\n\n**Recommendation:** ${recommendation.recommendation}\n**Resource:** ${recommendation.type} - "${recommendation.resource}"\n**Timeline:** ${data?.startDate ? new Date(data.startDate).toLocaleDateString() : 'N/A'} to ${data?.endDate ? new Date(data.endDate).toLocaleDateString() : 'N/A'}.`,
+            submittedAt: new Date(),
+            criticality: 'Low',
+            status: 'Pending Acknowledgement',
+            assignedTo: ['AM', 'Manager'],
+            viewed: false,
+            auditTrail: [{
+                event: 'Notification Created',
+                timestamp: new Date(),
+                actor: 'System',
+                details: `Automated notification for accepted coaching plan by ${supervisorName}.`
+            }]
+        };
+        allFeedback.unshift(notification);
+        saveFeedbackToStorage(allFeedback);
+
     } else if (status === 'declined') {
         recommendation.status = 'pending_am_review';
         recommendation.rejectionReason = data?.reason;
@@ -1199,7 +1222,7 @@ export async function requestIdentityReveal(trackingId: string, actor: Role, rea
     const item = allFeedback[feedbackIndex];
     item.status = 'Pending Identity Reveal';
 
-    const acknowledgmentText = "Manager Acknowledgment: I acknowledge my responsibility to protect the employee from bias or retaliation in this process.";
+    const acknowledgmentText = "Manager Acknowledgment: I acknowledge my responsibility to protect the employee from any form of bias, retaliation, or adverse consequence during this process. I am committed to handling this matter with fairness, discretion, and confidentiality.";
     const fullDetails = `${acknowledgmentText}\n\nManager's Reason: ${reason}`;
 
     item.auditTrail?.push({
