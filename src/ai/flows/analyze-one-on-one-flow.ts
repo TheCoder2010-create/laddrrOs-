@@ -119,7 +119,7 @@ Conversation Transcript: {{{conversationTranscript}}}
 Audio Recording (Primary source of truth): {{media url=conversationRecordingDataUri}}
 {{/if}}
 Past Declined Coaching Areas: {{#if pastDeclinedRecommendationAreas}}{{#each pastDeclinedRecommendationAreas}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None{{/if}}
-Active Development Goals: {{#if activeDevelopmentGoals}}{{#each activeDevelopmentGoals}}{{this.area}}: {{this.title}}{{/each}}{{else}}None{{/if}}
+Active Development Goals: {{#if activeDevelopmentGoals}}{{#each activeDevelopmentGoals}}* Goal Area: {{this.area}} (Title: {{this.title}}). User's check-in notes: "{{this.notes}}"{{/each}}{{else}}None{{/if}}
 Language Locale: {{languageLocale}}
 
 Analysis Instructions:
@@ -142,7 +142,12 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   Write a compelling \`justification\` explaining why this resource is a good fit.
     *   The \`status\` must be "pending".
 8.  **Action Items**: List all concrete tasks for both employee and supervisor, including deadlines if stated.
-9.  **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided) Analyze if the supervisor showed growth towards a goal. If so, summarize the application with a supporting quote. If mastery is shown, return the completedGoalId.
+9.  **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided). Analyze if the supervisor had an opportunity to apply their active learning goals in this session.
+    *   For each active goal, review the user's check-in notes for context on what they are learning/practicing.
+    *   Determine if a situation arose where this learning could be applied.
+    *   If the learning was applied, set \`didApply\` to true and provide an \`applicationExample\` with a supporting quote. This is an appreciation of their effort.
+    *   If an opportunity existed but was missed, set \`didApply\` to false and provide a \`missedOpportunityExample\` with a quote and a brief explanation of how they could have applied their learning. This is a notification.
+    *   If the supervisor has clearly mastered the goal (e.g., applied it consistently and effectively), set \`completedGoalId\` to the ID of the goal and provide a \`masteryJustification\` explaining why they've mastered it.
 10. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
 11. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
     *   **Trigger Conditions**: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, potential HR issues (e.g., statements like "I hate this workplace" or personal attacks like "you are a bad TL"). If a signal meets these conditions, it MUST be a Critical Coaching Insight and NOT a Missed Signal.

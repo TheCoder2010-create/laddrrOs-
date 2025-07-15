@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote, CheckCircle2, XCircle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -440,6 +440,34 @@ function HistorySection({ role }: { role: Role }) {
                                                         <p className="text-2xl font-bold">{analysisResult.effectivenessScore}/10</p>
                                                     </div>
                                                 </div>
+
+                                                {analysisResult.coachingImpactAnalysis && analysisResult.coachingImpactAnalysis.length > 0 && (
+                                                    <div>
+                                                        <h4 className="font-semibold text-foreground">Coaching Impact Analysis</h4>
+                                                        <div className="mt-2 space-y-3">
+                                                            {analysisResult.coachingImpactAnalysis.map((impact, i) => (
+                                                                <div key={i} className={cn(
+                                                                    "p-3 border rounded-md",
+                                                                    impact.didApply ? "bg-green-500/10 border-green-500/20" : "bg-yellow-500/10 border-yellow-500/20"
+                                                                )}>
+                                                                    <p className={cn(
+                                                                        "font-semibold flex items-center gap-2",
+                                                                        impact.didApply ? "text-green-700 dark:text-green-400" : "text-yellow-700 dark:text-yellow-400"
+                                                                    )}>
+                                                                        {impact.didApply ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                                                                        {impact.didApply ? 'Learning Applied' : 'Missed Opportunity'}: {impact.goalArea}
+                                                                    </p>
+                                                                    <p className={cn(
+                                                                        "text-sm mt-1 whitespace-pre-wrap",
+                                                                        impact.didApply ? "text-green-600 dark:text-green-300" : "text-yellow-600 dark:text-yellow-300"
+                                                                    )}>
+                                                                        {impact.didApply ? impact.applicationExample : impact.missedOpportunityExample}
+                                                                    </p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 <div>
                                                     <h4 className="font-semibold text-foreground">Strengths Observed</h4>

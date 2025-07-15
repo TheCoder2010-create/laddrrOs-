@@ -187,6 +187,24 @@ export async function getDeclinedCoachingAreasForSupervisor(supervisorName: stri
     return Array.from(declinedAreas);
 }
 
+export async function getActiveCoachingPlansForSupervisor(supervisorName: string): Promise<{ historyId: string, rec: CoachingRecommendation }[]> {
+    const history = await getOneOnOneHistory();
+    const activePlans: { historyId: string, rec: CoachingRecommendation }[] = [];
+
+    history.forEach(item => {
+        if (item.supervisorName === supervisorName) {
+            item.analysis.coachingRecommendations.forEach(rec => {
+                if (rec.status === 'accepted') {
+                    activePlans.push({ historyId: item.id, rec });
+                }
+            });
+        }
+    });
+
+    return activePlans;
+}
+
+
 export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id' | 'assignedTo'>): Promise<OneOnOneHistoryItem> {
     const history = await getOneOnOneHistory();
     const newHistoryItem: OneOnOneHistoryItem = { ...item, id: uuidv4(), assignedTo: null };

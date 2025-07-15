@@ -42,7 +42,7 @@ export const formSchema = z.object({
   oneOnOneId: z.string().optional(),
   conversationRecordingDataUri: z.string().optional().describe("A data URI of the recorded audio."),
   pastDeclinedRecommendationAreas: z.array(z.string()).optional(),
-  activeDevelopmentGoals: z.array(z.object({ area: z.string(), title: z.string() })).optional(),
+  activeDevelopmentGoals: z.array(z.object({ id: z.string(), area: z.string(), title: z.string(), notes: z.string() })).optional(),
   languageLocale: z.string().default('en'),
 }).transform(data => ({
   ...data,
@@ -113,6 +113,19 @@ export const CoachingRecommendationSchema = z.object({
 
 export type CoachingRecommendation = z.infer<typeof CoachingRecommendationSchema>;
 
+
+const CoachingImpactAnalysisSchema = z.object({
+    goalId: z.string().describe("The ID of the active development goal being analyzed."),
+    goalArea: z.string().describe("The area of the development goal, e.g., 'Active Listening'."),
+    didApply: z.boolean().describe("Whether the supervisor successfully applied the learning from this goal."),
+    applicationExample: z.string().optional().describe("An appreciation message with a quote showing successful application. Used when didApply is true."),
+    missedOpportunityExample: z.string().optional().describe("A notification with a quote and explanation of a missed opportunity. Used when didApply is false."),
+    completedGoalId: z.string().optional().describe("The ID of the development goal if mastery was demonstrated."),
+    masteryJustification: z.string().optional().describe("Justification for why the goal is considered mastered."),
+}).describe("Analysis of how the supervisor's actions relate to active development goals.");
+
+export type CoachingImpactAnalysis = z.infer<typeof CoachingImpactAnalysisSchema>;
+
 // Zod schema for the new, comprehensive structured output from the AI
 export const AnalyzeOneOnOneOutputSchema = z.object({
   supervisorSummary: z.string().describe("A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback."),
@@ -135,10 +148,7 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
     task: z.string(),
     deadline: z.string().optional(),
   })).describe("A list of clear, actionable items for the employee or supervisor, including deadlines if mentioned."),
-  coachingImpactAnalysis: z.object({
-    analysis: z.string().describe("Analysis of how the supervisor's actions relate to active development goals."),
-    completedGoalId: z.string().optional().describe("The ID of the development goal if mastery was demonstrated."),
-  }).optional().describe("Analysis of coaching impact against active development goals."),
+  coachingImpactAnalysis: z.array(CoachingImpactAnalysisSchema).optional().describe("A list of analyses, one for each active development goal provided."),
   missedSignals: z.array(z.string()).optional().describe("A list of subtle signals that the supervisor failed to explore."),
   criticalCoachingInsight: CriticalCoachingInsightSchema.optional().describe("An insight generated ONLY if an unaddressed red flag is present."),
   biasFairnessCheck: z.object({

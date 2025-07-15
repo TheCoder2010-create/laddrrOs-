@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput, type CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getDeclinedCoachingAreasForSupervisor } from '@/services/feedback-service';
+import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForSupervisor } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -21,13 +21,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock, Timer, BookOpen, Podcast, Newspaper, GraduationCap } from 'lucide-react';
+import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock, Timer, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useRole } from '@/hooks/use-role';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { Lightbulb } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Define meeting type locally as it's not exported from the main page
 interface Meeting {
@@ -208,14 +208,23 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                 analysis: { supervisorSummary: '', employeeSummary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false }, employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] } }, 
             });
 
-            // Fetch past declined coaching areas to provide context to the AI
+            // Fetch contextual data for the AI
             const pastDeclinedAreas = await getDeclinedCoachingAreasForSupervisor(supervisor);
+            const activePlans = await getActiveCoachingPlansForSupervisor(supervisor);
+            const activeDevelopmentGoals = activePlans.map(p => ({
+                id: p.rec.id,
+                area: p.rec.area,
+                title: p.rec.resource,
+                notes: p.rec.checkIns?.slice(-1)[0]?.notes || 'No check-ins yet.'
+            }));
 
-            // Pass the new history ID and past declined areas to the analysis flow
+
+            // Pass the new history ID and context to the analysis flow
             const result = await analyzeOneOnOne({
                 ...values,
                 oneOnOneId: historyItem.id, // Pass the ID for linking
-                pastDeclinedRecommendationAreas: pastDeclinedAreas, // Pass the context
+                pastDeclinedRecommendationAreas: pastDeclinedAreas,
+                activeDevelopmentGoals,
             });
 
             setAnalysisResult(result);
@@ -465,6 +474,34 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                             <p className="text-2xl font-bold">{analysisResult.effectivenessScore}/10</p>
                         </div>
                     </div>
+
+                    {analysisResult.coachingImpactAnalysis && analysisResult.coachingImpactAnalysis.length > 0 && (
+                        <div>
+                            <h4 className="font-semibold text-foreground">Coaching Impact Analysis</h4>
+                            <div className="mt-2 space-y-3">
+                                {analysisResult.coachingImpactAnalysis.map((impact, i) => (
+                                    <div key={i} className={cn(
+                                        "p-3 border rounded-md",
+                                        impact.didApply ? "bg-green-500/10 border-green-500/20" : "bg-yellow-500/10 border-yellow-500/20"
+                                    )}>
+                                        <p className={cn(
+                                            "font-semibold flex items-center gap-2",
+                                            impact.didApply ? "text-green-700 dark:text-green-400" : "text-yellow-700 dark:text-yellow-400"
+                                        )}>
+                                            {impact.didApply ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                                            {impact.didApply ? 'Learning Applied' : 'Missed Opportunity'}: {impact.goalArea}
+                                        </p>
+                                        <p className={cn(
+                                            "text-sm mt-1 whitespace-pre-wrap",
+                                            impact.didApply ? "text-green-600 dark:text-green-300" : "text-yellow-600 dark:text-yellow-300"
+                                        )}>
+                                            {impact.didApply ? impact.applicationExample : impact.missedOpportunityExample}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div>
                         <h4 className="font-semibold text-foreground">Strengths Observed</h4>
