@@ -46,7 +46,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -174,6 +174,7 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
 function ToDoSection({ role }: { role: Role }) {
     const [toDoItems, setToDoItems] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
 
     const fetchToDos = useCallback(async () => {
         setIsLoading(true);
@@ -182,6 +183,7 @@ function ToDoSection({ role }: { role: Role }) {
 
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
+            // Show if the user is the supervisor (owner of the list) or employee (participant)
             (item.supervisor === currentUserName || item.employee === currentUserName)
         );
         
@@ -200,6 +202,20 @@ function ToDoSection({ role }: { role: Role }) {
         }
     }, [fetchToDos]);
 
+    const handleToggleActionItem = async (trackingId: string, actionItemId: string) => {
+        await toggleActionItemStatus(trackingId, actionItemId);
+        fetchToDos(); // Re-fetch to update UI
+    };
+
+    const handleMarkAsCompleted = async (trackingId: string) => {
+        const item = toDoItems.find(i => i.trackingId === trackingId);
+        if (!item || !item.assignedTo || item.assignedTo.length === 0) return;
+        
+        await resolveFeedback(trackingId, item.assignedTo[0], "All action items completed.");
+        toast({ title: "To-Do List Completed", description: "This item has been moved to your history." });
+        fetchToDos(); // Re-fetch to remove the item from the active list
+    };
+
     if (isLoading) {
         return <Skeleton className="h-24 w-full mt-8" />;
     }
@@ -212,21 +228,33 @@ function ToDoSection({ role }: { role: Role }) {
             </h2>
             {toDoItems.length > 0 ? (
                 <div className="space-y-4">
-                    {toDoItems.map(item => (
-                        <div key={item.trackingId} className="border rounded-lg p-4">
-                            <h3 className="font-medium">From 1-on-1 with {item.employee === roleUserMapping[role].name ? item.supervisor : item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
-                            <div className="space-y-2 mt-3">
-                                {item.actionItems?.map(action => (
-                                    <div key={action.id} className="flex items-center space-x-3">
-                                        <Checkbox id={`action-${action.id}`} checked={action.status === 'completed'} />
-                                        <label htmlFor={`action-${action.id}`} className={cn("text-sm leading-none", action.status === 'completed' && "line-through text-muted-foreground")}>
-                                            ({action.owner}) {action.text}
-                                        </label>
+                    {toDoItems.map(item => {
+                        const allItemsCompleted = item.actionItems?.every(action => action.status === 'completed');
+                        return (
+                            <div key={item.trackingId} className="border rounded-lg p-4">
+                                <h3 className="font-medium">From 1-on-1 with {item.employee === roleUserMapping[role].name ? item.supervisor : item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
+                                <div className="space-y-2 mt-3">
+                                    {item.actionItems?.map(action => (
+                                        <div key={action.id} className="flex items-center space-x-3">
+                                            <Checkbox 
+                                                id={`action-${action.id}`} 
+                                                checked={action.status === 'completed'}
+                                                onCheckedChange={() => handleToggleActionItem(item.trackingId, action.id)}
+                                            />
+                                            <label htmlFor={`action-${action.id}`} className={cn("text-sm leading-none", action.status === 'completed' && "line-through text-muted-foreground")}>
+                                                ({action.owner}) {action.text}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                                {allItemsCompleted && (
+                                    <div className="mt-4 pt-4 border-t">
+                                        <Button variant="success" onClick={() => handleMarkAsCompleted(item.trackingId)}>Mark as Completed</Button>
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             ) : (
                 <div className="mt-4 text-center py-12 border-2 border-dashed rounded-lg">
