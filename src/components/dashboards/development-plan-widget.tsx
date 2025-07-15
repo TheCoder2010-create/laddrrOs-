@@ -180,7 +180,7 @@ export default function DevelopmentPlanWidget() {
                         Active Development Plan
                     </CardTitle>
                     <CardDescription>
-                        Update your progress on your current coaching goals. Click on an item to view its history.
+                        Update your progress on your current coaching goals. Click a card to view its history.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -188,16 +188,13 @@ export default function DevelopmentPlanWidget() {
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-4 border rounded-lg bg-muted/50 space-y-4 flex flex-col cursor-pointer hover:bg-muted/80 transition-colors"
+                                className="p-4 border rounded-lg bg-muted/50 space-y-3 flex flex-col cursor-pointer hover:bg-muted/80 transition-colors"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
                                 tabIndex={0}
                             >
-                                <div 
-                                    className="flex justify-between items-start"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
+                                <div className="flex justify-between items-start gap-4">
                                     <div className="flex-1 space-y-1">
                                         <p className="font-semibold text-foreground leading-tight">{rec.area}</p>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -205,21 +202,24 @@ export default function DevelopmentPlanWidget() {
                                             <span className="truncate">{rec.type}: {rec.resource}</span>
                                         </div>
                                     </div>
+                                    <div 
+                                        className="text-right flex-shrink-0"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <p className="text-2xl font-bold text-primary">{rec.progress ?? 0}%</p>
+                                    </div>
                                 </div>
                                 <div 
-                                    className="flex-grow flex flex-col justify-end"
+                                    className="pt-2"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="flex justify-between items-center gap-4">
-                                         <p className="text-2xl font-bold text-primary">{rec.progress ?? 0}%</p>
-                                        <Slider
-                                            defaultValue={[rec.progress ?? 0]}
-                                            max={100}
-                                            step={10}
-                                            onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
-                                            className="w-full max-w-[120px]"
-                                        />
-                                    </div>
+                                    <Slider
+                                        defaultValue={[rec.progress ?? 0]}
+                                        max={100}
+                                        step={10}
+                                        onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
+                                        className="w-full"
+                                    />
                                 </div>
                             </div>
                         ))}
