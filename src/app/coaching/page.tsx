@@ -199,7 +199,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
     const [teamActions, setTeamActions] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const [reviewingRec, setReviewingRec] = useState<{ historyItem: OneOnOneHistoryItem, rec: CoachingRecommendation } | null>(null);
+    const [reviewingRecId, setReviewingRecId] = useState<string | null>(null);
     const [amNotes, setAmNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -237,14 +237,14 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         };
     }, [fetchTeamActions]);
 
-     const handleAmDecision = async (approved: boolean) => {
-        if (!amNotes || !role || !reviewingRec) {
+     const handleAmDecision = async (historyId: string, recId: string, approved: boolean) => {
+        if (!amNotes || !role) {
             toast({ variant: 'destructive', title: "Notes Required", description: "Please provide notes for your decision."});
             return;
         };
         setIsSubmitting(true);
         try {
-            await reviewCoachingRecommendationDecline(reviewingRec.historyItem.id, reviewingRec.rec.id, role, approved, amNotes);
+            await reviewCoachingRecommendationDecline(historyId, recId, role, approved, amNotes);
             toast({ title: "Decision Submitted", description: `The coaching recommendation has been updated.`});
             fetchTeamActions();
         } catch (error) {
@@ -252,7 +252,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
             toast({ variant: 'destructive', title: "Submission Failed" });
         } finally {
             setIsSubmitting(false);
-            setReviewingRec(null);
+            setReviewingRecId(null);
             setAmNotes('');
         }
     };
@@ -268,102 +268,76 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
 
 
     return (
-        <>
-            <Dialog open={!!reviewingRec} onOpenChange={() => setReviewingRec(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Review Declined Recommendation</DialogTitle>
-                        <DialogDescription>
-                           Review the declined recommendation and either uphold the AI's suggestion or approve the decline.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4 space-y-4">
-                        {reviewingRec && (
-                            <>
-                                 <div className="p-3 bg-muted/80 rounded-lg border space-y-2">
-                                    <p className="font-semibold text-foreground">Original AI Recommendation ({reviewingRec.rec.area})</p>
-                                    <p className="text-sm text-muted-foreground">{reviewingRec.rec.recommendation}</p>
-                                     {reviewingRec.rec.example && (
-                                        <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary">
-                                             <blockquote className="text-sm italic text-primary/90">"{reviewingRec.rec.example}"</blockquote>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
-                                    <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
-                                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{reviewingRec.rec.rejectionReason}</p>
-                                </div>
-                                <div className="space-y-2 pt-2">
-                                    <Label htmlFor="am-notes">Your Decision & Notes</Label>
-                                    <Textarea 
-                                        id="am-notes"
-                                        placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
-                                        value={amNotes}
-                                        onChange={(e) => setAmNotes(e.target.value)}
-                                        rows={3}
-                                    />
-                                </div>
-                            </>
-                        )}
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Users />
+                    Team Development
+                </CardTitle>
+                <CardDescription>
+                    Review coaching and development items from your direct reports.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {teamActions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                        <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                        <h3 className="text-lg font-semibold">No Pending Team Actions</h3>
+                        <p className="text-muted-foreground mt-1">Escalated items from your team will appear here.</p>
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setReviewingRec(null)}>Cancel</Button>
-                        <div className="flex gap-2">
-                            <Button onClick={() => handleAmDecision(false)} disabled={isSubmitting || !amNotes} variant="destructive">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Uphold AI
-                            </Button>
-                             <Button onClick={() => handleAmDecision(true)} disabled={isSubmitting || !amNotes} variant="secondary">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Approve Decline
-                            </Button>
-                        </div>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users />
-                        Team Development
-                    </CardTitle>
-                    <CardDescription>
-                        Review coaching and development items from your direct reports.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {teamActions.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
-                            <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-                            <h3 className="text-lg font-semibold">No Pending Team Actions</h3>
-                            <p className="text-muted-foreground mt-1">Escalated items from your team will appear here.</p>
-                        </div>
-                    ) : (
-                        <Accordion type="single" collapsible className="w-full">
-                            {teamActions.map(({ historyItem, recommendation: rec }) => (
-                                <AccordionItem value={rec.id} key={rec.id}>
-                                    <AccordionTrigger>
-                                        <div className="flex flex-col items-start text-left">
-                                            <p className="font-semibold">Review Declined Recommendation: {rec.area}</p>
-                                            <p className="text-sm font-normal text-muted-foreground">From {historyItem.supervisorName} (1-on-1 with {historyItem.employeeName})</p>
+                ) : (
+                    <Accordion type="single" collapsible className="w-full" value={reviewingRecId || undefined} onValueChange={setReviewingRecId}>
+                        {teamActions.map(({ historyItem, recommendation: rec }) => (
+                            <AccordionItem value={rec.id} key={rec.id}>
+                                <AccordionTrigger>
+                                    <div className="flex flex-col items-start text-left">
+                                        <p className="font-semibold">Review Declined Recommendation: {rec.area}</p>
+                                        <p className="text-sm font-normal text-muted-foreground">From {historyItem.supervisorName} (1-on-1 with {historyItem.employeeName})</p>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="space-y-4 pt-2">
+                                     <div className="space-y-4 p-4 border rounded-lg">
+                                        <div className="p-3 bg-muted/80 rounded-lg border space-y-2">
+                                            <p className="font-semibold text-foreground">Original AI Recommendation ({rec.area})</p>
+                                            <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                                            {rec.example && (
+                                                <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary">
+                                                    <blockquote className="text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                                                </div>
+                                            )}
                                         </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="space-y-4 pt-2">
-                                        <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20 space-y-3">
-                                            <p className="font-semibold text-orange-700 dark:text-orange-500">Supervisor's Reason for Declining:</p>
-                                            <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+                                        <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
+                                            <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
+                                            <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <Button size="sm" variant="secondary" onClick={() => setReviewingRec({ historyItem, rec })}>Review & Decide</Button>
+                                        <div className="space-y-2 pt-4 border-t">
+                                            <Label htmlFor={`am-notes-${rec.id}`}>Your Decision & Notes</Label>
+                                            <Textarea 
+                                                id={`am-notes-${rec.id}`}
+                                                placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
+                                                value={amNotes}
+                                                onChange={(e) => setAmNotes(e.target.value)}
+                                                rows={3}
+                                            />
                                         </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    )}
-                </CardContent>
-            </Card>
-        </>
+                                         <div className="flex gap-2">
+                                            <Button onClick={() => handleAmDecision(historyItem.id, rec.id, false)} disabled={isSubmitting || !amNotes} variant="destructive">
+                                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Uphold AI
+                                            </Button>
+                                             <Button onClick={() => handleAmDecision(historyItem.id, rec.id, true)} disabled={isSubmitting || !amNotes} variant="secondary">
+                                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Approve Decline
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
+            </CardContent>
+        </Card>
     );
 }
 
@@ -398,4 +372,3 @@ export default function CoachingPage() {
     </DashboardLayout>
   );
 }
-
