@@ -173,20 +173,15 @@ export default function DevelopmentPlanWidget() {
                                 </div>
                             </div>
                             
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-4">
-                                     <Label className="text-xs text-muted-foreground shrink-0">Progress</Label>
-                                    <Slider
-                                       defaultValue={[rec.progress ?? 0]}
-                                       max={100}
-                                       step={10}
-                                       onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
-                                       className="flex-grow"
-                                    />
-                                    <Badge variant={rec.progress === 100 ? "success" : "secondary"} className="shrink-0 w-24 justify-center">
-                                        {rec.progress ?? 0}% Complete
-                                    </Badge>
-                                </div>
+                            <div className="space-y-3 pt-2">
+                                <p className="text-3xl font-bold text-primary">{rec.progress ?? 0}%</p>
+                                <Slider
+                                   defaultValue={[rec.progress ?? 0]}
+                                   max={100}
+                                   step={10}
+                                   onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
+                                   className="w-1/4"
+                                />
                             </div>
 
                              {rec.checkIns && rec.checkIns.length > 0 && (
