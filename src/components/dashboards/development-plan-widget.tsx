@@ -165,25 +165,26 @@ export default function DevelopmentPlanWidget() {
                 <CardContent className="space-y-6">
                     {activePlans.map(({ historyId, rec }) => (
                         <div key={rec.id} className="p-4 border rounded-lg bg-muted/50 space-y-4">
-                            <div>
-                                <p className="font-semibold text-foreground">{rec.area}</p>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                    <RecommendationIcon type={rec.type} />
-                                    <span>{rec.type}: {rec.resource}</span>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold text-foreground">{rec.area}</p>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                        <RecommendationIcon type={rec.type} />
+                                        <span>{rec.type}: {rec.resource}</span>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                     <p className="text-3xl font-bold text-primary">{rec.progress ?? 0}%</p>
+                                     <Slider
+                                        defaultValue={[rec.progress ?? 0]}
+                                        max={100}
+                                        step={10}
+                                        onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
+                                        className="w-28"
+                                     />
                                 </div>
                             </div>
                             
-                            <div className="space-y-3 pt-2">
-                                <p className="text-3xl font-bold text-primary">{rec.progress ?? 0}%</p>
-                                <Slider
-                                   defaultValue={[rec.progress ?? 0]}
-                                   max={100}
-                                   step={10}
-                                   onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
-                                   className="w-1/4"
-                                />
-                            </div>
-
                              {rec.checkIns && rec.checkIns.length > 0 && (
                                 <Accordion type="single" collapsible className="w-full">
                                     <AccordionItem value="check-in-history">
