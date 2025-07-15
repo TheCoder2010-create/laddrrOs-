@@ -8,17 +8,16 @@ import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { useRole } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2 } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -40,6 +39,8 @@ export default function DevelopmentPlanWidget() {
     const [checkInRec, setCheckInRec] = useState<{ historyId: string, rec: CoachingRecommendation, newProgress: number } | null>(null);
     const [checkInNotes, setCheckInNotes] = useState('');
     const [isSubmittingCheckIn, setIsSubmittingCheckIn] = useState(false);
+
+    const [historyInView, setHistoryInView] = useState<CoachingRecommendation | null>(null);
 
     const fetchActivePlans = useCallback(async () => {
         if (!role) return;
@@ -93,19 +94,6 @@ export default function DevelopmentPlanWidget() {
                 title: "Progress Updated",
                 description: "Your check-in has been logged successfully.",
             });
-
-            // Optimistically update UI
-            setActivePlans(prevPlans =>
-                prevPlans.map(plan =>
-                    plan.historyId === historyId && plan.rec.id === rec.id
-                        ? { ...plan, rec: { 
-                              ...plan.rec, 
-                              progress: newProgress,
-                              checkIns: [...(plan.rec.checkIns || []), { id: 'temp', date: new Date().toISOString(), notes: checkInNotes }]
-                          } }
-                        : plan
-                )
-            );
             
             setCheckInRec(null);
             setCheckInNotes('');
@@ -152,6 +140,35 @@ export default function DevelopmentPlanWidget() {
                 </DialogContent>
             </Dialog>
 
+            <Dialog open={!!historyInView} onOpenChange={() => setHistoryInView(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Check-in History</DialogTitle>
+                        <DialogDescription>
+                            Your progress journal for "{historyInView?.area}".
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] pr-4">
+                        <div className="py-4 space-y-4">
+                            {historyInView?.checkIns?.slice().reverse().map(checkIn => (
+                                <div key={checkIn.id} className="flex items-start gap-3">
+                                    <MessageSquare className="h-4 w-4 mt-1 text-primary/70 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <p className="text-xs text-muted-foreground">{format(new Date(checkIn.date), 'PPP, p')}</p>
+                                        <p className="text-sm text-foreground">{checkIn.notes}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Close</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -185,27 +202,16 @@ export default function DevelopmentPlanWidget() {
                                 </div>
                             </div>
                             
-                             {rec.checkIns && rec.checkIns.length > 0 && (
-                                <Accordion type="single" collapsible className="w-full">
-                                    <AccordionItem value="check-in-history">
-                                        <AccordionTrigger className="pt-2 text-sm font-medium flex items-center gap-2 text-muted-foreground hover:no-underline">
-                                            <History className="h-4 w-4" />
-                                            Check-in History
-                                        </AccordionTrigger>
-                                        <AccordionContent className="pt-2 space-y-3">
-                                            {rec.checkIns.slice(-3).reverse().map(checkIn => (
-                                                <div key={checkIn.id} className="flex items-start gap-3">
-                                                    <MessageSquare className="h-4 w-4 mt-1 text-primary/70" />
-                                                    <div className="flex-1">
-                                                        <p className="text-xs text-muted-foreground">{format(new Date(checkIn.date), 'PPP')}</p>
-                                                        <p className="text-sm text-foreground">{checkIn.notes}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                </Accordion>
-                            )}
+                            <div className="pt-4 border-t">
+                                {rec.checkIns && rec.checkIns.length > 0 ? (
+                                    <Button variant="ghost" size="sm" onClick={() => setHistoryInView(rec)}>
+                                        <History className="mr-2 h-4 w-4" />
+                                        View History ({rec.checkIns.length})
+                                    </Button>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground italic">No check-ins logged yet. Update your progress to add one.</p>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </CardContent>
