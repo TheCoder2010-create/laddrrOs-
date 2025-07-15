@@ -168,6 +168,25 @@ export async function getOneOnOneHistory(): Promise<OneOnOneHistoryItem[]> {
     return history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
+export async function getDeclinedCoachingAreasForSupervisor(supervisorName: string): Promise<string[]> {
+    const history = await getOneOnOneHistory();
+    const declinedAreas = new Set<string>();
+
+    history.forEach(item => {
+        if (item.supervisorName === supervisorName) {
+            item.analysis.coachingRecommendations.forEach(rec => {
+                // A recommendation is officially declined only after the manager acknowledges it,
+                // or if the AM approved the decline and it's pending manager acknowledgement.
+                if (rec.status === 'declined' || rec.status === 'pending_manager_acknowledgement') {
+                    declinedAreas.add(rec.area);
+                }
+            });
+        }
+    });
+
+    return Array.from(declinedAreas);
+}
+
 export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id' | 'assignedTo'>): Promise<OneOnOneHistoryItem> {
     const history = await getOneOnOneHistory();
     const newHistoryItem: OneOnOneHistoryItem = { ...item, id: uuidv4(), assignedTo: null };
@@ -505,10 +524,14 @@ export async function reviewCoachingRecommendationDecline(
     if (recIndex === -1) throw new Error("Coaching recommendation not found.");
 
     const recommendation = item.analysis.coachingRecommendations[recIndex];
+    
+    if (!recommendation.auditTrail) {
+        recommendation.auditTrail = [];
+    }
 
     if (approved) {
-        recommendation.status = 'declined';
-        recommendation.auditTrail?.push({
+        recommendation.status = 'pending_manager_acknowledgement'; // Escalate to manager for FYI
+        recommendation.auditTrail.push({
             event: "Decline Approved by AM",
             actor: amActor,
             timestamp: new Date().toISOString(),
@@ -516,13 +539,42 @@ export async function reviewCoachingRecommendationDecline(
         });
     } else {
         recommendation.status = 'pending'; // Re-assign to supervisor
-        recommendation.auditTrail?.push({
+        recommendation.auditTrail.push({
             event: "Decline Denied by AM",
             actor: amActor,
             timestamp: new Date().toISOString(),
             details: `AM upheld AI recommendation. Notes: ${amNotes}`
         });
     }
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+export async function acknowledgeDeclinedRecommendation(
+    historyId: string,
+    recommendationId: string,
+    managerActor: Role
+): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const historyIndex = allHistory.findIndex(h => h.id === historyId);
+    if (historyIndex === -1) throw new Error("History item not found.");
+
+    const item = allHistory[historyIndex];
+    const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
+    if (recIndex === -1) throw new Error("Coaching recommendation not found.");
+
+    const recommendation = item.analysis.coachingRecommendations[recIndex];
+
+    recommendation.status = 'declined'; // Final status
+    if (!recommendation.auditTrail) {
+        recommendation.auditTrail = [];
+    }
+    recommendation.auditTrail.push({
+        event: "Manager Acknowledged Declined Recommendation",
+        actor: managerActor,
+        timestamp: new Date().toISOString(),
+        details: "Manager acknowledged the AM's approval of the decline. This recommendation is now closed."
+    });
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
