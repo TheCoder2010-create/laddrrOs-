@@ -28,7 +28,7 @@ interface MainSidebarProps {
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
   const { availableRoles } = useRole();
-  const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
+  const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
   const pathname = usePathname();
   const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
   const [actionItemCount, setActionItemCount] = useState(0);
@@ -50,7 +50,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       
       // Action items count
-      setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole) && f.status !== 'Resolved').length);
+      setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole as any) && f.status !== 'Resolved' && f.status !== 'Closed').length);
 
       // Messages count (Critical Insights)
       const insightStatusesToCount: string[] = [];
@@ -65,15 +65,21 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           if (currentRole === 'Employee') {
               return h.employeeName === currentUserName && insightStatusesToCount.includes(insight.status);
           }
-          return insightStatusesToCount.includes(insight.status);
+          // For managers, we check if the case is escalated to them
+          if (insight.status === 'pending_am_review' && currentRole === 'AM') return true;
+          if (insight.status === 'pending_manager_review' && currentRole === 'Manager') return true;
+          if ((insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action') && currentRole === 'HR Head') return true;
+
+          return false;
       }).length;
       setMessageCount(messageNotifications);
       
       // Coaching & Development Count
       let devCount = 0;
       // My Development (pending recommendations for me)
-      devCount += history.flatMap(h => h.analysis.coachingRecommendations)
-                         .filter(rec => h.supervisorName === currentUserName && rec.status === 'pending').length;
+      devCount += history.filter(h => h.supervisorName === currentUserName)
+                         .flatMap(h => h.analysis.coachingRecommendations)
+                         .filter(rec => rec.status === 'pending').length;
 
       // Team Development (escalations for me to review)
       const recStatusesToCount: string[] = [];

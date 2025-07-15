@@ -13,7 +13,7 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
@@ -33,62 +33,66 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
   const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
+  const [coachingCount, setCoachingCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
     try {
-      // Vault count for HR Head
+      const feedback = await getAllFeedback();
+      const history = await getOneOnOneHistory();
+      const currentUserName = roleUserMapping[currentRole].name;
+
+      // Vault count
       if (currentRole === 'HR Head') {
-        const feedback = await getAllFeedback();
-        const newCount = feedback.filter(c => !c.viewed && c.status === 'Open').length;
-        setVaultFeedbackCount(newCount);
+        setVaultFeedbackCount(feedback.filter(c => !c.viewed && c.status === 'Open' && c.source === 'Voice – In Silence').length);
       } else {
         setVaultFeedbackCount(0);
       }
       
-      // Action items for assignees
-      const feedback = await getAllFeedback();
-      const assignedCount = feedback.filter(f => f.assignedTo === currentRole && f.status !== 'Resolved').length;
-      setActionItemCount(assignedCount);
+      // Action items count
+      setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole) && f.status !== 'Resolved').length);
 
-      // Messages count logic
-      const history = await getOneOnOneHistory();
-      let count = 0;
-      const statusesToCount: string[] = [];
+      // Messages count (Critical Insights)
+      const insightStatusesToCount: string[] = [];
+      if (currentRole === 'Employee') insightStatusesToCount.push('pending_employee_acknowledgement');
+      if (currentRole === 'AM') insightStatusesToCount.push('pending_am_review');
+      if (currentRole === 'Manager') insightStatusesToCount.push('pending_manager_review');
+      if (currentRole === 'HR Head') insightStatusesToCount.push('pending_hr_review', 'pending_final_hr_action');
 
-      switch (currentRole) {
-        case 'Employee':
-          statusesToCount.push('pending_employee_acknowledgement');
-          count = history.filter(h =>
-            h.employeeName === currentUser.name &&
-            h.analysis.criticalCoachingInsight?.status &&
-            statusesToCount.includes(h.analysis.criticalCoachingInsight.status)
-          ).length;
-          break;
-        case 'AM':
-          statusesToCount.push('pending_am_review');
-          break;
-        case 'Manager':
-          statusesToCount.push('pending_manager_review');
-          break;
-        case 'HR Head':
-            statusesToCount.push('pending_hr_review', 'pending_final_hr_action');
-            break;
+      const messageNotifications = history.filter(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          if (!insight || !insight.status) return false;
+          if (currentRole === 'Employee') {
+              return h.employeeName === currentUserName && insightStatusesToCount.includes(insight.status);
+          }
+          return insightStatusesToCount.includes(insight.status);
+      }).length;
+      setMessageCount(messageNotifications);
+      
+      // Coaching & Development Count
+      let devCount = 0;
+      // My Development (pending recommendations for me)
+      devCount += history.flatMap(h => h.analysis.coachingRecommendations)
+                         .filter(rec => h.supervisorName === currentUserName && rec.status === 'pending').length;
+
+      // Team Development (escalations for me to review)
+      const recStatusesToCount: string[] = [];
+      if (currentRole === 'AM') recStatusesToCount.push('pending_am_review');
+      if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
+
+      if (recStatusesToCount.length > 0) {
+        devCount += history.flatMap(h => h.analysis.coachingRecommendations)
+                         .filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
       }
+      setCoachingCount(devCount);
 
-      if (['AM', 'Manager', 'HR Head'].includes(currentRole)) {
-          count = history.filter(h => 
-            h.analysis.criticalCoachingInsight?.status && 
-            statusesToCount.includes(h.analysis.criticalCoachingInsight.status)
-          ).length;
-      }
-      setMessageCount(count);
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
       setVaultFeedbackCount(0);
       setActionItemCount(0);
       setMessageCount(0);
+      setCoachingCount(0);
     }
   }, [currentRole, currentUser.name]);
 
@@ -109,10 +113,12 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     };
   }, [fetchFeedbackCounts]);
 
+  const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
 
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
+    ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns' },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
@@ -190,7 +196,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
           {currentRole === 'HR Head' && hrMenuItems.map(renderMenuItem)}
-          {assigneeMenuItems.map(renderMenuItem)}
+          {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
