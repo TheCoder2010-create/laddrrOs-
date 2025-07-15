@@ -540,6 +540,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
 
 function MessagesContent({ role }: { role: Role }) {
   const [messages, setMessages] = useState<OneOnOneHistoryItem[]>([]);
+  const [recommendations, setRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
@@ -547,26 +548,45 @@ function MessagesContent({ role }: { role: Role }) {
     const history = await getOneOnOneHistory();
     const currentUser = roleUserMapping[role];
 
-    const userMessages = history.filter(item => {
+    const userMessages: OneOnOneHistoryItem[] = [];
+    const userRecs: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
+
+    history.forEach(item => {
         // Critical Insight Escalations
         const insight = item.analysis.criticalCoachingInsight;
-        if (!insight || insight.status === 'resolved') return false;
-
-        switch (role) {
-            case 'Employee':
-                return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
-            case 'AM':
-                return insight.status === 'pending_am_review';
-            case 'Manager':
-                return insight.status === 'pending_manager_review';
-            case 'HR Head':
-                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
-            default:
-                return false;
+        if (insight && insight.status !== 'resolved') {
+            let include = false;
+            switch (role) {
+                case 'Employee':
+                    if (item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement') include = true;
+                    break;
+                case 'AM':
+                    if (insight.status === 'pending_am_review') include = true;
+                    break;
+                case 'Manager':
+                    if (insight.status === 'pending_manager_review') include = true;
+                    break;
+                case 'HR Head':
+                    if (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action') include = true;
+                    break;
+            }
+            if (include) {
+                userMessages.push(item);
+            }
+        }
+        
+        // Manager acknowledgement for declined coaching recs
+        if (role === 'Manager') {
+            item.analysis.coachingRecommendations.forEach(rec => {
+                if (rec.status === 'pending_manager_acknowledgement') {
+                    userRecs.push({ historyItem: item, recommendation: rec });
+                }
+            });
         }
     });
 
     setMessages(userMessages.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setRecommendations(userRecs);
     setIsLoading(false);
   }, [role]);
 
@@ -584,35 +604,28 @@ function MessagesContent({ role }: { role: Role }) {
     }
   }, [fetchMessages]);
 
-  const hasMessages = messages.length > 0;
+  const hasMessages = messages.length > 0 || recommendations.length > 0;
 
   const renderWidgets = (item: OneOnOneHistoryItem) => {
-    const widgets = [];
-    
-    // Widget for Critical Insight Escalation
+    // Critical Insight Escalation Widget
     const insight = item.analysis.criticalCoachingInsight;
     if (insight && insight.status !== 'resolved') {
         const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
         if (canEmployeeAcknowledge) {
-            widgets.push(<AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />);
+            return <AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
         }
         if (role === 'AM' && insight.status === 'pending_am_review') {
-            widgets.push(<EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />);
+            return <EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
         }
         if (role === 'Manager' && insight.status === 'pending_manager_review') {
-            widgets.push(<EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />);
+            return <EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
         }
         if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
-            widgets.push(<HrReviewWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />);
+            return <HrReviewWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
         }
     }
-    
-    // Manager acknowledgement for declined coaching recs is now in the Coaching page
-    // No longer handled here.
-
-    return widgets;
+    return null;
   };
-
 
   return (
     <div className="p-4 md:p-8">
@@ -630,7 +643,12 @@ function MessagesContent({ role }: { role: Role }) {
             {isLoading ? (
                  <Skeleton className="h-48 w-full" />
             ) : hasMessages ? (
-                messages.flatMap(item => renderWidgets(item))
+                <>
+                    {messages.map(item => renderWidgets(item))}
+                    {recommendations.map(({ historyItem, recommendation }) => (
+                        <ManagerAcknowledgementWidget key={recommendation.id} item={historyItem} rec={recommendation} onUpdate={fetchMessages} />
+                    ))}
+                </>
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground text-lg">No new messages or actions.</p>
