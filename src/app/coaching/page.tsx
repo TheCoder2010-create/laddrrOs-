@@ -49,6 +49,8 @@ function MyDevelopmentWidget() {
     const [startDate, setStartDate] = useState<Date | undefined>();
     const [endDate, setEndDate] = useState<Date | undefined>();
     const [isSubmittingAccept, setIsSubmittingAccept] = useState(false);
+    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
     const fetchRecommendations = useCallback(async () => {
         if (!role) return;
@@ -147,10 +149,6 @@ function MyDevelopmentWidget() {
     }
 
 
-    if (isLoading) {
-        return <Skeleton className="h-48 w-full" />;
-    }
-
     return (
         <>
             <Dialog open={!!decliningRec} onOpenChange={() => setDecliningRec(null)}>
@@ -191,26 +189,47 @@ function MyDevelopmentWidget() {
                     <div className="py-4 space-y-4">
                         <div className="space-y-2">
                           <Label>Start Date</Label>
-                          <Popover>
+                          <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
                             <PopoverTrigger asChild>
                               <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={startDate} onSelect={setStartDate} initialFocus /></PopoverContent>
+                            <PopoverContent className="w-auto p-0">
+                                <CalendarComponent 
+                                    mode="single" 
+                                    selected={startDate} 
+                                    onSelect={(date) => {
+                                        setStartDate(date);
+                                        setIsStartDatePickerOpen(false);
+                                    }} 
+                                    initialFocus 
+                                />
+                            </PopoverContent>
                           </Popover>
                         </div>
                         <div className="space-y-2">
                            <Label>Tentative End Date</Label>
-                           <Popover>
+                           <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
                             <PopoverTrigger asChild>
                               <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={endDate} onSelect={setEndDate} disabled={(date) => date < (startDate || new Date())} initialFocus /></PopoverContent>
+                            <PopoverContent className="w-auto p-0">
+                                <CalendarComponent 
+                                    mode="single" 
+                                    selected={endDate} 
+                                    onSelect={(date) => {
+                                        setEndDate(date);
+                                        setIsEndDatePickerOpen(false);
+                                    }} 
+                                    disabled={(date) => date < (startDate || new Date())} 
+                                    initialFocus 
+                                />
+                            </PopoverContent>
                           </Popover>
                         </div>
                     </div>
