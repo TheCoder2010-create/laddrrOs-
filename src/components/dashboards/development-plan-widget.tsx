@@ -188,7 +188,7 @@ export default function DevelopmentPlanWidget() {
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-4 border rounded-lg bg-muted/50 space-y-3 cursor-pointer hover:bg-muted/80 transition-colors"
+                                className="p-4 border rounded-lg bg-muted/50 space-y-4 flex flex-col cursor-pointer hover:bg-muted/80 transition-colors"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
@@ -196,23 +196,28 @@ export default function DevelopmentPlanWidget() {
                             >
                                 <div 
                                     className="flex justify-between items-start"
-                                    onClick={(e) => e.stopPropagation()} // Prevent card click when interacting with slider
+                                    onClick={(e) => e.stopPropagation()}
                                 >
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-foreground">{rec.area}</p>
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                    <div className="flex-1 space-y-1">
+                                        <p className="font-semibold text-foreground leading-tight">{rec.area}</p>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                             <RecommendationIcon type={rec.type} />
                                             <span className="truncate">{rec.type}: {rec.resource}</span>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col items-end gap-1 pl-2">
-                                        <p className="text-2xl font-bold text-primary">{rec.progress ?? 0}%</p>
+                                </div>
+                                <div 
+                                    className="flex-grow flex flex-col justify-end"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex justify-between items-center gap-4">
+                                         <p className="text-2xl font-bold text-primary">{rec.progress ?? 0}%</p>
                                         <Slider
                                             defaultValue={[rec.progress ?? 0]}
                                             max={100}
                                             step={10}
                                             onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
-                                            className="w-24"
+                                            className="w-full max-w-[120px]"
                                         />
                                     </div>
                                 </div>
