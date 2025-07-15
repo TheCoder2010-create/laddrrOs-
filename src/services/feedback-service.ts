@@ -628,8 +628,8 @@ export async function reviewCoachingRecommendationDecline(
         recommendation.status = 'accepted';
         recommendation.progress = 0;
         const now = new Date();
-        const endDate = new Date(now.setDate(now.getDate() + 30)); // Default 30 day timeline
-        recommendation.startDate = new Date().toISOString();
+        const endDate = new Date(new Date().setDate(now.getDate() + 30)); // Default 30 day timeline
+        recommendation.startDate = now.toISOString();
         recommendation.endDate = endDate.toISOString();
 
         recommendation.auditTrail.push({
