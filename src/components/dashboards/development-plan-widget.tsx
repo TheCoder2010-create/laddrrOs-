@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -176,7 +177,7 @@ export default function DevelopmentPlanWidget() {
                                     {rec.progress ?? 0}% Complete
                                 </Badge>
                             </div>
-                            <div className="pt-2">
+                            <div className="pt-2 px-8">
                                  <Slider
                                     defaultValue={[rec.progress ?? 0]}
                                     max={100}
@@ -186,23 +187,25 @@ export default function DevelopmentPlanWidget() {
                             </div>
 
                              {rec.checkIns && rec.checkIns.length > 0 && (
-                                <div className="pt-4 border-t space-y-3">
-                                    <h4 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                        <History className="h-4 w-4" />
-                                        Check-in History
-                                    </h4>
-                                    <div className="space-y-3 pl-2">
-                                        {rec.checkIns.slice(-3).reverse().map(checkIn => (
-                                            <div key={checkIn.id} className="flex items-start gap-3">
-                                                <MessageSquare className="h-4 w-4 mt-1 text-primary/70" />
-                                                <div className="flex-1">
-                                                    <p className="text-xs text-muted-foreground">{format(new Date(checkIn.date), 'PPP')}</p>
-                                                    <p className="text-sm text-foreground">{checkIn.notes}</p>
+                                <Accordion type="single" collapsible className="w-full">
+                                    <AccordionItem value="check-in-history" className="border-t">
+                                        <AccordionTrigger className="pt-4 text-sm font-medium flex items-center gap-2 text-muted-foreground hover:no-underline">
+                                            <History className="h-4 w-4" />
+                                            Check-in History
+                                        </AccordionTrigger>
+                                        <AccordionContent className="pt-2 space-y-3">
+                                            {rec.checkIns.slice(-3).reverse().map(checkIn => (
+                                                <div key={checkIn.id} className="flex items-start gap-3">
+                                                    <MessageSquare className="h-4 w-4 mt-1 text-primary/70" />
+                                                    <div className="flex-1">
+                                                        <p className="text-xs text-muted-foreground">{format(new Date(checkIn.date), 'PPP')}</p>
+                                                        <p className="text-sm text-foreground">{checkIn.notes}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                            ))}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
                             )}
                         </div>
                     ))}
@@ -211,5 +214,3 @@ export default function DevelopmentPlanWidget() {
         </>
     );
 }
-
-    
