@@ -564,19 +564,21 @@ function MessagesContent({ role }: { role: Role }) {
     const currentUser = roleUserMapping[role];
 
     const userMessages = history.filter(item => {
-        const insight = item.analysis.criticalCoachingInsight;
-        
         // Critical Insight Escalations
+        const insight = item.analysis.criticalCoachingInsight;
         if (insight && insight.status !== 'resolved') {
             switch (role) {
                 case 'Employee':
                     return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
                 case 'AM':
-                    return insight.status === 'pending_am_review';
+                    if (insight.status === 'pending_am_review') return true;
+                    break;
                 case 'Manager':
-                    return insight.status === 'pending_manager_review';
+                    if (insight.status === 'pending_manager_review') return true;
+                    break;
                 case 'HR Head':
-                    return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
+                    if (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action') return true;
+                    break;
             }
         }
         
@@ -617,7 +619,6 @@ function MessagesContent({ role }: { role: Role }) {
     // Widget for Critical Insight Escalation
     const insight = item.analysis.criticalCoachingInsight;
     if (insight && insight.status !== 'resolved') {
-        const currentUser = roleUserMapping[role];
         const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
         if (canEmployeeAcknowledge) {
             widgets.push(<AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />);
