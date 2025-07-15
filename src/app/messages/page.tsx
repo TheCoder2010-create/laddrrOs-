@@ -8,7 +8,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, reviewCoachingRecommendationDecline, acknowledgeDeclinedRecommendation } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, acknowledgeDeclinedRecommendation } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -148,104 +148,6 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
                         >
                             {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
                             Submit Acknowledgement
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function RecommendationIcon({ type }: { type: CoachingRecommendation['type'] }) {
-    switch (type) {
-        case 'Book': return <BookOpen className="h-4 w-4" />;
-        case 'Podcast': return <Podcast className="h-4 w-4" />;
-        case 'Article': return <Newspaper className="h-4 w-4" />;
-        case 'Course': return <GraduationCap className="h-4 w-4" />;
-        default: return <Lightbulb className="h-4 w-4" />;
-    }
-};
-
-function DeclinedCoachingReviewWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, rec: CoachingRecommendation, onUpdate: () => void }) {
-    const { toast } = useToast();
-    const { role } = useRole();
-    const [amNotes, setAmNotes] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleDecision = async (approved: boolean) => {
-        if (!amNotes || !role) {
-            toast({ variant: 'destructive', title: "Notes Required", description: "Please provide notes for your decision."});
-            return;
-        };
-        setIsSubmitting(true);
-        try {
-            await reviewCoachingRecommendationDecline(item.id, rec.id, role, approved, amNotes);
-            toast({ title: "Decision Submitted", description: `The coaching recommendation has been updated.`});
-            onUpdate();
-        } catch (error) {
-            console.error("Failed to submit review", error);
-            toast({ variant: 'destructive', title: "Submission Failed" });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    return (
-        <Card className="border-orange-500/50">
-            <CardHeader className="bg-orange-500/10">
-                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                    <Zap className="h-6 w-6" />
-                    Review Declined Coaching Recommendation
-                </CardTitle>
-                <CardDescription>
-                   {item.supervisorName} (Team Lead) declined an AI recommendation from their 1-on-1 with {item.employeeName}.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-                <div className="p-3 bg-muted/80 rounded-lg border space-y-3">
-                    <p className="font-semibold text-foreground">Original AI Recommendation</p>
-                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                    
-                    {rec.example && (
-                        <div className="p-3 bg-background/80 rounded-md border-l-4 border-primary">
-                            <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
-                            <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
-                        </div>
-                    )}
-
-                    <div className="mt-3 pt-3 border-t">
-                        <div className="flex items-center gap-2 text-sm text-foreground mb-2">
-                            <RecommendationIcon type={rec.type} />
-                            <strong>{rec.type}:</strong> {rec.resource}
-                        </div>
-                        <p className="text-xs text-muted-foreground italic">AI Justification: "{rec.justification}"</p>
-                    </div>
-                </div>
-                 <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
-                    <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
-                </div>
-                <div className="space-y-3 pt-4">
-                     <Label htmlFor={`am-notes-${rec.id}`} className="font-semibold text-base">Your Decision & Notes</Label>
-                    <p className="text-sm text-muted-foreground">
-                        Uphold the AI's recommendation (deny the decline) or agree with the supervisor (approve the decline). Your notes will be visible to the supervisor.
-                    </p>
-                    <Textarea 
-                        id={`am-notes-${rec.id}`}
-                        placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
-                        value={amNotes}
-                        onChange={(e) => setAmNotes(e.target.value)}
-                        rows={3}
-                        className="bg-background"
-                    />
-                    <div className="flex gap-2 pt-2">
-                        <Button onClick={() => handleDecision(false)} disabled={isSubmitting || !amNotes} variant="destructive">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Uphold AI Recommendation
-                        </Button>
-                         <Button onClick={() => handleDecision(true)} disabled={isSubmitting || !amNotes} variant="secondary">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Approve Decline
                         </Button>
                     </div>
                 </div>
@@ -648,31 +550,20 @@ function MessagesContent({ role }: { role: Role }) {
     const userMessages = history.filter(item => {
         // Critical Insight Escalations
         const insight = item.analysis.criticalCoachingInsight;
-        if (insight && insight.status !== 'resolved') {
-            switch (role) {
-                case 'Employee':
-                    return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
-                case 'AM':
-                    if (insight.status === 'pending_am_review') return true;
-                    break;
-                case 'Manager':
-                    if (insight.status === 'pending_manager_review') return true;
-                    break;
-                case 'HR Head':
-                    if (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action') return true;
-                    break;
-            }
-        }
-        
-        // Declined Coaching Recommendation Escalations
-        const hasPendingRecReview = item.analysis.coachingRecommendations.some(rec => {
-            if (role === 'AM' && rec.status === 'pending_am_review') return true;
-            if (role === 'Manager' && rec.status === 'pending_manager_acknowledgement') return true;
-            return false;
-        });
-        if (hasPendingRecReview) return true;
+        if (!insight || insight.status === 'resolved') return false;
 
-        return false;
+        switch (role) {
+            case 'Employee':
+                return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
+            case 'AM':
+                return insight.status === 'pending_am_review';
+            case 'Manager':
+                return insight.status === 'pending_manager_review';
+            case 'HR Head':
+                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
+            default:
+                return false;
+        }
     });
 
     setMessages(userMessages.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -715,16 +606,9 @@ function MessagesContent({ role }: { role: Role }) {
             widgets.push(<HrReviewWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />);
         }
     }
-
-    // Widgets for Declined Coaching Recommendations
-    item.analysis.coachingRecommendations.forEach(rec => {
-        if (role === 'AM' && rec.status === 'pending_am_review') {
-            widgets.push(<DeclinedCoachingReviewWidget key={`${item.id}-${rec.id}`} item={item} rec={rec} onUpdate={fetchMessages} />);
-        }
-        if (role === 'Manager' && rec.status === 'pending_manager_acknowledgement') {
-            widgets.push(<ManagerAcknowledgementWidget key={`${item.id}-${rec.id}`} item={item} rec={rec} onUpdate={fetchMessages} />);
-        }
-    });
+    
+    // Manager acknowledgement for declined coaching recs is now in the Coaching page
+    // No longer handled here.
 
     return widgets;
   };
@@ -739,7 +623,7 @@ function MessagesContent({ role }: { role: Role }) {
             Messages
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
-            A central place for information, notifications, and actions gathered by the tool.
+            A central place for critical insight notifications and actions.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
