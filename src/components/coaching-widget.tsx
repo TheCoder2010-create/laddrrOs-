@@ -12,9 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle } from 'lucide-react';
 import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { Badge } from '@/components/ui/badge';
+import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
@@ -42,9 +42,11 @@ export default function CoachingWidget() {
         setIsLoading(true);
         const history = await getOneOnOneHistory();
         const pending: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
+        
+        const currentUserName = role ? roleUserMapping[role].name : null;
 
         history.forEach(item => {
-            if (item.supervisorName === role) {
+            if (item.supervisorName === currentUserName) {
                 item.analysis.coachingRecommendations.forEach(rec => {
                     if (rec.status === 'pending') {
                         pending.push({ historyItem: item, recommendation: rec });
@@ -91,10 +93,6 @@ export default function CoachingWidget() {
         return <Skeleton className="h-48 w-full" />;
     }
 
-    if (pendingRecommendations.length === 0) {
-        return null; // Don't show the widget if there are no pending recommendations
-    }
-
     return (
         <>
             <Dialog open={!!decliningRec} onOpenChange={() => setDecliningRec(null)}>
@@ -135,38 +133,46 @@ export default function CoachingWidget() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Accordion type="single" collapsible className="w-full">
-                        {pendingRecommendations.map(({ historyItem, recommendation: rec }) => (
-                            <AccordionItem value={rec.id} key={rec.id}>
-                                <AccordionTrigger>
-                                    <div className="flex flex-col items-start text-left">
-                                        <p className="font-semibold">{rec.area}</p>
-                                        <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="space-y-4 pt-2">
-                                    <div className="p-3 bg-background/60 rounded-lg border">
-                                         <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                                        <div className="mt-3 pt-3 border-t">
-                                            <div className="flex items-center gap-2 text-sm text-foreground mb-2">
-                                                <RecommendationIcon type={rec.type} />
-                                                <strong>{rec.type}:</strong> {rec.resource}
+                    {pendingRecommendations.length === 0 ? (
+                         <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                            <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                            <h3 className="text-lg font-semibold">All Caught Up!</h3>
+                            <p className="text-muted-foreground mt-1">There are no new coaching recommendations for you.</p>
+                        </div>
+                    ) : (
+                        <Accordion type="single" collapsible className="w-full">
+                            {pendingRecommendations.map(({ historyItem, recommendation: rec }) => (
+                                <AccordionItem value={rec.id} key={rec.id}>
+                                    <AccordionTrigger>
+                                        <div className="flex flex-col items-start text-left">
+                                            <p className="font-semibold">{rec.area}</p>
+                                            <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="space-y-4 pt-2">
+                                        <div className="p-3 bg-background/60 rounded-lg border">
+                                             <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                                            <div className="mt-3 pt-3 border-t">
+                                                <div className="flex items-center gap-2 text-sm text-foreground mb-2">
+                                                    <RecommendationIcon type={rec.type} />
+                                                    <strong>{rec.type}:</strong> {rec.resource}
+                                                </div>
+                                                <p className="text-xs text-muted-foreground italic">"{rec.justification}"</p>
                                             </div>
-                                            <p className="text-xs text-muted-foreground italic">"{rec.justification}"</p>
+                                             <div className="flex gap-2 mt-4 pt-4 border-t">
+                                                <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(historyItem.id, rec.id, 'accepted')}>
+                                                    <ThumbsUp className="mr-2 h-4 w-4" /> Accept
+                                                </Button>
+                                                <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ historyId: historyItem.id, recommendation: rec })}>
+                                                    <ThumbsDown className="mr-2 h-4 w-4" /> Decline
+                                                </Button>
+                                            </div>
                                         </div>
-                                         <div className="flex gap-2 mt-4 pt-4 border-t">
-                                            <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(historyItem.id, rec.id, 'accepted')}>
-                                                <ThumbsUp className="mr-2 h-4 w-4" /> Accept
-                                            </Button>
-                                            <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ historyId: historyItem.id, recommendation: rec })}>
-                                                <ThumbsDown className="mr-2 h-4 w-4" /> Decline
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    )}
                 </CardContent>
             </Card>
         </>
