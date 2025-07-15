@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -290,17 +291,21 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
     };
     
     const amApprovalNotes = rec.auditTrail?.find(e => e.event === "Decline Approved by AM")?.details;
+    const isActionable = rec.status === 'pending_manager_acknowledgement';
 
     return (
         <Card className="border-gray-500/50">
-            <CardHeader className="bg-gray-500/10">
-                <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-400">
-                    <CheckSquareIcon className="h-6 w-6" />
-                    FYI: Declined Recommendation Approved
-                </CardTitle>
-                <CardDescription>
-                   For 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
-                </CardDescription>
+            <CardHeader className="bg-gray-500/10 flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-400">
+                        <CheckSquareIcon className="h-6 w-6" />
+                        {isActionable ? "FYI: Action Required" : "FYI: Acknowledged & Closed"}
+                    </CardTitle>
+                    <CardDescription>
+                       For 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
+                    </CardDescription>
+                </div>
+                 {!isActionable && <Badge variant="success">Acknowledged & Closed</Badge>}
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2 p-3 rounded-lg border bg-muted/50">
@@ -326,18 +331,20 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
                     </div>
                 )}
                 
-                <div className="space-y-3 pt-4 border-t">
-                     <Label className="font-semibold text-base">Your Action</Label>
-                    <p className="text-sm text-muted-foreground">
-                        No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
-                    </p>
-                    <div className="flex gap-2 pt-2">
-                         <Button onClick={handleAcknowledge} disabled={isSubmitting} variant="secondary">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Acknowledge & Close
-                        </Button>
+                {isActionable && (
+                    <div className="space-y-3 pt-4 border-t">
+                         <Label className="font-semibold text-base">Your Action</Label>
+                        <p className="text-sm text-muted-foreground">
+                            No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
+                        </p>
+                        <div className="flex gap-2 pt-2">
+                             <Button onClick={handleAcknowledge} disabled={isSubmitting} variant="secondary">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Acknowledge & Close
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -352,17 +359,19 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         const history = await getOneOnOneHistory();
         const pendingActions: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
         
-        const statusesToFetch: CoachingRecommendation['status'][] = [];
-        if (role === 'AM') {
-            statusesToFetch.push('pending_am_review');
-        }
-        if (role === 'Manager') {
-            statusesToFetch.push('pending_manager_acknowledgement');
-        }
+        const amStatuses: CoachingRecommendation['status'][] = ['pending_am_review'];
+        const managerStatuses: CoachingRecommendation['status'][] = ['pending_manager_acknowledgement', 'declined'];
 
         history.forEach(item => {
             item.analysis.coachingRecommendations.forEach(rec => {
-                if (statusesToFetch.includes(rec.status)) {
+                if (role === 'AM' && amStatuses.includes(rec.status)) {
+                    pendingActions.push({ historyItem: item, recommendation: rec });
+                } else if (role === 'Manager' && managerStatuses.includes(rec.status)) {
+                    // Only include 'declined' if the manager was the one who acknowledged it.
+                    const wasManagerInvolved = rec.auditTrail?.some(e => e.event === "Manager Acknowledged Declined Recommendation");
+                    if (rec.status === 'declined' && !wasManagerInvolved) {
+                        return; // Skip if manager wasn't involved in this declined item.
+                    }
                     pendingActions.push({ historyItem: item, recommendation: rec });
                 }
             });
@@ -415,7 +424,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                             if (rec.status === 'pending_am_review' && role === 'AM') {
                                 return <AmReviewWidget key={rec.id} item={historyItem} rec={rec} onUpdate={fetchTeamActions} />;
                             }
-                            if (rec.status === 'pending_manager_acknowledgement' && role === 'Manager') {
+                            if ((rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') && role === 'Manager') {
                                 return <ManagerAcknowledgementWidget key={rec.id} item={historyItem} rec={rec} onUpdate={fetchTeamActions} />;
                             }
                             return null;
