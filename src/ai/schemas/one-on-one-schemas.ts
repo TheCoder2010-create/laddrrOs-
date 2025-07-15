@@ -77,6 +77,14 @@ export const CriticalCoachingInsightSchema = z.object({
 
 export type CriticalCoachingInsight = z.infer<typeof CriticalCoachingInsightSchema>;
 
+const RecommendationAuditEventSchema = z.object({
+    event: z.string(),
+    actor: z.string(),
+    timestamp: z.string(),
+    details: z.string().optional(),
+});
+export type RecommendationAuditEvent = z.infer<typeof RecommendationAuditEventSchema>;
+
 export const CoachingRecommendationSchema = z.object({
   id: z.string().uuid().describe("A unique identifier for this recommendation."),
   area: z.string().describe("The specific area or weakness identified for coaching, e.g., 'Active Listening'."),
@@ -84,8 +92,9 @@ export const CoachingRecommendationSchema = z.object({
   type: z.enum(["Book", "Podcast", "Article", "Course", "Other"]).describe("The type of resource being recommended."),
   resource: z.string().describe("The title of the recommended book, podcast episode, article, or course."),
   justification: z.string().describe("A brief explanation of why this specific resource is recommended and how it addresses the area of improvement."),
-  status: z.enum(["pending", "accepted", "declined"]).default("pending").describe("The supervisor's response to the recommendation."),
+  status: z.enum(["pending", "accepted", "declined", "pending_am_review"]).default("pending").describe("The supervisor's response to the recommendation."),
   rejectionReason: z.string().optional().describe("If declined, the supervisor's reason for not accepting the recommendation."),
+  auditTrail: z.array(RecommendationAuditEventSchema).optional().describe("An audit trail for this specific recommendation."),
 });
 
 export type CoachingRecommendation = z.infer<typeof CoachingRecommendationSchema>;

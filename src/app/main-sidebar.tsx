@@ -54,34 +54,30 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       // Messages count logic
       const history = await getOneOnOneHistory();
       let count = 0;
-      const statusesToCount: string[] = [];
+      
+      // Count critical insight escalations
+      const insightStatusesToCount: string[] = [];
+      if (currentRole === 'Employee') insightStatusesToCount.push('pending_employee_acknowledgement');
+      if (currentRole === 'AM') insightStatusesToCount.push('pending_am_review');
+      if (currentRole === 'Manager') insightStatusesToCount.push('pending_manager_review');
+      if (currentRole === 'HR Head') insightStatusesToCount.push('pending_hr_review', 'pending_final_hr_action');
 
-      switch (currentRole) {
-        case 'Employee':
-          statusesToCount.push('pending_employee_acknowledgement');
-          count = history.filter(h =>
-            h.employeeName === currentUser.name &&
-            h.analysis.criticalCoachingInsight?.status &&
-            statusesToCount.includes(h.analysis.criticalCoachingInsight.status)
-          ).length;
-          break;
-        case 'AM':
-          statusesToCount.push('pending_am_review');
-          break;
-        case 'Manager':
-          statusesToCount.push('pending_manager_review');
-          break;
-        case 'HR Head':
-            statusesToCount.push('pending_hr_review', 'pending_final_hr_action');
-            break;
-      }
+      count += history.filter(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          if (!insight || !insight.status) return false;
+          
+          if (currentRole === 'Employee') {
+              return h.employeeName === currentUser.name && insightStatusesToCount.includes(insight.status);
+          }
+          return insightStatusesToCount.includes(insight.status);
+      }).length;
 
-      if (['AM', 'Manager', 'HR Head'].includes(currentRole)) {
-          count = history.filter(h => 
-            h.analysis.criticalCoachingInsight?.status && 
-            statusesToCount.includes(h.analysis.criticalCoachingInsight.status)
-          ).length;
+      // Count declined coaching recommendation escalations for AM
+      if (currentRole === 'AM') {
+          count += history.flatMap(h => h.analysis.coachingRecommendations)
+                           .filter(rec => rec.status === 'pending_am_review').length;
       }
+      
       setMessageCount(count);
 
     } catch (error) {

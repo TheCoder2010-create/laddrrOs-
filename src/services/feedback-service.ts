@@ -454,21 +454,76 @@ export async function updateCoachingRecommendationStatus(
 ): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const historyIndex = allHistory.findIndex(h => h.id === historyId);
-    if (historyIndex === -1) {
-        throw new Error("History item not found.");
-    }
+    if (historyIndex === -1) throw new Error("History item not found.");
     
     const item = allHistory[historyIndex];
     const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
-    if (recIndex === -1) {
-        throw new Error("Coaching recommendation not found.");
+    if (recIndex === -1) throw new Error("Coaching recommendation not found.");
+    
+    const recommendation = item.analysis.coachingRecommendations[recIndex];
+    const supervisorName = item.supervisorName;
+
+    // Initialize audit trail if it doesn't exist
+    if (!recommendation.auditTrail) {
+        recommendation.auditTrail = [];
+    }
+
+    if (status === 'accepted') {
+        recommendation.status = 'accepted';
+        recommendation.auditTrail.push({
+            event: 'Recommendation Accepted',
+            actor: supervisorName,
+            timestamp: new Date().toISOString(),
+        });
+    } else if (status === 'declined') {
+        recommendation.status = 'pending_am_review';
+        recommendation.rejectionReason = rejectionReason;
+        recommendation.auditTrail.push({
+            event: 'Recommendation Declined by Supervisor',
+            actor: supervisorName,
+            timestamp: new Date().toISOString(),
+            details: `Reason: ${rejectionReason}`,
+        });
     }
     
-    item.analysis.coachingRecommendations[recIndex].status = status;
-    if (status === 'declined' && rejectionReason) {
-        item.analysis.coachingRecommendations[recIndex].rejectionReason = rejectionReason;
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+export async function reviewCoachingRecommendationDecline(
+    historyId: string,
+    recommendationId: string,
+    amActor: Role,
+    approved: boolean,
+    amNotes: string
+): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const historyIndex = allHistory.findIndex(h => h.id === historyId);
+    if (historyIndex === -1) throw new Error("History item not found.");
+
+    const item = allHistory[historyIndex];
+    const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
+    if (recIndex === -1) throw new Error("Coaching recommendation not found.");
+
+    const recommendation = item.analysis.coachingRecommendations[recIndex];
+
+    if (approved) {
+        recommendation.status = 'declined';
+        recommendation.auditTrail?.push({
+            event: "Decline Approved by AM",
+            actor: amActor,
+            timestamp: new Date().toISOString(),
+            details: `AM approved decline. Notes: ${amNotes}`
+        });
+    } else {
+        recommendation.status = 'pending'; // Re-assign to supervisor
+        recommendation.auditTrail?.push({
+            event: "Decline Denied by AM",
+            actor: amActor,
+            timestamp: new Date().toISOString(),
+            details: `AM upheld AI recommendation. Notes: ${amNotes}`
+        });
     }
-    
+
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 

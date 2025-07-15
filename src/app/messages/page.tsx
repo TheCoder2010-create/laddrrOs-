@@ -6,15 +6,15 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse } from '@/services/feedback-service';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb } from 'lucide-react';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, reviewCoachingRecommendationDecline } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
+import { CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -154,6 +154,97 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
         </Card>
     );
 }
+
+function RecommendationIcon({ type }: { type: CoachingRecommendation['type'] }) {
+    switch (type) {
+        case 'Book': return <BookOpen className="h-4 w-4" />;
+        case 'Podcast': return <Podcast className="h-4 w-4" />;
+        case 'Article': return <Newspaper className="h-4 w-4" />;
+        case 'Course': return <GraduationCap className="h-4 w-4" />;
+        default: return <Lightbulb className="h-4 w-4" />;
+    }
+};
+
+function DeclinedCoachingReviewWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, rec: CoachingRecommendation, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [amNotes, setAmNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleDecision = async (approved: boolean) => {
+        if (!amNotes || !role) {
+            toast({ variant: 'destructive', title: "Notes Required", description: "Please provide notes for your decision."});
+            return;
+        };
+        setIsSubmitting(true);
+        try {
+            await reviewCoachingRecommendationDecline(item.id, rec.id, role, approved, amNotes);
+            toast({ title: "Decision Submitted", description: `The coaching recommendation has been updated.`});
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit review", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Card className="border-orange-500/50">
+            <CardHeader className="bg-orange-500/10">
+                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                    <Zap className="h-6 w-6" />
+                    Review Declined Coaching Recommendation
+                </CardTitle>
+                <CardDescription>
+                   {item.supervisorName} (Team Lead) declined an AI recommendation from their 1-on-1 with {item.employeeName}.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                <div className="p-3 bg-muted/80 rounded-lg border space-y-3">
+                    <p className="font-semibold text-foreground">Original AI Recommendation</p>
+                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                    <div className="mt-3 pt-3 border-t">
+                        <div className="flex items-center gap-2 text-sm text-foreground mb-2">
+                            <RecommendationIcon type={rec.type} />
+                            <strong>{rec.type}:</strong> {rec.resource}
+                        </div>
+                        <p className="text-xs text-muted-foreground italic">AI Justification: "{rec.justification}"</p>
+                    </div>
+                </div>
+                 <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
+                    <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+                </div>
+                <div className="space-y-3 pt-4">
+                     <Label htmlFor={`am-notes-${rec.id}`} className="font-semibold text-base">Your Decision & Notes</Label>
+                    <p className="text-sm text-muted-foreground">
+                        Uphold the AI's recommendation (deny the decline) or agree with the supervisor (approve the decline). Your notes will be visible to the supervisor.
+                    </p>
+                    <Textarea 
+                        id={`am-notes-${rec.id}`}
+                        placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
+                        value={amNotes}
+                        onChange={(e) => setAmNotes(e.target.value)}
+                        rows={3}
+                        className="bg-background"
+                    />
+                    <div className="flex gap-2 pt-2">
+                        <Button onClick={() => handleDecision(false)} disabled={isSubmitting || !amNotes} variant="destructive">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Uphold AI Recommendation
+                        </Button>
+                         <Button onClick={() => handleDecision(true)} disabled={isSubmitting || !amNotes} variant="secondary">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Approve Decline
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleColor, bgColor, borderColor }: { item: OneOnOneHistoryItem, onUpdate: () => void, title: string, titleIcon: React.ElementType, titleColor: string, bgColor: string, borderColor: string }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
@@ -474,26 +565,33 @@ function MessagesContent({ role }: { role: Role }) {
 
     const userMessages = history.filter(item => {
         const insight = item.analysis.criticalCoachingInsight;
-        if (!insight || insight.status === 'resolved') return false;
         
-        // This logic ensures that once a manager/am acts, they can still see the case
-        const actedOnByCurrentUser = insight.auditTrail?.some(e => e.actor === currentUser.name);
-
-        switch (role) {
-            case 'Employee':
-                return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
-            case 'AM':
-                return insight.status === 'pending_am_review';
-            case 'Manager':
-                return insight.status === 'pending_manager_review';
-            case 'HR Head':
-                return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
-            default:
-                return false;
+        // Critical Insight Escalations
+        if (insight && insight.status !== 'resolved') {
+            switch (role) {
+                case 'Employee':
+                    return item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement';
+                case 'AM':
+                    return insight.status === 'pending_am_review';
+                case 'Manager':
+                    return insight.status === 'pending_manager_review';
+                case 'HR Head':
+                    return insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action';
+            }
         }
+        
+        // Declined Coaching Recommendation Escalations
+        if (role === 'AM') {
+            const hasPendingRecReview = item.analysis.coachingRecommendations.some(
+                rec => rec.status === 'pending_am_review'
+            );
+            if (hasPendingRecReview) return true;
+        }
+
+        return false;
     });
 
-    setMessages(userMessages);
+    setMessages(userMessages.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     setIsLoading(false);
   }, [role]);
 
@@ -513,28 +611,38 @@ function MessagesContent({ role }: { role: Role }) {
 
   const hasMessages = messages.length > 0;
 
-  const renderWidget = (item: OneOnOneHistoryItem) => {
-    const status = item.analysis.criticalCoachingInsight?.status;
-    const currentUser = roleUserMapping[role];
-    const isCurrentUserAssigned = item.assignedTo === currentUser.name;
-    const canEmployeeAcknowledge = role === 'Employee' && status === 'pending_employee_acknowledgement';
+  const renderWidgets = (item: OneOnOneHistoryItem) => {
+    const widgets = [];
     
-    // Determine which widget to show based on who needs to act, or who is viewing
-    if (canEmployeeAcknowledge) {
-         return <AcknowledgementWidget key={item.id} item={item} onUpdate={fetchMessages} />;
+    // Widget for Critical Insight Escalation
+    const insight = item.analysis.criticalCoachingInsight;
+    if (insight && insight.status !== 'resolved') {
+        const currentUser = roleUserMapping[role];
+        const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
+        if (canEmployeeAcknowledge) {
+            widgets.push(<AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />);
+        }
+        if (role === 'AM' && insight.status === 'pending_am_review') {
+            widgets.push(<EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />);
+        }
+        if (role === 'Manager' && insight.status === 'pending_manager_review') {
+            widgets.push(<EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />);
+        }
+        if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
+            widgets.push(<HrReviewWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />);
+        }
     }
 
-    if (role === 'AM' && status === 'pending_am_review') {
-        return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
+    // Widgets for Declined Coaching Recommendations
+    if (role === 'AM') {
+        item.analysis.coachingRecommendations.forEach(rec => {
+            if (rec.status === 'pending_am_review') {
+                widgets.push(<DeclinedCoachingReviewWidget key={`${item.id}-${rec.id}`} item={item} rec={rec} onUpdate={fetchMessages} />);
+            }
+        });
     }
-     if (role === 'Manager' && status === 'pending_manager_review') {
-        return <EscalationWidget key={item.id} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
-    }
-    if (role === 'HR Head' && (status === 'pending_hr_review' || status === 'pending_final_hr_action')) {
-         return <HrReviewWidget key={item.id} item={item} onUpdate={fetchMessages} />;
-    }
-    
-    return null;
+
+    return widgets;
   };
 
 
@@ -554,7 +662,7 @@ function MessagesContent({ role }: { role: Role }) {
             {isLoading ? (
                  <Skeleton className="h-48 w-full" />
             ) : hasMessages ? (
-                messages.map(item => renderWidget(item))
+                messages.flatMap(item => renderWidgets(item))
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground text-lg">No new messages or actions.</p>
