@@ -165,31 +165,33 @@ export default function DevelopmentPlanWidget() {
                 <CardContent className="space-y-6">
                     {activePlans.map(({ historyId, rec }) => (
                         <div key={rec.id} className="p-4 border rounded-lg bg-muted/50 space-y-4">
-                            <div className="flex justify-between items-start">
-                                 <div>
-                                    <p className="font-semibold text-foreground">{rec.area}</p>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                                        <RecommendationIcon type={rec.type} />
-                                        <span>{rec.type}: {rec.resource}</span>
-                                    </div>
+                            <div>
+                                <p className="font-semibold text-foreground">{rec.area}</p>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                                    <RecommendationIcon type={rec.type} />
+                                    <span>{rec.type}: {rec.resource}</span>
                                 </div>
-                                <Badge variant={rec.progress === 100 ? "success" : "secondary"}>
-                                    {rec.progress ?? 0}% Complete
-                                </Badge>
                             </div>
-                            <div className="pt-2 px-8">
-                                 <Slider
-                                    defaultValue={[rec.progress ?? 0]}
-                                    max={100}
-                                    step={10}
-                                    onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
+                            
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center mb-1">
+                                    <Label className="text-xs text-muted-foreground">Progress</Label>
+                                    <Badge variant={rec.progress === 100 ? "success" : "secondary"}>
+                                        {rec.progress ?? 0}% Complete
+                                    </Badge>
+                                </div>
+                                <Slider
+                                   defaultValue={[rec.progress ?? 0]}
+                                   max={100}
+                                   step={10}
+                                   onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
                                 />
                             </div>
 
                              {rec.checkIns && rec.checkIns.length > 0 && (
                                 <Accordion type="single" collapsible className="w-full">
-                                    <AccordionItem value="check-in-history" className="border-t">
-                                        <AccordionTrigger className="pt-4 text-sm font-medium flex items-center gap-2 text-muted-foreground hover:no-underline">
+                                    <AccordionItem value="check-in-history">
+                                        <AccordionTrigger className="pt-2 text-sm font-medium flex items-center gap-2 text-muted-foreground hover:no-underline">
                                             <History className="h-4 w-4" />
                                             Check-in History
                                         </AccordionTrigger>
