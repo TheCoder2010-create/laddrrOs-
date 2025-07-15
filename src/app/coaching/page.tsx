@@ -393,12 +393,12 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
             item.analysis.coachingRecommendations.forEach(rec => {
                 if (role === 'AM') {
                     const amWasInvolved = rec.auditTrail?.some(e => e.actor === amActorName);
-                    // AM sees items pending their review, or items they have already reviewed (which are now pending manager ack, or declined)
+                    // AM sees items pending their review, or items they have already reviewed
                     if (rec.status === 'pending_am_review' || (amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined'))) {
                         pendingActions.push({ historyItem: item, recommendation: rec });
                     }
                 } else if (role === 'Manager') {
-                     // Manager sees items pending their acknowledgement, or that they have already acknowledged
+                     // Manager sees items pending their acknowledgement, or that they have already acknowledged (status becomes 'declined')
                     if (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') {
                         pendingActions.push({ historyItem: item, recommendation: rec });
                     }
@@ -437,11 +437,13 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         if (rec.status === 'pending_am_review' && role === 'AM') {
             return <AmReviewWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
         }
-        // This view is for both Manager (actionable) and AM (read-only history)
-        if ((rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined')) {
-             if (role === 'Manager' || role === 'AM') {
-                return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
-             }
+        
+        const amWasInvolved = rec.auditTrail?.some(e => e.actor === roleUserMapping['AM'].name);
+        if (role === 'Manager' && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined')) {
+            return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
+        }
+        if (role === 'AM' && amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined')) {
+            return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
         }
         return null;
     };
@@ -451,9 +453,11 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         let title = "Coaching Item History";
         let subtitle = `For TL: ${item.supervisorName}`;
         let statusBadge = <Badge variant="secondary">Closed</Badge>;
+        let isActionable = false;
 
         if (role === 'AM') {
             if (rec.status === 'pending_am_review') {
+                isActionable = true;
                 icon = <UserCog className="h-5 w-5 text-orange-600 dark:text-orange-500" />;
                 title = "Review Declined Recommendation";
                 statusBadge = <Badge variant="destructive">Action Required</Badge>;
@@ -466,13 +470,13 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
             }
         }
         if (role === 'Manager') {
-            const isActionable = rec.status === 'pending_manager_acknowledgement';
+            isActionable = rec.status === 'pending_manager_acknowledgement';
             icon = <CheckSquareIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
             title = isActionable ? "Acknowledge Declined Recommendation" : "Declined Recommendation History";
             subtitle = `For AM: ${roleUserMapping['AM'].name} | TL: ${item.supervisorName}`;
             statusBadge = isActionable ? <Badge variant="destructive">Ack Required</Badge> : <Badge variant="success">Acknowledged</Badge>;
         }
-        return { icon, title, subtitle, statusBadge };
+        return { icon, title, subtitle, statusBadge, isActionable };
     }
 
     return (
@@ -496,8 +500,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                 ) : (
                     <Accordion type="single" collapsible className="w-full space-y-2">
                         {teamActions.map(({ historyItem, recommendation: rec }) => {
-                            const { icon, title, subtitle, statusBadge } = getTriggerInfo(historyItem, rec);
-                             const isActionable = (role === 'AM' && rec.status === 'pending_am_review') || (role === 'Manager' && rec.status === 'pending_manager_acknowledgement');
+                            const { icon, title, subtitle, statusBadge, isActionable } = getTriggerInfo(historyItem, rec);
                             return (
                                 <AccordionItem value={rec.id} key={rec.id} className={cn("border rounded-lg", isActionable ? "bg-muted/30" : "bg-transparent")}>
                                     <AccordionTrigger className="px-4 py-3 w-full hover:no-underline">
