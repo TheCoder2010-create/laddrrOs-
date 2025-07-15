@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote } from 'lucide-react';
 import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
@@ -150,14 +150,22 @@ export default function CoachingWidget() {
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="space-y-4 pt-2">
-                                        <div className="p-3 bg-background/60 rounded-lg border">
+                                        <div className="p-3 bg-background/60 rounded-lg border space-y-3">
                                              <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+
+                                             {rec.example && (
+                                                <div className="p-3 bg-muted/50 rounded-md border-l-4 border-primary">
+                                                    <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                                                    <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                                                </div>
+                                             )}
+
                                             <div className="mt-3 pt-3 border-t">
                                                 <div className="flex items-center gap-2 text-sm text-foreground mb-2">
                                                     <RecommendationIcon type={rec.type} />
                                                     <strong>{rec.type}:</strong> {rec.resource}
                                                 </div>
-                                                <p className="text-xs text-muted-foreground italic">"{rec.justification}"</p>
+                                                <p className="text-xs text-muted-foreground italic">AI Justification: "{rec.justification}"</p>
                                             </div>
                                              <div className="flex gap-2 mt-4 pt-4 border-t">
                                                 <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(historyItem.id, rec.id, 'accepted')}>

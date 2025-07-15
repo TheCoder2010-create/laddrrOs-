@@ -136,6 +136,7 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   Generate a unique string for the \`id\` field.
     *   Identify a clear \`area\` for improvement (e.g., "Active Listening," "Delivering Corrective Feedback," "Setting Clear Expectations").
     *   Write a concise \`recommendation\` for the supervisor.
+    *   **IMPORTANT**: Include a direct quote in the \`example\` field that demonstrates the area for improvement.
     *   Choose a resource \`type\`: "Book", "Podcast", "Article", or "Course".
     *   Provide the name of a REAL, SPECIFIC \`resource\` (e.g., book title: "Crucial Conversations"; podcast: "HBR IdeaCast").
     *   Write a compelling \`justification\` explaining why this resource is a good fit.

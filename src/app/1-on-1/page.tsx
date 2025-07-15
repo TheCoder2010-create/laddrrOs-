@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -447,6 +447,27 @@ function HistorySection({ role }: { role: Role }) {
                                                         {analysisResult.strengthsObserved.map((strength, i) => <li key={i}><strong>{strength.action}:</strong> "{strength.example}"</li>)}
                                                     </ul>
                                                 </div>
+                                                
+                                                {analysisResult.coachingRecommendations.length > 0 && (
+                                                    <div>
+                                                        <h4 className="font-semibold text-foreground">Coaching Recommendations</h4>
+                                                        <div className="mt-2 space-y-3">
+                                                            {analysisResult.coachingRecommendations.map((rec, i) => (
+                                                                <div key={i} className="p-3 border rounded-md bg-background/50">
+                                                                    <p className="font-medium text-foreground">{rec.area}</p>
+                                                                    <p className="text-sm text-muted-foreground mt-1">{rec.recommendation}</p>
+                                                                    {rec.example && (
+                                                                        <div className="mt-2 p-2 bg-muted/50 rounded-md border-l-2 border-primary">
+                                                                            <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example</p>
+                                                                            <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
 
                                                 <div>
                                                     <h4 className="font-semibold text-foreground">Action Items</h4>

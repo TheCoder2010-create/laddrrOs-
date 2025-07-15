@@ -6,7 +6,7 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb } from 'lucide-react';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote } from 'lucide-react';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, reviewCoachingRecommendationDecline } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
@@ -204,6 +204,14 @@ function DeclinedCoachingReviewWidget({ item, rec, onUpdate }: { item: OneOnOneH
                 <div className="p-3 bg-muted/80 rounded-lg border space-y-3">
                     <p className="font-semibold text-foreground">Original AI Recommendation</p>
                     <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                    
+                    {rec.example && (
+                        <div className="p-3 bg-background/80 rounded-md border-l-4 border-primary">
+                            <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                            <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                        </div>
+                    )}
+
                     <div className="mt-3 pt-3 border-t">
                         <div className="flex items-center gap-2 text-sm text-foreground mb-2">
                             <RecommendationIcon type={rec.type} />
