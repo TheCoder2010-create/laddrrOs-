@@ -15,12 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog, History, Calendar as CalendarIcon, Calendar } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog, History, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Calendar } from '@/components/ui/calendar';
+import DevelopmentPlanWidget from '@/components/dashboards/development-plan-widget';
 
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
@@ -59,13 +60,15 @@ function MyDevelopmentWidget() {
         const allRecs: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
         
         const currentUserName = role ? roleUserMapping[role].name : null;
-        const statusesToFetch: CoachingRecommendation['status'][] = ['pending', 'accepted', 'declined', 'pending_am_review', 'pending_manager_acknowledgement'];
+        const statusesToFetch: CoachingRecommendation['status'][] = ['pending', 'declined', 'pending_am_review', 'pending_manager_acknowledgement'];
 
         history.forEach(item => {
             if (item.supervisorName === currentUserName) {
                 item.analysis.coachingRecommendations.forEach(rec => {
+                    // We only want to show actionable items or items that were just actioned (declined).
+                    // Accepted items move to the other widget.
                     if (statusesToFetch.includes(rec.status)) {
-                        allRecs.push({ historyItem: item, recommendation: rec });
+                         allRecs.push({ historyItem: item, recommendation: rec });
                     }
                 });
             }
@@ -139,8 +142,6 @@ function MyDevelopmentWidget() {
                  return <Badge className="bg-orange-500 text-white">AM Review</Badge>;
             case 'pending_manager_acknowledgement':
                 return <Badge className="bg-red-700 text-white">Manager Review</Badge>;
-            case 'accepted':
-                return <Badge variant="success">Accepted</Badge>;
             case 'declined':
                 return <Badge variant="secondary">Declined</Badge>;
             default:
@@ -197,7 +198,7 @@ function MyDevelopmentWidget() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <CalendarComponent 
+                                <Calendar 
                                     mode="single" 
                                     selected={startDate} 
                                     onSelect={(date) => {
@@ -219,7 +220,7 @@ function MyDevelopmentWidget() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <CalendarComponent 
+                                <Calendar 
                                     mode="single" 
                                     selected={endDate} 
                                     onSelect={(date) => {
@@ -247,14 +248,16 @@ function MyDevelopmentWidget() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <BrainCircuit />
-                        My Development Plan
+                        My Actionable Items
                     </CardTitle>
                     <CardDescription>
                         AI-powered recommendations based on your recent 1-on-1 sessions. Review pending items and view your history.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {recommendations.length === 0 ? (
+                    {isLoading ? (
+                        <Skeleton className="h-24 w-full" />
+                    ) : recommendations.length === 0 ? (
                          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
                             <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                             <h3 className="text-lg font-semibold">All Caught Up!</h3>
@@ -307,17 +310,7 @@ function MyDevelopmentWidget() {
                                                 </div>
                                              )}
 
-                                            {rec.status === 'accepted' && rec.startDate && rec.endDate && (
-                                                <div className="mt-4 pt-4 border-t">
-                                                    <p className="text-sm font-semibold flex items-center gap-2"><Calendar className="h-4 w-4"/>Development Plan</p>
-                                                    <div className="mt-2 p-2 bg-muted/50 rounded-md text-sm text-foreground">
-                                                        <p><strong>Start Date:</strong> {format(new Date(rec.startDate), 'PPP')}</p>
-                                                        <p><strong>End Date:</strong> {format(new Date(rec.endDate), 'PPP')}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {!isActionable && rec.status !== 'accepted' && (
+                                            {!isActionable && (
                                                 <div className="mt-4 pt-4 border-t">
                                                     <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4"/>Status: {rec.status.replace(/_/g, ' ')}</p>
                                                     {rec.rejectionReason && (
@@ -491,7 +484,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                 if (role === 'AM') {
                     const amWasInvolved = rec.auditTrail?.some(e => e.actor === amActorName);
                     // AM sees items pending their review, or items they have already reviewed
-                    if (rec.status === 'pending_am_review' || (amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined'))) {
+                    if (rec.status === 'pending_am_review' || (amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined' || rec.status === 'accepted'))) {
                         pendingActions.push({ historyItem: item, recommendation: rec });
                     }
                 } else if (role === 'Manager') {
@@ -539,7 +532,8 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         if (role === 'Manager' && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined')) {
             return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
         }
-        if (role === 'AM' && amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined')) {
+        if (role === 'AM' && amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined' || rec.status === 'accepted')) {
+            // Re-use manager widget for read-only history view for AMs.
             return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
         }
         return null;
@@ -561,6 +555,10 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
             } else if (rec.status === 'pending_manager_acknowledgement') {
                  title = "Awaiting Manager Acknowledgement";
                  statusBadge = <Badge variant="secondary">Pending</Badge>;
+            } else if (rec.status === 'accepted') {
+                 title = "Mandated Development Plan";
+                 subtitle += ` | Status: Active`
+                 statusBadge = <Badge variant="success">Active</Badge>;
             } else { // Declined
                  title = "Declined Recommendation History";
                  statusBadge = <Badge variant="success">Closed</Badge>;
@@ -598,6 +596,9 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                     <Accordion type="single" collapsible className="w-full space-y-2">
                         {teamActions.map(({ historyItem, recommendation: rec }) => {
                             const { icon, title, subtitle, statusBadge, isActionable } = getTriggerInfo(historyItem, rec);
+                            const widgetContent = renderWidgetContent(historyItem, rec);
+                            if (!widgetContent) return null; // Don't render if there's nothing to show
+                            
                             return (
                                 <AccordionItem value={rec.id} key={rec.id} className={cn("border rounded-lg", isActionable ? "bg-muted/30" : "bg-transparent")}>
                                     <AccordionTrigger className="px-4 py-3 w-full hover:no-underline">
@@ -615,7 +616,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border-t">
-                                        {renderWidgetContent(historyItem, rec)}
+                                        {widgetContent}
                                     </AccordionContent>
                                 </AccordionItem>
                             );
@@ -627,21 +628,11 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
     );
 }
 
-function CoachingPageContent() {
-    const { role } = useRole();
-    const isSupervisor = role === 'Team Lead' || role === 'AM' || role === 'Manager';
-    const isManager = role === 'AM' || role === 'Manager' || role === 'HR Head';
-    
-    return (
-         <div className="p-4 md:p-8 space-y-8">
-            {isSupervisor && <MyDevelopmentWidget />}
-            {isManager && <TeamDevelopmentWidget role={role!} />}
-         </div>
-    )
-}
 
 export default function CoachingPage() {
   const { role, setRole, isLoading } = useRole();
+  const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
+  const isManager = role && ['AM', 'Manager', 'HR Head'].includes(role);
 
   if (isLoading || !role) {
     return (
@@ -653,7 +644,15 @@ export default function CoachingPage() {
   
   return (
     <DashboardLayout role={role} onSwitchRole={setRole}>
-        <CoachingPageContent />
+        <div className="p-4 md:p-8 space-y-8">
+            {isSupervisor && (
+                <>
+                    <MyDevelopmentWidget />
+                    <DevelopmentPlanWidget />
+                </>
+            )}
+            {isManager && <TeamDevelopmentWidget role={role} />}
+        </div>
     </DashboardLayout>
   );
 }

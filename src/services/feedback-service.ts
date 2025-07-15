@@ -625,12 +625,18 @@ export async function reviewCoachingRecommendationDecline(
             details: `AM approved decline. Notes: ${amNotes}`
         });
     } else {
-        recommendation.status = 'pending'; // Re-assign to supervisor
+        recommendation.status = 'accepted';
+        recommendation.progress = 0;
+        const now = new Date();
+        const endDate = new Date(now.setDate(now.getDate() + 30)); // Default 30 day timeline
+        recommendation.startDate = new Date().toISOString();
+        recommendation.endDate = endDate.toISOString();
+
         recommendation.auditTrail.push({
             event: "Decline Denied by AM",
             actor: amActor,
             timestamp: new Date().toISOString(),
-            details: `AM upheld AI recommendation. Notes: ${amNotes}`
+            details: `AM upheld AI recommendation and created a mandatory development plan. Notes: ${amNotes}`
         });
     }
 
