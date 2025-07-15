@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -79,10 +80,6 @@ export default function DevelopmentPlanWidget() {
             // Only trigger check-in if progress has increased
             if (newProgress > (plan.rec.progress ?? 0)) {
                 setCheckInRec({ historyId, rec: plan.rec, newProgress });
-            } else {
-                // If user slides backward, reset the UI by re-fetching
-                // This will snap the slider back to its saved state.
-                fetchActivePlans();
             }
         }
     }, 500);
@@ -198,22 +195,22 @@ export default function DevelopmentPlanWidget() {
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-4 border rounded-lg bg-card flex flex-col justify-between cursor-pointer hover:bg-muted/30 transition-colors"
+                                className="p-3 border rounded-lg bg-card flex flex-col justify-between cursor-pointer hover:bg-muted/30 transition-colors min-h-[120px]"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
                                 tabIndex={0}
                             >
-                                <div className="space-y-4">
-                                     <div className="flex justify-between items-start gap-2">
-                                        <p className="font-semibold text-foreground leading-tight">{rec.area}</p>
-                                        <p className="text-lg font-bold text-primary">{rec.progress ?? 0}%</p>
+                                <div className="flex flex-col gap-2 flex-grow">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
+                                        <p className="text-lg font-bold text-secondary flex-shrink-0">{rec.progress ?? 0}%</p>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <RecommendationIcon type={rec.type} />
-                                        <span className="truncate">{rec.type}: {rec.resource}</span>
-                                    </div>
-                                    <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                                    <div 
+                                        className="w-full"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                    >
                                         <Slider
                                             defaultValue={[rec.progress ?? 0]}
                                             max={100}
@@ -222,6 +219,10 @@ export default function DevelopmentPlanWidget() {
                                             className="w-full"
                                         />
                                     </div>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 truncate">
+                                    <RecommendationIcon type={rec.type} />
+                                    <span className="truncate">{rec.type}: {rec.resource}</span>
                                 </div>
                             </div>
                         ))}
