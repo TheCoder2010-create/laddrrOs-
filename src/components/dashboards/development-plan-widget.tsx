@@ -184,25 +184,23 @@ export default function DevelopmentPlanWidget() {
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-4 border rounded-lg bg-muted/50 space-y-3 flex flex-col cursor-pointer hover:bg-muted/80 transition-colors"
+                                className="p-4 border rounded-lg bg-muted/50 flex flex-col justify-between min-h-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
                                 tabIndex={0}
                             >
-                                <div className="flex justify-between items-start gap-4">
-                                    <div className="flex-1 space-y-1">
-                                        <p className="font-semibold text-foreground leading-tight">{rec.area}</p>
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <RecommendationIcon type={rec.type} />
-                                            <span className="truncate">{rec.type}: {rec.resource}</span>
-                                        </div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex justify-between items-start gap-4">
+                                        <p className="font-semibold text-foreground leading-tight truncate">{rec.area}</p>
+                                        <p className="text-xl font-bold text-primary flex-shrink-0">{rec.progress ?? 0}%</p>
                                     </div>
-                                    <div className="text-right flex-shrink-0">
-                                        <p className="text-2xl font-bold text-primary">{rec.progress ?? 0}%</p>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <RecommendationIcon type={rec.type} />
+                                        <span className="truncate">{rec.type}: {rec.resource}</span>
                                     </div>
                                 </div>
-                                <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="pt-3" onClick={(e) => e.stopPropagation()}>
                                     <Slider
                                         defaultValue={[rec.progress ?? 0]}
                                         max={100}
