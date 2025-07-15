@@ -8,7 +8,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
-import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
+import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
 import { summarizeAnonymousFeedback } from '@/ai/flows/summarize-anonymous-feedback-flow';
 
 export interface AuditEvent {
@@ -526,6 +526,33 @@ export async function updateCoachingProgress(historyId: string, recommendationId
     
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
+
+export async function addCoachingCheckIn(historyId: string, recommendationId: string, notes: string): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const historyIndex = allHistory.findIndex(h => h.id === historyId);
+    if (historyIndex === -1) throw new Error("History item not found.");
+
+    const item = allHistory[historyIndex];
+    const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
+    if (recIndex === -1) throw new Error("Coaching recommendation not found.");
+
+    const recommendation = item.analysis.coachingRecommendations[recIndex];
+    
+    if (!recommendation.checkIns) {
+        recommendation.checkIns = [];
+    }
+
+    const newCheckIn: CheckIn = {
+        id: uuidv4(),
+        date: new Date().toISOString(),
+        notes: notes,
+    };
+
+    recommendation.checkIns.push(newCheckIn);
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
 
 export async function reviewCoachingRecommendationDecline(
     historyId: string,
