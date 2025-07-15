@@ -28,7 +28,7 @@ interface MainSidebarProps {
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
   const { availableRoles } = useRole();
-  const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person' };
+  const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
   const pathname = usePathname();
   const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
   const [actionItemCount, setActionItemCount] = useState(0);
@@ -50,30 +50,30 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       
       // Action items count
-      setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole) && f.status !== 'Resolved').length);
+      setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole as any) && f.status !== 'Resolved' && f.status !== 'Closed').length);
 
       // Messages count (Critical Insights)
-      const insightStatusesToCount: string[] = [];
-      if (currentRole === 'Employee') insightStatusesToCount.push('pending_employee_acknowledgement');
-      if (currentRole === 'AM') insightStatusesToCount.push('pending_am_review');
-      if (currentRole === 'Manager') insightStatusesToCount.push('pending_manager_review');
-      if (currentRole === 'HR Head') insightStatusesToCount.push('pending_hr_review', 'pending_final_hr_action');
-
       const messageNotifications = history.filter(h => {
           const insight = h.analysis.criticalCoachingInsight;
-          if (!insight || !insight.status) return false;
-          if (currentRole === 'Employee') {
-              return h.employeeName === currentUserName && insightStatusesToCount.includes(insight.status);
-          }
-          return insightStatusesToCount.includes(insight.status);
+          if (!insight || insight.status === 'resolved') return false;
+
+          const isEmployeeMatch = currentRole === 'Employee' && h.employeeName === currentUserName && insight.status === 'pending_employee_acknowledgement';
+          const isAmMatch = currentRole === 'AM' && insight.status === 'pending_am_review';
+          const isManagerMatch = currentRole === 'Manager' && insight.status === 'pending_manager_review';
+          const isHrMatch = currentRole === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+          
+          return isEmployeeMatch || isAmMatch || isManagerMatch || isHrMatch;
       }).length;
       setMessageCount(messageNotifications);
       
       // Coaching & Development Count
       let devCount = 0;
       // My Development (pending recommendations for me)
-      devCount += history.flatMap(h => h.analysis.coachingRecommendations)
-                         .filter(rec => h.supervisorName === currentUserName && rec.status === 'pending').length;
+      history.forEach(h => {
+        if (h.supervisorName === currentUserName) {
+          devCount += h.analysis.coachingRecommendations.filter(rec => rec.status === 'pending').length;
+        }
+      });
 
       // Team Development (escalations for me to review)
       const recStatusesToCount: string[] = [];
@@ -81,8 +81,9 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
 
       if (recStatusesToCount.length > 0) {
-        devCount += history.flatMap(h => h.analysis.coachingRecommendations)
-                         .filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
+        history.forEach(h => {
+            devCount += h.analysis.coachingRecommendations.filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
+        });
       }
       setCoachingCount(devCount);
 
