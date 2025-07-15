@@ -55,7 +55,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const history = await getOneOnOneHistory();
       let count = 0;
       
-      // Count critical insight escalations
       const insightStatusesToCount: string[] = [];
       if (currentRole === 'Employee') insightStatusesToCount.push('pending_employee_acknowledgement');
       if (currentRole === 'AM') insightStatusesToCount.push('pending_am_review');
@@ -72,10 +71,14 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           return insightStatusesToCount.includes(insight.status);
       }).length;
 
-      // Count declined coaching recommendation escalations for AM
-      if (currentRole === 'AM') {
-          count += history.flatMap(h => h.analysis.coachingRecommendations)
-                           .filter(rec => rec.status === 'pending_am_review').length;
+      // Count declined coaching recommendation escalations
+      const recStatusesToCount: string[] = [];
+      if (currentRole === 'AM') recStatusesToCount.push('pending_am_review');
+      if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
+
+      if (recStatusesToCount.length > 0) {
+        count += history.flatMap(h => h.analysis.coachingRecommendations)
+                         .filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
       }
       
       setMessageCount(count);

@@ -86,14 +86,14 @@ const RecommendationAuditEventSchema = z.object({
 export type RecommendationAuditEvent = z.infer<typeof RecommendationAuditEventSchema>;
 
 export const CoachingRecommendationSchema = z.object({
-  id: z.string().describe("A unique identifier for this recommendation. This will be a UUID."),
+  id: z.string().describe("A unique identifier for this recommendation. The AI should not generate this; it's added post-analysis."),
   area: z.string().describe("The specific area or weakness identified for coaching, e.g., 'Active Listening'."),
   recommendation: z.string().describe("A concise, actionable recommendation for the supervisor to improve in the identified area."),
   example: z.string().optional().describe("A direct quote from the conversation that serves as an example of the area for improvement."),
   type: z.enum(["Book", "Podcast", "Article", "Course", "Other"]).describe("The type of resource being recommended."),
   resource: z.string().describe("The title of the recommended book, podcast episode, article, or course."),
   justification: z.string().describe("A brief explanation of why this specific resource is recommended and how it addresses the area of improvement."),
-  status: z.enum(["pending", "accepted", "declined", "pending_am_review"]).default("pending").describe("The supervisor's response to the recommendation."),
+  status: z.enum(["pending", "accepted", "declined", "pending_am_review", "pending_manager_acknowledgement"]).default("pending").describe("The supervisor's response to the recommendation."),
   rejectionReason: z.string().optional().describe("If declined, the supervisor's reason for not accepting the recommendation."),
   auditTrail: z.array(RecommendationAuditEventSchema).optional().describe("An audit trail for this specific recommendation."),
 });

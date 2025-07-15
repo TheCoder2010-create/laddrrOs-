@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput, type CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, updateOneOnOneHistoryItem } from '@/services/feedback-service';
+import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getDeclinedCoachingAreasForSupervisor } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -208,10 +208,14 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                 analysis: { supervisorSummary: '', employeeSummary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false }, employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] } }, 
             });
 
-            // Pass the new history ID to the analysis flow
+            // Fetch past declined coaching areas to provide context to the AI
+            const pastDeclinedAreas = await getDeclinedCoachingAreasForSupervisor(supervisor);
+
+            // Pass the new history ID and past declined areas to the analysis flow
             const result = await analyzeOneOnOne({
                 ...values,
                 oneOnOneId: historyItem.id, // Pass the ID for linking
+                pastDeclinedRecommendationAreas: pastDeclinedAreas, // Pass the context
             });
 
             setAnalysisResult(result);

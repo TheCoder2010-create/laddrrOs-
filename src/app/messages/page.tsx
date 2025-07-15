@@ -6,8 +6,8 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, reviewCoachingRecommendationDecline } from '@/services/feedback-service';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon } from 'lucide-react';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, escalateToManager, submitAmDirectResponse, reviewCoachingRecommendationDecline, acknowledgeDeclinedRecommendation } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -253,6 +253,66 @@ function DeclinedCoachingReviewWidget({ item, rec, onUpdate }: { item: OneOnOneH
     );
 }
 
+function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, rec: CoachingRecommendation, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleAcknowledge = async () => {
+        setIsSubmitting(true);
+        try {
+            await acknowledgeDeclinedRecommendation(item.id, rec.id, role!);
+            toast({ title: "Acknowledgement Logged", description: "The workflow for this recommendation is now complete." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit acknowledgement", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
+        const entry = rec.auditTrail?.find(e => e.event === event);
+        if (!details && !entry?.details) return null;
+        return (
+            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
+                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
+            </div>
+        );
+    };
+
+    return (
+        <Card className="border-gray-500/50">
+            <CardHeader className="bg-gray-500/10">
+                <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-400">
+                    <CheckSquareIcon className="h-6 w-6" />
+                    FYI: Declined Recommendation Approved
+                </CardTitle>
+                <CardDescription>
+                   For 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                 {renderAuditEntry("Recommendation Declined by Supervisor", `${item.supervisorName}'s (TL) Decline Reason`, rec.rejectionReason, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                 {renderAuditEntry("Decline Approved by AM", "AM's Approval Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+                <div className="space-y-3 pt-4">
+                     <Label className="font-semibold text-base">Your Action</Label>
+                    <p className="text-sm text-muted-foreground">
+                        No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
+                    </p>
+                    <div className="flex gap-2 pt-2">
+                         <Button onClick={handleAcknowledge} disabled={isSubmitting} variant="secondary">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Acknowledge & Close
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleColor, bgColor, borderColor }: { item: OneOnOneHistoryItem, onUpdate: () => void, title: string, titleIcon: React.ElementType, titleColor: string, bgColor: string, borderColor: string }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
@@ -395,7 +455,7 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                                 />
                                 <div className="flex gap-2">
                                     <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        {isSubmitting && <Loader2 className="mr-2 animate-spin"/>}
                                         Submit
                                     </Button>
                                     <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
@@ -591,12 +651,12 @@ function MessagesContent({ role }: { role: Role }) {
         }
         
         // Declined Coaching Recommendation Escalations
-        if (role === 'AM') {
-            const hasPendingRecReview = item.analysis.coachingRecommendations.some(
-                rec => rec.status === 'pending_am_review'
-            );
-            if (hasPendingRecReview) return true;
-        }
+        const hasPendingRecReview = item.analysis.coachingRecommendations.some(rec => {
+            if (role === 'AM' && rec.status === 'pending_am_review') return true;
+            if (role === 'Manager' && rec.status === 'pending_manager_acknowledgement') return true;
+            return false;
+        });
+        if (hasPendingRecReview) return true;
 
         return false;
     });
@@ -643,13 +703,14 @@ function MessagesContent({ role }: { role: Role }) {
     }
 
     // Widgets for Declined Coaching Recommendations
-    if (role === 'AM') {
-        item.analysis.coachingRecommendations.forEach(rec => {
-            if (rec.status === 'pending_am_review') {
-                widgets.push(<DeclinedCoachingReviewWidget key={`${item.id}-${rec.id}`} item={item} rec={rec} onUpdate={fetchMessages} />);
-            }
-        });
-    }
+    item.analysis.coachingRecommendations.forEach(rec => {
+        if (role === 'AM' && rec.status === 'pending_am_review') {
+            widgets.push(<DeclinedCoachingReviewWidget key={`${item.id}-${rec.id}`} item={item} rec={rec} onUpdate={fetchMessages} />);
+        }
+        if (role === 'Manager' && rec.status === 'pending_manager_acknowledgement') {
+            widgets.push(<ManagerAcknowledgementWidget key={`${item.id}-${rec.id}`} item={item} rec={rec} onUpdate={fetchMessages} />);
+        }
+    });
 
     return widgets;
   };
