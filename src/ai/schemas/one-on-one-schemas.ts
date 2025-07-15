@@ -86,7 +86,7 @@ const RecommendationAuditEventSchema = z.object({
 export type RecommendationAuditEvent = z.infer<typeof RecommendationAuditEventSchema>;
 
 export const CoachingRecommendationSchema = z.object({
-  id: z.string().uuid().describe("A unique identifier for this recommendation."),
+  id: z.string().describe("A unique identifier for this recommendation. This will be a UUID."),
   area: z.string().describe("The specific area or weakness identified for coaching, e.g., 'Active Listening'."),
   recommendation: z.string().describe("A concise, actionable recommendation for the supervisor to improve in the identified area."),
   type: z.enum(["Book", "Podcast", "Article", "Course", "Other"]).describe("The type of resource being recommended."),

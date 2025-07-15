@@ -133,7 +133,7 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
 5.  **Effectiveness Score (1-10)**: Rate the session based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
 6.  **Strengths Observed**: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
 7.  **Coaching Recommendations**: This is the MOST IMPORTANT part of your analysis. Provide 2-3 concrete, structured coaching recommendations based on weaknesses observed in this session. For each recommendation:
-    *   Generate a unique UUID for the \`id\` field.
+    *   Generate a unique string for the \`id\` field.
     *   Identify a clear \`area\` for improvement (e.g., "Active Listening," "Delivering Corrective Feedback," "Setting Clear Expectations").
     *   Write a concise \`recommendation\` for the supervisor.
     *   Choose a resource \`type\`: "Book", "Podcast", "Article", or "Course".
@@ -191,6 +191,15 @@ const analyzeOneOnOneFlow = ai.defineFlow(
     
     if (!output) {
       throw new Error("AI analysis failed to produce an output after multiple retries.");
+    }
+
+    // Post-process to add UUIDs to coaching recommendations, as the AI can't generate them.
+    if (output.coachingRecommendations) {
+        output.coachingRecommendations.forEach(rec => {
+            if (!rec.id || rec.id.startsWith('temp-')) {
+                rec.id = uuidv4();
+            }
+        });
     }
     
     // Add data handling metadata after the fact.
