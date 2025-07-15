@@ -7,7 +7,8 @@ export const roleUserMapping: Record<Role, { name: string; fallback: string; ima
   'AM': { name: 'Ashley Miles', fallback: 'AM', imageHint: 'assistant manager', role: 'AM' },
   'Employee': { name: 'Casey Day', fallback: 'CD', imageHint: 'employee', role: 'Employee' },
   'HR Head': { name: 'Dana Evans', fallback: 'DE', imageHint: 'hr head', role: 'HR Head' },
-  'Voice – In Silence': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person', role: 'Voice – In Silence' }
+  'Voice – In Silence': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person', role: 'Voice – In Silence' },
+  'Anonymous': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person', role: 'Anonymous' }
 };
 
 export const getRoleByName = (name: string): Role | undefined => {
@@ -18,3 +19,5 @@ export const getRoleByName = (name: string): Role | undefined => {
     }
     return undefined;
 }
+
+    

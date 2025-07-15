@@ -107,6 +107,7 @@ export const CoachingRecommendationSchema = z.object({
   // Fields for personalized coaching plan
   startDate: z.string().optional().describe("The ISO 8601 timestamp when the user plans to start the activity."),
   endDate: z.string().optional().describe("The ISO 8601 timestamp when the user tentatively plans to complete the activity."),
+  progress: z.number().optional().describe("The completion percentage of the coaching item (0-100)."),
   checkIns: z.array(CheckInSchema).optional().describe("A log of periodic check-ins on progress."),
 });
 
@@ -161,3 +162,5 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
 
 export type AnalyzeOneOnOneOutput = z.infer<typeof AnalyzeOneOnOneOutputSchema>;
 export type AuditEvent = z.infer<typeof AuditEventSchema>;
+
+    

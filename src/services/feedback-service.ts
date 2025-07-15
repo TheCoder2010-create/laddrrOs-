@@ -491,6 +491,7 @@ export async function updateCoachingRecommendationStatus(
         recommendation.status = 'accepted';
         recommendation.startDate = data?.startDate;
         recommendation.endDate = data?.endDate;
+        recommendation.progress = 0; // Initialize progress
         recommendation.auditTrail.push({
             event: 'Recommendation Accepted',
             actor: supervisorName,
@@ -507,6 +508,21 @@ export async function updateCoachingRecommendationStatus(
             details: `Reason: ${data?.reason}`,
         });
     }
+    
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+export async function updateCoachingProgress(historyId: string, recommendationId: string, progress: number): Promise<void> {
+    let allHistory = await getOneOnOneHistory();
+    const historyIndex = allHistory.findIndex(h => h.id === historyId);
+    if (historyIndex === -1) throw new Error("History item not found.");
+    
+    const item = allHistory[historyIndex];
+    const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
+    if (recIndex === -1) throw new Error("Coaching recommendation not found.");
+    
+    const recommendation = item.analysis.coachingRecommendations[recIndex];
+    recommendation.progress = progress;
     
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
@@ -1211,3 +1227,5 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         saveFeedbackToStorage(allFeedback);
     }
 }
+
+    
