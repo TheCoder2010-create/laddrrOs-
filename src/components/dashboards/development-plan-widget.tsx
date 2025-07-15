@@ -165,11 +165,7 @@ export default function DevelopmentPlanWidget() {
                             )}
                         </div>
                     </ScrollArea>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline">Close</Button>
-                        </DialogClose>
-                    </DialogFooter>
+                    <DialogFooter className="pt-0" />
                 </DialogContent>
             </Dialog>
 
@@ -202,17 +198,11 @@ export default function DevelopmentPlanWidget() {
                                             <span className="truncate">{rec.type}: {rec.resource}</span>
                                         </div>
                                     </div>
-                                    <div 
-                                        className="text-right flex-shrink-0"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
+                                    <div className="text-right flex-shrink-0">
                                         <p className="text-2xl font-bold text-primary">{rec.progress ?? 0}%</p>
                                     </div>
                                 </div>
-                                <div 
-                                    className="pt-2"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
+                                <div className="pt-2" onClick={(e) => e.stopPropagation()}>
                                     <Slider
                                         defaultValue={[rec.progress ?? 0]}
                                         max={100}
