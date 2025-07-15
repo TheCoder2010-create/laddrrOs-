@@ -672,3 +672,4 @@ export default function MessagesPage() {
     </DashboardLayout>
   );
 }
+
