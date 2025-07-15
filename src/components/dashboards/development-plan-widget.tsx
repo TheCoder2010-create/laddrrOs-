@@ -12,6 +12,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb } from 'lucide-react';
 import { useDebounce } from 'react-use';
+import { roleUserMapping } from '@/lib/role-mapping';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
