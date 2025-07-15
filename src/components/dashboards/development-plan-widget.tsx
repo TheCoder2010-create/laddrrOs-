@@ -197,7 +197,7 @@ export default function DevelopmentPlanWidget() {
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-3 border rounded-lg bg-card/50 flex flex-col justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+                                className="p-2 space-y-1.5 border rounded-lg bg-card/50 flex flex-col justify-between cursor-pointer hover:bg-muted/50 transition-colors min-h-[100px]"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
@@ -207,15 +207,17 @@ export default function DevelopmentPlanWidget() {
                                     <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
                                     <p className="text-lg font-bold text-secondary flex-shrink-0">{rec.progress ?? 0}%</p>
                                 </div>
-                                <div className="space-y-2 mt-2">
+                                <div 
+                                    className="w-full space-y-2 mt-auto"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                >
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
                                         <RecommendationIcon type={rec.type} />
                                         <span className="truncate">{rec.type}: {rec.resource}</span>
                                     </div>
                                     <div 
                                         className="w-full"
-                                        onClick={(e) => e.stopPropagation()}
-                                        onKeyDown={(e) => e.stopPropagation()}
                                     >
                                         <Slider
                                             defaultValue={[rec.progress ?? 0]}
