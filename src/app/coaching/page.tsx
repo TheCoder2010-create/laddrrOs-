@@ -208,23 +208,20 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         const history = await getOneOnOneHistory();
         const pendingActions: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
 
-        // This logic will need to become more sophisticated with a real management hierarchy.
-        // For now, AM sees all Team Lead escalations. Manager sees all AM escalations.
-        const targetStatus = role === 'AM' ? 'pending_am_review' : (role === 'Manager' ? 'pending_manager_acknowledgement' : null);
+        // AM sees all Team Lead escalations for declined coaching.
+        const targetStatus = 'pending_am_review';
 
-        if (targetStatus) {
-            history.forEach(item => {
-                item.analysis.coachingRecommendations.forEach(rec => {
-                    if (rec.status === targetStatus) {
-                        pendingActions.push({ historyItem: item, recommendation: rec });
-                    }
-                });
+        history.forEach(item => {
+            item.analysis.coachingRecommendations.forEach(rec => {
+                if (rec.status === targetStatus) {
+                    pendingActions.push({ historyItem: item, recommendation: rec });
+                }
             });
-        }
+        });
         
         setTeamActions(pendingActions);
         setIsLoading(false);
-    }, [role]);
+    }, []);
 
     useEffect(() => {
         fetchTeamActions();
@@ -261,8 +258,8 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         return <Skeleton className="h-48 w-full" />;
     }
 
-    // Only render the widget if the user is a manager type and there are actions.
-    if (!['AM', 'Manager', 'HR Head'].includes(role) || teamActions.length === 0) {
+    // Only render the widget if the user is a manager type.
+    if (!['AM', 'Manager', 'HR Head'].includes(role)) {
         return null;
     }
 
@@ -283,7 +280,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                     <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
                         <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                         <h3 className="text-lg font-semibold">No Pending Team Actions</h3>
-                        <p className="text-muted-foreground mt-1">Escalated items from your team will appear here.</p>
+                        <p className="text-muted-foreground mt-1">Declined recommendations from your team will appear here.</p>
                     </div>
                 ) : (
                     <Accordion type="single" collapsible className="w-full" value={reviewingRecId || undefined} onValueChange={setReviewingRecId}>

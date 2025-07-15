@@ -561,7 +561,7 @@ function MessagesContent({ role }: { role: Role }) {
                     if (item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement') include = true;
                     break;
                 case 'AM':
-                    if (insight.status === 'pending_am_review') include = true;
+                    // AM tasks are now on the Coaching page
                     break;
                 case 'Manager':
                     if (insight.status === 'pending_manager_review') include = true;
@@ -613,9 +613,6 @@ function MessagesContent({ role }: { role: Role }) {
         const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
         if (canEmployeeAcknowledge) {
             return <AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
-        }
-        if (role === 'AM' && insight.status === 'pending_am_review') {
-            return <EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={AlertTriangle} titleColor="text-orange-700 dark:text-orange-400" bgColor="bg-orange-500/10" borderColor="border-orange-500/50" />;
         }
         if (role === 'Manager' && insight.status === 'pending_manager_review') {
             return <EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
@@ -690,4 +687,3 @@ export default function MessagesPage() {
     </DashboardLayout>
   );
 }
-
