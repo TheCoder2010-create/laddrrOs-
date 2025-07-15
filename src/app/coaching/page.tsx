@@ -15,9 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -31,7 +32,7 @@ const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) 
 
 function MyDevelopmentWidget() {
     const { role } = useRole();
-    const [pendingRecommendations, setPendingRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
+    const [recommendations, setRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
@@ -43,21 +44,29 @@ function MyDevelopmentWidget() {
         if (!role) return;
         setIsLoading(true);
         const history = await getOneOnOneHistory();
-        const pending: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
+        const allRecs: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
         
         const currentUserName = role ? roleUserMapping[role].name : null;
+        const statusesToFetch: CoachingRecommendation['status'][] = ['pending', 'accepted', 'declined', 'pending_am_review', 'pending_manager_acknowledgement'];
 
         history.forEach(item => {
             if (item.supervisorName === currentUserName) {
                 item.analysis.coachingRecommendations.forEach(rec => {
-                    if (rec.status === 'pending') {
-                        pending.push({ historyItem: item, recommendation: rec });
+                    if (statusesToFetch.includes(rec.status)) {
+                        allRecs.push({ historyItem: item, recommendation: rec });
                     }
                 });
             }
         });
 
-        setPendingRecommendations(pending);
+        setRecommendations(allRecs.sort((a,b) => {
+            const statusOrder = (status: CoachingRecommendation['status']) => {
+                if (status === 'pending') return 1;
+                if (status === 'pending_am_review') return 2;
+                return 3;
+            };
+            return statusOrder(a.recommendation.status) - statusOrder(b.recommendation.status) || new Date(b.historyItem.date).getTime() - new Date(a.historyItem.date).getTime();
+        }));
         setIsLoading(false);
     }, [role]);
 
@@ -95,6 +104,24 @@ function MyDevelopmentWidget() {
             setRejectionReason('');
         });
     };
+    
+    const getStatusBadge = (status: CoachingRecommendation['status']) => {
+        switch(status) {
+            case 'pending':
+                return <Badge variant="destructive">Action Required</Badge>;
+            case 'pending_am_review':
+                 return <Badge className="bg-orange-500 text-white">AM Review</Badge>;
+            case 'pending_manager_acknowledgement':
+                return <Badge className="bg-red-700 text-white">Manager Review</Badge>;
+            case 'accepted':
+                return <Badge variant="success">Accepted</Badge>;
+            case 'declined':
+                return <Badge variant="secondary">Declined</Badge>;
+            default:
+                return null;
+        }
+    }
+
 
     if (isLoading) {
         return <Skeleton className="h-48 w-full" />;
@@ -136,11 +163,11 @@ function MyDevelopmentWidget() {
                         My Development Plan
                     </CardTitle>
                     <CardDescription>
-                        AI-powered recommendations based on your recent 1-on-1 sessions.
+                        AI-powered recommendations based on your recent 1-on-1 sessions. Review pending items and view your history.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {pendingRecommendations.length === 0 ? (
+                    {recommendations.length === 0 ? (
                          <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
                             <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                             <h3 className="text-lg font-semibold">All Caught Up!</h3>
@@ -148,12 +175,19 @@ function MyDevelopmentWidget() {
                         </div>
                     ) : (
                         <Accordion type="single" collapsible className="w-full">
-                            {pendingRecommendations.map(({ historyItem, recommendation: rec }) => (
-                                <AccordionItem value={rec.id} key={rec.id}>
+                            {recommendations.map(({ historyItem, recommendation: rec }) => {
+                                const isActionable = rec.status === 'pending';
+                                return (
+                                <AccordionItem value={rec.id} key={rec.id} className={cn(!isActionable && "bg-muted/30")}>
                                     <AccordionTrigger>
-                                        <div className="flex flex-col items-start text-left">
-                                            <p className="font-semibold">{rec.area}</p>
-                                            <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
+                                        <div className="flex justify-between items-center w-full">
+                                            <div className="flex flex-col items-start text-left">
+                                                <p className="font-semibold">{rec.area}</p>
+                                                <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
+                                            </div>
+                                            <div className="mr-4">
+                                                {getStatusBadge(rec.status)}
+                                            </div>
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="space-y-4 pt-2">
@@ -174,18 +208,33 @@ function MyDevelopmentWidget() {
                                                 </div>
                                                 <p className="text-xs text-muted-foreground italic">AI Justification: "{rec.justification}"</p>
                                             </div>
-                                             <div className="flex gap-2 mt-4 pt-4 border-t">
-                                                <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(historyItem.id, rec.id, 'accepted')}>
-                                                    <ThumbsUp className="mr-2 h-4 w-4" /> Accept
-                                                </Button>
-                                                <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ historyId: historyItem.id, recommendation: rec })}>
-                                                    <ThumbsDown className="mr-2 h-4 w-4" /> Decline
-                                                </Button>
-                                            </div>
+
+                                             {isActionable && (
+                                                 <div className="flex gap-2 mt-4 pt-4 border-t">
+                                                    <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(historyItem.id, rec.id, 'accepted')}>
+                                                        <ThumbsUp className="mr-2 h-4 w-4" /> Accept
+                                                    </Button>
+                                                    <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ historyId: historyItem.id, recommendation: rec })}>
+                                                        <ThumbsDown className="mr-2 h-4 w-4" /> Decline
+                                                    </Button>
+                                                </div>
+                                             )}
+
+                                            {!isActionable && (
+                                                <div className="mt-4 pt-4 border-t">
+                                                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4"/>Status: {rec.status.replace(/_/g, ' ')}</p>
+                                                    {rec.rejectionReason && (
+                                                        <div className="mt-2 p-2 bg-muted/50 rounded-md">
+                                                            <p className="text-xs font-semibold text-muted-foreground">Your Decline Reason:</p>
+                                                            <p className="text-sm text-foreground italic">"{rec.rejectionReason}"</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
-                            ))}
+                            )})}
                         </Accordion>
                     )}
                 </CardContent>
@@ -307,7 +356,7 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
                 </div>
             )}
             
-            {isActionable && (
+            {isActionable ? (
                 <div className="space-y-3 pt-4 border-t">
                      <Label className="font-semibold text-base">Your Action</Label>
                     <p className="text-sm text-muted-foreground">
@@ -319,6 +368,10 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
                             Acknowledge & Close
                         </Button>
                     </div>
+                </div>
+            ) : (
+                 <div className="space-y-3 pt-4 border-t">
+                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4"/>This item has been acknowledged and is closed.</p>
                 </div>
             )}
         </div>
@@ -334,16 +387,19 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         const history = await getOneOnOneHistory();
         const pendingActions: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
         
-        const amStatuses: CoachingRecommendation['status'][] = ['pending_am_review'];
-        const managerStatuses: CoachingRecommendation['status'][] = ['pending_manager_acknowledgement', 'declined'];
+        const amActorName = roleUserMapping['AM']?.name;
 
         history.forEach(item => {
             item.analysis.coachingRecommendations.forEach(rec => {
-                if (role === 'AM' && amStatuses.includes(rec.status)) {
-                    pendingActions.push({ historyItem: item, recommendation: rec });
+                if (role === 'AM') {
+                    // AM sees items pending their review, or items they have already reviewed
+                    const amWasInvolved = rec.auditTrail?.some(e => e.actor === amActorName);
+                    if (rec.status === 'pending_am_review' || (amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined'))) {
+                        pendingActions.push({ historyItem: item, recommendation: rec });
+                    }
                 } else if (role === 'Manager') {
-                    const wasManagerInvolved = rec.auditTrail?.some(e => e.event === "Manager Acknowledged Declined Recommendation" && e.actor === roleUserMapping[role].name);
-                    if (rec.status === 'pending_manager_acknowledgement' || (rec.status === 'declined' && wasManagerInvolved)) {
+                     // Manager sees items pending their acknowledgement, or that they have already acknowledged
+                    if (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') {
                         pendingActions.push({ historyItem: item, recommendation: rec });
                     }
                 }
@@ -384,28 +440,40 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         if ((rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') && role === 'Manager') {
             return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
         }
+        if ((rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') && role === 'AM') {
+            // Read-only view for AM after they've acted
+             return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
+        }
         return null;
     };
 
     const getTriggerInfo = (item: OneOnOneHistoryItem, rec: CoachingRecommendation) => {
+        let icon = <History className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
+        let title = "Coaching Item History";
+        let subtitle = `For TL: ${item.supervisorName}`;
+        let statusBadge = <Badge variant="secondary">Closed</Badge>;
+
         if (role === 'AM') {
-            return {
-                icon: <UserCog className="h-5 w-5 text-orange-600 dark:text-orange-500" />,
-                title: "Review Declined Recommendation",
-                subtitle: `From TL: ${item.supervisorName}`,
-                statusBadge: <Badge variant="destructive">Action Required</Badge>
-            };
+            if (rec.status === 'pending_am_review') {
+                icon = <UserCog className="h-5 w-5 text-orange-600 dark:text-orange-500" />;
+                title = "Review Declined Recommendation";
+                statusBadge = <Badge variant="destructive">Action Required</Badge>;
+            } else if (rec.status === 'pending_manager_acknowledgement') {
+                 title = "Awaiting Manager Acknowledgement";
+                 statusBadge = <Badge variant="secondary">Pending</Badge>;
+            } else { // Declined
+                 title = "Declined Recommendation History";
+                 statusBadge = <Badge variant="success">Closed</Badge>;
+            }
         }
         if (role === 'Manager') {
             const isActionable = rec.status === 'pending_manager_acknowledgement';
-            return {
-                icon: <CheckSquareIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
-                title: "FYI: Declined Recommendation",
-                subtitle: `From AM regarding TL: ${item.supervisorName}`,
-                statusBadge: isActionable ? <Badge variant="destructive">Ack Required</Badge> : <Badge variant="success">Closed</Badge>
-            };
+            icon = <CheckSquareIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
+            title = isActionable ? "Acknowledge Declined Recommendation" : "Declined Recommendation History";
+            subtitle = `For AM: ${roleUserMapping['AM'].name} | TL: ${item.supervisorName}`;
+            statusBadge = isActionable ? <Badge variant="destructive">Ack Required</Badge> : <Badge variant="success">Acknowledged</Badge>;
         }
-        return { icon: null, title: 'Team Action', subtitle: '', statusBadge: null };
+        return { icon, title, subtitle, statusBadge };
     }
 
     return (
@@ -430,8 +498,9 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                     <Accordion type="single" collapsible className="w-full space-y-2">
                         {teamActions.map(({ historyItem, recommendation: rec }) => {
                             const { icon, title, subtitle, statusBadge } = getTriggerInfo(historyItem, rec);
+                            const isActionable = rec.status === 'pending_am_review' || rec.status === 'pending_manager_acknowledgement';
                             return (
-                                <AccordionItem value={rec.id} key={rec.id} className="border rounded-lg bg-muted/30">
+                                <AccordionItem value={rec.id} key={rec.id} className={cn("border rounded-lg", isActionable ? "bg-muted/30" : "bg-transparent")}>
                                     <AccordionTrigger className="px-4 py-3 w-full hover:no-underline">
                                         <div className="flex justify-between items-center w-full">
                                             <div className="flex items-center gap-3">
