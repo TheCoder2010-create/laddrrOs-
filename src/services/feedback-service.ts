@@ -469,7 +469,7 @@ export async function updateCoachingRecommendationStatus(
     historyId: string, 
     recommendationId: string, 
     status: 'accepted' | 'declined', 
-    rejectionReason?: string
+    data?: { reason?: string, startDate?: string, endDate?: string }
 ): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const historyIndex = allHistory.findIndex(h => h.id === historyId);
@@ -489,19 +489,22 @@ export async function updateCoachingRecommendationStatus(
 
     if (status === 'accepted') {
         recommendation.status = 'accepted';
+        recommendation.startDate = data?.startDate;
+        recommendation.endDate = data?.endDate;
         recommendation.auditTrail.push({
             event: 'Recommendation Accepted',
             actor: supervisorName,
             timestamp: new Date().toISOString(),
+            details: `Plan set from ${data?.startDate ? new Date(data.startDate).toLocaleDateString() : 'N/A'} to ${data?.endDate ? new Date(data.endDate).toLocaleDateString() : 'N/A'}.`
         });
     } else if (status === 'declined') {
         recommendation.status = 'pending_am_review';
-        recommendation.rejectionReason = rejectionReason;
+        recommendation.rejectionReason = data?.reason;
         recommendation.auditTrail.push({
             event: 'Recommendation Declined by Supervisor',
             actor: supervisorName,
             timestamp: new Date().toISOString(),
-            details: `Reason: ${rejectionReason}`,
+            details: `Reason: ${data?.reason}`,
         });
     }
     

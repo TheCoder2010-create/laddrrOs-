@@ -11,14 +11,17 @@ import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog, History } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog, History, Calendar as CalendarIcon, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -36,9 +39,16 @@ function MyDevelopmentWidget() {
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
+    // State for Decline Dialog
     const [decliningRec, setDecliningRec] = useState<{ historyId: string; recommendation: CoachingRecommendation } | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [isSubmittingDecline, setIsSubmittingDecline] = useState(false);
+
+    // State for Accept Dialog
+    const [acceptingRec, setAcceptingRec] = useState<{ historyId: string; recommendationId: string; } | null>(null);
+    const [startDate, setStartDate] = useState<Date | undefined>();
+    const [endDate, setEndDate] = useState<Date | undefined>();
+    const [isSubmittingAccept, setIsSubmittingAccept] = useState(false);
 
     const fetchRecommendations = useCallback(async () => {
         if (!role) return;
@@ -81,9 +91,9 @@ function MyDevelopmentWidget() {
         };
     }, [fetchRecommendations]);
 
-    const handleCoachingRecAction = async (historyId: string, recommendationId: string, status: 'accepted' | 'declined', reason?: string) => {
+    const handleCoachingRecAction = async (historyId: string, recommendationId: string, status: 'accepted' | 'declined', data?: { reason?: string; startDate?: string; endDate?: string; }) => {
         try {
-            await updateCoachingRecommendationStatus(historyId, recommendationId, status, reason);
+            await updateCoachingRecommendationStatus(historyId, recommendationId, status, data);
             toast({
                 title: `Recommendation ${status}`,
                 description: `The coaching recommendation has been updated.`,
@@ -98,10 +108,24 @@ function MyDevelopmentWidget() {
     const handleDeclineSubmit = () => {
         if (!decliningRec || !rejectionReason) return;
         setIsSubmittingDecline(true);
-        handleCoachingRecAction(decliningRec.historyId, decliningRec.recommendation.id, 'declined', rejectionReason).finally(() => {
+        handleCoachingRecAction(decliningRec.historyId, decliningRec.recommendation.id, 'declined', { reason: rejectionReason }).finally(() => {
             setIsSubmittingDecline(false);
             setDecliningRec(null);
             setRejectionReason('');
+        });
+    };
+    
+    const handleAcceptSubmit = () => {
+        if (!acceptingRec || !startDate || !endDate) return;
+        setIsSubmittingAccept(true);
+        handleCoachingRecAction(acceptingRec.historyId, acceptingRec.recommendationId, 'accepted', { 
+            startDate: startDate.toISOString(), 
+            endDate: endDate.toISOString() 
+        }).finally(() => {
+            setIsSubmittingAccept(false);
+            setAcceptingRec(null);
+            setStartDate(undefined);
+            setEndDate(undefined);
         });
     };
     
@@ -151,6 +175,50 @@ function MyDevelopmentWidget() {
                         <Button variant="destructive" onClick={handleDeclineSubmit} disabled={!rejectionReason || isSubmittingDecline}>
                             {isSubmittingDecline && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Submit Justification
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            
+            <Dialog open={!!acceptingRec} onOpenChange={() => setAcceptingRec(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create Your Development Plan</DialogTitle>
+                        <DialogDescription>
+                            Set a timeline for this coaching activity. This will help you and your manager track progress.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                          <Label>Start Date</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={startDate} onSelect={setStartDate} initialFocus /></PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                           <Label>Tentative End Date</Label>
+                           <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><CalendarComponent mode="single" selected={endDate} onSelect={setEndDate} disabled={(date) => date < (startDate || new Date())} initialFocus /></PopoverContent>
+                          </Popover>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                         <Button variant="ghost" onClick={() => setAcceptingRec(null)}>Cancel</Button>
+                         <Button variant="success" onClick={handleAcceptSubmit} disabled={!startDate || !endDate || isSubmittingAccept}>
+                            {isSubmittingAccept && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                             Accept & Start Plan
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -211,7 +279,7 @@ function MyDevelopmentWidget() {
 
                                              {isActionable && (
                                                  <div className="flex gap-2 mt-4 pt-4 border-t">
-                                                    <Button size="sm" variant="success" onClick={() => handleCoachingRecAction(historyItem.id, rec.id, 'accepted')}>
+                                                    <Button size="sm" variant="success" onClick={() => setAcceptingRec({ historyId: historyItem.id, recommendationId: rec.id })}>
                                                         <ThumbsUp className="mr-2 h-4 w-4" /> Accept
                                                     </Button>
                                                     <Button size="sm" variant="destructive" onClick={() => setDecliningRec({ historyId: historyItem.id, recommendation: rec })}>
@@ -220,7 +288,17 @@ function MyDevelopmentWidget() {
                                                 </div>
                                              )}
 
-                                            {!isActionable && (
+                                            {rec.status === 'accepted' && rec.startDate && rec.endDate && (
+                                                <div className="mt-4 pt-4 border-t">
+                                                    <p className="text-sm font-semibold flex items-center gap-2"><Calendar className="h-4 w-4"/>Development Plan</p>
+                                                    <div className="mt-2 p-2 bg-muted/50 rounded-md text-sm text-foreground">
+                                                        <p><strong>Start Date:</strong> {format(new Date(rec.startDate), 'PPP')}</p>
+                                                        <p><strong>End Date:</strong> {format(new Date(rec.endDate), 'PPP')}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {!isActionable && rec.status !== 'accepted' && (
                                                 <div className="mt-4 pt-4 border-t">
                                                     <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4"/>Status: {rec.status.replace(/_/g, ' ')}</p>
                                                     {rec.rejectionReason && (

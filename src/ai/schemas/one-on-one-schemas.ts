@@ -85,6 +85,14 @@ const RecommendationAuditEventSchema = z.object({
 });
 export type RecommendationAuditEvent = z.infer<typeof RecommendationAuditEventSchema>;
 
+const CheckInSchema = z.object({
+    id: z.string(),
+    date: z.string().describe("The ISO 8601 timestamp of the check-in."),
+    notes: z.string().describe("The supervisor's notes from the check-in."),
+    rating: z.enum(["On Track", "Needs Support", "Blocked"]).optional().describe("The user's self-reported status."),
+});
+export type CheckIn = z.infer<typeof CheckInSchema>;
+
 export const CoachingRecommendationSchema = z.object({
   id: z.string().describe("A unique identifier for this recommendation. The AI should not generate this; it's added post-analysis."),
   area: z.string().describe("The specific area or weakness identified for coaching, e.g., 'Active Listening'."),
@@ -96,6 +104,10 @@ export const CoachingRecommendationSchema = z.object({
   status: z.enum(["pending", "accepted", "declined", "pending_am_review", "pending_manager_acknowledgement"]).default("pending").describe("The supervisor's response to the recommendation."),
   rejectionReason: z.string().optional().describe("If declined, the supervisor's reason for not accepting the recommendation."),
   auditTrail: z.array(RecommendationAuditEventSchema).optional().describe("An audit trail for this specific recommendation."),
+  // Fields for personalized coaching plan
+  startDate: z.string().optional().describe("The ISO 8601 timestamp when the user plans to start the activity."),
+  endDate: z.string().optional().describe("The ISO 8601 timestamp when the user tentatively plans to complete the activity."),
+  checkIns: z.array(CheckInSchema).optional().describe("A log of periodic check-ins on progress."),
 });
 
 export type CoachingRecommendation = z.infer<typeof CoachingRecommendationSchema>;
