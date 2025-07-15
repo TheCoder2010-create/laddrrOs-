@@ -150,15 +150,19 @@ export default function DevelopmentPlanWidget() {
                     </DialogHeader>
                     <ScrollArea className="max-h-[60vh] pr-4">
                         <div className="py-4 space-y-4">
-                            {historyInView?.checkIns?.slice().reverse().map(checkIn => (
-                                <div key={checkIn.id} className="flex items-start gap-3">
-                                    <MessageSquare className="h-4 w-4 mt-1 text-primary/70 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <p className="text-xs text-muted-foreground">{format(new Date(checkIn.date), 'PPP, p')}</p>
-                                        <p className="text-sm text-foreground">{checkIn.notes}</p>
+                            {historyInView?.checkIns && historyInView.checkIns.length > 0 ? (
+                                historyInView.checkIns.slice().reverse().map(checkIn => (
+                                    <div key={checkIn.id} className="flex items-start gap-3">
+                                        <MessageSquare className="h-4 w-4 mt-1 text-primary/70 flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <p className="text-xs text-muted-foreground">{format(new Date(checkIn.date), 'PPP, p')}</p>
+                                            <p className="text-sm text-foreground">{checkIn.notes}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No check-ins have been logged for this item yet.</p>
+                            )}
                         </div>
                     </ScrollArea>
                     <DialogFooter>
@@ -176,12 +180,19 @@ export default function DevelopmentPlanWidget() {
                         Active Development Plan
                     </CardTitle>
                     <CardDescription>
-                        Update your progress on your current coaching goals.
+                        Update your progress on your current coaching goals. Click on an item to view its history.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4">
                     {activePlans.map(({ historyId, rec }) => (
-                        <div key={rec.id} className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                        <div 
+                            key={rec.id} 
+                            className="p-4 border rounded-lg bg-muted/50 space-y-4 cursor-pointer hover:bg-muted/80 transition-colors"
+                            onClick={() => setHistoryInView(rec)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
+                            role="button"
+                            tabIndex={0}
+                        >
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold text-foreground">{rec.area}</p>
@@ -190,7 +201,10 @@ export default function DevelopmentPlanWidget() {
                                         <span>{rec.type}: {rec.resource}</span>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-2">
+                                <div 
+                                    className="flex flex-col items-end gap-2"
+                                    onClick={(e) => e.stopPropagation()} // Prevent card click when interacting with slider
+                                >
                                      <p className="text-3xl font-bold text-primary">{rec.progress ?? 0}%</p>
                                      <Slider
                                         defaultValue={[rec.progress ?? 0]}
@@ -200,17 +214,6 @@ export default function DevelopmentPlanWidget() {
                                         className="w-28"
                                      />
                                 </div>
-                            </div>
-                            
-                            <div className="pt-4 border-t">
-                                {rec.checkIns && rec.checkIns.length > 0 ? (
-                                    <Button variant="ghost" size="sm" onClick={() => setHistoryInView(rec)}>
-                                        <History className="mr-2 h-4 w-4" />
-                                        View History ({rec.checkIns.length})
-                                    </Button>
-                                ) : (
-                                    <p className="text-xs text-muted-foreground italic">No check-ins logged yet. Update your progress to add one.</p>
-                                )}
                             </div>
                         </div>
                     ))}
