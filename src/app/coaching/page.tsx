@@ -301,8 +301,9 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                                             <p className="font-semibold text-foreground">Original AI Recommendation ({rec.area})</p>
                                             <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
                                             {rec.example && (
-                                                <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary">
-                                                    <blockquote className="text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                                                <div className="mt-2 p-3 bg-background/80 rounded-md border-l-4 border-primary">
+                                                    <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                                                    <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
                                                 </div>
                                             )}
                                         </div>
