@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -259,9 +260,10 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleAcknowledge = async () => {
+        if (!role) return;
         setIsSubmitting(true);
         try {
-            await acknowledgeDeclinedRecommendation(item.id, rec.id, role!);
+            await acknowledgeDeclinedRecommendation(item.id, rec.id, role);
             toast({ title: "Acknowledgement Logged", description: "The workflow for this recommendation is now complete." });
             onUpdate();
         } catch (error) {
@@ -272,16 +274,7 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
         }
     };
     
-    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
-        const entry = rec.auditTrail?.find(e => e.event === event);
-        if (!details && !entry?.details) return null;
-        return (
-            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
-                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
-            </div>
-        );
-    };
+    const amApprovalNotes = rec.auditTrail?.find(e => e.event === "Decline Approved by AM")?.details;
 
     return (
         <Card className="border-gray-500/50">
@@ -295,9 +288,30 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
-                 {renderAuditEntry("Recommendation Declined by Supervisor", `${item.supervisorName}'s (TL) Decline Reason`, rec.rejectionReason, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
-                 {renderAuditEntry("Decline Approved by AM", "AM's Approval Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
-                <div className="space-y-3 pt-4">
+                <div className="space-y-2 p-3 rounded-lg border bg-muted/50">
+                    <Label className="font-semibold text-foreground">Original AI Recommendation: {rec.area}</Label>
+                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                    {rec.example && (
+                        <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary mt-2">
+                             <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                             <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2 p-3 rounded-lg border bg-blue-500/10 border-blue-500/20">
+                    <Label className="font-semibold text-blue-700 dark:text-blue-500">{item.supervisorName}'s (TL) Decline Reason</Label>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+                </div>
+                
+                {amApprovalNotes && (
+                    <div className="space-y-2 p-3 rounded-lg border bg-orange-500/10 border-orange-500/20">
+                        <Label className="font-semibold text-orange-700 dark:text-orange-500">AM's Approval Notes</Label>
+                        <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amApprovalNotes}</p>
+                    </div>
+                )}
+                
+                <div className="space-y-3 pt-4 border-t">
                      <Label className="font-semibold text-base">Your Action</Label>
                     <p className="text-sm text-muted-foreground">
                         No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
