@@ -10,7 +10,7 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2 } from 'lucide-react';
+import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2, Check } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -131,7 +131,7 @@ export default function DevelopmentPlanWidget() {
                             Let's log a quick check-in for your work on "{checkInRec?.rec.area}". Your progress is now at {checkInRec?.newProgress}%.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4 space-y-2">
+                    <div className="py-4 space-y-2 relative">
                         <Label htmlFor="checkin-notes">What have you learned or tried so far?</Label>
                         <Textarea 
                             id="checkin-notes"
@@ -139,15 +139,18 @@ export default function DevelopmentPlanWidget() {
                             onChange={(e) => setCheckInNotes(e.target.value)}
                             placeholder="e.g., I tried the 'state my path' technique from the book. It was difficult but...' or 'This podcast episode had a great tip on...'"
                             rows={5}
+                            className="pr-12 pb-12"
                         />
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={handleCheckInCancel}>Cancel</Button>
-                        <Button onClick={handleCheckInSubmit} disabled={isSubmittingCheckIn || !checkInNotes}>
-                            {isSubmittingCheckIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Check-in
+                         <Button 
+                            size="icon" 
+                            className="absolute bottom-6 right-4 h-8 w-8 rounded-full bg-success hover:bg-success/90"
+                            onClick={handleCheckInSubmit} 
+                            disabled={isSubmittingCheckIn || !checkInNotes}
+                            aria-label="Save check-in"
+                        >
+                            {isSubmittingCheckIn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         </Button>
-                    </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
 
@@ -190,11 +193,11 @@ export default function DevelopmentPlanWidget() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-3 border rounded-lg bg-card flex flex-col justify-between cursor-pointer hover:bg-muted/30 transition-colors min-h-[120px]"
+                                className="p-3 border rounded-lg bg-card/50 flex flex-col justify-between cursor-pointer hover:bg-muted/50 transition-colors"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
@@ -204,7 +207,11 @@ export default function DevelopmentPlanWidget() {
                                     <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
                                     <p className="text-lg font-bold text-secondary flex-shrink-0">{rec.progress ?? 0}%</p>
                                 </div>
-                                <div className="space-y-2 mt-auto">
+                                <div className="space-y-2 mt-2">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                                        <RecommendationIcon type={rec.type} />
+                                        <span className="truncate">{rec.type}: {rec.resource}</span>
+                                    </div>
                                     <div 
                                         className="w-full"
                                         onClick={(e) => e.stopPropagation()}
@@ -217,10 +224,6 @@ export default function DevelopmentPlanWidget() {
                                             onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
                                             className="w-full"
                                         />
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
-                                        <RecommendationIcon type={rec.type} />
-                                        <span className="truncate">{rec.type}: {rec.resource}</span>
                                     </div>
                                 </div>
                             </div>
