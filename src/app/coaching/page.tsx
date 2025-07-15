@@ -21,7 +21,6 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import DevelopmentPlanWidget from '@/components/dashboards/development-plan-widget';
 
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
@@ -648,7 +647,6 @@ export default function CoachingPage() {
             {isSupervisor && (
                 <>
                     <MyDevelopmentWidget />
-                    <DevelopmentPlanWidget />
                 </>
             )}
             {isManager && <TeamDevelopmentWidget role={role} />}
