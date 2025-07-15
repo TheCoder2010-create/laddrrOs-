@@ -198,34 +198,30 @@ export default function DevelopmentPlanWidget() {
                         {activePlans.map(({ historyId, rec }) => (
                             <div 
                                 key={rec.id} 
-                                className="p-4 border rounded-lg bg-muted/50 flex flex-col justify-between min-h-[140px] cursor-pointer hover:bg-muted/80 transition-colors"
+                                className="p-4 border rounded-lg bg-card flex flex-col justify-between cursor-pointer hover:bg-muted/30 transition-colors"
                                 onClick={() => setHistoryInView(rec)}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                 role="button"
                                 tabIndex={0}
                             >
-                                <div className="flex-1 space-y-2">
+                                <div className="space-y-4">
                                      <div className="flex justify-between items-start gap-2">
-                                        <div className="flex-1">
-                                            <p className="font-semibold text-foreground leading-tight truncate">{rec.area}</p>
-                                        </div>
-                                        <div className="flex-shrink-0">
-                                             <p className="text-2xl font-bold text-primary text-right">{rec.progress ?? 0}%</p>
-                                        </div>
+                                        <p className="font-semibold text-foreground leading-tight">{rec.area}</p>
+                                        <p className="text-lg font-bold text-primary">{rec.progress ?? 0}%</p>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <RecommendationIcon type={rec.type} />
                                         <span className="truncate">{rec.type}: {rec.resource}</span>
                                     </div>
-                                </div>
-                                <div className="pt-3 w-1/2 mx-auto" onClick={(e) => e.stopPropagation()}>
-                                    <Slider
-                                        defaultValue={[rec.progress ?? 0]}
-                                        max={100}
-                                        step={10}
-                                        onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
-                                        className="w-full"
-                                    />
+                                    <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                                        <Slider
+                                            defaultValue={[rec.progress ?? 0]}
+                                            max={100}
+                                            step={10}
+                                            onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
+                                            className="w-full"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         ))}
