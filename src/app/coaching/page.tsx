@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
@@ -220,53 +220,42 @@ function AmReviewWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, re
     };
 
     return (
-        <Card className="border-orange-500/50">
-            <CardHeader className="bg-orange-500/10">
-                 <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                    <Users />
-                    Review Declined Recommendation
-                </CardTitle>
-                <CardDescription>
-                    From {item.supervisorName} (1-on-1 with {item.employeeName})
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-                <div className="p-3 bg-muted/80 rounded-lg border space-y-2">
-                    <p className="font-semibold text-foreground">Original AI Recommendation ({rec.area})</p>
-                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                    {rec.example && (
-                        <div className="mt-2 p-3 bg-background/80 rounded-md border-l-4 border-primary">
-                            <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
-                            <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
-                        </div>
-                    )}
-                </div>
-                <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
-                    <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
-                </div>
-                <div className="space-y-2 pt-4 border-t">
-                    <Label htmlFor={`am-notes-${rec.id}`}>Your Decision & Notes</Label>
-                    <Textarea 
-                        id={`am-notes-${rec.id}`}
-                        placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
-                        value={amNotes}
-                        onChange={(e) => setAmNotes(e.target.value)}
-                        rows={3}
-                    />
-                </div>
-                <div className="flex gap-2">
-                    <Button onClick={() => handleAmDecision(false)} disabled={isSubmitting || !amNotes} variant="destructive">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Uphold AI
-                    </Button>
-                    <Button onClick={() => handleAmDecision(true)} disabled={isSubmitting || !amNotes} variant="secondary">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Approve Decline
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="space-y-4">
+            <div className="p-3 bg-muted/80 rounded-lg border space-y-2">
+                <p className="font-semibold text-foreground">Original AI Recommendation ({rec.area})</p>
+                <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                {rec.example && (
+                    <div className="mt-2 p-3 bg-background/80 rounded-md border-l-4 border-primary">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                        <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                    </div>
+                )}
+            </div>
+            <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
+                <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
+                <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+            </div>
+            <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor={`am-notes-${rec.id}`}>Your Decision & Notes</Label>
+                <Textarea 
+                    id={`am-notes-${rec.id}`}
+                    placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
+                    value={amNotes}
+                    onChange={(e) => setAmNotes(e.target.value)}
+                    rows={3}
+                />
+            </div>
+            <div className="flex gap-2">
+                <Button onClick={() => handleAmDecision(false)} disabled={isSubmitting || !amNotes} variant="destructive">
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Uphold AI
+                </Button>
+                <Button onClick={() => handleAmDecision(true)} disabled={isSubmitting || !amNotes} variant="secondary">
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Approve Decline
+                </Button>
+            </div>
+        </div>
     );
 }
 
@@ -294,59 +283,45 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
     const isActionable = rec.status === 'pending_manager_acknowledgement';
 
     return (
-        <Card className="border-gray-500/50">
-            <CardHeader className="bg-gray-500/10 flex flex-row justify-between items-start">
-                <div>
-                    <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-400">
-                        <CheckSquareIcon className="h-6 w-6" />
-                        {isActionable ? "FYI: Action Required" : "FYI: Acknowledged & Closed"}
-                    </CardTitle>
-                    <CardDescription>
-                       For 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
-                    </CardDescription>
-                </div>
-                 {!isActionable && <Badge variant="success">Acknowledged & Closed</Badge>}
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2 p-3 rounded-lg border bg-muted/50">
-                    <Label className="font-semibold text-foreground">Original AI Recommendation: {rec.area}</Label>
-                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                    {rec.example && (
-                        <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary mt-2">
-                             <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
-                             <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
-                        </div>
-                    )}
-                </div>
+        <div className="space-y-4">
+            <div className="space-y-2 p-3 rounded-lg border bg-muted/50">
+                <Label className="font-semibold text-foreground">Original AI Recommendation: {rec.area}</Label>
+                <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                {rec.example && (
+                    <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary mt-2">
+                         <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                         <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                    </div>
+                )}
+            </div>
 
-                <div className="space-y-2 p-3 rounded-lg border bg-blue-500/10 border-blue-500/20">
-                    <Label className="font-semibold text-blue-700 dark:text-blue-500">{item.supervisorName}'s (TL) Decline Reason</Label>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+            <div className="space-y-2 p-3 rounded-lg border bg-blue-500/10 border-blue-500/20">
+                <Label className="font-semibold text-blue-700 dark:text-blue-500">{item.supervisorName}'s (TL) Decline Reason</Label>
+                <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+            </div>
+            
+            {amApprovalNotes && (
+                <div className="space-y-2 p-3 rounded-lg border bg-orange-500/10 border-orange-500/20">
+                    <Label className="font-semibold text-orange-700 dark:text-orange-500">AM's Approval Notes</Label>
+                    <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amApprovalNotes}</p>
                 </div>
-                
-                {amApprovalNotes && (
-                    <div className="space-y-2 p-3 rounded-lg border bg-orange-500/10 border-orange-500/20">
-                        <Label className="font-semibold text-orange-700 dark:text-orange-500">AM's Approval Notes</Label>
-                        <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amApprovalNotes}</p>
+            )}
+            
+            {isActionable && (
+                <div className="space-y-3 pt-4 border-t">
+                     <Label className="font-semibold text-base">Your Action</Label>
+                    <p className="text-sm text-muted-foreground">
+                        No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
+                    </p>
+                    <div className="flex gap-2 pt-2">
+                         <Button onClick={handleAcknowledge} disabled={isSubmitting} variant="secondary">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Acknowledge & Close
+                        </Button>
                     </div>
-                )}
-                
-                {isActionable && (
-                    <div className="space-y-3 pt-4 border-t">
-                         <Label className="font-semibold text-base">Your Action</Label>
-                        <p className="text-sm text-muted-foreground">
-                            No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
-                        </p>
-                        <div className="flex gap-2 pt-2">
-                             <Button onClick={handleAcknowledge} disabled={isSubmitting} variant="secondary">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Acknowledge & Close
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -366,18 +341,20 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
             item.analysis.coachingRecommendations.forEach(rec => {
                 if (role === 'AM' && amStatuses.includes(rec.status)) {
                     pendingActions.push({ historyItem: item, recommendation: rec });
-                } else if (role === 'Manager' && managerStatuses.includes(rec.status)) {
-                    // Only include 'declined' if the manager was the one who acknowledged it.
-                    const wasManagerInvolved = rec.auditTrail?.some(e => e.event === "Manager Acknowledged Declined Recommendation");
-                    if (rec.status === 'declined' && !wasManagerInvolved) {
-                        return; // Skip if manager wasn't involved in this declined item.
+                } else if (role === 'Manager') {
+                    const wasManagerInvolved = rec.auditTrail?.some(e => e.event === "Manager Acknowledged Declined Recommendation" && e.actor === roleUserMapping[role].name);
+                    if (rec.status === 'pending_manager_acknowledgement' || (rec.status === 'declined' && wasManagerInvolved)) {
+                        pendingActions.push({ historyItem: item, recommendation: rec });
                     }
-                    pendingActions.push({ historyItem: item, recommendation: rec });
                 }
             });
         });
         
-        setTeamActions(pendingActions);
+        setTeamActions(pendingActions.sort((a,b) => {
+            const dateA = a.recommendation.auditTrail?.slice(-1)[0]?.timestamp;
+            const dateB = b.recommendation.auditTrail?.slice(-1)[0]?.timestamp;
+            return new Date(dateB || 0).getTime() - new Date(dateA || 0).getTime();
+        }));
         setIsLoading(false);
     }, [role]);
 
@@ -400,6 +377,37 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         return null;
     }
 
+    const renderWidgetContent = (item: OneOnOneHistoryItem, rec: CoachingRecommendation) => {
+        if (rec.status === 'pending_am_review' && role === 'AM') {
+            return <AmReviewWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
+        }
+        if ((rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') && role === 'Manager') {
+            return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
+        }
+        return null;
+    };
+
+    const getTriggerInfo = (item: OneOnOneHistoryItem, rec: CoachingRecommendation) => {
+        if (role === 'AM') {
+            return {
+                icon: <UserCog className="h-5 w-5 text-orange-600 dark:text-orange-500" />,
+                title: "Review Declined Recommendation",
+                subtitle: `From TL: ${item.supervisorName}`,
+                statusBadge: <Badge variant="destructive">Action Required</Badge>
+            };
+        }
+        if (role === 'Manager') {
+            const isActionable = rec.status === 'pending_manager_acknowledgement';
+            return {
+                icon: <CheckSquareIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
+                title: "FYI: Declined Recommendation",
+                subtitle: `From AM regarding TL: ${item.supervisorName}`,
+                statusBadge: isActionable ? <Badge variant="destructive">Ack Required</Badge> : <Badge variant="success">Closed</Badge>
+            };
+        }
+        return { icon: null, title: 'Team Action', subtitle: '', statusBadge: null };
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -419,17 +427,32 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                         <p className="text-muted-foreground mt-1">Actions requiring your review will appear here.</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <Accordion type="single" collapsible className="w-full space-y-2">
                         {teamActions.map(({ historyItem, recommendation: rec }) => {
-                            if (rec.status === 'pending_am_review' && role === 'AM') {
-                                return <AmReviewWidget key={rec.id} item={historyItem} rec={rec} onUpdate={fetchTeamActions} />;
-                            }
-                            if ((rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') && role === 'Manager') {
-                                return <ManagerAcknowledgementWidget key={rec.id} item={historyItem} rec={rec} onUpdate={fetchTeamActions} />;
-                            }
-                            return null;
+                            const { icon, title, subtitle, statusBadge } = getTriggerInfo(historyItem, rec);
+                            return (
+                                <AccordionItem value={rec.id} key={rec.id} className="border rounded-lg bg-muted/30">
+                                    <AccordionTrigger className="px-4 py-3 w-full hover:no-underline">
+                                        <div className="flex justify-between items-center w-full">
+                                            <div className="flex items-center gap-3">
+                                                {icon}
+                                                <div className="text-left">
+                                                    <p className="font-semibold text-foreground">{title}</p>
+                                                    <p className="text-sm font-normal text-muted-foreground">{subtitle}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4 mr-2">
+                                                {statusBadge}
+                                            </div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 border-t">
+                                        {renderWidgetContent(historyItem, rec)}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            );
                         })}
-                    </div>
+                    </Accordion>
                 )}
             </CardContent>
         </Card>
