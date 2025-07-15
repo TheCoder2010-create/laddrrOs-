@@ -179,12 +179,11 @@ function ToDoSection({ role }: { role: Role }) {
     const fetchToDos = useCallback(async () => {
         setIsLoading(true);
         const allFeedback = await getAllFeedback();
-        const currentUserName = roleUserMapping[role].name;
+        const supervisorRole = roleUserMapping[role];
 
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
-            // Show if the user is the supervisor (owner of the list) or employee (participant)
-            (item.supervisor === currentUserName || item.employee === currentUserName)
+            item.supervisor === supervisorRole.name
         );
         
         setToDoItems(userToDos.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
@@ -232,7 +231,7 @@ function ToDoSection({ role }: { role: Role }) {
                         const allItemsCompleted = item.actionItems?.every(action => action.status === 'completed');
                         return (
                             <div key={item.trackingId} className="border rounded-lg p-4">
-                                <h3 className="font-medium">From 1-on-1 with {item.employee === roleUserMapping[role].name ? item.supervisor : item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
+                                <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
                                 <div className="space-y-2 mt-3">
                                     {item.actionItems?.map(action => (
                                         <div key={action.id} className="flex items-center space-x-3">
