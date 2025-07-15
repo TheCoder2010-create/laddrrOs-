@@ -6,7 +6,7 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getOneOnOneHistory, OneOnOneHistoryItem, updateCoachingRecommendationStatus, reviewCoachingRecommendationDecline } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, updateCoachingRecommendationStatus, reviewCoachingRecommendationDecline, acknowledgeDeclinedRecommendation } from '@/services/feedback-service';
 import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
@@ -193,27 +193,176 @@ function MyDevelopmentWidget() {
     );
 }
 
-
-function TeamDevelopmentWidget({ role }: { role: Role }) {
+function AmReviewWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, rec: CoachingRecommendation, onUpdate: () => void }) {
     const { toast } = useToast();
-    const [teamActions, setTeamActions] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const [reviewingRecId, setReviewingRecId] = useState<string | null>(null);
+    const { role } = useRole();
     const [amNotes, setAmNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleAmDecision = async (approved: boolean) => {
+        if (!amNotes || !role) {
+            toast({ variant: 'destructive', title: "Notes Required", description: "Please provide notes for your decision."});
+            return;
+        };
+        setIsSubmitting(true);
+        try {
+            await reviewCoachingRecommendationDecline(item.id, rec.id, role, approved, amNotes);
+            toast({ title: "Decision Submitted", description: `The coaching recommendation has been updated.`});
+            onUpdate(); // This will trigger a re-fetch in the parent
+        } catch (error) {
+            console.error("Failed to submit review", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+            setAmNotes('');
+        }
+    };
+
+    return (
+        <Card className="border-orange-500/50">
+            <CardHeader className="bg-orange-500/10">
+                 <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                    <Users />
+                    Review Declined Recommendation
+                </CardTitle>
+                <CardDescription>
+                    From {item.supervisorName} (1-on-1 with {item.employeeName})
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                <div className="p-3 bg-muted/80 rounded-lg border space-y-2">
+                    <p className="font-semibold text-foreground">Original AI Recommendation ({rec.area})</p>
+                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                    {rec.example && (
+                        <div className="mt-2 p-3 bg-background/80 rounded-md border-l-4 border-primary">
+                            <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                            <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                        </div>
+                    )}
+                </div>
+                <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
+                    <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+                </div>
+                <div className="space-y-2 pt-4 border-t">
+                    <Label htmlFor={`am-notes-${rec.id}`}>Your Decision & Notes</Label>
+                    <Textarea 
+                        id={`am-notes-${rec.id}`}
+                        placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
+                        value={amNotes}
+                        onChange={(e) => setAmNotes(e.target.value)}
+                        rows={3}
+                    />
+                </div>
+                <div className="flex gap-2">
+                    <Button onClick={() => handleAmDecision(false)} disabled={isSubmitting || !amNotes} variant="destructive">
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Uphold AI
+                    </Button>
+                    <Button onClick={() => handleAmDecision(true)} disabled={isSubmitting || !amNotes} variant="secondary">
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Approve Decline
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, rec: CoachingRecommendation, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleAcknowledge = async () => {
+        if (!role) return;
+        setIsSubmitting(true);
+        try {
+            await acknowledgeDeclinedRecommendation(item.id, rec.id, role);
+            toast({ title: "Acknowledgement Logged", description: "The workflow for this recommendation is now complete." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit acknowledgement", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const amApprovalNotes = rec.auditTrail?.find(e => e.event === "Decline Approved by AM")?.details;
+
+    return (
+        <Card className="border-gray-500/50">
+            <CardHeader className="bg-gray-500/10">
+                <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-400">
+                    <CheckSquareIcon className="h-6 w-6" />
+                    FYI: Declined Recommendation Approved
+                </CardTitle>
+                <CardDescription>
+                   For 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2 p-3 rounded-lg border bg-muted/50">
+                    <Label className="font-semibold text-foreground">Original AI Recommendation: {rec.area}</Label>
+                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
+                    {rec.example && (
+                        <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary mt-2">
+                             <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                             <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2 p-3 rounded-lg border bg-blue-500/10 border-blue-500/20">
+                    <Label className="font-semibold text-blue-700 dark:text-blue-500">{item.supervisorName}'s (TL) Decline Reason</Label>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
+                </div>
+                
+                {amApprovalNotes && (
+                    <div className="space-y-2 p-3 rounded-lg border bg-orange-500/10 border-orange-500/20">
+                        <Label className="font-semibold text-orange-700 dark:text-orange-500">AM's Approval Notes</Label>
+                        <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amApprovalNotes}</p>
+                    </div>
+                )}
+                
+                <div className="space-y-3 pt-4 border-t">
+                     <Label className="font-semibold text-base">Your Action</Label>
+                    <p className="text-sm text-muted-foreground">
+                        No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
+                    </p>
+                    <div className="flex gap-2 pt-2">
+                         <Button onClick={handleAcknowledge} disabled={isSubmitting} variant="secondary">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Acknowledge & Close
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function TeamDevelopmentWidget({ role }: { role: Role }) {
+    const [teamActions, setTeamActions] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const fetchTeamActions = useCallback(async () => {
         setIsLoading(true);
         const history = await getOneOnOneHistory();
         const pendingActions: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
-
-        // AM sees all Team Lead escalations for declined coaching.
-        const targetStatus = 'pending_am_review';
+        
+        const statusesToFetch: CoachingRecommendation['status'][] = [];
+        if (role === 'AM') {
+            statusesToFetch.push('pending_am_review');
+        }
+        if (role === 'Manager') {
+            statusesToFetch.push('pending_manager_acknowledgement');
+        }
 
         history.forEach(item => {
             item.analysis.coachingRecommendations.forEach(rec => {
-                if (rec.status === targetStatus) {
+                if (statusesToFetch.includes(rec.status)) {
                     pendingActions.push({ historyItem: item, recommendation: rec });
                 }
             });
@@ -221,7 +370,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         
         setTeamActions(pendingActions);
         setIsLoading(false);
-    }, []);
+    }, [role]);
 
     useEffect(() => {
         fetchTeamActions();
@@ -234,35 +383,13 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         };
     }, [fetchTeamActions]);
 
-     const handleAmDecision = async (historyId: string, recId: string, approved: boolean) => {
-        if (!amNotes || !role) {
-            toast({ variant: 'destructive', title: "Notes Required", description: "Please provide notes for your decision."});
-            return;
-        };
-        setIsSubmitting(true);
-        try {
-            await reviewCoachingRecommendationDecline(historyId, recId, role, approved, amNotes);
-            toast({ title: "Decision Submitted", description: `The coaching recommendation has been updated.`});
-            fetchTeamActions();
-        } catch (error) {
-            console.error("Failed to submit review", error);
-            toast({ variant: 'destructive', title: "Submission Failed" });
-        } finally {
-            setIsSubmitting(false);
-            setReviewingRecId(null);
-            setAmNotes('');
-        }
-    };
-
     if (isLoading) {
         return <Skeleton className="h-48 w-full" />;
     }
 
-    // Only render the widget if the user is a manager type.
     if (!['AM', 'Manager', 'HR Head'].includes(role)) {
         return null;
     }
-
 
     return (
         <Card>
@@ -280,65 +407,25 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                     <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
                         <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                         <h3 className="text-lg font-semibold">No Pending Team Actions</h3>
-                        <p className="text-muted-foreground mt-1">Declined recommendations from your team will appear here.</p>
+                        <p className="text-muted-foreground mt-1">Actions requiring your review will appear here.</p>
                     </div>
                 ) : (
-                    <Accordion type="single" collapsible className="w-full" value={reviewingRecId || undefined} onValueChange={setReviewingRecId}>
-                        {teamActions.map(({ historyItem, recommendation: rec }) => (
-                            <AccordionItem value={rec.id} key={rec.id}>
-                                <AccordionTrigger>
-                                    <div className="flex flex-col items-start text-left">
-                                        <p className="font-semibold">Review Declined Recommendation: {rec.area}</p>
-                                        <p className="text-sm font-normal text-muted-foreground">From {historyItem.supervisorName} (1-on-1 with {historyItem.employeeName})</p>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="space-y-4 pt-2">
-                                     <div className="space-y-4 p-4 border rounded-lg">
-                                        <div className="p-3 bg-muted/80 rounded-lg border space-y-2">
-                                            <p className="font-semibold text-foreground">Original AI Recommendation ({rec.area})</p>
-                                            <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                                            {rec.example && (
-                                                <div className="mt-2 p-3 bg-background/80 rounded-md border-l-4 border-primary">
-                                                    <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
-                                                    <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
-                                            <p className="font-semibold text-blue-700 dark:text-blue-500">Supervisor's Reason for Declining</p>
-                                            <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
-                                        </div>
-                                        <div className="space-y-2 pt-4 border-t">
-                                            <Label htmlFor={`am-notes-${rec.id}`}>Your Decision & Notes</Label>
-                                            <Textarea 
-                                                id={`am-notes-${rec.id}`}
-                                                placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
-                                                value={amNotes}
-                                                onChange={(e) => setAmNotes(e.target.value)}
-                                                rows={3}
-                                            />
-                                        </div>
-                                         <div className="flex gap-2">
-                                            <Button onClick={() => handleAmDecision(historyItem.id, rec.id, false)} disabled={isSubmitting || !amNotes} variant="destructive">
-                                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                Uphold AI
-                                            </Button>
-                                             <Button onClick={() => handleAmDecision(historyItem.id, rec.id, true)} disabled={isSubmitting || !amNotes} variant="secondary">
-                                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                Approve Decline
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
+                    <div className="space-y-4">
+                        {teamActions.map(({ historyItem, recommendation: rec }) => {
+                            if (rec.status === 'pending_am_review' && role === 'AM') {
+                                return <AmReviewWidget key={rec.id} item={historyItem} rec={rec} onUpdate={fetchTeamActions} />;
+                            }
+                            if (rec.status === 'pending_manager_acknowledgement' && role === 'Manager') {
+                                return <ManagerAcknowledgementWidget key={rec.id} item={historyItem} rec={rec} onUpdate={fetchTeamActions} />;
+                            }
+                            return null;
+                        })}
+                    </div>
                 )}
             </CardContent>
         </Card>
     );
 }
-
 
 function CoachingPageContent() {
     const { role } = useRole();

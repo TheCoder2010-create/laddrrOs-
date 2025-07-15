@@ -156,80 +156,6 @@ function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, 
     );
 }
 
-function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, rec: CoachingRecommendation, onUpdate: () => void }) {
-    const { toast } = useToast();
-    const { role } = useRole();
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleAcknowledge = async () => {
-        if (!role) return;
-        setIsSubmitting(true);
-        try {
-            await acknowledgeDeclinedRecommendation(item.id, rec.id, role);
-            toast({ title: "Acknowledgement Logged", description: "The workflow for this recommendation is now complete." });
-            onUpdate();
-        } catch (error) {
-            console.error("Failed to submit acknowledgement", error);
-            toast({ variant: 'destructive', title: "Submission Failed" });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
-    const amApprovalNotes = rec.auditTrail?.find(e => e.event === "Decline Approved by AM")?.details;
-
-    return (
-        <Card className="border-gray-500/50">
-            <CardHeader className="bg-gray-500/10">
-                <CardTitle className="flex items-center gap-2 text-gray-700 dark:text-gray-400">
-                    <CheckSquareIcon className="h-6 w-6" />
-                    FYI: Declined Recommendation Approved
-                </CardTitle>
-                <CardDescription>
-                   For 1-on-1 between {item.supervisorName} and {item.employeeName} on {format(new Date(item.date), 'PPP')}.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2 p-3 rounded-lg border bg-muted/50">
-                    <Label className="font-semibold text-foreground">Original AI Recommendation: {rec.area}</Label>
-                    <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
-                    {rec.example && (
-                        <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary mt-2">
-                             <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
-                             <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
-                        </div>
-                    )}
-                </div>
-
-                <div className="space-y-2 p-3 rounded-lg border bg-blue-500/10 border-blue-500/20">
-                    <Label className="font-semibold text-blue-700 dark:text-blue-500">{item.supervisorName}'s (TL) Decline Reason</Label>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{rec.rejectionReason}</p>
-                </div>
-                
-                {amApprovalNotes && (
-                    <div className="space-y-2 p-3 rounded-lg border bg-orange-500/10 border-orange-500/20">
-                        <Label className="font-semibold text-orange-700 dark:text-orange-500">AM's Approval Notes</Label>
-                        <p className="text-sm text-orange-600 dark:text-orange-400 whitespace-pre-wrap">{amApprovalNotes}</p>
-                    </div>
-                )}
-                
-                <div className="space-y-3 pt-4 border-t">
-                     <Label className="font-semibold text-base">Your Action</Label>
-                    <p className="text-sm text-muted-foreground">
-                        No action is required other than acknowledging that you have seen this decision. This is for your awareness of your team's coaching and development activities.
-                    </p>
-                    <div className="flex gap-2 pt-2">
-                         <Button onClick={handleAcknowledge} disabled={isSubmitting} variant="secondary">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Acknowledge & Close
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
 function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleColor, bgColor, borderColor }: { item: OneOnOneHistoryItem, onUpdate: () => void, title: string, titleIcon: React.ElementType, titleColor: string, bgColor: string, borderColor: string }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
     const { toast } = useToast();
@@ -540,7 +466,6 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
 
 function MessagesContent({ role }: { role: Role }) {
   const [messages, setMessages] = useState<OneOnOneHistoryItem[]>([]);
-  const [recommendations, setRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
@@ -549,7 +474,6 @@ function MessagesContent({ role }: { role: Role }) {
     const currentUser = roleUserMapping[role];
 
     const userMessages: OneOnOneHistoryItem[] = [];
-    const userRecs: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
 
     history.forEach(item => {
         // Critical Insight Escalations
@@ -561,10 +485,10 @@ function MessagesContent({ role }: { role: Role }) {
                     if (item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement') include = true;
                     break;
                 case 'AM':
-                    // AM tasks are now on the Coaching page
+                    // This is handled on the Coaching page now.
                     break;
                 case 'Manager':
-                    if (insight.status === 'pending_manager_review') include = true;
+                     // This is handled on the Coaching page now.
                     break;
                 case 'HR Head':
                     if (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action') include = true;
@@ -574,19 +498,9 @@ function MessagesContent({ role }: { role: Role }) {
                 userMessages.push(item);
             }
         }
-        
-        // Manager acknowledgement for declined coaching recs
-        if (role === 'Manager') {
-            item.analysis.coachingRecommendations.forEach(rec => {
-                if (rec.status === 'pending_manager_acknowledgement') {
-                    userRecs.push({ historyItem: item, recommendation: rec });
-                }
-            });
-        }
     });
 
     setMessages(userMessages.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    setRecommendations(userRecs);
     setIsLoading(false);
   }, [role]);
 
@@ -604,7 +518,7 @@ function MessagesContent({ role }: { role: Role }) {
     }
   }, [fetchMessages]);
 
-  const hasMessages = messages.length > 0 || recommendations.length > 0;
+  const hasMessages = messages.length > 0;
 
   const renderWidgets = (item: OneOnOneHistoryItem) => {
     // Critical Insight Escalation Widget
@@ -613,9 +527,6 @@ function MessagesContent({ role }: { role: Role }) {
         const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
         if (canEmployeeAcknowledge) {
             return <AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
-        }
-        if (role === 'Manager' && insight.status === 'pending_manager_review') {
-            return <EscalationWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} title="Escalation" titleIcon={Briefcase} titleColor="text-destructive" bgColor="bg-destructive/10" borderColor="border-destructive" />;
         }
         if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
             return <HrReviewWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
@@ -642,9 +553,6 @@ function MessagesContent({ role }: { role: Role }) {
             ) : hasMessages ? (
                 <>
                     {messages.map(item => renderWidgets(item))}
-                    {recommendations.map(({ historyItem, recommendation }) => (
-                        <ManagerAcknowledgementWidget key={recommendation.id} item={historyItem} rec={recommendation} onUpdate={fetchMessages} />
-                    ))}
                 </>
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
