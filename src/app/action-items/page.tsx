@@ -828,7 +828,11 @@ function ActionItemsContent() {
   const [identifiedConcerns, setIdentifiedConcerns] = useState<Feedback[]>([]);
   const [retaliationClaims, setRetaliationClaims] = useState<Feedback[]>([]);
   
-  const [closedItems, setClosedItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
+  const [closedToDoItems, setClosedToDoItems] = useState<Feedback[]>([]);
+  const [closedOneOnOneEscalations, setClosedOneOnOneEscalations] = useState<OneOnOneHistoryItem[]>([]);
+  const [closedIdentifiedConcerns, setClosedIdentifiedConcerns] = useState<Feedback[]>([]);
+  const [closedRetaliationClaims, setClosedRetaliationClaims] = useState<Feedback[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
   const accordionRef = useRef<HTMLDivElement>(null);
@@ -844,11 +848,16 @@ function ActionItemsContent() {
         const fetchedFeedback = await getAllFeedback();
         const history = await getOneOnOneHistory();
 
-        const myActionableToDoItems: Feedback[] = [];
-        const myActionableOneOnOneEscalations: OneOnOneHistoryItem[] = [];
-        const myActionableIdentifiedConcerns: Feedback[] = [];
-        const myActionableRetaliationClaims: Feedback[] = [];
-        const myClosedItems : (Feedback | OneOnOneHistoryItem)[] = [];
+        const activeToDoItems: Feedback[] = [];
+        const activeOneOnOneEscalations: OneOnOneHistoryItem[] = [];
+        const activeIdentifiedConcerns: Feedback[] = [];
+        const activeRetaliationClaims: Feedback[] = [];
+        
+        const localClosedToDo: Feedback[] = [];
+        const localClosed1on1: OneOnOneHistoryItem[] = [];
+        const localClosedIdentified: Feedback[] = [];
+        const localClosedRetaliation: Feedback[] = [];
+        
 
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
 
@@ -865,20 +874,20 @@ function ActionItemsContent() {
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
                     isActionable = isAmMatch || isManagerMatch || isHrMatch;
                     wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
-                    if(isActionable) category = '1on1';
+                    if(isActionable || wasInvolved) category = '1on1';
                 }
             } else { // It's a Feedback item
-                if (item.source === 'Voice – In Silence') return; // Ignore vault items
+                if (item.source === 'Voice – In Silence') return;
                 
                 const isAssigned = item.assignedTo?.includes(role as Role);
                 const isActiveStatus = item.status !== 'Resolved' && item.status !== 'Closed';
                 isActionable = !!isAssigned && isActiveStatus;
                 wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
 
-                if (isActionable) {
-                    if (item.status === 'To-Do') {
+                if (isActionable || wasInvolved) {
+                    if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
                         category = 'todo';
-                    } else if (item.criticality === 'Retaliation Claim') {
+                    } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
                         category = 'retaliation';
                     } else {
                         category = 'concern';
@@ -887,12 +896,15 @@ function ActionItemsContent() {
             }
 
             if (isActionable) {
-                if (category === '1on1') myActionableOneOnOneEscalations.push(item as OneOnOneHistoryItem);
-                else if (category === 'todo') myActionableToDoItems.push(item as Feedback);
-                else if (category === 'retaliation') myActionableRetaliationClaims.push(item as Feedback);
-                else if (category === 'concern') myActionableIdentifiedConcerns.push(item as Feedback);
+                if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
+                else if (category === 'todo') activeToDoItems.push(item as Feedback);
+                else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);
+                else if (category === 'concern') activeIdentifiedConcerns.push(item as Feedback);
             } else if (wasInvolved) {
-                myClosedItems.push(item);
+                if (category === '1on1') localClosed1on1.push(item as OneOnOneHistoryItem);
+                else if (category === 'todo') localClosedToDo.push(item as Feedback);
+                else if (category === 'retaliation') localClosedRetaliation.push(item as Feedback);
+                else if (category === 'concern') localClosedIdentified.push(item as Feedback);
             }
         });
 
@@ -902,12 +914,16 @@ function ActionItemsContent() {
             return dateB.getTime() - dateA.getTime();
         };
         
-        setToDoItems(myActionableToDoItems.sort(sortFn));
-        setOneOnOneEscalations(myActionableOneOnOneEscalations.sort(sortFn));
-        setIdentifiedConcerns(myActionableIdentifiedConcerns.sort(sortFn));
-        setRetaliationClaims(myActionableRetaliationClaims.sort(sortFn));
-        setClosedItems(myClosedItems.sort(sortFn));
+        setToDoItems(activeToDoItems.sort(sortFn));
+        setOneOnOneEscalations(activeOneOnOneEscalations.sort(sortFn));
+        setIdentifiedConcerns(activeIdentifiedConcerns.sort(sortFn));
+        setRetaliationClaims(activeRetaliationClaims.sort(sortFn));
         
+        setClosedToDoItems(localClosedToDo.sort(sortFn));
+        setClosedOneOnOneEscalations(localClosed1on1.sort(sortFn));
+        setClosedIdentifiedConcerns(localClosedIdentified.sort(sortFn));
+        setClosedRetaliationClaims(localClosedRetaliation.sort(sortFn));
+
     } catch (error) {
       console.error("Failed to fetch feedback", error);
     } finally {
@@ -946,17 +962,10 @@ function ActionItemsContent() {
     );
   }
   
-  const handleOpenCase = (item: Feedback | OneOnOneHistoryItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCaseInModal(item);
-    setIsModalOpen(true);
-  };
-  
   const renderCategorySection = (
     title: string,
     icon: React.ElementType,
-    items: (Feedback | OneOnOneHistoryItem)[],
-    isClosedList = false
+    items: (Feedback | OneOnOneHistoryItem)[]
   ) => {
     if (items.length === 0) return null;
     const Icon = icon;
@@ -966,12 +975,12 @@ function ActionItemsContent() {
             <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-3">
                <Icon className="h-6 w-6" /> {title} ({items.length})
             </h2>
-            {renderFeedbackList(items, isClosedList)}
+            {renderFeedbackList(items)}
         </div>
     );
   };
 
-  const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[], isClosedList = false) => {
+  const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[]) => {
     return (
         <Accordion 
             type="single" 
@@ -1056,7 +1065,7 @@ function ActionItemsContent() {
                                 {item.summary && <p><span className="font-semibold">Summary:</span> {item.summary}</p>}
                                 
                                 {item.parentCaseId && (
-                                     <Button variant="outline" size="sm" onClick={(e) => handleOpenCase(item, e)}>
+                                     <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); /* Logic to open modal can go here */ }}>
                                         <GitMerge className="mr-2" /> View Parent Case
                                     </Button>
                                 )}
@@ -1078,7 +1087,7 @@ function ActionItemsContent() {
                     { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} />}
                     { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} /> }
 
-                    {(!isClosedList) && <ActionPanel item={item} onUpdate={fetchFeedback} />}
+                    <ActionPanel item={item} onUpdate={fetchFeedback} />
                     
                     {!isOneOnOne && item.resolution && (
                          <div className="space-y-2">
@@ -1095,6 +1104,7 @@ function ActionItemsContent() {
   }
 
   const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length + identifiedConcerns.length + retaliationClaims.length;
+  const allClosedItemsCount = closedToDoItems.length + closedOneOnOneEscalations.length + closedIdentifiedConcerns.length + closedRetaliationClaims.length;
 
   return (
     <div className="p-4 md:p-8" ref={accordionRef}>
@@ -1126,20 +1136,41 @@ function ActionItemsContent() {
         </CardContent>
       </Card>
       
-      <CaseDetailsModal caseItem={caseInModal} open={isModalOpen} onOpenChange={setIsModalOpen} />
-
-      {closedItems.length > 0 && (
+      {allClosedItemsCount > 0 && (
           <div className="mt-8">
             <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="closed-items" className="border rounded-lg">
                     <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1 [&_svg]:ml-auto">
                         <div data-trigger-content className="flex items-center gap-3 text-lg font-semibold text-muted-foreground">
                            <FolderClosed />
-                           Closed Items ({closedItems.length})
+                           Closed Items ({allClosedItemsCount})
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-2">
-                        {renderFeedbackList(closedItems, true)}
+                    <AccordionContent className="p-2 space-y-4">
+                        {closedToDoItems.length > 0 && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><ListTodo className="h-5 w-5" /> Closed To-Do Lists ({closedToDoItems.length})</h3>
+                                {renderFeedbackList(closedToDoItems)}
+                            </div>
+                        )}
+                        {closedOneOnOneEscalations.length > 0 && (
+                             <div>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserCog className="h-5 w-5" /> Closed 1-on-1 Escalations ({closedOneOnOneEscalations.length})</h3>
+                                {renderFeedbackList(closedOneOnOneEscalations)}
+                            </div>
+                        )}
+                        {closedIdentifiedConcerns.length > 0 && (
+                             <div>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Users className="h-5 w-5" /> Closed Identified Concerns ({closedIdentifiedConcerns.length})</h3>
+                                {renderFeedbackList(closedIdentifiedConcerns)}
+                            </div>
+                        )}
+                        {closedRetaliationClaims.length > 0 && (
+                             <div>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Flag className="h-5 w-5" /> Closed Retaliation Claims ({closedRetaliationClaims.length})</h3>
+                                {renderFeedbackList(closedRetaliationClaims)}
+                            </div>
+                        )}
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
