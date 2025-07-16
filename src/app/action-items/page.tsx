@@ -16,7 +16,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -847,12 +847,10 @@ function ActionItemsContent() {
         allItems.forEach(item => {
             let isActionable = false;
             let wasInvolved = false;
-            let date = new Date(0);
 
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
                 if (insight) {
-                    date = new Date(item.date);
                     const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
@@ -861,7 +859,6 @@ function ActionItemsContent() {
                 }
             } else { // It's a Feedback item
                 if (item.source === 'Voice – In Silence') return;
-                date = new Date(item.submittedAt);
                 const isAssigned = item.assignedTo?.includes(role as Role);
                 const isActiveStatus = item.status !== 'Resolved' && item.status !== 'Closed';
                 isActionable = !!isAssigned && isActiveStatus;
@@ -986,21 +983,23 @@ function ActionItemsContent() {
 
             return (
             <AccordionItem value={id} key={id} id={id}>
-                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <Badge variant={config?.badge as any || 'secondary'}>
-                            {isOneOnOne ? `1-on-1 Insight` : (status === 'To-Do' ? 'To-Do List' : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A'))))}
-                        </Badge>
-                        <span className="font-medium truncate">{subject}</span>
-                    </div>
-                    <div className="flex items-center gap-4 pl-4">
-                        <span 
-                            className="text-xs text-muted-foreground font-mono cursor-text"
-                            onClick={(e) => { e.stopPropagation(); }}
-                        >
-                           ID: {id}
-                        </span>
-                        {statusBadge()}
+                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1">
+                    <div data-trigger-content className="flex justify-between items-center w-full">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <Badge variant={config?.badge as any || 'secondary'}>
+                                {isOneOnOne ? `1-on-1 Insight` : (status === 'To-Do' ? 'To-Do List' : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A'))))}
+                            </Badge>
+                            <span className="font-medium truncate">{subject}</span>
+                        </div>
+                        <div className="flex items-center gap-4 pl-4 mr-4">
+                            <span 
+                                className="text-xs text-muted-foreground font-mono cursor-text"
+                                onClick={(e) => { e.stopPropagation(); }}
+                            >
+                               ID: {id}
+                            </span>
+                            {statusBadge()}
+                        </div>
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-6 pt-4 px-4">
@@ -1089,8 +1088,8 @@ function ActionItemsContent() {
           <div className="mt-8">
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 <AccordionItem value="closed-items">
-                    <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
-                        <div className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
+                    <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1">
+                        <div data-trigger-content className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
                            <FolderClosed />
                            Closed Items ({closedItems.length})
                         </div>
