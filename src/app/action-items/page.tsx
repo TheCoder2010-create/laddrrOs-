@@ -838,9 +838,6 @@ function ActionItemsContent() {
   const accordionRef = useRef<HTMLDivElement>(null);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
   
-  const [caseInModal, setCaseInModal] = useState<Feedback | OneOnOneHistoryItem | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
     setIsLoading(true);
@@ -1029,15 +1026,15 @@ function ActionItemsContent() {
 
             return (
             <AccordionItem value={id} key={id} id={id}>
-                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1 [&_svg]:ml-auto">
-                    <div data-trigger-content className="flex justify-between items-center w-full">
+                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
+                    <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                             <Badge variant={config?.badge as any || 'secondary'}>
                                 {isOneOnOne ? `1-on-1 Insight` : (status === 'To-Do' ? 'To-Do List' : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A'))))}
                             </Badge>
                             <span className="font-medium truncate">{subject}</span>
                         </div>
-                        <div className="flex items-center gap-4 pl-4 mr-2">
+                        <div className="flex items-center gap-4 pl-4 mr-4">
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
@@ -1140,8 +1137,8 @@ function ActionItemsContent() {
           <div className="mt-8">
             <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="closed-items" className="border rounded-lg">
-                    <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1 [&_svg]:ml-auto">
-                        <div data-trigger-content className="flex items-center gap-3 text-lg font-semibold text-muted-foreground">
+                    <AccordionTrigger className="w-full px-4 py-3 hover:no-underline [&_svg]:ml-auto">
+                        <div className="flex items-center gap-3 text-lg font-semibold text-muted-foreground">
                            <FolderClosed />
                            Closed Items ({allClosedItemsCount})
                         </div>
