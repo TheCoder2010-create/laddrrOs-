@@ -51,25 +51,47 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       
       // Action items count
-      setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole as any) && f.status !== 'Resolved' && f.status !== 'Closed').length);
+      let totalActionItems = 0;
+      // Regular feedback items
+      totalActionItems += feedback.filter(f => {
+         const isAssigned = f.assignedTo?.includes(currentRole as any);
+         const isActionable = f.status !== 'Resolved' && f.status !== 'Closed';
+         // Exclude To-Do lists as they are handled on the 1-on-1 page
+         const isNotToDo = f.status !== 'To-Do';
+         return isAssigned && isActionable && isNotToDo;
+      }).length;
+
+      // Escalated 1-on-1 insights
+      totalActionItems += history.filter(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          if (!insight || insight.status === 'resolved') return false;
+          
+          const isAmMatch = currentRole === 'AM' && insight.status === 'pending_am_review';
+          const isManagerMatch = currentRole === 'Manager' && insight.status === 'pending_manager_review';
+          const isHrMatch = currentRole === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+
+          return isAmMatch || isManagerMatch || isHrMatch;
+      }).length;
+
+      setActionItemCount(totalActionItems);
+
 
       // Messages count
       let totalMessages = 0;
-      // Critical Insights
+      // Critical Insights for employee acknowledgement
       totalMessages += history.filter(h => {
           const insight = h.analysis.criticalCoachingInsight;
           if (!insight || insight.status === 'resolved') return false;
 
-          const isEmployeeMatch = currentRole === 'Employee' && h.employeeName === currentUserName && insight.status === 'pending_employee_acknowledgement';
-          const isAmMatch = currentRole === 'AM' && insight.status === 'pending_am_review';
-          const isManagerMatch = currentRole === 'Manager' && insight.status === 'pending_manager_review';
-          const isHrMatch = currentRole === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-          
-          return isEmployeeMatch || isAmMatch || isManagerMatch || isHrMatch;
+          return currentRole === 'Employee' && h.employeeName === currentUserName && insight.status === 'pending_employee_acknowledgement';
       }).length;
       
-      // General Notifications
-      totalMessages += feedback.filter(f => f.status === 'Pending Acknowledgement' && f.assignedTo?.includes(currentRole as any)).length;
+      // General Notifications (e.g. from coaching plans) and identified concern acknowledgements
+      totalMessages += feedback.filter(f => {
+        const isPendingAck = f.status === 'Pending Acknowledgement';
+        const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
+        return (isPendingAck || isIdentifiedAck) && f.assignedTo?.includes(currentRole as any);
+      }).length;
       
       setMessageCount(totalMessages);
       

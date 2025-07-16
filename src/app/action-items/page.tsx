@@ -9,12 +9,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getOneOnOneHistory, OneOnOneHistoryItem, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitAmDirectResponse } from '@/services/feedback-service';
+import type { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { roleUserMapping } from '@/lib/role-mapping';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -125,6 +127,286 @@ function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () =>
              )}
         </div>
     )
+}
+
+function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleColor, bgColor, borderColor }: { item: OneOnOneHistoryItem, onUpdate: () => void, title: string, titleIcon: React.ElementType, titleColor: string, bgColor: string, borderColor: string }) {
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [action, setAction] = useState<'coach' | 'address' | null>(null);
+    const [actionNotes, setActionNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const isManagerWidget = role === 'Manager';
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const [isSubmittingManager, setIsSubmittingManager] = useState(false);
+
+    const handleAmActionSubmit = async () => {
+        if (!actionNotes || !role) return;
+
+        setIsSubmitting(true);
+        try {
+            if (action === 'coach') {
+                await submitAmCoachingNotes(item.id, role, actionNotes);
+                toast({ title: "Coaching Notes Submitted", description: "The supervisor has been notified to retry the 1-on-1." });
+            } else if (action === 'address') {
+                await submitAmDirectResponse(item.id, role, actionNotes);
+                toast({ title: "Response Submitted", description: "Your response has been sent to the employee for acknowledgement." });
+            }
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit AM action", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+            setAction(null);
+            setActionNotes('');
+        }
+    };
+    
+    const handleActionClick = (selectedAction: 'coach' | 'address') => {
+        setAction(selectedAction);
+    };
+
+    const handleManagerSubmit = async () => {
+        if (!resolutionNotes || !role) return;
+        setIsSubmittingManager(true);
+        try {
+            await submitManagerResolution(item.id, role, resolutionNotes);
+            toast({ title: "Resolution Submitted", description: "The case has been sent to the employee for final acknowledgement." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit manager resolution", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingManager(false);
+        }
+    };
+    
+    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
+        const entry = insight.auditTrail?.find(e => e.event === event);
+        if (!details && !entry?.details) return null;
+        return (
+            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
+                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-6">
+             <div className="space-y-4">
+                {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
+                {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Employee Acknowledged", `${item.employeeName}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                
+                {isManagerWidget && renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+                {isManagerWidget && renderAuditEntry("AM Responded to Employee", "AM Response to Employee", insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+
+                {isManagerWidget && renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
+                {isManagerWidget && renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+            </div>
+        
+            <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
+                <Label className={`font-semibold text-base ${titleColor}`}>Your Action</Label>
+                
+                {isManagerWidget ? (
+                     <div className="w-full space-y-3">
+                         <p className="text-sm text-muted-foreground">
+                            This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to the employee for final acknowledgement.
+                        </p>
+                         <Textarea 
+                            placeholder="e.g., I have scheduled a mediated session between the TL and employee, and will be implementing a new communication protocol for the team..."
+                            value={resolutionNotes}
+                            onChange={(e) => setResolutionNotes(e.target.value)}
+                            rows={4}
+                            className="bg-background"
+                         />
+                         <div className="flex gap-2">
+                             <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmittingManager || !resolutionNotes}>
+                                {isSubmittingManager && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Submit to Employee
+                             </Button>
+                         </div>
+                     </div>
+                ) : action ? (
+                    <div className="w-full space-y-3">
+                        <Label htmlFor={`action-notes-${item.id}`}>
+                            {action === 'coach' ? 'Coaching Notes for Supervisor' : 'Notes for Employee'}
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                            {action === 'coach' 
+                                ? 'Log your coaching notes for the supervisor. This will be visible to them.'
+                                : "Describe the conversation you had with the employee. This will be sent to them for acknowledgement."
+                            }
+                        </p>
+                        <Textarea 
+                            id={`action-notes-${item.id}`}
+                            placeholder={action === 'coach' 
+                                ? "e.g., Coached Ben on active listening and validating concerns before offering solutions..."
+                                : "e.g., I spoke with Casey to understand their perspective and we've agreed on a path forward..."
+                            }
+                            value={actionNotes}
+                            onChange={(e) => setActionNotes(e.target.value)}
+                            rows={4}
+                            className="bg-background"
+                        />
+                        <div className="flex gap-2">
+                            <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Submit
+                            </Button>
+                            <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
+                        <div className="flex gap-4">
+                            <Button variant="secondary" onClick={() => handleActionClick('coach')}>
+                                <Users className="mr-2 h-4 w-4" />
+                                Coach Supervisor
+                            </Button>
+                            <Button onClick={() => handleActionClick('address')}>
+                                <ChevronsRight className="mr-2 h-4 w-4" />
+                                Address Employee
+                            </Button>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [resolutionNotes, setResolutionNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // State for the final action step
+    const [finalAction, setFinalAction] = useState<string | null>(null);
+    const [finalActionNotes, setFinalActionNotes] = useState('');
+    const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
+
+    const handleHrSubmit = async () => {
+        if (!resolutionNotes || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitHrResolution(item.id, role, resolutionNotes);
+            toast({ title: "Resolution Submitted", description: "The employee has been notified for a final acknowledgement." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit HR resolution", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const handleFinalHrDecision = async () => {
+        if (!finalAction || !finalActionNotes || !role) return;
+        setIsSubmittingFinal(true);
+        try {
+            await submitFinalHrDecision(item.id, role, finalAction, finalActionNotes);
+            toast({ title: "Final Action Logged", description: "The case has been closed." });
+            onUpdate();
+        } catch (error) {
+             console.error("Failed to submit final HR decision", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingFinal(false);
+        }
+    }
+
+    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
+        const entry = insight.auditTrail?.find(e => e.event === event);
+        if (!details && !entry?.details) return null;
+        return (
+            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
+                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="space-y-4">
+                {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
+                {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor !== 'HR Head')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                {renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
+                {renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, "bg-muted/80", "text-foreground")}
+                 {renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+            </div>
+            <div className="bg-black/10 dark:bg-gray-800/50 pt-4 p-4 rounded-lg flex flex-col items-start gap-4">
+                 {insight.status === 'pending_hr_review' && (
+                    <>
+                        <Label className="font-semibold text-black dark:text-white">Your Action</Label>
+                         <p className="text-sm text-muted-foreground">
+                            The automated workflow for this case has concluded. Document your final actions to resolve this situation. The employee will be asked for a final acknowledgement.
+                        </p>
+                        <div className="w-full space-y-3">
+                             <Textarea 
+                                placeholder="e.g., I have met with all parties involved and have put a formal performance improvement plan in place for the supervisor..."
+                                value={resolutionNotes}
+                                onChange={(e) => setResolutionNotes(e.target.value)}
+                                rows={4}
+                                className="bg-background"
+                             />
+                             <div className="flex gap-2">
+                                 <Button className="bg-black hover:bg-black/80 text-white" onClick={handleHrSubmit} disabled={isSubmitting || !resolutionNotes}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                    Submit Final HR Resolution
+                                 </Button>
+                             </div>
+                         </div>
+                    </>
+                )}
+                 {insight.status === 'pending_final_hr_action' && (
+                    <>
+                         <Label className="font-semibold text-black dark:text-white">Final Action Required</Label>
+                         <p className="text-sm text-muted-foreground">
+                            The employee remains dissatisfied. Please select a final action to formally close this case. This is the last step in the automated workflow.
+                         </p>
+
+                         {!finalAction ? (
+                             <div className="flex flex-wrap gap-2">
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
+                                 <Button variant="destructive" onClick={() => setFinalAction('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
+                             </div>
+                         ) : (
+                             <div className="w-full space-y-3">
+                                <p className="font-medium">Action: <span className="text-primary">{finalAction}</span></p>
+                                 <Label htmlFor="final-notes">Reasoning / Notes</Label>
+                                 <Textarea
+                                     id="final-notes"
+                                     placeholder={`Provide reasoning for selecting: ${finalAction}`}
+                                     value={finalActionNotes}
+                                     onChange={(e) => setFinalActionNotes(e.target.value)}
+                                     rows={4}
+                                     className="bg-background"
+                                 />
+                                 <div className="flex gap-2">
+                                     <Button className="bg-black hover:bg-black/80 text-white" onClick={handleFinalHrDecision} disabled={isSubmittingFinal || !finalActionNotes}>
+                                        {isSubmittingFinal && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        Submit Final Action
+                                     </Button>
+                                     <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
+                                 </div>
+                             </div>
+                         )}
+                    </>
+                 )}
+            </div>
+        </div>
+    );
 }
 
 function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
@@ -385,18 +667,41 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     );
 }
 
-function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function ActionPanel({ item, onUpdate }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [supervisorUpdate, setSupervisorUpdate] = useState('');
 
-    const handleSupervisorUpdate = async () => {
+    const handleSupervisorUpdate = async (trackingId: string) => {
         if (!supervisorUpdate || !role) return;
-        await submitSupervisorUpdate(feedback.trackingId, role, supervisorUpdate);
+        await submitSupervisorUpdate(trackingId, role, supervisorUpdate);
         setSupervisorUpdate('');
         toast({ title: "Update Submitted", description: "The employee has been notified to acknowledge your response." });
         onUpdate();
     }
+    
+    // Render widget for 1-on-1 Escalations
+    if ('analysis' in item) {
+        const insight = item.analysis.criticalCoachingInsight;
+        if (!insight) return null;
+        
+        let widgetProps;
+        if (role === 'AM' && insight.status === 'pending_am_review') {
+             widgetProps = { title: "1-on-1 Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
+        } else if (role === 'Manager' && insight.status === 'pending_manager_review') {
+             widgetProps = { title: "1-on-1 Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
+        } else if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
+            return <HrReviewWidget item={item} onUpdate={onUpdate} />
+        }
+
+        if (widgetProps) {
+            return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />
+        }
+        return null;
+    }
+
+    // Render widgets for standard Feedback items
+    const feedback = item;
     
     // Retaliation claims are handled by a specific panel for HR Head
     if (role === 'HR Head' && feedback.status === 'Retaliation Claim') {
@@ -458,7 +763,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         onChange={(e) => setSupervisorUpdate(e.target.value)}
                         rows={4}
                     />
-                    <Button onClick={handleSupervisorUpdate} disabled={!supervisorUpdate}>Submit for Acknowledgement</Button>
+                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId)} disabled={!supervisorUpdate}>Submit for Acknowledgement</Button>
                 </div>
             </div>
         );
@@ -505,9 +810,9 @@ function ParentCaseModal({ parentCase, open, onOpenChange }: { parentCase: Feedb
 
 
 function ActionItemsContent() {
-  const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
-  const [activeItems, setActiveItems] = useState<Feedback[]>([]);
-  const [closedItems, setClosedItems] = useState<Feedback[]>([]);
+  const [allItems, setAllItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
+  const [activeItems, setActiveItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
+  const [closedItems, setClosedItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
   const accordionRef = useRef<HTMLDivElement>(null);
@@ -515,13 +820,15 @@ function ActionItemsContent() {
   
   const [parentCaseInModal, setParentCaseInModal] = useState<Feedback | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const allFeedbackItems = useRef<Feedback[]>([]); // To look up parent cases
 
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
     setIsLoading(true);
     try {
       const fetchedFeedback = await getAllFeedback();
-      setAllFeedback(fetchedFeedback); // Store all for modal lookup
+      allFeedbackItems.current = fetchedFeedback;
 
       const myFeedback = fetchedFeedback.filter(f => {
         // Exclude items from "Voice - In Silence" source from the Action Items page
@@ -540,26 +847,62 @@ function ActionItemsContent() {
         
         return isCurrentlyAssigned || isCollaboratorOnAnonymousCase || wasInvolved;
       });
+      
+      const history = await getOneOnOneHistory();
+      const myEscalatedInsights = history.filter(item => {
+        const insight = item.analysis.criticalCoachingInsight;
+        if (!insight || insight.status === 'resolved') return false;
 
-      const active = myFeedback.filter(f => f.status !== 'Resolved' && f.status !== 'Closed');
-      const closed = myFeedback.filter(f => f.status === 'Resolved' || f.status === 'Closed');
+        const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
+        const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
+        const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+
+        return isAmMatch || isManagerMatch || isHrMatch;
+      });
+
+      const combinedList = [...myFeedback, ...myEscalatedInsights];
+      
+      setAllItems(combinedList);
+
+      const active = combinedList.filter(item => {
+        if ('analysis' in item) { // OneOnOneHistoryItem
+          const insight = item.analysis.criticalCoachingInsight;
+          return insight && insight.status !== 'resolved';
+        }
+        // Feedback item
+        return item.status !== 'Resolved' && item.status !== 'Closed';
+      });
+
+      const closed = combinedList.filter(item => {
+        if ('analysis' in item) { // OneOnOneHistoryItem
+          const insight = item.analysis.criticalCoachingInsight;
+          return insight && insight.status === 'resolved';
+        }
+        // Feedback item
+        return item.status === 'Resolved' || item.status === 'Closed';
+      });
       
       active.sort((a, b) => {
-        if (a.status === 'To-Do' && b.status !== 'To-Do') return -1;
-        if (b.status === 'To-Do' && a.status !== 'To-Do') return 1;
-        return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+        const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
+        const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
+        
+        if ('status' in a && a.status === 'To-Do') return -1; // To-Do items first
+        if ('status' in b && b.status === 'To-Do') return 1;
+
+        return dateB.getTime() - dateA.getTime();
       });
 
       closed.sort((a, b) => {
-        const bDate = b.auditTrail?.find(e => e.event === 'Resolved' || e.event === 'Closed')?.timestamp || b.submittedAt;
-        const aDate = a.auditTrail?.find(e => e.event === 'Resolved' || e.event === 'Closed')?.timestamp || a.submittedAt;
-        return new Date(bDate).getTime() - new Date(aDate).getTime();
+        const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
+        const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
+        return dateB.getTime() - dateA.getTime();
       });
 
       setActiveItems(active);
       setClosedItems(closed);
       if (active.length > 0 && !openAccordionItem) {
-        setOpenAccordionItem(active[0].trackingId);
+        const firstId = 'trackingId' in active[0] ? active[0].trackingId : active[0].id;
+        setOpenAccordionItem(firstId);
       }
     } catch (error) {
       console.error("Failed to fetch feedback", error);
@@ -600,33 +943,17 @@ function ActionItemsContent() {
         </div>
     );
   }
-
-  const getStatusVariant = (status?: Feedback['status']) => {
-    switch(status) {
-        case 'Resolved': return 'success';
-        case 'To-Do': return 'default';
-        case 'Pending Supervisor Action': return 'destructive';
-        case 'Pending Manager Action': return 'destructive';
-        case 'Pending Employee Acknowledgment': return 'destructive';
-        case 'Pending HR Action': 
-            return 'default';
-        case 'Pending Identity Reveal': return 'secondary';
-        case 'Retaliation Claim': return 'destructive';
-        case 'Closed': return 'secondary';
-        default: return 'secondary';
-    }
-  }
-
+  
   const handleOpenParentCase = (parentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const parentCase = allFeedback.find(f => f.trackingId === parentId);
+    const parentCase = allFeedbackItems.current.find(f => f.trackingId === parentId);
     if (parentCase) {
         setParentCaseInModal(parentCase);
         setIsModalOpen(true);
     }
   };
 
-  const renderFeedbackList = (items: Feedback[], isClosedList = false) => {
+  const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[], isClosedList = false) => {
     return (
         <Accordion 
             type="single" 
@@ -635,28 +962,58 @@ function ActionItemsContent() {
             value={openAccordionItem}
             onValueChange={setOpenAccordionItem}
         >
-        {items.map((feedback) => {
-            const config = criticalityConfig[feedback.criticality || 'Low'];
+        {items.map((item) => {
+            const isOneOnOne = 'analysis' in item;
+            
+            const id = isOneOnOne ? item.id : item.trackingId;
+            const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
+            const criticality = isOneOnOne ? 'Critical' : item.criticality;
+            const status = isOneOnOne ? item.analysis.criticalCoachingInsight?.status : item.status;
+
+            const config = criticalityConfig[criticality || 'Low'];
             let Icon = Info;
-            if (feedback.status === 'Retaliation Claim') Icon = ShieldAlert;
-            else if (feedback.isAnonymous) Icon = UserX;
+
+            if (status === 'Retaliation Claim') Icon = ShieldAlert;
+            else if (!isOneOnOne && item.isAnonymous) Icon = UserX;
             else if (config?.icon) Icon = config.icon;
             
-            let statusBadge;
-            
-            if (feedback.status === 'Pending HR Action') {
-                statusBadge = <Badge className="bg-black text-white"><ShieldCheckIcon className="mr-2 h-4 w-4" />HR Review</Badge>;
-            } else {
-                statusBadge = <Badge variant={getStatusVariant(feedback.status)}>{feedback.status || 'N/A'}</Badge>;
+            const statusBadge = () => {
+              if (isOneOnOne) {
+                  const insightStatus = item.analysis.criticalCoachingInsight?.status;
+                  switch (insightStatus) {
+                      case 'pending_am_review': return <Badge className="bg-orange-500 text-white">AM Review</Badge>;
+                      case 'pending_manager_review': return <Badge className="bg-red-700 text-white">Manager Review</Badge>;
+                      case 'pending_hr_review':
+                      case 'pending_final_hr_action': return <Badge className="bg-black text-white">HR Review</Badge>;
+                      case 'resolved': return <Badge variant="success">Resolved</Badge>;
+                      default: return <Badge variant="secondary">{insightStatus}</Badge>;
+                  }
+              }
+              const feedbackStatus = item.status;
+              switch (feedbackStatus) {
+                  case 'Resolved': return <Badge variant="success">Resolved</Badge>;
+                  case 'To-Do': return <Badge variant="default">To-Do</Badge>;
+                  case 'Pending Supervisor Action': return <Badge variant="destructive">Supervisor Action</Badge>;
+                  case 'Pending Manager Action': return <Badge variant="destructive">Manager Action</Badge>;
+                  case 'Pending Employee Acknowledgment': return <Badge variant="destructive">Employee Ack.</Badge>;
+                  case 'Pending HR Action': return <Badge className="bg-black text-white">HR Review</Badge>;
+                  case 'Pending Identity Reveal': return <Badge variant="secondary">Reveal Requested</Badge>;
+                  case 'Retaliation Claim': return <Badge variant="destructive">Retaliation Claim</Badge>;
+                  case 'Closed': return <Badge variant="secondary">Closed</Badge>;
+                  default: return <Badge variant="secondary">{feedbackStatus || 'N/A'}</Badge>;
+              }
             }
 
+
             return (
-            <AccordionItem value={feedback.trackingId} key={feedback.trackingId} id={feedback.trackingId}>
+            <AccordionItem value={id} key={id} id={id}>
                 <div className="flex items-center w-full">
                     <AccordionTrigger className="flex-1 text-left px-4 py-3">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <Badge variant={config?.badge as any || 'secondary'}>{feedback.status === 'Retaliation Claim' ? 'Retaliation' : (feedback.isAnonymous ? 'Anonymous' : (feedback.criticality || 'N/A'))}</Badge>
-                            <span className="font-medium truncate">{feedback.subject}</span>
+                            <Badge variant={config?.badge as any || 'secondary'}>
+                                {isOneOnOne ? `1-on-1 Insight` : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A')))}
+                            </Badge>
+                            <span className="font-medium truncate">{subject}</span>
                         </div>
                     </AccordionTrigger>
                     <div className="flex items-center gap-4 ml-auto px-4">
@@ -664,55 +1021,56 @@ function ActionItemsContent() {
                             className="text-xs text-muted-foreground font-mono cursor-text"
                             onClick={(e) => { e.stopPropagation(); }}
                         >
-                           ID: {feedback.trackingId}
+                           ID: {id}
                         </span>
-                        {statusBadge}
+                        {statusBadge()}
                     </div>
                 </div>
                 <AccordionContent className="space-y-6 pt-4 px-4">
-                     {feedback.status !== 'To-Do' && (
+                     {!isOneOnOne && item.status !== 'To-Do' && (
                         <>
                              <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
                                 <div className="flex items-center gap-2 font-bold">
                                     <Icon className="h-5 w-5" />
                                     <span>
-                                        {feedback.status === 'Retaliation Claim'
+                                        {item.status === 'Retaliation Claim'
                                             ? 'Retaliation Claim'
-                                            : feedback.isAnonymous
+                                            : item.isAnonymous
                                             ? 'Anonymous Submission'
-                                            : `AI Analysis: ${feedback.criticality}`}
+                                            : `AI Analysis: ${item.criticality}`}
                                     </span>
                                 </div>
-                                {feedback.summary && <p><span className="font-semibold">Summary:</span> {feedback.summary}</p>}
+                                {item.summary && <p><span className="font-semibold">Summary:</span> {item.summary}</p>}
                                 
-                                {feedback.parentCaseId && (
-                                     <Button variant="outline" size="sm" onClick={(e) => handleOpenParentCase(feedback.parentCaseId!, e)}>
+                                {item.parentCaseId && (
+                                     <Button variant="outline" size="sm" onClick={(e) => handleOpenParentCase(item.parentCaseId!, e)}>
                                         <LinkIcon className="mr-2" /> View Parent Case
                                     </Button>
                                 )}
-                                {feedback.attachment && (
+                                {item.attachment && (
                                     <Button variant="outline" size="sm" asChild>
                                         <a href="#" onClick={(e) => e.preventDefault()}>
-                                            <Paperclip className="mr-2" /> View Attachment ({feedback.attachment.name})
+                                            <Paperclip className="mr-2" /> View Attachment ({item.attachment.name})
                                         </a>
                                     </Button>
                                 )}
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-base">Original Submission Context</Label>
-                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
                             </div>
                         </>
                      )}
 
-                    {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
+                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} />}
+                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} /> }
 
-                    {(!isClosedList) && <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />}
+                    {(!isClosedList) && <ActionPanel item={item} onUpdate={fetchFeedback} />}
                     
-                    {feedback.resolution && (
+                    {!isOneOnOne && item.resolution && (
                          <div className="space-y-2">
                             <Label className="text-base">Final Resolution</Label>
-                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{feedback.resolution}</p>
+                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{item.resolution}</p>
                         </div>
                     )}
                 </AccordionContent>
