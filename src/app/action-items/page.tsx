@@ -1149,25 +1149,25 @@ function ActionItemsContent() {
                     <AccordionContent className="p-2 space-y-4">
                         {closedToDoItems.length > 0 && (
                             <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><ListTodo className="h-5 w-5" /> Closed To-Do Lists ({closedToDoItems.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><ListTodo className="h-5 w-5" />To-Do Lists ({closedToDoItems.length})</h3>
                                 {renderFeedbackList(closedToDoItems)}
                             </div>
                         )}
                         {closedOneOnOneEscalations.length > 0 && (
                              <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserCog className="h-5 w-5" /> Closed 1-on-1 Escalations ({closedOneOnOneEscalations.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserCog className="h-5 w-5" />1-on-1 Escalations ({closedOneOnOneEscalations.length})</h3>
                                 {renderFeedbackList(closedOneOnOneEscalations)}
                             </div>
                         )}
                         {closedIdentifiedConcerns.length > 0 && (
                              <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Users className="h-5 w-5" /> Closed Identified Concerns ({closedIdentifiedConcerns.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Users className="h-5 w-5" />Identified Concerns ({closedIdentifiedConcerns.length})</h3>
                                 {renderFeedbackList(closedIdentifiedConcerns)}
                             </div>
                         )}
                         {closedRetaliationClaims.length > 0 && (
                              <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Flag className="h-5 w-5" /> Closed Retaliation Claims ({closedRetaliationClaims.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Flag className="h-5 w-5" />Retaliation Claims ({closedRetaliationClaims.length})</h3>
                                 {renderFeedbackList(closedRetaliationClaims)}
                             </div>
                         )}
