@@ -1301,5 +1301,3 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         saveFeedbackToStorage(allFeedback);
     }
 }
-
-    
