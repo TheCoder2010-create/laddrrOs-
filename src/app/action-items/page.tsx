@@ -15,7 +15,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -772,32 +772,36 @@ function ActionPanel({ item, onUpdate }: { item: Feedback | OneOnOneHistoryItem,
     return null; // No action panel for other statuses
 }
 
-function ParentCaseModal({ parentCase, open, onOpenChange }: { parentCase: Feedback | null, open: boolean, onOpenChange: (open: boolean) => void }) {
-    if (!parentCase) return null;
+function CaseDetailsModal({ caseItem, open, onOpenChange }: { caseItem: Feedback | OneOnOneHistoryItem | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    if (!caseItem) return null;
 
-    const config = criticalityConfig[parentCase.criticality || 'Low'];
-    const Icon = config?.icon || Info;
+    const isOneOnOne = 'analysis' in caseItem;
+    const subject = isOneOnOne ? `1-on-1 Escalation: ${caseItem.employeeName} & ${caseItem.supervisorName}` : caseItem.subject;
+    const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
+    const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary : caseItem.message;
+    const auditTrail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail : caseItem.auditTrail;
+    const resolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.supervisorResponse : caseItem.resolution;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>Parent Case Details: {parentCase.subject}</DialogTitle>
+                    <DialogTitle>Case Details: {subject}</DialogTitle>
                     <DialogDescription>
-                        Tracking ID: {parentCase.trackingId}
+                        Tracking ID: {trackingId}
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[70vh] pr-6">
                     <div className="space-y-6 py-4">
                         <div className="space-y-2">
-                            <Label className="text-base">Original Submission Context</Label>
-                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{parentCase.message}</p>
+                            <Label className="text-base">Initial Submission Context</Label>
+                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{initialMessage}</p>
                         </div>
-                        {parentCase.auditTrail && <AuditTrail trail={parentCase.auditTrail} />}
-                        {parentCase.resolution && (
+                        {auditTrail && <AuditTrail trail={auditTrail} />}
+                        {resolution && (
                              <div className="space-y-2">
                                 <Label className="text-base">Final Resolution</Label>
-                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{parentCase.resolution}</p>
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{resolution}</p>
                             </div>
                         )}
                     </div>
@@ -810,7 +814,6 @@ function ParentCaseModal({ parentCase, open, onOpenChange }: { parentCase: Feedb
 
 
 function ActionItemsContent() {
-  const [allItems, setAllItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
   const [activeItems, setActiveItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
   const [closedItems, setClosedItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -818,102 +821,77 @@ function ActionItemsContent() {
   const accordionRef = useRef<HTMLDivElement>(null);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
   
-  const [parentCaseInModal, setParentCaseInModal] = useState<Feedback | null>(null);
+  const [caseInModal, setCaseInModal] = useState<Feedback | OneOnOneHistoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const allFeedbackItems = useRef<Feedback[]>([]); // To look up parent cases
-
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
     setIsLoading(true);
     try {
-      const fetchedFeedback = await getAllFeedback();
-      allFeedbackItems.current = fetchedFeedback;
+        const fetchedFeedback = await getAllFeedback();
+        const history = await getOneOnOneHistory();
 
-      const myFeedback = fetchedFeedback.filter(f => {
-        if (f.source === 'Voice – In Silence') {
-            return false;
-        }
-        
-        const isCurrentlyAssigned = f.assignedTo?.includes(role);
-        const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === 'Manager');
-        const wasInvolved = f.auditTrail?.some(e => e.actor === role) ?? false;
-        
-        if (f.status === 'Resolved' || f.status === 'Closed') {
-            return wasInvolved;
-        }
-        
-        return isCurrentlyAssigned || isCollaboratorOnAnonymousCase || wasInvolved;
-      });
-      
-      const history = await getOneOnOneHistory();
-      const myEscalatedInsights = history.filter(item => {
-        const insight = item.analysis.criticalCoachingInsight;
-        if (!insight) return false;
+        const myActionableFeedback: Feedback[] = [];
+        const myHistoricalFeedback: Feedback[] = [];
 
-        const wasEverAssignedToMe = insight.auditTrail?.some(e => {
-            if (e.event === 'Escalated by AM' && role === 'Manager') return true;
-            if (e.event.includes('Escalated to HR') && role === 'HR Head') return true;
-            return false;
+        fetchedFeedback.forEach(f => {
+            if (f.source === 'Voice – In Silence') return;
+
+            const isCurrentlyAssigned = f.assignedTo?.includes(role as Role);
+            const wasInvolved = f.auditTrail?.some(e => e.actor === role);
+            
+            if (isCurrentlyAssigned && f.status !== 'Resolved' && f.status !== 'Closed') {
+                myActionableFeedback.push(f);
+            } else if (wasInvolved) {
+                myHistoricalFeedback.push(f);
+            }
         });
 
-        const isCurrentlyAssignedToMe = 
-            (role === 'AM' && insight.status === 'pending_am_review') ||
-            (role === 'Manager' && insight.status === 'pending_manager_review') ||
-            (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action'));
+        const myActionableInsights: OneOnOneHistoryItem[] = [];
+        const myHistoricalInsights: OneOnOneHistoryItem[] = [];
 
-        // Include if currently assigned, or if it has been resolved but I was involved.
-        if (insight.status === 'resolved') {
-            return wasEverAssignedToMe || isCurrentlyAssignedToMe;
-        }
+        history.forEach(item => {
+            const insight = item.analysis.criticalCoachingInsight;
+            if (!insight) return;
 
-        return isCurrentlyAssignedToMe;
-      });
+            const isCurrentlyAssigned = 
+                (role === 'AM' && insight.status === 'pending_am_review') ||
+                (role === 'Manager' && insight.status === 'pending_manager_review') ||
+                (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action'));
+            
+            const wasInvolved = insight.auditTrail?.some(e => e.actor === role);
 
-      const combinedList = [...myFeedback, ...myEscalatedInsights];
-      
-      setAllItems(combinedList);
+            if (isCurrentlyAssigned) {
+                myActionableInsights.push(item);
+            } else if (wasInvolved) {
+                myHistoricalInsights.push(item);
+            }
+        });
 
-      const active = combinedList.filter(item => {
-        if ('analysis' in item) { // OneOnOneHistoryItem
-          const insight = item.analysis.criticalCoachingInsight;
-          return insight && insight.status !== 'resolved';
-        }
-        // Feedback item
-        return item.status !== 'Resolved' && item.status !== 'Closed';
-      });
-
-      const closed = combinedList.filter(item => {
-        if ('analysis' in item) { // OneOnOneHistoryItem
-          const insight = item.analysis.criticalCoachingInsight;
-          return insight && insight.status === 'resolved';
-        }
-        // Feedback item
-        return item.status === 'Resolved' || item.status === 'Closed';
-      });
-      
-      active.sort((a, b) => {
-        const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
-        const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
+        const active = [...myActionableFeedback, ...myActionableInsights];
+        const closed = [...myHistoricalFeedback, ...myHistoricalInsights];
         
-        if ('status' in a && a.status === 'To-Do') return -1; // To-Do items first
-        if ('status' in b && b.status === 'To-Do') return 1;
+        active.sort((a, b) => {
+            const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
+            const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
+            if ('status' in a && a.status === 'To-Do') return -1;
+            if ('status' in b && b.status === 'To-Do') return 1;
+            return dateB.getTime() - dateA.getTime();
+        });
 
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      closed.sort((a, b) => {
-        const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
-        const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
-        return dateB.getTime() - dateA.getTime();
-      });
-
-      setActiveItems(active);
-      setClosedItems(closed);
-      if (active.length > 0 && !openAccordionItem) {
-        const firstId = 'trackingId' in active[0] ? active[0].trackingId : active[0].id;
-        setOpenAccordionItem(firstId);
-      }
+        closed.sort((a, b) => {
+            const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
+            const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
+            return dateB.getTime() - dateA.getTime();
+        });
+        
+        setActiveItems(active);
+        setClosedItems(closed);
+        
+        if (active.length > 0 && !openAccordionItem) {
+            const firstId = 'trackingId' in active[0] ? active[0].trackingId : active[0].id;
+            setOpenAccordionItem(firstId);
+        }
     } catch (error) {
       console.error("Failed to fetch feedback", error);
     } finally {
@@ -954,13 +932,10 @@ function ActionItemsContent() {
     );
   }
   
-  const handleOpenParentCase = (parentId: string, e: React.MouseEvent) => {
+  const handleOpenCase = (item: Feedback | OneOnOneHistoryItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    const parentCase = allFeedbackItems.current.find(f => f.trackingId === parentId);
-    if (parentCase) {
-        setParentCaseInModal(parentCase);
-        setIsModalOpen(true);
-    }
+    setCaseInModal(item);
+    setIsModalOpen(true);
   };
 
   const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[], isClosedList = false) => {
@@ -1027,6 +1002,11 @@ function ActionItemsContent() {
                         </div>
                     </AccordionTrigger>
                     <div className="flex items-center gap-4 ml-auto px-4">
+                         {isClosedList && (
+                             <Button variant="ghost" size="sm" onClick={(e) => handleOpenCase(item, e)}>
+                                <ExternalLink className="mr-2 h-4 w-4" /> Open Case
+                             </Button>
+                         )}
                         <span 
                             className="text-xs text-muted-foreground font-mono cursor-text"
                             onClick={(e) => { e.stopPropagation(); }}
@@ -1053,7 +1033,7 @@ function ActionItemsContent() {
                                 {item.summary && <p><span className="font-semibold">Summary:</span> {item.summary}</p>}
                                 
                                 {item.parentCaseId && (
-                                     <Button variant="outline" size="sm" onClick={(e) => handleOpenParentCase(item.parentCaseId!, e)}>
+                                     <Button variant="outline" size="sm" onClick={(e) => handleOpenCase(item, e)}>
                                         <LinkIcon className="mr-2" /> View Parent Case
                                     </Button>
                                 )}
@@ -1116,7 +1096,7 @@ function ActionItemsContent() {
         </CardContent>
       </Card>
       
-      <ParentCaseModal parentCase={parentCaseInModal} open={isModalOpen} onOpenChange={setIsModalOpen} />
+      <CaseDetailsModal caseItem={caseInModal} open={isModalOpen} onOpenChange={setIsModalOpen} />
 
       {closedItems.length > 0 && (
           <div className="mt-8">

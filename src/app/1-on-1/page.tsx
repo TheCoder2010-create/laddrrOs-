@@ -219,6 +219,10 @@ function ToDoSection({ role }: { role: Role }) {
         return <Skeleton className="h-24 w-full mt-8" />;
     }
 
+    if (!['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role)) {
+        return null; // Only show for supervisors
+    }
+
     return (
         <div className="mt-8">
             <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-2">
@@ -733,7 +737,7 @@ function HistorySection({ role }: { role: Role }) {
                                                 {insight.status === 'pending_employee_acknowledgement' && (
                                                     <div className="mt-4">
                                                         <p className="text-sm text-destructive/90">
-                                                            You have a pending action for this item. Please go to your <Link href="/messages" className="font-bold underline">Messages</Link> to respond.
+                                                            You have a pending action for this item. Please go to your <Link href="/action-items" className="font-bold underline">Action Items</Link> to respond.
                                                         </p>
                                                     </div>
                                                 )}
@@ -791,15 +795,17 @@ function OneOnOnePage({ role }: { role: Role }) {
     <div className="p-4 md:p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold font-headline text-foreground">1-on-1s</h1>
-        <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2" />
-              Schedule New Meeting
-            </Button>
-          </DialogTrigger>
-          <ScheduleMeetingDialog onSchedule={handleSchedule} />
-        </Dialog>
+        {['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role) && (
+            <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2" />
+                  Schedule New Meeting
+                </Button>
+              </DialogTrigger>
+              <ScheduleMeetingDialog onSchedule={handleSchedule} />
+            </Dialog>
+        )}
       </div>
 
       <div>
@@ -810,42 +816,44 @@ function OneOnOnePage({ role }: { role: Role }) {
               <div key={meeting.id} className="border rounded-lg">
                 <div className="flex items-center justify-between p-3 py-2">
                     <h3 className="text-lg font-semibold">{meeting.with}</h3>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleStartMeeting(meeting)}>
-                        <Video className="h-5 w-5" />
-                      </Button>
+                     {['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role) && (
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleStartMeeting(meeting)}>
+                            <Video className="h-5 w-5" />
+                          </Button>
 
-                      <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <CalendarCheck className="h-5 w-5" />
-                            </Button>
-                        </DialogTrigger>
-                        <ScheduleMeetingDialog meetingToEdit={meeting} onSchedule={handleSchedule} />
-                      </Dialog>
-                      
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                <CalendarX className="h-5 w-5" />
-                            </Button>
-                        </AlertDialogTrigger>
-                          <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently cancel your meeting with {meeting.with} on {format(new Date(meeting.date), 'PPP')} at {formatTime(meeting.time)}. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Go Back</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleCancelMeeting(meeting.id)} className={cn(buttonVariants({variant: 'destructive'}))}>
-                              Yes, Cancel
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                  </div>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <CalendarCheck className="h-5 w-5" />
+                                </Button>
+                            </DialogTrigger>
+                            <ScheduleMeetingDialog meetingToEdit={meeting} onSchedule={handleSchedule} />
+                          </Dialog>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                    <CalendarX className="h-5 w-5" />
+                                </Button>
+                            </AlertDialogTrigger>
+                              <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently cancel your meeting with {meeting.with} on {format(new Date(meeting.date), 'PPP')} at {formatTime(meeting.time)}. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Go Back</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleCancelMeeting(meeting.id)} className={cn(buttonVariants({variant: 'destructive'}))}>
+                                  Yes, Cancel
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                      </div>
+                    )}
                 </div>
                 <div className="border-t p-3 py-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -861,9 +869,11 @@ function OneOnOnePage({ role }: { role: Role }) {
         ) : (
           <div className="text-center py-12 border-2 border-dashed rounded-lg">
             <p className="text-muted-foreground text-lg">No upcoming meetings.</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Click "Schedule New Meeting" to get started.
-            </p>
+            {['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role) && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Click "Schedule New Meeting" to get started.
+                </p>
+            )}
           </div>
         )}
       </div>
