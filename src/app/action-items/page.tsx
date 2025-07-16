@@ -16,7 +16,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserVoice } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -823,7 +823,11 @@ function CaseDetailsModal({ caseItem, open, onOpenChange }: { caseItem: Feedback
 
 
 function ActionItemsContent() {
-  const [activeItems, setActiveItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
+  const [toDoItems, setToDoItems] = useState<Feedback[]>([]);
+  const [oneOnOneEscalations, setOneOnOneEscalations] = useState<OneOnOneHistoryItem[]>([]);
+  const [identifiedConcerns, setIdentifiedConcerns] = useState<Feedback[]>([]);
+  const [retaliationClaims, setRetaliationClaims] = useState<Feedback[]>([]);
+  
   const [closedItems, setClosedItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
@@ -840,13 +844,18 @@ function ActionItemsContent() {
         const fetchedFeedback = await getAllFeedback();
         const history = await getOneOnOneHistory();
 
-        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
-        const myActiveItems : (Feedback | OneOnOneHistoryItem)[] = [];
+        const myActionableToDoItems: Feedback[] = [];
+        const myActionableOneOnOneEscalations: OneOnOneHistoryItem[] = [];
+        const myActionableIdentifiedConcerns: Feedback[] = [];
+        const myActionableRetaliationClaims: Feedback[] = [];
         const myClosedItems : (Feedback | OneOnOneHistoryItem)[] = [];
+
+        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
 
         allItems.forEach(item => {
             let isActionable = false;
             let wasInvolved = false;
+            let category: 'todo' | '1on1' | 'concern' | 'retaliation' | 'none' = 'none';
 
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
@@ -856,17 +865,32 @@ function ActionItemsContent() {
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
                     isActionable = isAmMatch || isManagerMatch || isHrMatch;
                     wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+                    if(isActionable) category = '1on1';
                 }
             } else { // It's a Feedback item
-                if (item.source === 'Voice – In Silence') return;
+                if (item.source === 'Voice – In Silence') return; // Ignore vault items
+                
                 const isAssigned = item.assignedTo?.includes(role as Role);
                 const isActiveStatus = item.status !== 'Resolved' && item.status !== 'Closed';
                 isActionable = !!isAssigned && isActiveStatus;
                 wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+
+                if (isActionable) {
+                    if (item.status === 'To-Do') {
+                        category = 'todo';
+                    } else if (item.criticality === 'Retaliation Claim') {
+                        category = 'retaliation';
+                    } else {
+                        category = 'concern';
+                    }
+                }
             }
 
             if (isActionable) {
-                myActiveItems.push(item);
+                if (category === '1on1') myActionableOneOnOneEscalations.push(item as OneOnOneHistoryItem);
+                else if (category === 'todo') myActionableToDoItems.push(item as Feedback);
+                else if (category === 'retaliation') myActionableRetaliationClaims.push(item as Feedback);
+                else if (category === 'concern') myActionableIdentifiedConcerns.push(item as Feedback);
             } else if (wasInvolved) {
                 myClosedItems.push(item);
             }
@@ -877,30 +901,24 @@ function ActionItemsContent() {
             const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
             return dateB.getTime() - dateA.getTime();
         };
-
-        const todoItems = myActiveItems.filter(item => 'status' in item && item.status === 'To-Do').sort(sortFn);
-        const otherActiveItems = myActiveItems.filter(item => !('status' in item) || item.status !== 'To-Do').sort(sortFn);
-
-        setActiveItems([...todoItems, ...otherActiveItems]);
+        
+        setToDoItems(myActionableToDoItems.sort(sortFn));
+        setOneOnOneEscalations(myActionableOneOnOneEscalations.sort(sortFn));
+        setIdentifiedConcerns(myActionableIdentifiedConcerns.sort(sortFn));
+        setRetaliationClaims(myActionableRetaliationClaims.sort(sortFn));
         setClosedItems(myClosedItems.sort(sortFn));
         
-        if (activeItems.length > 0 && !openAccordionItem) {
-            const firstId = 'trackingId' in activeItems[0] ? activeItems[0].trackingId : activeItems[0].id;
-            setOpenAccordionItem(firstId);
-        }
     } catch (error) {
       console.error("Failed to fetch feedback", error);
     } finally {
       setIsLoading(false);
     }
-  }, [role, openAccordionItem]);
+  }, [role]);
 
   useEffect(() => {
     fetchFeedback();
 
-    const handleStorageChange = () => {
-        fetchFeedback();
-    };
+    const handleStorageChange = () => fetchFeedback();
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('feedbackUpdated', handleStorageChange);
@@ -932,6 +950,25 @@ function ActionItemsContent() {
     e.stopPropagation();
     setCaseInModal(item);
     setIsModalOpen(true);
+  };
+  
+  const renderCategorySection = (
+    title: string,
+    icon: React.ElementType,
+    items: (Feedback | OneOnOneHistoryItem)[],
+    isClosedList = false
+  ) => {
+    if (items.length === 0) return null;
+    const Icon = icon;
+
+    return (
+        <div className="pt-6">
+            <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-3">
+               <Icon className="h-6 w-6" /> {title} ({items.length})
+            </h2>
+            {renderFeedbackList(items, isClosedList)}
+        </div>
+    );
   };
 
   const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[], isClosedList = false) => {
@@ -983,15 +1020,15 @@ function ActionItemsContent() {
 
             return (
             <AccordionItem value={id} key={id} id={id}>
-                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1">
-                    <div data-trigger-content className="flex justify-between items-center w-full">
+                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
+                    <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                             <Badge variant={config?.badge as any || 'secondary'}>
                                 {isOneOnOne ? `1-on-1 Insight` : (status === 'To-Do' ? 'To-Do List' : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A'))))}
                             </Badge>
                             <span className="font-medium truncate">{subject}</span>
                         </div>
-                        <div className="flex items-center gap-4 pl-4 mr-4">
+                        <div className="flex items-center gap-4 pl-4 mr-2">
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
@@ -1057,6 +1094,8 @@ function ActionItemsContent() {
     );
   }
 
+  const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length + identifiedConcerns.length + retaliationClaims.length;
+
   return (
     <div className="p-4 md:p-8" ref={accordionRef}>
       <Card>
@@ -1069,7 +1108,7 @@ function ActionItemsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {activeItems.length === 0 ? (
+          {allActiveItemsCount === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <p className="text-muted-foreground text-lg">Your active action item list is empty.</p>
               <p className="text-sm text-muted-foreground mt-2">
@@ -1077,7 +1116,12 @@ function ActionItemsContent() {
               </p>
             </div>
           ) : (
-                renderFeedbackList(activeItems)
+            <div className="space-y-6">
+                {renderCategorySection("To-Do Lists", ListTodo, toDoItems)}
+                {renderCategorySection("1-on-1 Escalations", UserVoice, oneOnOneEscalations)}
+                {renderCategorySection("Identified Concerns", Users, identifiedConcerns)}
+                {renderCategorySection("Retaliation Claims", Flag, retaliationClaims)}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -1086,10 +1130,10 @@ function ActionItemsContent() {
 
       {closedItems.length > 0 && (
           <div className="mt-8">
-            <Accordion type="single" collapsible className="w-full border rounded-lg">
-                <AccordionItem value="closed-items">
-                    <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1">
-                        <div data-trigger-content className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="closed-items" className="border rounded-lg">
+                    <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1 [&_svg]:ml-auto">
+                        <div data-trigger-content className="flex items-center gap-3 text-lg font-semibold text-muted-foreground">
                            <FolderClosed />
                            Closed Items ({closedItems.length})
                         </div>
@@ -1143,3 +1187,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
