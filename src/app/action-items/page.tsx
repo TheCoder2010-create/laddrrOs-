@@ -669,8 +669,8 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
 
 function ActionPanel({ item, onUpdate }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void }) {
     const { role } = useRole();
-    const { toast } = useToast();
     const [supervisorUpdate, setSupervisorUpdate] = useState('');
+    const { toast } = useToast();
 
     const handleSupervisorUpdate = async (trackingId: string) => {
         if (!supervisorUpdate || !role) return;
