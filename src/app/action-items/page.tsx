@@ -831,7 +831,6 @@ function ActionItemsContent() {
       allFeedbackItems.current = fetchedFeedback;
 
       const myFeedback = fetchedFeedback.filter(f => {
-        // Exclude items from "Voice - In Silence" source from the Action Items page
         if (f.source === 'Voice – In Silence') {
             return false;
         }
@@ -840,7 +839,6 @@ function ActionItemsContent() {
         const isCollaboratorOnAnonymousCase = f.isAnonymous && f.status === 'Pending HR Action' && (role === 'HR Head' || role === 'Manager');
         const wasInvolved = f.auditTrail?.some(e => e.actor === role) ?? false;
         
-        // Include closed cases if the user was ever involved.
         if (f.status === 'Resolved' || f.status === 'Closed') {
             return wasInvolved;
         }
@@ -851,13 +849,25 @@ function ActionItemsContent() {
       const history = await getOneOnOneHistory();
       const myEscalatedInsights = history.filter(item => {
         const insight = item.analysis.criticalCoachingInsight;
-        if (!insight || insight.status === 'resolved') return false;
+        if (!insight) return false;
 
-        const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
-        const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
-        const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+        const wasEverAssignedToMe = insight.auditTrail?.some(e => {
+            if (e.event === 'Escalated by AM' && role === 'Manager') return true;
+            if (e.event.includes('Escalated to HR') && role === 'HR Head') return true;
+            return false;
+        });
 
-        return isAmMatch || isManagerMatch || isHrMatch;
+        const isCurrentlyAssignedToMe = 
+            (role === 'AM' && insight.status === 'pending_am_review') ||
+            (role === 'Manager' && insight.status === 'pending_manager_review') ||
+            (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action'));
+
+        // Include if currently assigned, or if it has been resolved but I was involved.
+        if (insight.status === 'resolved') {
+            return wasEverAssignedToMe || isCurrentlyAssignedToMe;
+        }
+
+        return isCurrentlyAssignedToMe;
       });
 
       const combinedList = [...myFeedback, ...myEscalatedInsights];

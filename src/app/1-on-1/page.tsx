@@ -705,12 +705,38 @@ function HistorySection({ role }: { role: Role }) {
                                             )}
                                         </div>
 
-                                        {insight && insightStatus === 'pending_employee_acknowledgement' && (
-                                             <div className="p-4 border rounded-lg bg-blue-500/10">
-                                                <h4 className="font-semibold text-lg text-blue-700 dark:text-blue-400">Action Required</h4>
-                                                <p className="text-sm text-muted-foreground mt-2">
-                                                    Your supervisor has responded to a critical insight from this meeting. Please review their response and acknowledge it in your <Link href="/messages" className="font-bold underline">Messages</Link>.
-                                                </p>
+                                        {insight && (
+                                            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                                <h4 className="font-semibold text-destructive flex items-center gap-2">
+                                                    <AlertTriangle className="h-4 w-4" />Critical Insight & Resolution
+                                                </h4>
+                                                
+                                                <div className="mt-4 p-3 bg-muted/80 rounded-md border">
+                                                    <p className="font-semibold text-foreground text-sm">Initial Summary</p>
+                                                    <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{insight.summary}</p>
+                                                </div>
+                                                
+                                                {insight.supervisorResponse && (
+                                                    <div className="mt-2 p-3 bg-muted/80 rounded-md border">
+                                                        <p className="font-semibold text-foreground text-sm">{item.supervisorName}'s (TL) Response</p>
+                                                        <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
+                                                    </div>
+                                                )}
+
+                                                {insight.employeeAcknowledgement && (
+                                                    <div className="mt-2 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
+                                                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Your Acknowledgement</p>
+                                                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {insight.status === 'pending_employee_acknowledgement' && (
+                                                    <div className="mt-4">
+                                                        <p className="text-sm text-destructive/90">
+                                                            You have a pending action for this item. Please go to your <Link href="/messages" className="font-bold underline">Messages</Link> to respond.
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                      </div>
