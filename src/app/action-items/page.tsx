@@ -990,12 +990,10 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
-            const criticality = isOneOnOne ? 'Critical' : item.criticality;
+            const rawSubject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
+            const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
             const status = isOneOnOne ? item.analysis.criticalCoachingInsight?.status : item.status;
 
-            const config = criticalityConfig[criticality || 'Low'];
-            
             const statusBadge = () => {
               if (isOneOnOne) {
                   const insightStatus = item.analysis.criticalCoachingInsight?.status;
@@ -1029,9 +1027,6 @@ function ActionItemsContent() {
                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <Badge variant={config?.badge as any || 'secondary'}>
-                                {isOneOnOne ? `1-on-1 Insight` : (status === 'To-Do' ? 'To-Do List' : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A'))))}
-                            </Badge>
                             <span className="font-medium truncate">{subject}</span>
                         </div>
                         <div className="flex items-center gap-4 pl-4 mr-4">
@@ -1048,32 +1043,6 @@ function ActionItemsContent() {
                 <AccordionContent className="space-y-6 pt-4 px-4">
                      {!isOneOnOne && item.status !== 'To-Do' && (
                         <>
-                             <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
-                                <div className="flex items-center gap-2 font-bold">
-                                    <config.icon className="h-5 w-5" />
-                                    <span>
-                                        {item.status === 'Retaliation Claim'
-                                            ? 'Retaliation Claim'
-                                            : item.isAnonymous
-                                            ? 'Anonymous Submission'
-                                            : `AI Analysis: ${item.criticality}`}
-                                    </span>
-                                </div>
-                                {item.summary && <p><span className="font-semibold">Summary:</span> {item.summary}</p>}
-                                
-                                {item.parentCaseId && (
-                                     <Button variant="outline" size="sm" onClick={(e) => { e.preventDefault(); /* Logic to open modal can go here */ }}>
-                                        <GitMerge className="mr-2" /> View Parent Case
-                                    </Button>
-                                )}
-                                {item.attachment && (
-                                    <Button variant="outline" size="sm" asChild>
-                                        <a href="#" onClick={(e) => e.preventDefault()}>
-                                            <Paperclip className="mr-2" /> View Attachment ({item.attachment.name})
-                                        </a>
-                                    </Button>
-                                )}
-                            </div>
                             <div className="space-y-2">
                                 <Label className="text-base">Original Submission Context</Label>
                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
