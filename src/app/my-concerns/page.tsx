@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -559,24 +559,22 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                  {cases.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
                     
-                    const responderEvent = item.auditTrail?.find(e => e.event === 'Supervisor Responded');
+                    const responderEvent = item.auditTrail?.find(e => ['Supervisor Responded', 'HR Resolution Submitted'].includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.find(e => e.event === 'HR Responded to Retaliation Claim');
 
                     return (
                         <AccordionItem value={item.trackingId} key={item.trackingId}>
-                             <div className="flex items-center w-full px-4">
-                                <AccordionTrigger className="flex-1 text-left">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <p className="font-medium truncate">{item.subject}</p>
-                                    </div>
-                                </AccordionTrigger>
-                                <div className="flex items-center gap-4 ml-auto pl-4">
+                             <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                    <p className="font-medium truncate">{item.subject}</p>
+                                </div>
+                                <div className="flex items-center gap-4 pl-4">
                                     <span className="text-xs text-muted-foreground font-mono cursor-text">
                                         ID: {item.trackingId}
                                     </span>
                                     {getStatusBadge(item.status)}
                                 </div>
-                            </div>
+                            </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2 px-4">
                                {item.status === 'Pending Identity Reveal' && (
                                    <RevealIdentityWidget item={item} onUpdate={onUpdate} />

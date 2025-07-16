@@ -16,7 +16,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,15 @@ const auditEventIcons = {
     'Assigned': Send,
     'Supervisor Responded': MessageSquare,
     'Resolved': CheckCircle,
+    'Identity Reveal Requested': UserX,
+    'Identity Revealed': User,
+    'User acknowledged manager\'s assurance message': CheckCircle,
+    'Identity Reveal Declined; Escalated to HR': ShieldCheckIcon,
+    'Employee Accepted Resolution': CheckCircle,
+    'Employee Escalated Concern': AlertTriangle,
+    'HR Resolution Submitted': ShieldCheckIcon,
+    'Final Disposition Required': ShieldAlert,
+    'Final Disposition': FileCheck,
     'default': Clock,
 }
 
@@ -831,65 +840,55 @@ function ActionItemsContent() {
         const fetchedFeedback = await getAllFeedback();
         const history = await getOneOnOneHistory();
 
-        const myActionableFeedback: Feedback[] = [];
-        const myHistoricalFeedback: Feedback[] = [];
+        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
+        const myActiveItems : (Feedback | OneOnOneHistoryItem)[] = [];
+        const myClosedItems : (Feedback | OneOnOneHistoryItem)[] = [];
 
-        fetchedFeedback.forEach(f => {
-            if (f.source === 'Voice – In Silence') return;
+        allItems.forEach(item => {
+            let isActionable = false;
+            let wasInvolved = false;
+            let date = new Date(0);
 
-            const isCurrentlyAssigned = f.assignedTo?.includes(role as Role);
-            const wasInvolved = f.auditTrail?.some(e => e.actor === role);
-            
-            if (isCurrentlyAssigned && f.status !== 'Resolved' && f.status !== 'Closed') {
-                myActionableFeedback.push(f);
+            if ('analysis' in item) { // It's a OneOnOneHistoryItem
+                const insight = item.analysis.criticalCoachingInsight;
+                if (insight) {
+                    date = new Date(item.date);
+                    const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
+                    const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
+                    const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+                    isActionable = isAmMatch || isManagerMatch || isHrMatch;
+                    wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+                }
+            } else { // It's a Feedback item
+                if (item.source === 'Voice – In Silence') return;
+                date = new Date(item.submittedAt);
+                const isAssigned = item.assignedTo?.includes(role as Role);
+                const isActiveStatus = item.status !== 'Resolved' && item.status !== 'Closed';
+                isActionable = !!isAssigned && isActiveStatus;
+                wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+            }
+
+            if (isActionable) {
+                myActiveItems.push(item);
             } else if (wasInvolved) {
-                myHistoricalFeedback.push(f);
+                myClosedItems.push(item);
             }
         });
 
-        const myActionableInsights: OneOnOneHistoryItem[] = [];
-        const myHistoricalInsights: OneOnOneHistoryItem[] = [];
-
-        history.forEach(item => {
-            const insight = item.analysis.criticalCoachingInsight;
-            if (!insight) return;
-
-            const isCurrentlyAssigned = 
-                (role === 'AM' && insight.status === 'pending_am_review') ||
-                (role === 'Manager' && insight.status === 'pending_manager_review') ||
-                (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action'));
-            
-            const wasInvolved = insight.auditTrail?.some(e => e.actor === role);
-
-            if (isCurrentlyAssigned) {
-                myActionableInsights.push(item);
-            } else if (wasInvolved) {
-                myHistoricalInsights.push(item);
-            }
-        });
-
-        const active = [...myActionableFeedback, ...myActionableInsights];
-        const closed = [...myHistoricalFeedback, ...myHistoricalInsights];
-        
-        active.sort((a, b) => {
-            const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
-            const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
-            if ('status' in a && a.status === 'To-Do') return -1;
-            if ('status' in b && b.status === 'To-Do') return 1;
-            return dateB.getTime() - dateA.getTime();
-        });
-
-        closed.sort((a, b) => {
+        const sortFn = (a: Feedback | OneOnOneHistoryItem, b: Feedback | OneOnOneHistoryItem) => {
             const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
             const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
             return dateB.getTime() - dateA.getTime();
-        });
+        };
+
+        const todoItems = myActiveItems.filter(item => 'status' in item && item.status === 'To-Do').sort(sortFn);
+        const otherActiveItems = myActiveItems.filter(item => !('status' in item) || item.status !== 'To-Do').sort(sortFn);
+
+        setActiveItems([...todoItems, ...otherActiveItems]);
+        setClosedItems(myClosedItems.sort(sortFn));
         
-        setActiveItems(active);
-        setClosedItems(closed);
-        
-        if (active.length > 0 && !openAccordionItem) {
-            const firstId = 'trackingId' in active[0] ? active[0].trackingId : active[0].id;
+        if (activeItems.length > 0 && !openAccordionItem) {
+            const firstId = 'trackingId' in activeItems[0] ? activeItems[0].trackingId : activeItems[0].id;
             setOpenAccordionItem(firstId);
         }
     } catch (error) {
@@ -956,11 +955,6 @@ function ActionItemsContent() {
             const status = isOneOnOne ? item.analysis.criticalCoachingInsight?.status : item.status;
 
             const config = criticalityConfig[criticality || 'Low'];
-            let Icon = Info;
-
-            if (status === 'Retaliation Claim') Icon = ShieldAlert;
-            else if (!isOneOnOne && item.isAnonymous) Icon = UserX;
-            else if (config?.icon) Icon = config.icon;
             
             const statusBadge = () => {
               if (isOneOnOne) {
@@ -971,7 +965,7 @@ function ActionItemsContent() {
                       case 'pending_hr_review':
                       case 'pending_final_hr_action': return <Badge className="bg-black text-white">HR Review</Badge>;
                       case 'resolved': return <Badge variant="success">Resolved</Badge>;
-                      default: return <Badge variant="secondary">{insightStatus}</Badge>;
+                      default: return <Badge variant="secondary">{insightStatus?.replace(/_/g, ' ')}</Badge>;
                   }
               }
               const feedbackStatus = item.status;
@@ -992,16 +986,14 @@ function ActionItemsContent() {
 
             return (
             <AccordionItem value={id} key={id} id={id}>
-                <div className="flex items-center w-full">
-                    <AccordionTrigger className="flex-1 text-left px-4 py-3">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <Badge variant={config?.badge as any || 'secondary'}>
-                                {isOneOnOne ? `1-on-1 Insight` : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A')))}
-                            </Badge>
-                            <span className="font-medium truncate">{subject}</span>
-                        </div>
-                    </AccordionTrigger>
-                    <div className="flex items-center gap-4 ml-auto px-4">
+                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <Badge variant={config?.badge as any || 'secondary'}>
+                            {isOneOnOne ? `1-on-1 Insight` : (status === 'To-Do' ? 'To-Do List' : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A'))))}
+                        </Badge>
+                        <span className="font-medium truncate">{subject}</span>
+                    </div>
+                    <div className="flex items-center gap-4 pl-4">
                         <span 
                             className="text-xs text-muted-foreground font-mono cursor-text"
                             onClick={(e) => { e.stopPropagation(); }}
@@ -1010,13 +1002,13 @@ function ActionItemsContent() {
                         </span>
                         {statusBadge()}
                     </div>
-                </div>
+                </AccordionTrigger>
                 <AccordionContent className="space-y-6 pt-4 px-4">
                      {!isOneOnOne && item.status !== 'To-Do' && (
                         <>
                              <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
                                 <div className="flex items-center gap-2 font-bold">
-                                    <Icon className="h-5 w-5" />
+                                    <config.icon className="h-5 w-5" />
                                     <span>
                                         {item.status === 'Retaliation Claim'
                                             ? 'Retaliation Claim'
@@ -1029,7 +1021,7 @@ function ActionItemsContent() {
                                 
                                 {item.parentCaseId && (
                                      <Button variant="outline" size="sm" onClick={(e) => handleOpenCase(item, e)}>
-                                        <LinkIcon className="mr-2" /> View Parent Case
+                                        <GitMerge className="mr-2" /> View Parent Case
                                     </Button>
                                 )}
                                 {item.attachment && (
@@ -1097,7 +1089,7 @@ function ActionItemsContent() {
           <div className="mt-8">
             <Accordion type="single" collapsible className="w-full border rounded-lg">
                 <AccordionItem value="closed-items">
-                    <AccordionTrigger className="px-4 py-3">
+                    <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                         <div className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
                            <FolderClosed />
                            Closed Items ({closedItems.length})
