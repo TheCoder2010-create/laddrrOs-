@@ -1059,8 +1059,8 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     const item = allFeedback[feedbackIndex];
     const actor = item.submittedBy || 'Anonymous';
     
-    // Find the last responder in the audit trail to determine current level
-    const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => e.event === 'Supervisor Responded' || e.event === 'HR Responded to Retaliation Claim');
+    const relevantEvents = ['Supervisor Responded', 'HR Responded to Retaliation Claim'];
+    const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
     const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
     if (accepted) {
@@ -1081,27 +1081,11 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     } else {
         const escalationDetails = `Resolution not accepted. Escalating further.${comments ? `\nComments: ${comments}` : ''}`;
         
-        // If it's a retaliation claim being rejected, route it back to HR for final disposition.
-        if(item.criticality === 'Retaliation Claim') {
-            item.status = 'Pending HR Action';
-            item.assignedTo = ['HR Head'];
-             item.auditTrail?.push({
-                event: 'Final Disposition Required',
-                timestamp: new Date(),
-                actor: 'System',
-                details: `Case returned to HR for final action after employee rejected resolution. ${escalationDetails}`
-             });
-
-            saveFeedbackToStorage(allFeedback);
-            return;
-        }
-
         let nextAssignee: Role | undefined = undefined;
         let nextStatus: FeedbackStatus = 'Pending Manager Action';
 
         const lastResponderRole = Object.values(roleUserMapping).find(u => u.name === lastResponder)?.role || lastResponder;
 
-        // Determine next escalation level based on the last responder
         if (lastResponderRole === 'Team Lead') {
             nextAssignee = 'AM';
             nextStatus = 'Pending Manager Action'
