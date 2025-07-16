@@ -1002,11 +1002,6 @@ function ActionItemsContent() {
                         </div>
                     </AccordionTrigger>
                     <div className="flex items-center gap-4 ml-auto px-4">
-                         {isClosedList && (
-                             <Button variant="ghost" size="sm" onClick={(e) => handleOpenCase(item, e)}>
-                                <ExternalLink className="mr-2 h-4 w-4" /> Open Case
-                             </Button>
-                         )}
                         <span 
                             className="text-xs text-muted-foreground font-mono cursor-text"
                             onClick={(e) => { e.stopPropagation(); }}
