@@ -970,7 +970,7 @@ function ActionItemsContent() {
     return (
         <div className="pt-6">
             <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-3">
-               <Icon className="h-6 w-6" /> {title} ({items.length})
+               <Icon className="h-6 w-6" /> {title}
             </h2>
             {renderFeedbackList(items)}
         </div>
@@ -1137,34 +1137,34 @@ function ActionItemsContent() {
           <div className="mt-8">
             <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="closed-items" className="border rounded-lg">
-                    <AccordionTrigger className="w-full px-4 py-3 hover:no-underline [&_svg]:ml-auto">
+                    <AccordionTrigger className="flex w-full items-center justify-between px-4 py-3 hover:no-underline [&_svg]:ml-auto">
                         <div className="flex items-center gap-3 text-lg font-semibold text-muted-foreground">
                            <FolderClosed />
-                           Closed Items ({allClosedItemsCount})
+                           Closed Items
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-2 space-y-4">
                         {closedToDoItems.length > 0 && (
                             <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><ListTodo className="h-5 w-5" />To-Do Lists ({closedToDoItems.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><ListTodo className="h-5 w-5" />To-Do Lists</h3>
                                 {renderFeedbackList(closedToDoItems)}
                             </div>
                         )}
                         {closedOneOnOneEscalations.length > 0 && (
                              <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserCog className="h-5 w-5" />1-on-1 Escalations ({closedOneOnOneEscalations.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserCog className="h-5 w-5" />1-on-1 Escalations</h3>
                                 {renderFeedbackList(closedOneOnOneEscalations)}
                             </div>
                         )}
                         {closedIdentifiedConcerns.length > 0 && (
                              <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Users className="h-5 w-5" />Identified Concerns ({closedIdentifiedConcerns.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Users className="h-5 w-5" />Identified Concerns</h3>
                                 {renderFeedbackList(closedIdentifiedConcerns)}
                             </div>
                         )}
                         {closedRetaliationClaims.length > 0 && (
                              <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Flag className="h-5 w-5" />Retaliation Claims ({closedRetaliationClaims.length})</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Flag className="h-5 w-5" />Retaliation Claims</h3>
                                 {renderFeedbackList(closedRetaliationClaims)}
                             </div>
                         )}
