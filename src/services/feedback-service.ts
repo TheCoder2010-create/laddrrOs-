@@ -447,7 +447,7 @@ export async function submitHrResolution(historyId: string, actor: Role, notes: 
         insight.auditTrail = [];
     }
     insight.auditTrail.push({
-        event: 'HR Responded to Retaliation Claim',
+        event: 'HR Resolution',
         timestamp: new Date(),
         actor: actor,
         details: notes,
@@ -1037,8 +1037,11 @@ export async function submitSupervisorUpdate(trackingId: string, supervisor: Rol
     item.status = 'Pending Employee Acknowledgment'; // Send for acknowledgment
     item.assignedTo = []; // Unset assignee so it leaves the manager's queue
     
+    // Use a more specific event for HR to break the loop
+    const eventName = supervisor === 'HR Head' ? 'HR Resolution Submitted' : 'Supervisor Responded';
+
     item.auditTrail?.push({
-        event: 'Supervisor Responded',
+        event: eventName,
         timestamp: new Date(),
         actor: supervisor,
         details: update,
@@ -1059,7 +1062,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     const item = allFeedback[feedbackIndex];
     const actor = item.submittedBy || 'Anonymous';
     
-    const relevantEvents = ['Supervisor Responded', 'HR Responded to Retaliation Claim'];
+    const relevantEvents = ['Supervisor Responded', 'HR Responded to Retaliation Claim', 'HR Resolution Submitted'];
     const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
     const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
@@ -1086,20 +1089,33 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
 
         const lastResponderRole = Object.values(roleUserMapping).find(u => u.name === lastResponder)?.role || lastResponder;
 
-        if (lastResponderRole === 'Team Lead') {
+        // Check if the last response was the final one from HR
+        if (lastResponderEvent?.event === 'HR Resolution Submitted') {
+            nextAssignee = 'HR Head';
+            nextStatus = 'Pending HR Action';
+            item.auditTrail?.push({
+                event: 'Final Disposition Required',
+                timestamp: new Date(),
+                actor: 'System',
+                details: 'Case returned to HR for final action after employee rejected resolution.'
+            });
+        } else if (lastResponderRole === 'Team Lead') {
             nextAssignee = 'AM';
-            nextStatus = 'Pending Manager Action'
+            nextStatus = 'Pending Manager Action';
         } else if (lastResponderRole === 'AM') {
             nextAssignee = 'Manager';
-            nextStatus = 'Pending Manager Action'
+            nextStatus = 'Pending Manager Action';
         } else if (lastResponderRole === 'Manager') {
             nextAssignee = 'HR Head';
             nextStatus = 'Pending HR Action';
         } else if (lastResponderRole === 'HR Head') {
-            // After HR responds and is rejected, it goes back to HR for final disposition
-            nextAssignee = 'HR Head';
-            nextStatus = 'Pending HR Action'; 
+             // This condition now specifically handles the retaliation claim response
+             // or other direct HR responses, not the final identified concern response
+            item.status = 'Closed';
+            item.resolution = `Case closed. Employee remained dissatisfied with HR response. Employee comments: ${comments || 'None'}`;
+            item.auditTrail?.push({ event: 'Case Closed, Not Resolved', timestamp: new Date(), actor: 'System' });
         }
+
 
         if (nextAssignee) {
              item.status = nextStatus;
@@ -1110,24 +1126,6 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
                 actor: actor,
                 details: `Concern escalated to ${nextAssignee}. ${escalationDetails}`
             });
-             if (lastResponderRole === 'HR Head') {
-                 item.auditTrail?.push({
-                    event: 'Final Disposition Required',
-                    timestamp: new Date(),
-                    actor: 'System',
-                    details: 'Case returned to HR for final action after employee rejected resolution.'
-                 });
-             }
-        } else {
-             // Fallback/end of the line, shouldn't normally be hit with the new logic
-             item.status = 'Closed';
-             item.resolution = `Case closed after final escalation attempt. Employee remained unsatisfied. Last response from ${lastResponder}: ${item.supervisorUpdate}`;
-             item.auditTrail?.push({
-                event: 'Case Closed, Not Resolved',
-                timestamp: new Date(),
-                actor: 'System',
-                details: `Workflow concluded without employee satisfaction. ${escalationDetails}`
-             });
         }
     }
 
