@@ -16,7 +16,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserVoice } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -1020,8 +1020,8 @@ function ActionItemsContent() {
 
             return (
             <AccordionItem value={id} key={id} id={id}>
-                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
-                    <div className="flex justify-between items-center w-full">
+                <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&>[data-trigger-content]]:flex-1 [&_svg]:ml-auto">
+                    <div data-trigger-content className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                             <Badge variant={config?.badge as any || 'secondary'}>
                                 {isOneOnOne ? `1-on-1 Insight` : (status === 'To-Do' ? 'To-Do List' : (status === 'Retaliation Claim' ? 'Retaliation' : (item.isAnonymous ? 'Anonymous' : (criticality || 'N/A'))))}
@@ -1118,7 +1118,7 @@ function ActionItemsContent() {
           ) : (
             <div className="space-y-6">
                 {renderCategorySection("To-Do Lists", ListTodo, toDoItems)}
-                {renderCategorySection("1-on-1 Escalations", UserVoice, oneOnOneEscalations)}
+                {renderCategorySection("1-on-1 Escalations", UserCog, oneOnOneEscalations)}
                 {renderCategorySection("Identified Concerns", Users, identifiedConcerns)}
                 {renderCategorySection("Retaliation Claims", Flag, retaliationClaims)}
             </div>
@@ -1187,5 +1187,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
