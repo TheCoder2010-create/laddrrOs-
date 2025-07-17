@@ -603,6 +603,7 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
 const auditEventIcons = {
     'Submitted': FileCheck,
     'Retaliation Claim Submitted': Flag,
+    'Retaliation Claim Filed': Flag,
     'Identity Revealed': User,
     'Identity Reveal Requested': UserX,
     'Resolved': CheckCircle,
@@ -621,31 +622,17 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
                     {trail.map((event, index) => {
                         const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
                         
-                         const renderDetails = () => {
+                        const renderDetails = () => {
                             if (!event.details) return null;
 
-                            const parentRegex = /(Claim submitted for case )([a-f0-9-]+)/;
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
-                            
-                            const parentMatch = event.details.match(parentRegex);
                             const childMatch = event.details.match(childRegex);
 
-                            if (parentMatch || childMatch) {
-                                const parentId = parentMatch?.[2];
-                                const childId = childMatch?.[2];
-                                const textBeforeParent = parentMatch ? parentMatch[1] : '';
-                                
+                            if (childMatch) {
+                                const childId = childMatch[2];
                                 return (
-                                    <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                                        {textBeforeParent && <span>{textBeforeParent}</span>}
-                                        {parentId && <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>}
-                                        {childId && 
-                                            <>
-                                                <br/>
-                                                <span>New Case ID: </span>
-                                                <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>
-                                            </>
-                                        }
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                        New Case ID: <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>
                                     </div>
                                 );
                             }
@@ -776,10 +763,11 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.find(e => e.event === 'HR Responded to Retaliation Claim');
                     
                     const isLinkedClaim = !!item.parentCaseId;
+                    
                     const accordionTitle = isLinkedClaim
                         ? `Linked Retaliation Claim`
                         : item.subject;
-
+                    
                     return (
                         <AccordionItem value={item.trackingId} key={item.trackingId} id={`accordion-item-${item.trackingId}`}>
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">

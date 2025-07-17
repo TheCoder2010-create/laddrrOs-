@@ -57,6 +57,7 @@ const auditEventIcons = {
     'Final Disposition Required': ShieldAlert,
     'Final Disposition': FileCheck,
     'Retaliation Claim Submitted': Flag,
+    'Retaliation Claim Filed': Flag,
     'Update Added': MessageSquare,
     'default': Info,
 }
@@ -83,21 +84,22 @@ function AuditTrail({ trail, handleScrollToCase }: { trail: AuditEvent[], handle
                             const childMatch = event.details.match(childRegex);
 
                             if (parentMatch || childMatch) {
-                                const parentId = parentMatch?.[2];
-                                const childId = childMatch?.[2];
-                                const textBeforeParent = parentMatch ? parentMatch[1] : '';
-                                
                                 return (
                                     <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                                        {textBeforeParent && <span>{textBeforeParent}</span>}
-                                        {parentId && <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>}
-                                        {childId && 
-                                            <>
-                                                <br/>
-                                                <span>New Case ID: </span>
-                                                <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>
-                                            </>
-                                        }
+                                        {event.details.split('\n').map((line, i) => {
+                                            const lineParentMatch = line.match(/(Claim submitted for case )([a-f0-9-]+)/);
+                                            const lineChildMatch = line.match(/(New Case ID: )([a-f0-9-]+)/);
+                                            
+                                            if (lineParentMatch) {
+                                                const parentId = lineParentMatch[2];
+                                                return <div key={i}>Claim submitted for case <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
+                                            }
+                                            if (lineChildMatch) {
+                                                const childId = lineChildMatch[2];
+                                                return <div key={i}>New Case ID: <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a></div>
+                                            }
+                                            return <div key={i}>{line}</div>
+                                        })}
                                     </div>
                                 );
                             }
@@ -953,45 +955,41 @@ function ActionItemsContent() {
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
         
         allItems.forEach(item => {
-            let isActionable = false;
             let wasInvolved = false;
             let category: 'todo' | '1on1' | 'concern' | 'retaliation' | 'none' = 'none';
             let isItemClosed = false;
-            let finalDispositionEvent;
 
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
                 if (insight) {
+                    const finalDispositionEvent = insight.auditTrail?.some(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
+                    
+                    // An item is considered "closed" if its status is resolved/closed OR a final disposition exists.
+                    isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
+                    
+                    // A user was involved if they are the assigned AM/Manager/HR for an active escalation,
+                    // or if their role appears anywhere in the audit trail (for closed items).
                     const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-                    
-                    finalDispositionEvent = insight.auditTrail?.some(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
-                    
-                    isActionable = isAmMatch || isManagerMatch || isHrMatch;
-                    isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
-                    
-                    // An item is considered "involved" if it's actionable now or was in the past (based on audit trail).
-                    // This ensures closed items appear in the history of anyone who touched them.
+                    const isActionable = isAmMatch || isManagerMatch || isHrMatch;
+
                     wasInvolved = isActionable || (insight.auditTrail?.some(e => e.actor === role) ?? false);
                     
-                    if(isActionable || wasInvolved) category = '1on1';
+                    if(wasInvolved) category = '1on1';
                 }
             } else { // It's a Feedback item
                 if (item.source === 'Voice – In Silence') return;
                 
-                const isAssigned = item.assignedTo?.includes(role as Role);
-                finalDispositionEvent = item.auditTrail?.some(e => e.event === "Final Disposition");
-                
-                const isOpenStatus = !closedStatuses.includes(item.status as any) && !finalDispositionEvent;
-                
-                // Case is actionable if it is assigned to me and is not closed/resolved
-                isActionable = isAssigned && isOpenStatus;
-
+                const finalDispositionEvent = item.auditTrail?.some(e => e.event === "Final Disposition");
                 isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
-                wasInvolved = isActionable || (item.auditTrail?.some(e => e.actor === role) ?? false);
                 
-                if (isActionable || wasInvolved) {
+                // A user was involved if they are currently assigned to an open case,
+                // or if their role appears in the audit trail of any case (open or closed).
+                const isAssignedToOpenCase = (item.assignedTo?.includes(role as Role) ?? false) && !isItemClosed;
+                wasInvolved = isAssignedToOpenCase || (item.auditTrail?.some(e => e.actor === role) ?? false);
+
+                if (wasInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
                         category = 'todo';
                     } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
@@ -1002,7 +1000,7 @@ function ActionItemsContent() {
                 }
             }
             
-            if (!isItemClosed && isActionable) {
+            if (!isItemClosed && wasInvolved) {
                 if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') activeToDoItems.push(item as Feedback);
                 else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);

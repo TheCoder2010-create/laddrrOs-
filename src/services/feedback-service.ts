@@ -843,13 +843,13 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
 
 export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
-    const trackingId = uuidv4();
+    const childCaseId = uuidv4();
 
-    // Create the new retaliation case
+    // Create the new child retaliation case
     const newRetaliationCase: Feedback = {
-        trackingId,
+        trackingId: childCaseId,
         parentCaseId: input.parentCaseId,
-        subject: `Retaliation Claim`,
+        subject: `Retaliation Claim (linked to ${input.parentCaseId.substring(0,8)})`,
         message: input.description,
         submittedAt: new Date(),
         submittedBy: input.submittedBy,
@@ -861,14 +861,27 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `Claim submitted for case ${input.parentCaseId}.\nNew Case ID: ${trackingId}${input.file ? `\nAn attachment named "${input.file.name}" was securely uploaded.` : ''}`
+            details: `Claim submitted for case ${input.parentCaseId}.${input.file ? `\nAn attachment named "${input.file.name}" was securely uploaded.` : ''}`
         }],
         attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
     };
     allFeedback.unshift(newRetaliationCase);
+
+    // Add a linking event to the parent case
+    const parentCaseIndex = allFeedback.findIndex(f => f.trackingId === input.parentCaseId);
+    if (parentCaseIndex !== -1) {
+        const parentCase = allFeedback[parentCaseIndex];
+        if (!parentCase.auditTrail) parentCase.auditTrail = [];
+        parentCase.auditTrail.push({
+            event: 'Retaliation Claim Filed',
+            timestamp: new Date(),
+            actor: input.submittedBy,
+            details: `New Case ID: ${childCaseId}`
+        });
+    }
     
     saveFeedbackToStorage(allFeedback);
-    return { trackingId };
+    return { trackingId: childCaseId };
 }
 
 export async function submitHrRetaliationResponse(trackingId: string, actor: Role, response: string): Promise<void> {
