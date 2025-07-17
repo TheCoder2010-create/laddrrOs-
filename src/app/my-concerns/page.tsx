@@ -797,7 +797,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                )}
                                <div className="space-y-2">
                                     <Label>Original Submission</Label>
-                                    <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
+                                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.message}</p>
                                 </div>
                                
                                 <CaseHistory trail={item.auditTrail} handleScrollToCase={handleScrollToCase} />

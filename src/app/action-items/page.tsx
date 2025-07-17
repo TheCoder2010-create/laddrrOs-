@@ -899,7 +899,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange }: { caseItem: Feedback
                     <div className="space-y-6 py-4">
                         <div className="space-y-2">
                             <Label className="text-base">Initial Submission Context</Label>
-                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{initialMessage}</p>
+                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{initialMessage}</p>
                         </div>
                         {auditTrail && <AuditTrail trail={auditTrail} handleScrollToCase={() => {}} />}
                         {resolution && (
@@ -1188,7 +1188,7 @@ function ActionItemsContent() {
                         <>
                             <div className="space-y-2">
                                 <Label className="text-base">Original Submission Context</Label>
-                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.message}</p>
                             </div>
                         </>
                      )}
