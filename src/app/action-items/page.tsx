@@ -446,6 +446,9 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
         try {
             await addFeedbackUpdate(feedback.trackingId, role, update, file);
             setUpdate('');
+            if (document.getElementById('hr-update-file')) {
+                (document.getElementById('hr-update-file') as HTMLInputElement).value = '';
+            }
             setFile(null);
             toast({ title: "Update Added", description: "Your confidential notes have been added to the case history." });
             onUpdate();
@@ -1240,3 +1243,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    

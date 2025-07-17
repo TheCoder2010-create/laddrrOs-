@@ -834,8 +834,8 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                             <div className="space-y-2">
                                                 <Label>Parent Case</Label>
                                                 <div>
-                                                     <a href={`#accordion-item-${item.trackingId}`} onClick={(e) => handleScrollToCase(e, item.trackingId)} className={cn(buttonVariants({ variant: 'link', size: 'sm' }), "h-auto p-0")}>
-                                                        View Parent Case (...{item.trackingId.slice(-6)})
+                                                     <a href={`#accordion-item-${item.trackingId}`} onClick={(e) => handleScrollToCase(e, item.trackingId)} className={cn(buttonVariants({ variant: 'link', size: 'sm' }), "h-auto p-0 italic")}>
+                                                        Parent Case ({item.trackingId})
                                                     </a>
                                                 </div>
                                             </div>
@@ -957,3 +957,5 @@ export default function MyConcernsPage() {
 
     
 }
+
+    
