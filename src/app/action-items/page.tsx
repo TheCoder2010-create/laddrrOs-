@@ -1000,6 +1000,20 @@ function ActionItemsContent() {
     };
   }, [fetchFeedback]);
 
+  const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
+      e.preventDefault();
+      const caseElement = accordionRef.current?.querySelector(`#accordion-item-${caseId}`);
+      caseElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
+      // Use a timeout to ensure the element is visible before trying to click the trigger
+      setTimeout(() => {
+          const trigger = caseElement?.querySelector('[data-radix-collection-item]');
+          if (trigger instanceof HTMLElement) {
+              trigger.click();
+          }
+      }, 300);
+  };
+
   if (isLoading) {
     return (
         <div className="p-4 md:p-8">
@@ -1100,6 +1114,17 @@ function ActionItemsContent() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-6 pt-4 px-4">
+                     {!isOneOnOne && item.parentCaseId && (
+                         <div className="space-y-2">
+                             <a
+                                href="#"
+                                onClick={(e) => handleScrollToCase(e, item.parentCaseId!)}
+                                className="text-sm italic text-muted-foreground hover:text-primary transition-colors"
+                            >
+                                Parent Case: {item.parentCaseId}
+                            </a>
+                        </div>
+                     )}
                      {!isOneOnOne && item.status !== 'To-Do' && (
                         <>
                             <div className="space-y-2">
