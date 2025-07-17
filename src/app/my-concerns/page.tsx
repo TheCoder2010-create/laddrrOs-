@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -627,7 +627,14 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
         );
     }
     
-    const getStatusBadge = (status?: string) => {
+    const getStatusBadge = (item: Feedback) => {
+        const { status, resolution } = item;
+        if (status === 'Closed' && resolution) {
+            if (resolution.includes('Ombudsman')) return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Ombudsman</Badge>;
+            if (resolution.includes('Grievance')) return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Grievance</Badge>;
+            return <Badge variant="secondary" className="flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Closed</Badge>;
+        }
+        
         switch(status) {
             case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
             case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
@@ -673,7 +680,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
                                     <span className="text-xs text-muted-foreground font-mono cursor-text">
                                         ID: {item.trackingId}
                                     </span>
-                                    {getStatusBadge(item.status)}
+                                    {getStatusBadge(item)}
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2 px-4">

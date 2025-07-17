@@ -1206,7 +1206,7 @@ export async function submitFinalDisposition(trackingId: string, actor: Role, di
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    item.status = 'Resolved';
+    item.status = 'Closed';
     item.resolution = `Final Disposition: ${disposition}.\n\nHR Notes: ${notes}`;
     item.assignedTo = [];
     item.auditTrail?.push({
@@ -1216,7 +1216,7 @@ export async function submitFinalDisposition(trackingId: string, actor: Role, di
         details: `Case routed to ${disposition}. Notes: ${notes}`
     });
      item.auditTrail?.push({
-        event: 'Resolved',
+        event: 'Closed',
         timestamp: new Date(),
         actor: 'System',
         details: 'Case closed after final disposition by HR.'
