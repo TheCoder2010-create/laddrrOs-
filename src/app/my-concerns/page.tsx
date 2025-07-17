@@ -460,20 +460,29 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
 function AcknowledgementWidget({ item, onUpdate, title, description, responderEventDetails, responderEventActor }: { item: Feedback, onUpdate: () => void, title: string, description: string, responderEventDetails?: string, responderEventActor?: string }) {
     const { toast } = useToast();
     const [comments, setComments] = useState('');
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
     const handleAcknowledge = async (accepted: boolean) => {
-        await submitEmployeeFeedbackAcknowledgement(item.trackingId, accepted, comments);
-        if (accepted) {
-            toast({ title: "Resolution Accepted", description: "The case has been closed." });
-        } else {
-            if (item.criticality === 'Retaliation Claim') {
-                toast({ title: "Feedback Submitted", description: "The case has been closed with your feedback noted." });
+        setIsSubmitting(true);
+        try {
+            await submitEmployeeFeedbackAcknowledgement(item.trackingId, accepted, comments);
+            if (accepted) {
+                toast({ title: "Resolution Accepted", description: "The case has been closed." });
             } else {
-                toast({ title: "Concern Escalated", description: "Your feedback has been escalated to the next level." });
+                if (item.criticality === 'Retaliation Claim') {
+                    toast({ title: "Feedback Submitted", description: "The case has been closed with your feedback noted." });
+                } else {
+                    toast({ title: "Concern Escalated", description: "Your feedback has been escalated to the next level." });
+                }
             }
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit acknowledgement", error);
+            toast({ variant: 'destructive', title: "Acknowledgement Failed" });
+        } finally {
+            setIsSubmitting(false);
         }
-        onUpdate();
-    }
+    };
     
     if (!responderEventDetails) return null;
 
@@ -505,8 +514,14 @@ function AcknowledgementWidget({ item, onUpdate, title, description, responderEv
                     />
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
-                    <Button onClick={() => handleAcknowledge(true)} variant="success">Accept Resolution</Button>
-                    <Button onClick={() => handleAcknowledge(false)} variant="destructive">I'm Not Satisfied, {item.criticality === 'Retaliation Claim' ? 'Close Case' : 'Escalate'}</Button>
+                    <Button onClick={() => handleAcknowledge(true)} variant="success" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                        Accept Resolution
+                    </Button>
+                    <Button onClick={() => handleAcknowledge(false)} variant="destructive" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                        I'm Not Satisfied, {item.criticality === 'Retaliation Claim' ? 'Close Case' : 'Escalate'}
+                    </Button>
                 </div>
             </CardContent>
         </Card>
@@ -801,7 +816,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                 {retaliationCase && (
                                     <div className="mt-4 pt-4 border-t-2 border-destructive/50 space-y-4">
                                         <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
-                                            <GitMerge /> Linked Retaliation Claim
+                                            <GitMerge /> Linked Retaliation Claim {retaliationCase.parentCaseId && `(Parent Case: ...${retaliationCase.parentCaseId.slice(-6)})`}
                                         </h4>
                                         
                                         {retaliationCase.status === 'Pending Employee Acknowledgment' && (
@@ -829,15 +844,6 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                             <div className="space-y-2">
                                                 <Label>Your Claim Description</Label>
                                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label>Parent Case</Label>
-                                                <div>
-                                                     <a href={`#accordion-item-${item.trackingId}`} onClick={(e) => handleScrollToCase(e, item.trackingId)} className={cn(buttonVariants({ variant: 'link', size: 'sm' }), "h-auto p-0 italic")}>
-                                                        Parent Case ({item.trackingId})
-                                                    </a>
-                                                </div>
                                             </div>
 
                                             {retaliationCase.attachment && (
