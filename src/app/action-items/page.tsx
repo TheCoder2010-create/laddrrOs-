@@ -69,7 +69,7 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
             <Label className="text-base">Case History</Label>
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
-                <div className="space-y-8">
+                <div className="space-y-4">
                     {trail.map((event, index) => {
                         const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
                         return (
@@ -945,17 +945,17 @@ function ActionItemsContent() {
                 if (item.source === 'Voice – In Silence') return;
                 
                 const isAssigned = item.assignedTo?.includes(role as Role);
-                isItemClosed = closedStatuses.includes(item.status as any);
-                isActionable = !!isAssigned && !isItemClosed;
+                const isFinalDisposition = item.status === 'Final Disposition Required';
+                const isRetaliationClaim = item.status === 'Retaliation Claim';
+                const isNotResolved = !closedStatuses.includes(item.status as any);
                 
-                // For HR Head, keep retaliation claims in the active list until explicitly resolved, even if sent to employee
-                if (role === 'HR Head' && item.criticality === 'Retaliation Claim' && item.status !== 'Resolved' && item.status !== 'Closed') {
-                    isActionable = true;
-                }
-                
+                isActionable = isAssigned && isNotResolved && (isFinalDisposition || isRetaliationClaim || item.status !== 'Pending Employee Acknowledgment');
+
                 // Check involvement for closed items
-                if (isItemClosed) {
+                if (closedStatuses.includes(item.status as any)) {
                      wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+                } else {
+                    wasInvolved = isAssigned ?? false;
                 }
                 
                 if (isActionable || wasInvolved) {
@@ -967,6 +967,8 @@ function ActionItemsContent() {
                         category = 'concern';
                     }
                 }
+                
+                isItemClosed = closedStatuses.includes(item.status as any);
             }
             
             if (!isItemClosed) {

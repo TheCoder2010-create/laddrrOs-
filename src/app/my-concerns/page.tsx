@@ -617,7 +617,7 @@ function CaseHistory({ trail }: { trail: Feedback['auditTrail'] }) {
             <Label>Case History</Label>
             <div className="relative p-4 border rounded-md bg-muted/50">
                  <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
-                <div className="space-y-8">
+                <div className="space-y-4">
                     {trail.map((event, index) => {
                         const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
                         return (
@@ -816,8 +816,16 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                 {retaliationCase && (
                                     <div className="mt-4 pt-4 border-t-2 border-destructive/50 space-y-4">
                                         <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
-                                            <GitMerge /> Linked Retaliation Claim {retaliationCase.parentCaseId && `(Parent Case: ...${retaliationCase.parentCaseId.slice(-6)})`}
+                                            <GitMerge /> Linked Retaliation Claim 
                                         </h4>
+                                        <a
+                                            href="#"
+                                            onClick={(e) => handleScrollToCase(e, retaliationCase.parentCaseId!)}
+                                            className="text-sm italic text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+                                        >
+                                            <LinkIcon className="h-4 w-4" />
+                                            Parent Case: {retaliationCase.parentCaseId}
+                                        </a>
                                         
                                         {retaliationCase.status === 'Pending Employee Acknowledgment' && (
                                             <AcknowledgementWidget 

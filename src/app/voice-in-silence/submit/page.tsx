@@ -105,7 +105,7 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
             <Label>Case History</Label>
             <div className="relative p-4 border rounded-md bg-muted/50">
                  <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
-                <div className="space-y-8">
+                <div className="space-y-4">
                     {trail.map((event, index) => {
                         const Icon = publicAuditEventIcons[event.event as keyof typeof publicAuditEventIcons] || publicAuditEventIcons.default;
                         let eventText = event.event;
