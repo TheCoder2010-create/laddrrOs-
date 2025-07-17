@@ -106,6 +106,13 @@ export interface RetaliationReportInput {
     file?: File | null;
 }
 
+export interface DirectRetaliationReportInput {
+    submittedBy: Role;
+    subject: string;
+    description: string;
+    file?: File | null;
+}
+
 // Client-side tracking types
 export interface TrackFeedbackInput {
   trackingId: string;
@@ -804,6 +811,33 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
     saveFeedbackToStorage(allFeedback);
     return { trackingId };
 }
+
+export async function submitDirectRetaliationReport(input: DirectRetaliationReportInput): Promise<AnonymousFeedbackOutput> {
+    const allFeedback = getFeedbackFromStorage();
+    const trackingId = uuidv4();
+    const newRetaliationCase: Feedback = {
+        trackingId,
+        subject: input.subject,
+        message: input.description,
+        submittedAt: new Date(),
+        submittedBy: input.submittedBy,
+        criticality: 'Retaliation Claim',
+        status: 'Retaliation Claim',
+        assignedTo: ['HR Head'],
+        viewed: false,
+        auditTrail: [{
+            event: 'Retaliation Claim Submitted',
+            timestamp: new Date(),
+            actor: input.submittedBy,
+            details: `A direct retaliation claim was submitted.${input.file ? `\nAttachment: ${input.file.name}` : ''}`
+        }],
+        attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
+    };
+    allFeedback.unshift(newRetaliationCase);
+    saveFeedbackToStorage(allFeedback);
+    return { trackingId };
+}
+
 
 export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();

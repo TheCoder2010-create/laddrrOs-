@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -23,8 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow, format } from 'date-fns';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -52,6 +51,7 @@ import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 
 const getAnonymousCaseKey = (role: string | null) => role ? `anonymous_cases_${role.replace(/\s/g, '_')}` : null;
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
+const getRetaliationCaseKey = (role: string | null) => role ? `direct_retaliation_cases_${role.replace(/\s/g, '_')}` : null;
 
 function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
     const { toast } = useToast();
@@ -242,6 +242,101 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
     )
 }
 
+function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [subject, setSubject] = useState('');
+    const [description, setDescription] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!subject || !description || !role) {
+            toast({ variant: 'destructive', title: "Missing Information", description: "Please provide a subject and a detailed description." });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const result = await submitDirectRetaliationReport({
+                submittedBy: role,
+                subject,
+                description,
+                file,
+            });
+
+            const key = getRetaliationCaseKey(role);
+            if (key) {
+                const existingIds = JSON.parse(localStorage.getItem(key) || '[]');
+                existingIds.push(result.trackingId);
+                localStorage.setItem(key, JSON.stringify(existingIds));
+            }
+
+            toast({ title: "Retaliation Report Submitted", description: "Your report has been sent directly to the HR Head for immediate review." });
+            setSubject('');
+            setDescription('');
+            setFile(null);
+            onCaseSubmitted();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your report." });
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+            <p className="text-sm text-muted-foreground">
+                This form is for reporting instances of retaliation or bias. Your identity will be attached, and the report will be sent directly to the HR Head for immediate and confidential review.
+            </p>
+             <div className="space-y-2">
+                <Label htmlFor="retaliation-subject">Subject</Label>
+                <Input
+                    id="retaliation-subject"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g., Retaliation after informal feedback, Biased project assignments"
+                    required
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="retaliation-description">Description of Incident</Label>
+                <Textarea
+                    id="retaliation-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe the retaliation or bias you observed. Please include dates, individuals involved, specific actions or comments, and the impact on you or your work."
+                    rows={8}
+                    required
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="retaliation-file">Attach Evidence (Optional)</Label>
+                <Input
+                    id="retaliation-file"
+                    type="file"
+                    onChange={handleFileChange}
+                    accept="image/*,application/pdf,.doc,.docx,.mp3,.wav"
+                />
+                <p className="text-xs text-muted-foreground">You can attach screenshots, documents, or audio recordings.</p>
+            </div>
+            <div className="flex justify-end">
+                <Button type="submit" variant="destructive" disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Submit to HR Head
+                </Button>
+            </div>
+        </form>
+    );
+}
+
 function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void}) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -272,7 +367,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
         if (accept) {
             toast({ title: "Identity Revealed", description: "Your identity has been attached to the case. The manager has been notified."});
         } else {
-             toast({ variant: 'default', title: "Request Declined", description: "The case has been escalated to HR for review."});
+             toast({ variant: 'default', title: "Request Declined", description: "The case has been escalated to HR for a final review."});
         }
         
         onUpdate();
@@ -758,8 +853,8 @@ function MyConcernsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="anonymous">
-                <TabsList className="grid w-full grid-cols-2">
+            <Tabs defaultValue="identity-revealed">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="identity-revealed">
                         <User className="mr-2" />
                         Identity Revealed
@@ -767,6 +862,10 @@ function MyConcernsContent() {
                     <TabsTrigger value="anonymous">
                         <UserX className="mr-2" />
                         Anonymous
+                    </TabsTrigger>
+                    <TabsTrigger value="retaliation" className="text-destructive/80 data-[state=active]:text-destructive">
+                        <Flag className="mr-2" />
+                        Report Retaliation
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="identity-revealed">
@@ -776,6 +875,10 @@ function MyConcernsContent() {
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} />
+                </TabsContent>
+                 <TabsContent value="retaliation">
+                    <DirectRetaliationForm onCaseSubmitted={handleCaseSubmitted} />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" key={`retaliation-${remountKey}`} allCases={allCases} />
                 </TabsContent>
             </Tabs>
         </CardContent>
