@@ -624,18 +624,26 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
                         const renderDetails = () => {
                             if (!event.details) return null;
 
-                            const regex = /(Claim submitted for case |A new retaliation claim has been filed and linked to this case. New Case ID: )([a-f0-9-]+)/;
-                            const match = event.details.match(regex);
+                            const parentRegex = /(Claim submitted for case )([a-f0-9-]+)/;
+                            const childRegex = /(New Case ID: )([a-f0-9-]+)/;
+                            
+                            const parentMatch = event.details.match(parentRegex);
+                            const childMatch = event.details.match(childRegex);
 
-                            if (match) {
-                                const textBefore = match[1];
-                                const caseId = match[2];
-                                const textAfter = event.details.substring(match[0].length);
+                            if (parentMatch || childMatch) {
+                                const parentId = parentMatch?.[2];
+                                const childId = childMatch?.[2];
+                                const textBeforeParent = parentMatch ? parentMatch[1] : '';
+                                const textAfterParent = parentMatch ? event.details.substring(parentMatch.index! + parentMatch[0].length, childMatch ? childMatch.index : undefined) : '';
+                                const textBeforeChild = childMatch ? childMatch[1] : '';
+                                
                                 return (
                                     <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                                        {textBefore}
-                                        <a href="#" onClick={(e) => handleScrollToCase(e, caseId)} className="font-mono text-primary hover:underline">{caseId}</a>
-                                        {textAfter}
+                                        {textBeforeParent && <span>{textBeforeParent}</span>}
+                                        {parentId && <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>}
+                                        {textAfterParent}
+                                        {textBeforeChild && <span className="block mt-1">{textBeforeChild}</span>}
+                                        {childId && <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>}
                                     </p>
                                 );
                             }

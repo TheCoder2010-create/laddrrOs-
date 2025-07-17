@@ -843,14 +843,12 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
 
 export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
-    const parentCaseIndex = allFeedback.findIndex(f => f.trackingId === input.parentCaseId);
-
-    // Create the new child case for the retaliation claim
+    
     const trackingId = uuidv4();
     const newRetaliationCase: Feedback = {
         trackingId,
         parentCaseId: input.parentCaseId,
-        subject: `Retaliation Claim (Parent Case: ...${input.parentCaseId.slice(-6)})`,
+        subject: `Retaliation Claim`,
         message: input.description,
         submittedAt: new Date(),
         submittedBy: input.submittedBy,
@@ -862,21 +860,11 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `Claim submitted for case ${input.parentCaseId}.${input.file ? ` An attachment named "${input.file.name}" was securely uploaded.` : ''}`
+            details: `Claim submitted for case ${input.parentCaseId}.\nNew Case ID: ${trackingId}${input.file ? `\nAn attachment named "${input.file.name}" was securely uploaded.` : ''}`
         }],
         attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
     };
     allFeedback.unshift(newRetaliationCase);
-
-    // Add an audit trail to the parent case
-    if (parentCaseIndex !== -1) {
-        allFeedback[parentCaseIndex].auditTrail?.push({
-            event: 'Retaliation Claim Filed',
-            timestamp: new Date(),
-            actor: input.submittedBy,
-            details: `A new retaliation claim has been filed and linked to this case. New Case ID: ${trackingId}`
-        });
-    }
 
     saveFeedbackToStorage(allFeedback);
     return { trackingId };

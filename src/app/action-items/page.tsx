@@ -77,16 +77,26 @@ function AuditTrail({ trail, handleScrollToCase }: { trail: AuditEvent[], handle
                         const renderDetails = () => {
                             if (!event.details) return null;
 
-                            const regex = /(Claim submitted for case )([a-f0-9-]+)/;
-                            const match = event.details.match(regex);
+                            const parentRegex = /(Claim submitted for case )([a-f0-9-]+)/;
+                            const childRegex = /(New Case ID: )([a-f0-9-]+)/;
+                            
+                            const parentMatch = event.details.match(parentRegex);
+                            const childMatch = event.details.match(childRegex);
 
-                            if (match) {
-                                const textBefore = match[1];
-                                const caseId = match[2];
+                            if (parentMatch || childMatch) {
+                                const parentId = parentMatch?.[2];
+                                const childId = childMatch?.[2];
+                                const textBeforeParent = parentMatch ? parentMatch[1] : '';
+                                const textAfterParent = parentMatch ? event.details.substring(parentMatch.index! + parentMatch[0].length, childMatch ? childMatch.index : undefined) : '';
+                                const textBeforeChild = childMatch ? childMatch[1] : '';
+                                
                                 return (
                                     <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                                        {textBefore}
-                                        <a href="#" onClick={(e) => handleScrollToCase(e, caseId)} className="font-mono text-primary hover:underline">{caseId}</a>.
+                                        {textBeforeParent && <span>{textBeforeParent}</span>}
+                                        {parentId && <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>}
+                                        {textAfterParent}
+                                        {textBeforeChild && <span className="block mt-1">{textBeforeChild}</span>}
+                                        {childId && <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>}
                                     </p>
                                 );
                             }
@@ -975,18 +985,15 @@ function ActionItemsContent() {
                 const isRetaliationClaim = item.status === 'Retaliation Claim';
 
                 finalDispositionEvent = item.auditTrail?.some(e => e.event === "Final Disposition");
-
-                // Case is actionable if it is assigned to me and NOT awaiting employee ack, and is not closed/resolved
-                const isActionableStatus = !closedStatuses.includes(item.status as any) && item.status !== 'Pending Employee Acknowledgment';
                 
-                isActionable = isAssigned && isActionableStatus;
+                // Case is actionable if it is assigned to me and NOT awaiting employee ack, and is not closed/resolved
+                const isOpenStatus = !closedStatuses.includes(item.status as any) && !finalDispositionEvent;
+                
+                isActionable = isAssigned && isOpenStatus;
 
                 // Check involvement for closed items
-                if (closedStatuses.includes(item.status as any) || finalDispositionEvent) {
-                     wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
-                } else {
-                    wasInvolved = isAssigned ?? false;
-                }
+                isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
+                wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
                 
                 if (isActionable || wasInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
@@ -997,8 +1004,6 @@ function ActionItemsContent() {
                         category = 'concern';
                     }
                 }
-                
-                isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
             }
             
             if (!isItemClosed && isActionable) {
@@ -1169,6 +1174,11 @@ function ActionItemsContent() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-6 pt-4 px-4">
+                    {!isOneOnOne && item.parentCaseId && (
+                        <div className="text-sm italic text-muted-foreground">
+                            This claim is linked to Parent Case: <a href="#" onClick={(e) => handleScrollToCase(e, item.parentCaseId!)} className="font-mono text-primary hover:underline">{item.parentCaseId}</a>
+                        </div>
+                    )}
                      {!isOneOnOne && item.status !== 'To-Do' && (
                         <>
                             <div className="space-y-2">
