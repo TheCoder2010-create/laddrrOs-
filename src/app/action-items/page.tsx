@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -29,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -426,13 +427,21 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
     const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
     const [update, setUpdate] = useState('');
     const [isSubmittingUpdate, setIsSubmittingUpdate] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
 
     const handleAddUpdate = async () => {
         if (!update || !role) return;
         setIsSubmittingUpdate(true);
         try {
-            await addFeedbackUpdate(feedback.trackingId, role, update);
+            await addFeedbackUpdate(feedback.trackingId, role, update, file);
             setUpdate('');
+            setFile(null);
             toast({ title: "Update Added", description: "Your confidential notes have been added to the case history." });
             onUpdate();
         } catch (error) {
@@ -475,6 +484,12 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
                 />
+                 <div className="space-y-2">
+                    <Label htmlFor="hr-update-file" className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Paperclip className="h-4 w-4" /> Attach supporting documents (optional)
+                    </Label>
+                    <Input id="hr-update-file" type="file" onChange={handleFileChange} />
+                </div>
                 <Button onClick={handleAddUpdate} disabled={!update || isSubmittingUpdate}>
                     {isSubmittingUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Add Confidential Update

@@ -1009,17 +1009,23 @@ export async function assignFeedback(trackingId: string, assignees: Role[], acto
 /**
  * Adds a general update to a feedback item's audit trail.
  */
-export async function addFeedbackUpdate(trackingId: string, actor: Role, comment: string): Promise<void> {
+export async function addFeedbackUpdate(trackingId: string, actor: Role, comment: string, file?: File | null): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
+    
+    let details = comment;
+    if (file) {
+        details += `\n\n[System]: A document named "${file.name}" was securely attached to this update.`;
+    }
+
     item.auditTrail?.push({
         event: 'Update Added',
         timestamp: new Date(),
         actor,
-        details: comment,
+        details: details,
     });
 
     saveFeedbackToStorage(allFeedback);
