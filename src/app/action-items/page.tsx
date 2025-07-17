@@ -923,6 +923,7 @@ function ActionItemsContent() {
             let isActionable = false;
             let wasInvolved = false;
             let category: 'todo' | '1on1' | 'concern' | 'retaliation' | 'none' = 'none';
+            let isItemClosed = false;
 
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
@@ -930,10 +931,13 @@ function ActionItemsContent() {
                     const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-                    isActionable = isAmMatch || isManagerMatch || isHrMatch;
                     
-                    const isClosed = closedStatuses.includes(insight.status);
-                    if (!isClosed) wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+                    isActionable = isAmMatch || isManagerMatch || isHrMatch;
+                    isItemClosed = closedStatuses.includes(insight.status);
+                    
+                    if (isActionable || isItemClosed) {
+                        wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+                    }
                     
                     if(isActionable || wasInvolved) category = '1on1';
                 }
@@ -941,17 +945,12 @@ function ActionItemsContent() {
                 if (item.source === 'Voice – In Silence') return;
                 
                 const isAssigned = item.assignedTo?.includes(role as Role);
-                const isActiveStatus = !closedStatuses.includes(item.status as any);
+                isItemClosed = closedStatuses.includes(item.status as any);
+                isActionable = !!isAssigned && !isItemClosed;
                 
-                if (item.criticality === 'Retaliation Claim' && role === 'HR Head') {
-                    // HR Head should see retaliation claims in their active queue until they are formally closed.
-                    isActionable = isActiveStatus;
-                } else {
-                    isActionable = !!isAssigned && isActiveStatus;
-                }
-
-                if (!isActiveStatus) {
-                    wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+                // Check involvement for closed items
+                if (isItemClosed) {
+                     wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
                 }
                 
                 if (isActionable || wasInvolved) {
@@ -965,15 +964,11 @@ function ActionItemsContent() {
                 }
             }
             
-            const isItemClosed = 'analysis' in item 
-                ? closedStatuses.includes(item.analysis.criticalCoachingInsight?.status as any) 
-                : closedStatuses.includes(item.status as any);
-
             if (!isItemClosed) {
-                if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
-                else if (category === 'todo') activeToDoItems.push(item as Feedback);
-                else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);
-                else if (category === 'concern') activeIdentifiedConcerns.push(item as Feedback);
+                if (category === '1on1' && isActionable) activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
+                else if (category === 'todo' && isActionable) activeToDoItems.push(item as Feedback);
+                else if (category === 'retaliation' && isActionable) activeRetaliationClaims.push(item as Feedback);
+                else if (category === 'concern' && isActionable) activeIdentifiedConcerns.push(item as Feedback);
             } else if (wasInvolved) {
                 if (category === '1on1') localClosed1on1.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') localClosedToDo.push(item as Feedback);
@@ -1053,14 +1048,18 @@ function ActionItemsContent() {
   const renderCategorySection = (
     title: string,
     icon: React.ElementType,
-    items: (Feedback | OneOnOneHistoryItem)[]
+    items: (Feedback | OneOnOneHistoryItem)[],
+    isSevere = false
   ) => {
     if (items.length === 0) return null;
     const Icon = icon;
 
     return (
         <div className="pt-6">
-            <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-3">
+            <h2 className={cn(
+                "text-xl font-semibold mb-4 flex items-center gap-3",
+                isSevere ? "text-destructive" : "text-muted-foreground"
+            )}>
                <Icon className="h-6 w-6" /> {title}
             </h2>
             {renderFeedbackList(items)}
@@ -1200,7 +1199,7 @@ function ActionItemsContent() {
                 {renderCategorySection("To-Do Lists", ListTodo, toDoItems)}
                 {renderCategorySection("1-on-1 Escalations", UserCog, oneOnOneEscalations)}
                 {renderCategorySection("Identified Concerns", Users, identifiedConcerns)}
-                {renderCategorySection("Retaliation Claims", Flag, retaliationClaims)}
+                {renderCategorySection("Retaliation Claims", Flag, retaliationClaims, true)}
             </div>
           )}
         </CardContent>
