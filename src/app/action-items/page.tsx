@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -422,11 +423,29 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
     const { role } = useRole();
     const { toast } = useToast();
     const [response, setResponse] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
+    const [update, setUpdate] = useState('');
+    const [isSubmittingUpdate, setIsSubmittingUpdate] = useState(false);
 
-    const handleSubmit = async () => {
+    const handleAddUpdate = async () => {
+        if (!update || !role) return;
+        setIsSubmittingUpdate(true);
+        try {
+            await addFeedbackUpdate(feedback.trackingId, role, update);
+            setUpdate('');
+            toast({ title: "Update Added", description: "Your confidential notes have been added to the case history." });
+            onUpdate();
+        } catch (error) {
+            console.error(error);
+            toast({ variant: "destructive", title: "Update Failed" });
+        } finally {
+            setIsSubmittingUpdate(false);
+        }
+    };
+    
+    const handleSubmitResponse = async () => {
         if (!response || !role) return;
-        setIsSubmitting(true);
+        setIsSubmittingResponse(true);
         try {
             await submitHrRetaliationResponse(feedback.trackingId, role, response);
             setResponse('');
@@ -436,18 +455,34 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
             console.error(error);
             toast({ variant: "destructive", title: "Submission Failed" });
         } finally {
-            setIsSubmitting(false);
+            setIsSubmittingResponse(false);
         }
     };
 
     return (
-        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+        <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
             <Label className="text-base font-semibold text-destructive">Action Required: Retaliation Claim</Label>
             <p className="text-sm text-muted-foreground">
-                A retaliation claim has been filed. Please investigate thoroughly. Document your findings and the resolution steps taken below. This will be sent to the employee for acknowledgment.
+                A retaliation claim has been filed. Please investigate thoroughly. You can add confidential interim updates that are only visible to you. Once your investigation is complete, submit a final resolution summary to the employee for acknowledgment.
             </p>
+
             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="hr-response">HR Resolution Summary</Label>
+                <Label htmlFor="hr-update" className="font-medium">Add Interim Update (Confidential)</Label>
+                <Textarea
+                    id="hr-update"
+                    placeholder="e.g., 'Met with the alleged party on [Date]. Their statement is...' These notes are for your records and will not be shared."
+                    value={update}
+                    onChange={(e) => setUpdate(e.target.value)}
+                    rows={4}
+                />
+                <Button onClick={handleAddUpdate} disabled={!update || isSubmittingUpdate}>
+                    {isSubmittingUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Add Confidential Update
+                </Button>
+            </div>
+            
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor="hr-response" className="font-medium">Submit Final Resolution to Employee</Label>
                 <Textarea
                     id="hr-response"
                     placeholder="e.g., 'After reviewing the case, we have spoken with all parties involved and have implemented the following corrective actions...'"
@@ -455,8 +490,8 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                     onChange={(e) => setResponse(e.target.value)}
                     rows={4}
                 />
-                <Button onClick={handleSubmit} disabled={!response || isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button variant="destructive" onClick={handleSubmitResponse} disabled={!response || isSubmittingResponse}>
+                    {isSubmittingResponse && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit for Employee Acknowledgment
                 </Button>
             </div>
