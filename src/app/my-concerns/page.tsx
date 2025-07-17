@@ -585,6 +585,47 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
     );
 }
 
+const auditEventIcons = {
+    'Submitted': FileCheck,
+    'Retaliation Claim Submitted': Flag,
+    'Identity Revealed': User,
+    'Identity Reveal Requested': UserX,
+    'Resolved': CheckCircle,
+    'Update Added': MessageSquare,
+    'default': Info,
+}
+
+function CaseHistory({ trail }: { trail: Feedback['auditTrail'] }) {
+    if (!trail || trail.length === 0) return null;
+    return (
+        <div className="space-y-2">
+            <Label>Case History</Label>
+            <div className="relative p-4 border rounded-md bg-muted/50">
+                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
+                <div className="space-y-8">
+                    {trail.map((event, index) => {
+                        const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
+                        return (
+                            <div key={index} className="flex items-start gap-4 relative">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
+                                    <Icon className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 -mt-1">
+                                    <p className="font-medium text-sm">
+                                        {event.event} by <span className="text-primary">{event.actor}</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                    {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other' }) {
     const [cases, setCases] = useState<Feedback[]>([]);
@@ -701,23 +742,9 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
                                     <Label>Original Submission</Label>
                                     <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Case History</Label>
-                                    <div className="p-4 border rounded-md bg-muted/50 space-y-4">
-                                        {item.auditTrail?.map((event, index) => (
-                                            <div key={index} className="flex items-start gap-3">
-                                                <Info className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-sm">
-                                                        {event.event} by <span className="text-primary">{event.actor}</span>
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
-                                                    {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                               
+                                <CaseHistory trail={item.auditTrail} />
+                                
                                  {item.resolution && (
                                     <div className="space-y-2">
                                         <Label>Manager's Final Resolution</Label>
@@ -801,23 +828,8 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
                                                 </div>
                                             )}
 
-                                            <div className="space-y-2">
-                                                <Label>Claim Case History</Label>
-                                                <div className="p-3 border rounded-md bg-background space-y-3">
-                                                    {retaliationCase.auditTrail?.map((event, index) => (
-                                                        <div key={index} className="flex items-start gap-3">
-                                                            <Info className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                                                            <div className="flex-1">
-                                                                <p className="font-medium text-sm">
-                                                                    {event.event} by <span className="text-primary">{event.actor}</span>
-                                                                </p>
-                                                                <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
-                                                                {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                           <CaseHistory trail={retaliationCase.auditTrail} />
+
                                         </div>
                                     </div>
                                 )}

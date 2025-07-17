@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -8,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
 import { trackFeedback, TrackedFeedback } from '@/services/feedback-service';
@@ -93,7 +94,7 @@ const publicAuditEventIcons = {
     'Assigned': Send,
     'Update Added': MessageSquare,
     'Resolved': CheckCircle,
-    'default': Clock,
+    'default': Info,
 }
 
 function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
@@ -102,28 +103,32 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
     return (
         <div className="space-y-2">
             <Label>Case History</Label>
-            <div className="p-4 border rounded-md bg-muted/50 space-y-4">
-                {trail.map((event, index) => {
-                    const Icon = publicAuditEventIcons[event.event as keyof typeof publicAuditEventIcons] || publicAuditEventIcons.default;
-                    let eventText = event.event;
-                    if (event.event === 'Assigned') {
-                        eventText = 'Case assigned for review';
-                    } else if (event.event === 'Update Added') {
-                        eventText = 'An update was added to the case';
-                    }
-
-                    return (
-                        <div key={index} className="flex items-start gap-3">
-                            <Icon className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                            <div className="flex-1">
-                                <p className="font-medium text-sm">
-                                    {eventText}
-                                </p>
-                                <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+            <div className="relative p-4 border rounded-md bg-muted/50">
+                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
+                <div className="space-y-8">
+                    {trail.map((event, index) => {
+                        const Icon = publicAuditEventIcons[event.event as keyof typeof publicAuditEventIcons] || publicAuditEventIcons.default;
+                        let eventText = event.event;
+                        if (event.event === 'Assigned') {
+                            eventText = 'Case assigned for review';
+                        } else if (event.event === 'Update Added') {
+                            eventText = 'An update was added to the case';
+                        }
+                        return (
+                            <div key={index} className="flex items-start gap-4 relative">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
+                                    <Icon className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 -mt-1">
+                                    <p className="font-medium text-sm">
+                                        {eventText}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );

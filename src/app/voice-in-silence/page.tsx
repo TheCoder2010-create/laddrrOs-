@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -30,7 +31,7 @@ const auditEventIcons = {
     'Assigned': Send,
     'Update Added': MessageSquare,
     'Resolved': CheckCircle,
-    'default': Clock,
+    'default': Info,
 }
 
 function AuditTrail({ trail }: { trail: AuditEvent[] }) {
@@ -39,22 +40,27 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
     return (
         <div className="space-y-2">
             <Label className="text-base">Case History</Label>
-            <div className="p-4 border rounded-md bg-muted/50 space-y-4">
-                {trail.map((event, index) => {
-                    const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
-                    return (
-                        <div key={index} className="flex items-start gap-3">
-                            <Icon className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                            <div className="flex-1">
-                                <p className="font-medium text-sm">
-                                    {event.event} by <span className="text-primary">{event.actor}</span>
-                                </p>
-                                <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
-                                {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+            <div className="relative p-4 border rounded-md bg-muted/50">
+                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
+                <div className="space-y-8">
+                    {trail.map((event, index) => {
+                        const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
+                        return (
+                            <div key={index} className="flex items-start gap-4 relative">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
+                                    <Icon className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 -mt-1">
+                                    <p className="font-medium text-sm">
+                                        {event.event} by <span className="text-primary">{event.actor}</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                    {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
