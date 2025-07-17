@@ -951,6 +951,7 @@ function ActionItemsContent() {
         const localClosedRetaliation: Feedback[] = [];
         
         const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
+        const finalDispositionEvents = ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"];
 
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
         
@@ -962,13 +963,10 @@ function ActionItemsContent() {
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
                 if (insight) {
-                    const finalDispositionEvent = insight.auditTrail?.some(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
+                    const finalDispositionEvent = insight.auditTrail?.some(e => finalDispositionEvents.includes(e.event));
                     
-                    // An item is considered "closed" if its status is resolved/closed OR a final disposition exists.
                     isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
                     
-                    // A user was involved if they are the assigned AM/Manager/HR for an active escalation,
-                    // or if their role appears anywhere in the audit trail (for closed items).
                     const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
@@ -981,11 +979,9 @@ function ActionItemsContent() {
             } else { // It's a Feedback item
                 if (item.source === 'Voice – In Silence') return;
                 
-                const finalDispositionEvent = item.auditTrail?.some(e => e.event === "Final Disposition");
+                const finalDispositionEvent = item.auditTrail?.some(e => finalDispositionEvents.includes(e.event));
                 isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
                 
-                // A user was involved if they are currently assigned to an open case,
-                // or if their role appears in the audit trail of any case (open or closed).
                 const isAssignedToOpenCase = (item.assignedTo?.includes(role as Role) ?? false) && !isItemClosed;
                 wasInvolved = isAssignedToOpenCase || (item.auditTrail?.some(e => e.actor === role) ?? false);
 
@@ -1118,9 +1114,20 @@ function ActionItemsContent() {
             const id = isOneOnOne ? item.id : item.trackingId;
             const rawSubject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
             const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
-            const status = isOneOnOne ? item.analysis.criticalCoachingInsight?.status : item.status;
-
+            
             const statusBadge = () => {
+              const auditTrail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail : item.auditTrail;
+              const finalDispositionEvent = auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
+              
+              if (finalDispositionEvent) {
+                  let Icon = FileText;
+                  let text = "Closed";
+                  if (finalDispositionEvent.event.includes("Ombudsman")) { Icon = UserX; text = "Ombudsman"; }
+                  if (finalDispositionEvent.event.includes("Grievance")) { Icon = UserPlus; text = "Grievance"; }
+                  
+                  return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><Icon className="h-3 w-3" />{text}</Badge>;
+              }
+
               if (isOneOnOne) {
                   const insightStatus = item.analysis.criticalCoachingInsight?.status;
                   switch (insightStatus) {
