@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, ChangeEvent } from 'react';
+import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -627,7 +627,7 @@ function CaseHistory({ trail }: { trail: Feedback['auditTrail'] }) {
 }
 
 
-function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other' }) {
+function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, accordionRef }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other', accordionRef: React.RefObject<HTMLDivElement> }) {
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
@@ -643,8 +643,10 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
                     
                     let filteredCases;
                     if (concernType === 'retaliation') {
-                        filteredCases = fetchedCases.filter(c => c.criticality === 'Retaliation Claim');
+                        // For retaliation tab, show only direct retaliation claims
+                        filteredCases = fetchedCases.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId);
                     } else {
+                        // For other tabs, show everything that isn't a retaliation claim
                         filteredCases = fetchedCases.filter(c => c.criticality !== 'Retaliation Claim');
                     }
 
@@ -656,8 +658,22 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
             setIsLoading(false);
         };
         loadCases();
-    }, [storageKey, allCases, concernType]); // Rerun when allCases or concernType changes
+    }, [storageKey, allCases, concernType]);
     
+    const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
+        e.preventDefault();
+        const caseElement = accordionRef.current?.querySelector(`#accordion-item-${caseId}`);
+        caseElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Use a timeout to ensure the element is visible before trying to click the trigger
+        setTimeout(() => {
+            const trigger = caseElement?.querySelector('[data-radix-collection-item]');
+            if (trigger instanceof HTMLElement) {
+                trigger.click();
+            }
+        }, 300);
+    };
+
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
     if (cases.length === 0) {
@@ -704,7 +720,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
                 <List className="h-5 w-5" />
                 {title}
             </h3>
-            <Accordion type="single" collapsible className="w-full border rounded-lg">
+            <Accordion type="single" collapsible className="w-full border rounded-lg" ref={accordionRef}>
                  {cases.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
                     
@@ -712,7 +728,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.find(e => e.event === 'HR Responded to Retaliation Claim');
 
                     return (
-                        <AccordionItem value={item.trackingId} key={item.trackingId}>
+                        <AccordionItem value={item.trackingId} key={item.trackingId} id={`accordion-item-${item.trackingId}`}>
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <p className="font-medium truncate">{item.subject}</p>
@@ -815,6 +831,15 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: {
                                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
                                             </div>
 
+                                            <div className="space-y-2">
+                                                <Label>Parent Case</Label>
+                                                <div>
+                                                     <a href={`#accordion-item-${item.trackingId}`} onClick={(e) => handleScrollToCase(e, item.trackingId)} className={cn(buttonVariants({ variant: 'link', size: 'sm' }), "h-auto p-0")}>
+                                                        View Parent Case (...{item.trackingId.slice(-6)})
+                                                    </a>
+                                                </div>
+                                            </div>
+
                                             {retaliationCase.attachment && (
                                                 <div className="space-y-2">
                                                     <Label>Your Attachment</Label>
@@ -847,6 +872,7 @@ function MyConcernsContent() {
   const { role } = useRole();
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const accordionRef = useRef<HTMLDivElement>(null);
 
   const fetchAllCases = useCallback(() => {
     setIsLoading(true);
@@ -895,15 +921,15 @@ function MyConcernsContent() {
                 </TabsList>
                 <TabsContent value="identity-revealed">
                     <IdentifiedConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} allCases={allCases} concernType="other" />
+                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} allCases={allCases} concernType="other" accordionRef={accordionRef} />
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} concernType="other" />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} concernType="other" accordionRef={accordionRef} />
                 </TabsContent>
                  <TabsContent value="retaliation">
                     <DirectRetaliationForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" key={`retaliation-${remountKey}`} allCases={allCases} concernType="retaliation" />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" key={`retaliation-${remountKey}`} allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -931,5 +957,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    
