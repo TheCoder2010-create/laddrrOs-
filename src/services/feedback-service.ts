@@ -29,6 +29,7 @@ export type FeedbackStatus =
   | 'Pending HR Action'
   | 'Pending Employee Acknowledgment' // New status for identified concerns
   | 'Pending Acknowledgement' // For FYI notifications
+  | 'Final Disposition Required' // For HR's final action
   | 'To-Do'
   | 'Resolved'
   | 'Closed'
@@ -1112,7 +1113,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     const item = allFeedback[feedbackIndex];
     const actor = item.submittedBy || 'Anonymous';
     
-    const relevantEvents = ['Supervisor Responded', 'HR Responded to Retaliation Claim', 'HR Resolution Submitted'];
+    const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim'];
     const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
     const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
@@ -1138,16 +1139,15 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         let nextStatus: FeedbackStatus = 'Pending Manager Action';
 
         const lastResponderRole = Object.values(roleUserMapping).find(u => u.name === lastResponder)?.role || lastResponder;
-
-        // Check if the last response was the final one from HR
-        if (lastResponderEvent?.event === 'HR Resolution Submitted') {
-            nextAssignee = 'HR Head';
-            nextStatus = 'Pending HR Action';
-            item.auditTrail?.push({
+        
+        if (item.criticality === 'Retaliation Claim' || lastResponderEvent?.event === 'HR Resolution Submitted') {
+             item.status = 'Final Disposition Required';
+             item.assignedTo = ['HR Head'];
+             item.auditTrail?.push({
                 event: 'Final Disposition Required',
                 timestamp: new Date(),
                 actor: 'System',
-                details: 'Case returned to HR for final action after employee rejected resolution.'
+                details: 'Employee rejected HR resolution. Final disposition is required from HR Head.'
             });
         } else if (lastResponderRole === 'Team Lead') {
             nextAssignee = 'AM';
@@ -1158,12 +1158,6 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         } else if (lastResponderRole === 'Manager') {
             nextAssignee = 'HR Head';
             nextStatus = 'Pending HR Action';
-        } else if (lastResponderRole === 'HR Head') {
-             // This condition now specifically handles the retaliation claim response
-             // or other direct HR responses, not the final identified concern response
-            item.status = 'Closed';
-            item.resolution = `Case closed. Employee remained dissatisfied with HR response. Employee comments: ${comments || 'None'}`;
-            item.auditTrail?.push({ event: 'Case Closed, Not Resolved', timestamp: new Date(), actor: 'System' });
         }
 
 

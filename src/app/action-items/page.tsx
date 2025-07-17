@@ -773,7 +773,7 @@ function ActionPanel({ item, onUpdate }: { item: Feedback | OneOnOneHistoryItem,
     }
 
     // For identified concerns that were rejected by employee at HR level
-    if (role === 'HR Head' && feedback.auditTrail?.some(e => e.event === 'Final Disposition Required')) {
+    if (role === 'HR Head' && feedback.status === 'Final Disposition Required') {
         return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
     
@@ -1064,6 +1064,7 @@ function ActionItemsContent() {
                   case 'Pending Manager Action': return <Badge variant="destructive">Manager Action</Badge>;
                   case 'Pending Employee Acknowledgment': return <Badge variant="destructive">Employee Ack.</Badge>;
                   case 'Pending HR Action': return <Badge className="bg-black text-white">HR Review</Badge>;
+                  case 'Final Disposition Required': return <Badge variant="destructive">Final Disposition</Badge>;
                   case 'Pending Identity Reveal': return <Badge variant="secondary">Reveal Requested</Badge>;
                   case 'Retaliation Claim': return <Badge variant="destructive">Retaliation Claim</Badge>;
                   case 'Closed': return <Badge variant="secondary">Closed</Badge>;
