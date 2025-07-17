@@ -586,7 +586,7 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
 }
 
 
-function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[] }) {
+function MySubmissions({ onUpdate, storageKey, title, allCases, concernType }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other' }) {
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
@@ -599,8 +599,15 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                 const caseIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 if (caseIds.length > 0) {
                     const fetchedCases = await getFeedbackByIds(caseIds);
-                    const nonRetaliationCases = fetchedCases.filter(c => c.criticality !== 'Retaliation Claim');
-                    setCases(nonRetaliationCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
+                    
+                    let filteredCases;
+                    if (concernType === 'retaliation') {
+                        filteredCases = fetchedCases.filter(c => c.criticality === 'Retaliation Claim');
+                    } else {
+                        filteredCases = fetchedCases.filter(c => c.criticality !== 'Retaliation Claim');
+                    }
+
+                    setCases(filteredCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
                 } else {
                     setCases([]);
                 }
@@ -608,7 +615,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
             setIsLoading(false);
         };
         loadCases();
-    }, [storageKey, allCases]); // Rerun when allCases changes
+    }, [storageKey, allCases, concernType]); // Rerun when allCases or concernType changes
     
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
@@ -869,15 +876,15 @@ function MyConcernsContent() {
                 </TabsList>
                 <TabsContent value="identity-revealed">
                     <IdentifiedConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} allCases={allCases} />
+                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} allCases={allCases} concernType="other" />
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} concernType="other" />
                 </TabsContent>
                  <TabsContent value="retaliation">
                     <DirectRetaliationForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" key={`retaliation-${remountKey}`} allCases={allCases} />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" key={`retaliation-${remountKey}`} allCases={allCases} concernType="retaliation" />
                 </TabsContent>
             </Tabs>
         </CardContent>
