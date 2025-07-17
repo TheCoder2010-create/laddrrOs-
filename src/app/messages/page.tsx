@@ -8,7 +8,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon, Info } from 'lucide-react';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, getAllFeedback, Feedback, resolveFeedback } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, getAllFeedback, Feedback, resolveFeedback, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ import { CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/on
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
-function AcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
+function OneOnOneAcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const { toast } = useToast();
     const [employeeAcknowledgement, setEmployeeAcknowledgement] = useState('');
     const [acknowledgementComments, setAcknowledgementComments] = useState('');
@@ -200,6 +200,79 @@ function GeneralNotificationWidget({ item, onUpdate }: { item: Feedback, onUpdat
     )
 }
 
+function ConcernAcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const [comments, setComments] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => ['Supervisor Responded', 'HR Resolution Submitted'].includes(e.event));
+
+    const handleAcknowledge = async (accepted: boolean) => {
+        setIsSubmitting(true);
+        try {
+            await submitEmployeeFeedbackAcknowledgement(item.trackingId, accepted, comments);
+            if (accepted) {
+                toast({ title: "Resolution Accepted", description: "The case has been closed." });
+            } else {
+                toast({ title: "Concern Escalated", description: "Your feedback has been escalated to the next level." });
+            }
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit acknowledgement", error);
+            toast({ variant: 'destructive', title: "Acknowledgement Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Card className="border-blue-500/50">
+            <CardHeader className="bg-blue-500/10">
+                <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                    <MessageCircleQuestion className="h-6 w-6" />
+                    Response to Your Concern
+                </CardTitle>
+                <CardDescription>
+                    Regarding: {item.subject}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                <div className="p-3 bg-muted/80 rounded-md border">
+                    <p className="font-semibold text-foreground">{lastResponderEvent?.actor}'s Response:</p>
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{item.supervisorUpdate}</p>
+                </div>
+                <div className="space-y-3">
+                    <Label className="font-semibold">Your Acknowledgement</Label>
+                    <p className="text-sm text-muted-foreground">
+                        Please review the response and provide your feedback on the resolution.
+                    </p>
+                    <div className="space-y-2 pt-2">
+                        <Label htmlFor={`ack-comments-${item.trackingId}`}>Additional Comments (Optional)</Label>
+                        <Textarea
+                            id={`ack-comments-${item.trackingId}`}
+                            value={comments}
+                            onChange={(e) => setComments(e.target.value)}
+                            placeholder="Provide more detail about your selection..."
+                            rows={3}
+                            className="bg-background"
+                        />
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        <Button onClick={() => handleAcknowledge(true)} variant="success" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                            Accept Resolution
+                        </Button>
+                        <Button onClick={() => handleAcknowledge(false)} variant="destructive" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                            I'm Not Satisfied, Escalate
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function MessagesContent({ role }: { role: Role }) {
   const [messages, setMessages] = useState<(OneOnOneHistoryItem | Feedback)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -216,20 +289,22 @@ function MessagesContent({ role }: { role: Role }) {
     history.forEach(item => {
         const insight = item.analysis.criticalCoachingInsight;
         if (insight && insight.status !== 'resolved') {
-            let include = false;
             // Employee acknowledgements always appear in their message inbox
             if (role === 'Employee' && item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement') {
-                include = true;
-            }
-            if (include) {
                 userMessages.push(item);
             }
         }
     });
 
-    // General notifications (e.g., from accepted coaching plans)
+    // General notifications and identified concern acknowledgements
     feedback.forEach(item => {
-        if (item.status === 'Pending Acknowledgement' && item.assignedTo?.includes(role)) {
+        const isAssignedToMe = item.assignedTo?.includes(role);
+        // For general "for your info" notifications
+        if (item.status === 'Pending Acknowledgement' && isAssignedToMe) {
+            userMessages.push(item);
+        }
+        // For acknowledgements of identified concerns I submitted
+        if (item.status === 'Pending Employee Acknowledgment' && item.submittedBy === role) {
             userMessages.push(item);
         }
     });
@@ -264,17 +339,17 @@ function MessagesContent({ role }: { role: Role }) {
     // Check if it's a OneOnOneHistoryItem (has 'analysis' property)
     if ('analysis' in item) {
         const insight = item.analysis.criticalCoachingInsight;
-        if (insight && insight.status !== 'resolved') {
-            const canEmployeeAcknowledge = role === 'Employee' && insight.status === 'pending_employee_acknowledgement';
-            if (canEmployeeAcknowledge) {
-                return <AcknowledgementWidget key={`${item.id}-insight`} item={item} onUpdate={fetchMessages} />;
-            }
+        if (insight && insight.status === 'pending_employee_acknowledgement' && role === 'Employee') {
+            return <OneOnOneAcknowledgementWidget key={`${item.id}-1on1`} item={item} onUpdate={fetchMessages} />;
         }
     } 
     // Check if it's a Feedback item (has 'trackingId' property)
     else if ('trackingId' in item) {
         if (item.status === 'Pending Acknowledgement') {
-            return <GeneralNotificationWidget key={item.trackingId} item={item} onUpdate={fetchMessages} />;
+            return <GeneralNotificationWidget key={`${item.trackingId}-info`} item={item} onUpdate={fetchMessages} />;
+        }
+        if (item.status === 'Pending Employee Acknowledgment') {
+            return <ConcernAcknowledgementWidget key={`${item.trackingId}-concern`} item={item} onUpdate={fetchMessages} />;
         }
     }
     return null;
@@ -289,7 +364,7 @@ function MessagesContent({ role }: { role: Role }) {
             Messages
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
-            A central place for critical insight notifications and actions.
+            A central place for critical notifications and actions.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
