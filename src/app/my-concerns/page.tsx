@@ -323,7 +323,6 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                     id="retaliation-file"
                     type="file"
                     onChange={handleFileChange}
-                    accept="image/*,application/pdf,.doc,.docx,.mp3,.wav"
                 />
                 <p className="text-xs text-muted-foreground">You can attach screenshots, documents, or audio recordings.</p>
             </div>
@@ -569,7 +568,6 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                     id="retaliation-file"
                     type="file"
                     onChange={handleFileChange}
-                    accept="image/*,application/pdf,.doc,.docx,.mp3,.wav"
                 />
                 <p className="text-xs text-muted-foreground">You can attach screenshots, documents, or audio recordings.</p>
             </div>
@@ -780,7 +778,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases }: { onUpdate: ()
                                                     <Label>Your Attachment</Label>
                                                     <div>
                                                         <Button variant="outline" size="sm" asChild>
-                                                            <a href="#" onClick={(e) => e.preventDefault()}>
+                                                            <a href="#" onClick={(e) => { e.preventDefault(); alert('In a real app, this would securely download the attachment.'); }}>
                                                                 <LinkIcon className="mr-2 h-4 w-4" /> View Attachment ({retaliationCase.attachment.name})
                                                             </a>
                                                         </Button>

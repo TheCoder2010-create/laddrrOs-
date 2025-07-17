@@ -829,7 +829,7 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `A direct retaliation claim was submitted.${input.file ? `\nAttachment: ${input.file.name}` : ''}`
+            details: `A direct retaliation claim was submitted.${input.file ? ` An attachment named "${input.file.name}" was securely uploaded.` : ''}`
         }],
         attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
     };
@@ -860,7 +860,7 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `Claim submitted for case ${input.parentCaseId}.${input.file ? `\nAttachment: ${input.file.name}` : ''}`
+            details: `Claim submitted for case ${input.parentCaseId}.${input.file ? ` An attachment named "${input.file.name}" was securely uploaded.` : ''}`
         }],
         attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
     };
