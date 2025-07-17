@@ -867,6 +867,20 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
     };
     allFeedback.unshift(newRetaliationCase);
     
+    // Add an event to the parent case linking to the new child case
+    const parentCaseIndex = allFeedback.findIndex(f => f.trackingId === input.parentCaseId);
+    if (parentCaseIndex !== -1) {
+        if (!allFeedback[parentCaseIndex].auditTrail) {
+            allFeedback[parentCaseIndex].auditTrail = [];
+        }
+        allFeedback[parentCaseIndex].auditTrail!.push({
+            event: 'Retaliation Claim Filed',
+            timestamp: new Date(),
+            actor: input.submittedBy,
+            details: `A new retaliation claim has been filed and linked to this case. New Case ID: ${childCaseId}`
+        });
+    }
+
     saveFeedbackToStorage(allFeedback);
     return { trackingId: childCaseId };
 }
