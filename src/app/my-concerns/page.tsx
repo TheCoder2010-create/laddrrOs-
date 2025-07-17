@@ -610,7 +610,7 @@ const auditEventIcons = {
     'default': Info,
 }
 
-function CaseHistory({ trail }: { trail: Feedback['auditTrail'] }) {
+function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrail'], handleScrollToCase: (e: React.MouseEvent, caseId: string) => void }) {
     if (!trail || trail.length === 0) return null;
     return (
         <div className="space-y-2">
@@ -620,6 +620,29 @@ function CaseHistory({ trail }: { trail: Feedback['auditTrail'] }) {
                 <div className="space-y-4">
                     {trail.map((event, index) => {
                         const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
+                        
+                        const renderDetails = () => {
+                            if (!event.details) return null;
+
+                            const regex = /(Claim submitted for case |A new retaliation claim has been filed and linked to this case. New Case ID: )([a-f0-9-]+)/;
+                            const match = event.details.match(regex);
+
+                            if (match) {
+                                const textBefore = match[1];
+                                const caseId = match[2];
+                                const textAfter = event.details.substring(match[0].length);
+                                return (
+                                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                                        {textBefore}
+                                        <a href="#" onClick={(e) => handleScrollToCase(e, caseId)} className="font-mono text-primary hover:underline">{caseId}</a>
+                                        {textAfter}
+                                    </p>
+                                );
+                            }
+
+                            return <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>;
+                        };
+                        
                         return (
                             <div key={index} className="flex items-start gap-4 relative">
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
@@ -630,7 +653,7 @@ function CaseHistory({ trail }: { trail: Feedback['auditTrail'] }) {
                                         {event.event} by <span className="text-primary">{event.actor}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
-                                    {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                    {renderDetails()}
                                 </div>
                             </div>
                         );
@@ -774,7 +797,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                     <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{item.message}</p>
                                 </div>
                                
-                                <CaseHistory trail={item.auditTrail} />
+                                <CaseHistory trail={item.auditTrail} handleScrollToCase={handleScrollToCase} />
                                 
                                  {item.resolution && (
                                     <div className="space-y-2">
@@ -818,14 +841,6 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                         <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
                                             <GitMerge /> Linked Retaliation Claim 
                                         </h4>
-                                        <a
-                                            href="#"
-                                            onClick={(e) => handleScrollToCase(e, retaliationCase.parentCaseId!)}
-                                            className="text-sm italic text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                                        >
-                                            <LinkIcon className="h-4 w-4" />
-                                            Parent Case: {retaliationCase.parentCaseId}
-                                        </a>
                                         
                                         {retaliationCase.status === 'Pending Employee Acknowledgment' && (
                                             <AcknowledgementWidget 
@@ -867,7 +882,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                                 </div>
                                             )}
 
-                                           <CaseHistory trail={retaliationCase.auditTrail} />
+                                           <CaseHistory trail={retaliationCase.auditTrail} handleScrollToCase={handleScrollToCase} />
 
                                         </div>
                                     </div>

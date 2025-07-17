@@ -57,11 +57,12 @@ const auditEventIcons = {
     'Final Disposition Required': ShieldAlert,
     'Final Disposition': FileCheck,
     'Retaliation Claim Filed': Flag,
+    'Retaliation Claim Submitted': Flag,
     'Update Added': MessageSquare,
     'default': Info,
 }
 
-function AuditTrail({ trail }: { trail: AuditEvent[] }) {
+function AuditTrail({ trail, handleScrollToCase }: { trail: AuditEvent[], handleScrollToCase: (e: React.MouseEvent, caseId: string) => void }) {
     if (!trail || trail.length === 0) return null;
 
     return (
@@ -72,6 +73,28 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
                 <div className="space-y-4">
                     {trail.map((event, index) => {
                         const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
+                        
+                        const renderDetails = () => {
+                            if (!event.details) return null;
+
+                            const regex = /(Claim submitted for case )([a-f0-9-]+)/;
+                            const match = event.details.match(regex);
+
+                            if (match) {
+                                const textBefore = match[1];
+                                const caseId = match[2];
+                                return (
+                                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                                        {textBefore}
+                                        <a href="#" onClick={(e) => handleScrollToCase(e, caseId)} className="font-mono text-primary hover:underline">{caseId}</a>.
+                                    </p>
+                                );
+                            }
+
+                            return <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>;
+                        };
+
+
                         return (
                             <div key={index} className="flex items-start gap-4 relative">
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
@@ -82,7 +105,7 @@ function AuditTrail({ trail }: { trail: AuditEvent[] }) {
                                         {event.event} by <span className="text-primary">{event.actor}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
-                                    {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                    {renderDetails()}
                                 </div>
                             </div>
                         );
@@ -736,7 +759,7 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     );
 }
 
-function ActionPanel({ item, onUpdate }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void }) {
+function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void, handleScrollToCase: (e: React.MouseEvent, caseId: string) => void }) {
     const { role } = useRole();
     const [supervisorUpdate, setSupervisorUpdate] = useState('');
     const { toast } = useToast();
@@ -866,7 +889,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange }: { caseItem: Feedback
                             <Label className="text-base">Initial Submission Context</Label>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-muted/50">{initialMessage}</p>
                         </div>
-                        {auditTrail && <AuditTrail trail={auditTrail} />}
+                        {auditTrail && <AuditTrail trail={auditTrail} handleScrollToCase={() => {}} />}
                         {resolution && (
                              <div className="space-y-2">
                                 <Label className="text-base">Final Resolution</Label>
@@ -924,6 +947,7 @@ function ActionItemsContent() {
             let wasInvolved = false;
             let category: 'todo' | '1on1' | 'concern' | 'retaliation' | 'none' = 'none';
             let isItemClosed = false;
+            let finalDispositionEvent;
 
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
@@ -932,8 +956,10 @@ function ActionItemsContent() {
                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
                     
+                    finalDispositionEvent = insight.auditTrail?.some(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
+                    
                     isActionable = isAmMatch || isManagerMatch || isHrMatch;
-                    isItemClosed = closedStatuses.includes(insight.status) || !!insight.auditTrail?.some(e => ['Assigned to Ombudsman', 'Assigned to Grievance Office', 'Logged Dissatisfaction & Closed'].includes(e.event));
+                    isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
                     
                     if (isActionable || isItemClosed) {
                         wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
@@ -947,12 +973,16 @@ function ActionItemsContent() {
                 const isAssigned = item.assignedTo?.includes(role as Role);
                 const isFinalDisposition = item.status === 'Final Disposition Required';
                 const isRetaliationClaim = item.status === 'Retaliation Claim';
-                const isNotResolved = !closedStatuses.includes(item.status as any);
+
+                finalDispositionEvent = item.auditTrail?.some(e => e.event === "Final Disposition");
+
+                // Case is actionable if it is assigned to me and NOT awaiting employee ack, and is not closed/resolved
+                const isActionableStatus = !closedStatuses.includes(item.status as any) && item.status !== 'Pending Employee Acknowledgment';
                 
-                isActionable = isAssigned && isNotResolved && (isFinalDisposition || isRetaliationClaim || item.status !== 'Pending Employee Acknowledgment');
+                isActionable = isAssigned && isActionableStatus;
 
                 // Check involvement for closed items
-                if (closedStatuses.includes(item.status as any)) {
+                if (closedStatuses.includes(item.status as any) || finalDispositionEvent) {
                      wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
                 } else {
                     wasInvolved = isAssigned ?? false;
@@ -968,15 +998,15 @@ function ActionItemsContent() {
                     }
                 }
                 
-                isItemClosed = closedStatuses.includes(item.status as any);
+                isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
             }
             
-            if (!isItemClosed) {
-                if (category === '1on1' && isActionable) activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
-                else if (category === 'todo' && isActionable) activeToDoItems.push(item as Feedback);
-                else if (category === 'retaliation' && isActionable) activeRetaliationClaims.push(item as Feedback);
-                else if (category === 'concern' && isActionable) activeIdentifiedConcerns.push(item as Feedback);
-            } else if (wasInvolved) {
+            if (!isItemClosed && isActionable) {
+                if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
+                else if (category === 'todo') activeToDoItems.push(item as Feedback);
+                else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);
+                else if (category === 'concern') activeIdentifiedConcerns.push(item as Feedback);
+            } else if (isItemClosed && wasInvolved) {
                 if (category === '1on1') localClosed1on1.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') localClosedToDo.push(item as Feedback);
                 else if (category === 'retaliation') localClosedRetaliation.push(item as Feedback);
@@ -1139,18 +1169,6 @@ function ActionItemsContent() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-6 pt-4 px-4">
-                     {!isOneOnOne && item.parentCaseId && (
-                         <div className="space-y-2">
-                            <a
-                                href="#"
-                                onClick={(e) => handleScrollToCase(e, item.parentCaseId!)}
-                                className="text-sm italic text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
-                            >
-                                <GitMerge className="h-4 w-4" />
-                                Parent Case: {item.parentCaseId}
-                            </a>
-                        </div>
-                     )}
                      {!isOneOnOne && item.status !== 'To-Do' && (
                         <>
                             <div className="space-y-2">
@@ -1160,10 +1178,10 @@ function ActionItemsContent() {
                         </>
                      )}
 
-                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} />}
-                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} /> }
+                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} handleScrollToCase={handleScrollToCase} />}
+                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} handleScrollToCase={handleScrollToCase}/> }
 
-                    <ActionPanel item={item} onUpdate={fetchFeedback} />
+                    <ActionPanel item={item} onUpdate={fetchFeedback} handleScrollToCase={handleScrollToCase} />
                     
                     {!isOneOnOne && item.resolution && (
                          <div className="space-y-2">
@@ -1243,7 +1261,7 @@ function ActionItemsContent() {
                         )}
                         {closedRetaliationClaims.length > 0 && (
                              <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Flag className="h-5 w-5" />Retaliation Claims</h3>
+                                <h3 className="text-lg font-semibold mb-2 text-destructive flex items-center gap-3 px-2"><Flag className="h-5 w-5" />Retaliation Claims</h3>
                                 {renderFeedbackList(closedRetaliationClaims)}
                             </div>
                         )}
