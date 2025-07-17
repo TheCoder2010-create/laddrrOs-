@@ -1,4 +1,5 @@
 
+
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -888,7 +889,15 @@ export async function submitHrRetaliationResponse(trackingId: string, actor: Rol
     const item = allFeedback[feedbackIndex];
     item.status = 'Pending Employee Acknowledgment';
     item.supervisorUpdate = response; // Re-use this field for the response
-    item.assignedTo = []; // Unassign from HR so it leaves their action queue
+    
+    // Ensure the employee who submitted the claim is assigned to see the response.
+    if (item.submittedBy) {
+        item.assignedTo = [item.submittedBy];
+    } else {
+        // Fallback, though a retaliation claim should always have a submitter.
+        item.assignedTo = [];
+    }
+
 
     item.auditTrail?.push({
         event: 'HR Responded to Retaliation Claim',
@@ -1018,7 +1027,8 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
     
     let details = comment;
     if (file) {
-        details += `\n\n[System]: A document named "${file.name}" was securely attached to this update.`;
+        details += `\n\n[System]: An attachment named "${file.name}" was securely uploaded.`;
+        item.attachment = { name: file.name, type: file.type, size: file.size };
     }
 
     item.auditTrail?.push({
