@@ -915,10 +915,10 @@ function ActionItemsContent() {
         const localClosedIdentified: Feedback[] = [];
         const localClosedRetaliation: Feedback[] = [];
         
-
-        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
         const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
 
+        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
+        
         allItems.forEach(item => {
             let isActionable = false;
             let wasInvolved = false;
@@ -933,7 +933,7 @@ function ActionItemsContent() {
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
                     
                     isActionable = isAmMatch || isManagerMatch || isHrMatch;
-                    isItemClosed = closedStatuses.includes(insight.status);
+                    isItemClosed = closedStatuses.includes(insight.status) || !!insight.auditTrail?.some(e => ['Assigned to Ombudsman', 'Assigned to Grievance Office', 'Logged Dissatisfaction & Closed'].includes(e.event));
                     
                     if (isActionable || isItemClosed) {
                         wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
@@ -947,6 +947,11 @@ function ActionItemsContent() {
                 const isAssigned = item.assignedTo?.includes(role as Role);
                 isItemClosed = closedStatuses.includes(item.status as any);
                 isActionable = !!isAssigned && !isItemClosed;
+                
+                // For HR Head, keep retaliation claims in the active list until explicitly resolved, even if sent to employee
+                if (role === 'HR Head' && item.criticality === 'Retaliation Claim' && item.status !== 'Resolved' && item.status !== 'Closed') {
+                    isActionable = true;
+                }
                 
                 // Check involvement for closed items
                 if (isItemClosed) {
