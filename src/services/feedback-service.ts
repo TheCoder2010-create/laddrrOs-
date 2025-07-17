@@ -849,7 +849,7 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
     const newRetaliationCase: Feedback = {
         trackingId: childCaseId,
         parentCaseId: input.parentCaseId,
-        subject: `Retaliation Claim (linked to ${input.parentCaseId.substring(0,8)})`,
+        subject: `Retaliation Claim`,
         message: input.description,
         submittedAt: new Date(),
         submittedBy: input.submittedBy,
@@ -861,24 +861,11 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `Claim submitted for case ${input.parentCaseId}.${input.file ? `\nAn attachment named "${input.file.name}" was securely uploaded.` : ''}`
+            details: `Claim submitted for case ${input.parentCaseId}.\nNew Case ID: ${childCaseId}${input.file ? `\nAn attachment named "${input.file.name}" was securely uploaded.` : ''}`
         }],
         attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
     };
     allFeedback.unshift(newRetaliationCase);
-
-    // Add a linking event to the parent case
-    const parentCaseIndex = allFeedback.findIndex(f => f.trackingId === input.parentCaseId);
-    if (parentCaseIndex !== -1) {
-        const parentCase = allFeedback[parentCaseIndex];
-        if (!parentCase.auditTrail) parentCase.auditTrail = [];
-        parentCase.auditTrail.push({
-            event: 'Retaliation Claim Filed',
-            timestamp: new Date(),
-            actor: input.submittedBy,
-            details: `New Case ID: ${childCaseId}`
-        });
-    }
     
     saveFeedbackToStorage(allFeedback);
     return { trackingId: childCaseId };
@@ -1296,13 +1283,12 @@ export async function respondToIdentityReveal(trackingId: string, actor: Role, a
         });
     } else {
         item.status = 'Pending HR Action';
-        // Keep assignedTo as Manager so they can see the escalated case too.
-        // The filtering logic in action-items page will show it to HR Head as well.
+        item.assignedTo = ['Manager', 'HR Head'];
         item.auditTrail?.push({
             event: 'Identity Reveal Declined; Escalated to HR',
             timestamp: new Date(),
             actor: 'Anonymous',
-            details: `User declined the request to reveal their identity. Case has been escalated to HR Head for final review.`,
+            details: `User declined the request to reveal their identity. Case has been escalated to HR Head and Manager for collaborative review.`,
         });
     }
 

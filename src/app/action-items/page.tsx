@@ -813,7 +813,7 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
     }
 
     // For anonymous concerns escalated to HR, show the collaborative panel
-    if (feedback.status === 'Pending HR Action' && feedback.isAnonymous) {
+    if (feedback.isAnonymous && feedback.status === 'Pending HR Action' && (role === 'Manager' || role === 'HR Head')) {
         return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
@@ -828,7 +828,7 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
         return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />
     }
     
-    if (feedback.isAnonymous) {
+    if (feedback.isAnonymous && feedback.status === 'Pending Manager Action') {
         return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
@@ -959,31 +959,40 @@ function ActionItemsContent() {
             let wasInvolved = false;
             let category: 'todo' | '1on1' | 'concern' | 'retaliation' | 'none' = 'none';
             let isItemClosed = false;
+            
+            let finalDispositionEvent: AuditEvent | undefined;
 
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
                 if (insight) {
-                    const finalDispositionEvent = insight.auditTrail?.some(e => finalDispositionEvents.includes(e.event));
+                    finalDispositionEvent = insight.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
                     
                     isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
                     
                     const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+                    
                     const isActionable = isAmMatch || isManagerMatch || isHrMatch;
-
+                    
                     wasInvolved = isActionable || (insight.auditTrail?.some(e => e.actor === role) ?? false);
                     
-                    if(wasInvolved) category = '1on1';
+                    if (wasInvolved) category = '1on1';
                 }
             } else { // It's a Feedback item
                 if (item.source === 'Voice – In Silence') return;
                 
-                const finalDispositionEvent = item.auditTrail?.some(e => finalDispositionEvents.includes(e.event));
+                finalDispositionEvent = item.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
+                
                 isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
                 
-                const isAssignedToOpenCase = (item.assignedTo?.includes(role as Role) ?? false) && !isItemClosed;
-                wasInvolved = isAssignedToOpenCase || (item.auditTrail?.some(e => e.actor === role) ?? false);
+                const isAssignedToOpenCase = (item.assignedTo?.includes(role as Role) ?? false);
+                
+                // For HR Head, an "open" case is anything not explicitly closed/resolved.
+                // This prevents cases from disappearing from their view when it's pending employee ack.
+                const isHrViewingOpenCase = role === 'HR Head' && !isItemClosed;
+
+                wasInvolved = isAssignedToOpenCase || isHrViewingOpenCase || (item.auditTrail?.some(e => e.actor === role) ?? false);
 
                 if (wasInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
