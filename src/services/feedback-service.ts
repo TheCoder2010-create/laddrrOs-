@@ -843,8 +843,9 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
 
 export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
-    
     const trackingId = uuidv4();
+
+    // Create the new retaliation case
     const newRetaliationCase: Feedback = {
         trackingId,
         parentCaseId: input.parentCaseId,
@@ -865,7 +866,7 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
         attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
     };
     allFeedback.unshift(newRetaliationCase);
-
+    
     saveFeedbackToStorage(allFeedback);
     return { trackingId };
 }

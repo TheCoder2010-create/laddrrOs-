@@ -621,7 +621,7 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
                     {trail.map((event, index) => {
                         const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
                         
-                        const renderDetails = () => {
+                         const renderDetails = () => {
                             if (!event.details) return null;
 
                             const parentRegex = /(Claim submitted for case )([a-f0-9-]+)/;
@@ -634,17 +634,19 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
                                 const parentId = parentMatch?.[2];
                                 const childId = childMatch?.[2];
                                 const textBeforeParent = parentMatch ? parentMatch[1] : '';
-                                const textAfterParent = parentMatch ? event.details.substring(parentMatch.index! + parentMatch[0].length, childMatch ? childMatch.index : undefined) : '';
-                                const textBeforeChild = childMatch ? childMatch[1] : '';
                                 
                                 return (
-                                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                                    <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                                         {textBeforeParent && <span>{textBeforeParent}</span>}
                                         {parentId && <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>}
-                                        {textAfterParent}
-                                        {textBeforeChild && <span className="block mt-1">{textBeforeChild}</span>}
-                                        {childId && <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>}
-                                    </p>
+                                        {childId && 
+                                            <>
+                                                <br/>
+                                                <span>New Case ID: </span>
+                                                <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>
+                                            </>
+                                        }
+                                    </div>
                                 );
                             }
 
@@ -772,12 +774,17 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     
                     const responderEvent = item.auditTrail?.find(e => ['Supervisor Responded', 'HR Resolution Submitted'].includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.find(e => e.event === 'HR Responded to Retaliation Claim');
+                    
+                    const isLinkedClaim = !!item.parentCaseId;
+                    const accordionTitle = isLinkedClaim
+                        ? `Linked Retaliation Claim`
+                        : item.subject;
 
                     return (
                         <AccordionItem value={item.trackingId} key={item.trackingId} id={`accordion-item-${item.trackingId}`}>
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <p className="font-medium truncate">{item.subject}</p>
+                                    <p className="font-medium truncate">{accordionTitle}</p>
                                 </div>
                                 <div className="flex items-center gap-4 pl-4">
                                     <span className="text-xs text-muted-foreground font-mono cursor-text">
