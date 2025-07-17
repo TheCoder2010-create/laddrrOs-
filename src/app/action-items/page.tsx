@@ -46,6 +46,7 @@ const auditEventIcons = {
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
     'Supervisor Responded': MessageSquare,
+    'HR Resolution Submitted': ShieldCheckIcon,
     'Resolved': CheckCircle,
     'Identity Reveal Requested': UserX,
     'Identity Revealed': User,
@@ -53,9 +54,10 @@ const auditEventIcons = {
     'Identity Reveal Declined; Escalated to HR': ShieldCheckIcon,
     'Employee Accepted Resolution': CheckCircle,
     'Employee Escalated Concern': AlertTriangle,
-    'HR Resolution Submitted': ShieldCheckIcon,
     'Final Disposition Required': ShieldAlert,
     'Final Disposition': FileCheck,
+    'Retaliation Claim Filed': Flag,
+    'Update Added': MessageSquare,
     'default': Info,
 }
 
@@ -915,6 +917,7 @@ function ActionItemsContent() {
         
 
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
+        const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
 
         allItems.forEach(item => {
             let isActionable = false;
@@ -928,17 +931,29 @@ function ActionItemsContent() {
                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
                     isActionable = isAmMatch || isManagerMatch || isHrMatch;
-                    wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+                    
+                    const isClosed = closedStatuses.includes(insight.status);
+                    if (!isClosed) wasInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+                    
                     if(isActionable || wasInvolved) category = '1on1';
                 }
             } else { // It's a Feedback item
                 if (item.source === 'Voice – In Silence') return;
                 
                 const isAssigned = item.assignedTo?.includes(role as Role);
-                const isActiveStatus = item.status !== 'Resolved' && item.status !== 'Closed';
-                isActionable = !!isAssigned && isActiveStatus;
-                wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+                const isActiveStatus = !closedStatuses.includes(item.status as any);
+                
+                if (item.criticality === 'Retaliation Claim' && role === 'HR Head') {
+                    // HR Head should see retaliation claims in their active queue until they are formally closed.
+                    isActionable = isActiveStatus;
+                } else {
+                    isActionable = !!isAssigned && isActiveStatus;
+                }
 
+                if (!isActiveStatus) {
+                    wasInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+                }
+                
                 if (isActionable || wasInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
                         category = 'todo';
@@ -949,8 +964,12 @@ function ActionItemsContent() {
                     }
                 }
             }
+            
+            const isItemClosed = 'analysis' in item 
+                ? closedStatuses.includes(item.analysis.criticalCoachingInsight?.status as any) 
+                : closedStatuses.includes(item.status as any);
 
-            if (isActionable) {
+            if (!isItemClosed) {
                 if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') activeToDoItems.push(item as Feedback);
                 else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);
@@ -1096,7 +1115,7 @@ function ActionItemsContent() {
 
 
             return (
-            <AccordionItem value={id} key={id} id={id}>
+            <AccordionItem value={id} key={id} id={`accordion-item-${id}`}>
                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -1116,11 +1135,12 @@ function ActionItemsContent() {
                 <AccordionContent className="space-y-6 pt-4 px-4">
                      {!isOneOnOne && item.parentCaseId && (
                          <div className="space-y-2">
-                             <a
+                            <a
                                 href="#"
                                 onClick={(e) => handleScrollToCase(e, item.parentCaseId!)}
-                                className="text-sm italic text-muted-foreground hover:text-primary transition-colors"
+                                className="text-sm italic text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                             >
+                                <GitMerge className="h-4 w-4" />
                                 Parent Case: {item.parentCaseId}
                             </a>
                         </div>
@@ -1268,5 +1288,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
