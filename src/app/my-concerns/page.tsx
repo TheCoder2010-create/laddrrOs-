@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -48,13 +48,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
+import { Alert } from '@/components/ui/alert';
 
 
 const getAnonymousCaseKey = (role: string | null) => role ? `anonymous_cases_${role.replace(/\s/g, '_')}` : null;
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
 const getRetaliationCaseKey = (role: string | null) => role ? `direct_retaliation_cases_${role.replace(/\s/g, '_')}` : null;
 
-function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
+function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingId: string) => void }) {
     const { toast } = useToast();
     const { role } = useRole();
     const [subject, setSubject] = useState('');
@@ -71,30 +72,21 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void
         setIsSubmitting(true);
         try {
             const result = await submitAnonymousConcernFromDashboard({ subject, message: concern });
-            
-            const key = getAnonymousCaseKey(role);
-            if (key) {
-                const existingIds = JSON.parse(localStorage.getItem(key) || '[]');
-                existingIds.push(result.trackingId);
-                localStorage.setItem(key, JSON.stringify(existingIds));
-            }
-
-            toast({ title: "Anonymous Concern Submitted", description: "Your concern has been confidentially routed to management." });
-            setSubject('');
-            setConcern('');
-            onCaseSubmitted();
+            onCaseSubmitted(result.trackingId);
         } catch (error) {
             toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
             console.error(error);
         } finally {
             setIsSubmitting(false);
+            setSubject('');
+            setConcern('');
         }
     };
 
     return (
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
             <p className="text-sm text-muted-foreground">
-                Your name and role will NOT be attached to this submission. It will be routed anonymously to management for review. You can track its status on this page.
+                Your name and role will NOT be attached to this submission. It will be routed anonymously to management for review. After submitting, you will be given a unique Tracking ID to check the status of your case on this page.
             </p>
             <div className="space-y-2">
                 <Label htmlFor="anon-subject">Subject</Label>
@@ -662,13 +654,23 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
 }
 
 
-function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, accordionRef }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other', accordionRef: React.RefObject<HTMLDivElement> }) {
+function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, accordionRef }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', accordionRef: React.RefObject<HTMLDivElement> }) {
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
 
+    // New state for anonymous tracking
+    const [trackingIdInput, setTrackingIdInput] = useState('');
+    const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
+    const [isTracking, setIsTracking] = useState(false);
+    const [notFound, setNotFound] = useState(false);
+
     useEffect(() => {
+        if (concernType === 'anonymous') {
+            setIsLoading(false);
+            return;
+        }
         const loadCases = async () => {
             setIsLoading(true);
             if (storageKey) {
@@ -678,10 +680,8 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     
                     let filteredCases;
                     if (concernType === 'retaliation') {
-                        // For retaliation tab, show only direct retaliation claims
                         filteredCases = fetchedCases.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId);
                     } else {
-                        // For other tabs, show everything that isn't a retaliation claim
                         filteredCases = fetchedCases.filter(c => c.criticality !== 'Retaliation Claim');
                     }
 
@@ -700,7 +700,6 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
         const caseElement = accordionRef.current?.querySelector(`#accordion-item-${caseId}`);
         caseElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         
-        // Use a timeout to ensure the element is visible before trying to click the trigger
         setTimeout(() => {
             const trigger = caseElement?.querySelector('[data-radix-collection-item]');
             if (trigger instanceof HTMLElement) {
@@ -709,65 +708,76 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
         }, 300);
     };
 
+    const handleTrackAnonymous = async () => {
+        if (!trackingIdInput) return;
+        setIsTracking(true);
+        setTrackedCase(null);
+        setNotFound(false);
+        try {
+            const [foundCase] = await getFeedbackByIds([trackingIdInput]);
+            if (foundCase) {
+                setTrackedCase(foundCase);
+            } else {
+                setNotFound(true);
+            }
+        } catch (e) {
+            setNotFound(true);
+        } finally {
+            setIsTracking(false);
+        }
+    };
+
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
-    if (cases.length === 0) {
+    const itemsToDisplay = concernType === 'anonymous' && trackedCase ? [trackedCase] : cases;
+    
+    const renderCaseList = (items: Feedback[]) => {
+        if (items.length === 0) {
+            return (
+                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">{notFound ? 'No submission found with that ID.' : 'You have not submitted any concerns of this type yet.'}</p>
+                </div>
+            )
+        }
         return (
-            <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">You have not submitted any concerns of this type yet.</p>
-            </div>
-        );
-    }
-    
-    const getStatusBadge = (item: Feedback) => {
-        const { status, resolution } = item;
-        if (status === 'Closed' && resolution) {
-            if (resolution.includes('Ombudsman')) return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Ombudsman</Badge>;
-            if (resolution.includes('Grievance')) return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Grievance</Badge>;
-            return <Badge variant="secondary" className="flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Closed</Badge>;
-        }
-        
-        switch(status) {
-            case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
-            case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
-            case 'Pending Supervisor Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Reviewing</Badge>;
-            case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
-            case 'Pending HR Action': return <Badge className="bg-black text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
-            case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
-            case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Closed</Badge>;
-            default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
-        }
-    }
-    
-    const getRetaliationStatusBadge = (status?: string) => {
-        switch(status) {
-            case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Claim Resolved</Badge>;
-            case 'Retaliation Claim': return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3"/>HR Reviewing Claim</Badge>;
-            case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Your Ack. Required</Badge>;
-            case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Claim Closed</Badge>;
-            default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Claim Submitted</Badge>;
-        }
-    }
-
-    return (
-        <div className="mt-6 space-y-4">
-             <h3 className="text-lg font-semibold flex items-center gap-2 text-muted-foreground">
-                <List className="h-5 w-5" />
-                {title}
-            </h3>
-            <Accordion type="single" collapsible className="w-full border rounded-lg" ref={accordionRef}>
-                 {cases.map(item => {
+             <Accordion type="single" collapsible className="w-full border rounded-lg" ref={accordionRef}>
+                 {items.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
-                    
                     const responderEvent = item.auditTrail?.find(e => ['Supervisor Responded', 'HR Resolution Submitted'].includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.find(e => e.event === 'HR Responded to Retaliation Claim');
-                    
                     const isLinkedClaim = !!item.parentCaseId;
+                    const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
                     
-                    const accordionTitle = isLinkedClaim
-                        ? `Linked Retaliation Claim`
-                        : item.subject;
+                    const getStatusBadge = (item: Feedback) => {
+                        const { status, resolution } = item;
+                        if (status === 'Closed' && resolution) {
+                            if (resolution.includes('Ombudsman')) return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Ombudsman</Badge>;
+                            if (resolution.includes('Grievance')) return <Badge className="bg-gray-700 text-white flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Grievance</Badge>;
+                            return <Badge variant="secondary" className="flex items-center gap-1.5"><FolderClosed className="h-3 w-3" />Closed</Badge>;
+                        }
+                        
+                        switch(status) {
+                            case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
+                            case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
+                            case 'Pending Supervisor Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Reviewing</Badge>;
+                            case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
+                            case 'Pending HR Action': return <Badge className="bg-black text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
+                            case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
+                            case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Closed</Badge>;
+                            default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
+                        }
+                    }
                     
+                    const getRetaliationStatusBadge = (status?: string) => {
+                        switch(status) {
+                            case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Claim Resolved</Badge>;
+                            case 'Retaliation Claim': return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3"/>HR Reviewing Claim</Badge>;
+                            case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Your Ack. Required</Badge>;
+                            case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Claim Closed</Badge>;
+                            default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Claim Submitted</Badge>;
+                        }
+                    }
+
                     return (
                         <AccordionItem value={item.trackingId} key={item.trackingId} id={`accordion-item-${item.trackingId}`}>
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
@@ -809,7 +819,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                     </div>
                                 )}
 
-                                {!item.isAnonymous && (
+                                {item.isAnonymous === false && (
                                     <div className="pt-4 border-t border-dashed">
                                         <Dialog open={retaliationDialogOpen && activeCaseId === item.trackingId} onOpenChange={(open) => {
                                             if (!open) setRetaliationDialogOpen(false);
@@ -895,16 +905,45 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     );
                 })}
             </Accordion>
+        );
+    }
+
+    return (
+        <div className="mt-6 space-y-4">
+             <h3 className="text-lg font-semibold flex items-center gap-2 text-muted-foreground">
+                <List className="h-5 w-5" />
+                {title}
+            </h3>
+            {concernType === 'anonymous' && (
+                <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Enter the tracking ID you saved after submission to see the status of your case.</p>
+                    <div className="flex items-center gap-2">
+                        <Input 
+                            placeholder="Enter Tracking ID..." 
+                            value={trackingIdInput}
+                            onChange={(e) => setTrackingIdInput(e.target.value)}
+                        />
+                        <Button onClick={handleTrackAnonymous} disabled={isTracking || !trackingIdInput}>
+                            {isTracking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Track
+                        </Button>
+                    </div>
+                </div>
+            )}
+            {renderCaseList(itemsToDisplay)}
         </div>
     );
 }
 
 function MyConcernsContent() {
   const [remountKey, setRemountKey] = useState(0);
-  const { role } = useRole();
+  const { role, toast } = useRole();
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const accordionRef = useRef<HTMLDivElement>(null);
+
+  const [showIdDialog, setShowIdDialog] = useState(false);
+  const [newCaseId, setNewCaseId] = useState('');
 
   const fetchAllCases = useCallback(() => {
     setIsLoading(true);
@@ -919,13 +958,48 @@ function MyConcernsContent() {
   }, [fetchAllCases]);
 
 
-  const handleCaseSubmitted = useCallback(() => {
-    // Re-fetch all cases after a new submission
+  const handleCaseSubmitted = useCallback((trackingId?: string) => {
     fetchAllCases();
+    if (trackingId) {
+        setNewCaseId(trackingId);
+        setShowIdDialog(true);
+    }
   }, [fetchAllCases]);
+
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    toast({
+      title: 'Copied!',
+      description: 'Tracking ID copied to clipboard.',
+    });
+  };
 
   return (
     <div className="p-4 md:p-8">
+      <Dialog open={showIdDialog} onOpenChange={setShowIdDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>✅ Submission Received</DialogTitle>
+            <DialogDescription>
+                Your feedback has been submitted anonymously. Please copy and save the tracking ID below. It is the ONLY way to check the status of your submission later.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Alert>
+              <AlertTitle className="font-semibold">Your Tracking ID</AlertTitle>
+              <div className="flex items-center justify-between mt-2">
+                <code className="text-sm font-mono">{newCaseId}</code>
+                <Button variant="ghost" size="icon" onClick={() => copyToClipboard(newCaseId)}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowIdDialog(false)}>I have saved my ID</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
@@ -957,7 +1031,7 @@ function MyConcernsContent() {
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getAnonymousCaseKey(role)} title="My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} concernType="other" accordionRef={accordionRef} />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} title="Track My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
                 </TabsContent>
                  <TabsContent value="retaliation">
                     <DirectRetaliationForm onCaseSubmitted={handleCaseSubmitted} />

@@ -1257,14 +1257,14 @@ export async function requestIdentityReveal(trackingId: string, actor: Role, rea
     const item = allFeedback[feedbackIndex];
     item.status = 'Pending Identity Reveal';
 
-    const acknowledgmentText = "Manager Acknowledgment: I acknowledge my responsibility to protect the employee from any form of bias, retaliation, or adverse consequence during this process. I am committed to handling this matter with fairness, discretion, and confidentiality.";
-    const fullDetails = `${acknowledgmentText}\n\nManager's Reason: ${reason}`;
-
+    // The acknowledgment text is now hardcoded in the UI, so we just need the reason here.
+    const details = reason;
+    
     item.auditTrail?.push({
         event: 'Identity Reveal Requested',
         timestamp: new Date(),
         actor: actor,
-        details: fullDetails,
+        details: details,
     });
 
     saveFeedbackToStorage(allFeedback);
