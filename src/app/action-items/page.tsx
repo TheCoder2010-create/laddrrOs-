@@ -639,45 +639,90 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     const { toast } = useToast();
     const [revealReason, setRevealReason] = useState('');
     const [resolution, setResolution] = useState('');
+    const [update, setUpdate] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleRequestIdentity = async () => {
         if (!revealReason || !role) return;
-        await requestIdentityReveal(feedback.trackingId, role, revealReason);
-        setRevealReason('');
-        toast({ title: "Request Submitted", description: "The user has been notified of your request."});
-        onUpdate();
+        setIsSubmitting(true);
+        try {
+            await requestIdentityReveal(feedback.trackingId, role, revealReason);
+            setRevealReason('');
+            toast({ title: "Request Submitted", description: "The user has been notified of your request."});
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     const handleResolveDirectly = async () => {
         if (!resolution || !role) return;
-        await resolveFeedback(feedback.trackingId, role, resolution);
-        setResolution('');
-        toast({ title: "Case Resolved", description: "You have resolved the anonymous concern."});
-        onUpdate();
+        setIsSubmitting(true);
+        try {
+            await resolveFeedback(feedback.trackingId, role, resolution);
+            setResolution('');
+            toast({ title: "Case Resolved", description: "You have resolved the anonymous concern."});
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
     }
+    
+    const handleAddUpdate = async () => {
+        if (!update || !role) return;
+        setIsSubmitting(true);
+        try {
+            await addFeedbackUpdate(feedback.trackingId, role, update);
+            setUpdate('');
+            toast({ title: "Update Added", description: "Your notes have been added to the case history." });
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     
     return (
         <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
             <Label className="text-base font-semibold">Your Action Required</Label>
             <p className="text-sm text-muted-foreground">
-                This is an anonymous submission. You can resolve it directly with a closing statement, or request the user reveal their identity if more information is needed.
+                This is an anonymous submission. You can add confidential interim updates, resolve it directly, or request the user reveal their identity.
             </p>
+             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor="interim-update" className="font-medium">Option 1: Add Interim Update (Confidential)</Label>
+                <p className="text-xs text-muted-foreground">
+                    Log your investigation steps or notes. This will NOT be shared with the anonymous submitter but will be visible to HR.
+                </p>
+                <Textarea 
+                    id="interim-update"
+                    placeholder="e.g., 'Investigating the team schedule for the past month...'"
+                    value={update}
+                    onChange={(e) => setUpdate(e.target.value)}
+                    rows={3}
+                />
+                <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary">
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Add Confidential Update
+                </Button>
+            </div>
             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="resolve-directly" className="font-medium">Option 1: Resolve Directly</Label>
+                <Label htmlFor="resolve-directly" className="font-medium">Option 2: Resolve Directly</Label>
                 <p className="text-xs text-muted-foreground">
                     If you have enough information to close this case, provide a final resolution summary. This will be visible to the anonymous user.
                 </p>
                 <Textarea 
                     id="resolve-directly"
-                    placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines for project planning to ensure equitable task distribution...'"
+                    placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines...'"
                     value={resolution}
                     onChange={(e) => setResolution(e.target.value)}
                     rows={4}
                 />
-                <Button onClick={handleResolveDirectly} disabled={!resolution}>Resolve Case</Button>
+                <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Resolve Case
+                </Button>
             </div>
             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="revealReason" className="font-medium">Option 2: Request Identity Reveal</Label>
+                <Label htmlFor="revealReason" className="font-medium">Option 3: Request Identity Reveal</Label>
                  <p className="text-xs text-muted-foreground">
                     If you cannot proceed without more details, explain why you need to know their identity. This message will be shown to the user.
                 </p>
@@ -690,7 +735,10 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                 />
                  <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button disabled={!revealReason}>Request Identity Reveal</Button>
+                        <Button disabled={!revealReason || isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Request Identity Reveal
+                        </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -1028,9 +1076,7 @@ function ActionItemsContent() {
                     }
                 }
 
-                wasInvolved = isActionableForRole || wasEverInvolved;
-
-                if (wasInvolved) {
+                if (isActionableForRole || wasEverInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
                         category = 'todo';
                     } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
@@ -1041,12 +1087,12 @@ function ActionItemsContent() {
                 }
             }
             
-            if (!isItemClosed && wasInvolved) {
+            if (!isItemClosed && (category !== 'none')) {
                 if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') activeToDoItems.push(item as Feedback);
                 else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);
                 else if (category === 'concern') activeIdentifiedConcerns.push(item as Feedback);
-            } else if (isItemClosed && wasInvolved) {
+            } else if (isItemClosed && (category !== 'none')) {
                 if (category === '1on1') localClosed1on1.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') localClosedToDo.push(item as Feedback);
                 else if (category === 'retaliation') localClosedRetaliation.push(item as Feedback);
