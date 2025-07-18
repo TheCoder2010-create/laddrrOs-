@@ -1072,6 +1072,8 @@ function ActionItemsContent() {
         const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
         const finalDispositionEvents = ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"];
         
+        const retaliationClaimParentIds = new Set(fetchedFeedback.filter(f => f.parentCaseId).map(f => f.parentCaseId));
+
         allItems.forEach(item => {
             let isItemClosed = false;
             
@@ -1097,7 +1099,12 @@ function ActionItemsContent() {
                 isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
 
                 const isActionableForRole = !isItemClosed && (item.assignedTo?.includes(role as Role) ?? false);
-                const wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+                let wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+
+                // For HR Head, if they are reviewing a child retaliation claim, they are "involved" in the parent.
+                if (role === 'HR Head' && retaliationClaimParentIds.has(item.trackingId)) {
+                    wasEverInvolved = true;
+                }
 
                 if (isActionableForRole) {
                     if (item.status === 'To-Do') activeToDoItems.push(item);
@@ -1292,9 +1299,9 @@ function ActionItemsContent() {
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="font-medium truncate">{subject}</span>
-                            {isClosedSection && getTypeBadge()}
                         </div>
                         <div className="flex items-center gap-4 pl-4">
+                            {getTypeBadge()}
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
@@ -1339,19 +1346,17 @@ function ActionItemsContent() {
   const ClosedItemsSection = () => {
     return (
         <div className="mt-8">
-            <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="closed-items" className="border rounded-lg">
-                    <AccordionTrigger className="flex w-full items-center justify-between px-4 py-3 text-lg font-semibold text-muted-foreground hover:no-underline [&_svg]:ml-auto">
-                        <div className="flex items-center gap-3">
-                            <FolderClosed />
-                            Closed Items ({allClosedItems.length})
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="p-2 pt-4 md:p-4 space-y-4">
-                       {renderFeedbackList(allClosedItems, true)}
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
+            <div className="border rounded-lg">
+                <div className="flex w-full items-center justify-between px-4 py-3 text-lg font-semibold text-muted-foreground border-b bg-muted/30">
+                    <div className="flex items-center gap-3">
+                        <FolderClosed />
+                        Closed Items ({allClosedItems.length})
+                    </div>
+                </div>
+                <div className="p-2 md:p-4 space-y-4">
+                   {renderFeedbackList(allClosedItems, true)}
+                </div>
+            </div>
         </div>
     );
   };
