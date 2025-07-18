@@ -1041,11 +1041,13 @@ function ActionItemsContent() {
   const [toDoItems, setToDoItems] = useState<Feedback[]>([]);
   const [oneOnOneEscalations, setOneOnOneEscalations] = useState<OneOnOneHistoryItem[]>([]);
   const [identifiedConcerns, setIdentifiedConcerns] = useState<Feedback[]>([]);
+  const [anonymousConcerns, setAnonymousConcerns] = useState<Feedback[]>([]);
   const [retaliationClaims, setRetaliationClaims] = useState<Feedback[]>([]);
   
   const [closedToDoItems, setClosedToDoItems] = useState<Feedback[]>([]);
   const [closedOneOnOneEscalations, setClosedOneOnOneEscalations] = useState<OneOnOneHistoryItem[]>([]);
   const [closedIdentifiedConcerns, setClosedIdentifiedConcerns] = useState<Feedback[]>([]);
+  const [closedAnonymousConcerns, setClosedAnonymousConcerns] = useState<Feedback[]>([]);
   const [closedRetaliationClaims, setClosedRetaliationClaims] = useState<Feedback[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
@@ -1064,11 +1066,13 @@ function ActionItemsContent() {
         const activeToDoItems: Feedback[] = [];
         const activeOneOnOneEscalations: OneOnOneHistoryItem[] = [];
         const activeIdentifiedConcerns: Feedback[] = [];
+        const activeAnonymousConcerns: Feedback[] = [];
         const activeRetaliationClaims: Feedback[] = [];
         
         const localClosedToDo: Feedback[] = [];
         const localClosed1on1: OneOnOneHistoryItem[] = [];
         const localClosedIdentified: Feedback[] = [];
+        const localClosedAnonymous: Feedback[] = [];
         const localClosedRetaliation: Feedback[] = [];
         
         const allFeedback = [...fetchedFeedback];
@@ -1079,26 +1083,9 @@ function ActionItemsContent() {
 
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...allFeedback, ...allHistory];
         
-        // When HR Head is viewing, find all retaliation claims and add their parent cases to the list of items to process
-        if (role === 'HR Head') {
-            const retaliationParentIds = new Set<string>();
-            fetchedFeedback.forEach(c => {
-                if (c.parentCaseId) {
-                    retaliationParentIds.add(c.parentCaseId);
-                }
-            });
-
-            retaliationParentIds.forEach(parentId => {
-                const parentCase = allItems.find(item => ('trackingId' in item) && item.trackingId === parentId);
-                if (parentCase && !allItems.some(item => ('trackingId' in item) && item.trackingId === parentId)) {
-                    allItems.push(parentCase);
-                }
-            });
-        }
-        
         allItems.forEach(item => {
             let wasInvolved = false;
-            let category: 'todo' | '1on1' | 'concern' | 'retaliation' | 'none' = 'none';
+            let category: 'todo' | '1on1' | 'concern' | 'anonymous' | 'retaliation' | 'none' = 'none';
             let isItemClosed = false;
             
             let finalDispositionEvent: AuditEvent | undefined;
@@ -1133,17 +1120,13 @@ function ActionItemsContent() {
                 // An item is also part of history if the role was ever involved in the audit trail.
                 let wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
                 
-                // Special case for HR viewing a retaliation claim's parent case
-                const isParentOfRetaliationClaim = role === 'HR Head' && allFeedback.some(c => c.parentCaseId === item.trackingId);
-                if (isParentOfRetaliationClaim) {
-                    wasEverInvolved = true;
-                }
-
                 if (isActionableForRole || wasEverInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
                         category = 'todo';
-                    } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId || isParentOfRetaliationClaim) {
+                    } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
                         category = 'retaliation';
+                    } else if (item.isAnonymous) {
+                        category = 'anonymous';
                     } else {
                         category = 'concern';
                     }
@@ -1154,11 +1137,13 @@ function ActionItemsContent() {
                 if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') activeToDoItems.push(item as Feedback);
                 else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);
+                else if (category === 'anonymous') activeAnonymousConcerns.push(item as Feedback);
                 else if (category === 'concern') activeIdentifiedConcerns.push(item as Feedback);
             } else if (isItemClosed && (category !== 'none')) {
                 if (category === '1on1') localClosed1on1.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') localClosedToDo.push(item as Feedback);
                 else if (category === 'retaliation') localClosedRetaliation.push(item as Feedback);
+                else if (category === 'anonymous') localClosedAnonymous.push(item as Feedback);
                 else if (category === 'concern') localClosedIdentified.push(item as Feedback);
             }
         });
@@ -1172,11 +1157,13 @@ function ActionItemsContent() {
         setToDoItems(activeToDoItems.sort(sortFn));
         setOneOnOneEscalations(activeOneOnOneEscalations.sort(sortFn));
         setIdentifiedConcerns(activeIdentifiedConcerns.sort(sortFn));
+        setAnonymousConcerns(activeAnonymousConcerns.sort(sortFn));
         setRetaliationClaims(activeRetaliationClaims.sort(sortFn));
         
         setClosedToDoItems(localClosedToDo.sort(sortFn));
         setClosedOneOnOneEscalations(localClosed1on1.sort(sortFn));
         setClosedIdentifiedConcerns(localClosedIdentified.sort(sortFn));
+        setClosedAnonymousConcerns(localClosedAnonymous.sort(sortFn));
         setClosedRetaliationClaims(localClosedRetaliation.sort(sortFn));
 
     } catch (error) {
@@ -1203,7 +1190,7 @@ function ActionItemsContent() {
   const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
       e.stopPropagation();
-      const allItems: (Feedback | OneOnOneHistoryItem)[] = [...toDoItems, ...oneOnOneEscalations, ...identifiedConcerns, ...retaliationClaims, ...closedToDoItems, ...closedOneOnOneEscalations, ...closedIdentifiedConcerns, ...closedRetaliationClaims];
+      const allItems: (Feedback | OneOnOneHistoryItem)[] = [...toDoItems, ...oneOnOneEscalations, ...identifiedConcerns, ...anonymousConcerns, ...retaliationClaims, ...closedToDoItems, ...closedOneOnOneEscalations, ...closedIdentifiedConcerns, ...closedAnonymousConcerns, ...closedRetaliationClaims];
       const caseItem = allItems.find(item => ('analysis' in item ? item.id : item.trackingId) === caseId);
 
       if (caseItem) {
@@ -1358,8 +1345,8 @@ function ActionItemsContent() {
     );
   }
 
-  const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length + identifiedConcerns.length + retaliationClaims.length;
-  const allClosedItemsCount = closedToDoItems.length + closedOneOnOneEscalations.length + closedIdentifiedConcerns.length + closedRetaliationClaims.length;
+  const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length + identifiedConcerns.length + anonymousConcerns.length + retaliationClaims.length;
+  const allClosedItemsCount = closedToDoItems.length + closedOneOnOneEscalations.length + closedIdentifiedConcerns.length + closedAnonymousConcerns.length + closedRetaliationClaims.length;
 
   return (
     <div className="p-4 md:p-8" ref={accordionRef}>
@@ -1391,6 +1378,7 @@ function ActionItemsContent() {
                 {renderCategorySection("To-Do Lists", ListTodo, toDoItems)}
                 {renderCategorySection("1-on-1 Escalations", UserCog, oneOnOneEscalations)}
                 {renderCategorySection("Identified Concerns", Users, identifiedConcerns)}
+                {renderCategorySection("Anonymous Concerns", UserX, anonymousConcerns)}
                 {renderCategorySection("Retaliation Claims", Flag, retaliationClaims, true)}
             </div>
           )}
@@ -1424,6 +1412,12 @@ function ActionItemsContent() {
                              <div>
                                 <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Users className="h-5 w-5" />Identified Concerns</h3>
                                 {renderFeedbackList(closedIdentifiedConcerns)}
+                            </div>
+                        )}
+                        {closedAnonymousConcerns.length > 0 && (
+                             <div>
+                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserX className="h-5 w-5" />Anonymous Concerns</h3>
+                                {renderFeedbackList(closedAnonymousConcerns)}
                             </div>
                         )}
                         {closedRetaliationClaims.length > 0 && (
