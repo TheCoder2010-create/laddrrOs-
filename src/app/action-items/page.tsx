@@ -773,14 +773,23 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
 
 function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void, handleScrollToCase: (e: React.MouseEvent, caseId: string) => void }) {
     const { role } = useRole();
-    const [supervisorUpdate, setSupervisorUpdate] = useState('');
+    const [resolutionSummary, setResolutionSummary] = useState('');
+    const [interimUpdate, setInterimUpdate] = useState('');
     const { toast } = useToast();
 
-    const handleSupervisorUpdate = async (trackingId: string) => {
-        if (!supervisorUpdate || !role) return;
-        await submitSupervisorUpdate(trackingId, role, supervisorUpdate);
-        setSupervisorUpdate('');
-        toast({ title: "Update Submitted", description: "The employee has been notified to acknowledge your response." });
+    const handleSupervisorUpdate = async (trackingId: string, isFinal: boolean) => {
+        const comment = isFinal ? resolutionSummary : interimUpdate;
+        if (!comment || !role) return;
+
+        if (isFinal) {
+            await submitSupervisorUpdate(trackingId, role, comment);
+            setResolutionSummary('');
+            toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
+        } else {
+            await addFeedbackUpdate(trackingId, role, comment);
+            setInterimUpdate('');
+            toast({ title: "Update Added", description: "Your notes have been added to the case history." });
+        }
         onUpdate();
     }
     
@@ -840,11 +849,11 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
         
     if (isEscalatedConcern) {
         let title = 'Your Action Required';
-        let description = "A concern requires your attention. Please review the details and provide a summary of the actions you have taken or will take to address it. This will be sent to the employee for acknowledgment.";
+        let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
 
         if (feedback.status === 'Pending Manager Action') {
             title = 'Escalation: Review Required';
-            description = `This concern has been escalated to you as the ${role}. Please review the case history and provide your resolution summary.`;
+            description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
         } else if (feedback.status === 'Pending HR Action') {
              if (feedback.isAnonymous) { // The collaborative case
                 return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
@@ -858,16 +867,31 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
             <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
                 <Label className="text-base font-semibold">{title}</Label>
                  <p className="text-sm text-muted-foreground">{description}</p>
+                
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                    <Label htmlFor="supervisorUpdate">Resolution Summary</Label>
+                    <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
+                    <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
                     <Textarea 
-                        id="supervisorUpdate"
-                        placeholder="e.g., 'I spoke with the employee to clarify the issue and we have agreed on the following steps...'"
-                        value={supervisorUpdate}
-                        onChange={(e) => setSupervisorUpdate(e.target.value)}
+                        id={`interim-update-${feedback.trackingId}`}
+                        placeholder="e.g., 'Met with employee on 10/26 to discuss concerns. We've scheduled a follow-up.'"
+                        value={interimUpdate}
+                        onChange={(e) => setInterimUpdate(e.target.value)}
+                        rows={3}
+                    />
+                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, false)} disabled={!interimUpdate}>Add Update to History</Button>
+                </div>
+
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                    <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
+                    <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
+                    <Textarea 
+                        id={`final-resolution-${feedback.trackingId}`}
+                        placeholder="e.g., 'After reviewing the situation, we have taken the following steps...'"
+                        value={resolutionSummary}
+                        onChange={(e) => setResolutionSummary(e.target.value)}
                         rows={4}
                     />
-                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId)} disabled={!supervisorUpdate}>Submit for Acknowledgement</Button>
+                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, true)} disabled={!resolutionSummary}>Submit for Acknowledgement</Button>
                 </div>
             </div>
         );
