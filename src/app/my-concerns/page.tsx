@@ -607,7 +607,7 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
                             if (!event.details) return null;
 
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
-                            const childMatch = event.details.match(childRegex);
+                            const childMatch = event.details.match(regex);
 
                             if (childMatch) {
                                 const childId = childMatch[2];
@@ -934,10 +934,11 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
 }
 
 function MyConcernsContent() {
-  const { role, toast } = useRole();
+  const { role } = useRole();
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const accordionRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const [showIdDialog, setShowIdDialog] = useState(false);
   const [newCaseId, setNewCaseId] = useState('');
@@ -1060,3 +1061,5 @@ export default function MyConcernsPage() {
 
     
 }
+
+    
