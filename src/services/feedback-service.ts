@@ -129,12 +129,14 @@ export interface TrackedFeedback {
 }
 export interface TrackFeedbackOutput {
   found: boolean;
-  feedback?: TrackedFeedback;
+  feedback?: TrackedFeedback | Feedback; // Can return full feedback for interactive widgets
 }
 
 
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
+
+const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
 
 
 // ==========================================
@@ -921,7 +923,12 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
     return { found: false };
   }
   
-  // Create a version of the audit trail that's safe for public viewing
+  // If the case requires interaction (like identity reveal), return the full object.
+  if (feedback.status === 'Pending Identity Reveal') {
+      return { found: true, feedback };
+  }
+
+  // Otherwise, create a limited, public-safe version of the feedback
   const publicAuditTrail = feedback.auditTrail?.map(event => ({
       event: event.event,
       timestamp: new Date(event.timestamp).toISOString(),
@@ -1294,6 +1301,17 @@ export async function respondToIdentityReveal(trackingId: string, actor: Role, a
             actor: user.role,
             details: `User ${user.name} accepted the request and revealed their identity.`,
         });
+
+        // Add the tracking ID to the identified list in localStorage
+        const key = getIdentifiedCaseKey(actor);
+        if (key) {
+            const existingIds = JSON.parse(localStorage.getItem(key) || '[]');
+            if (!existingIds.includes(trackingId)) {
+                existingIds.push(trackingId);
+                localStorage.setItem(key, JSON.stringify(existingIds));
+            }
+        }
+
     } else {
         item.status = 'Pending HR Action';
         item.assignedTo = ['Manager', 'HR Head'];
@@ -1328,3 +1346,5 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
         saveFeedbackToStorage(allFeedback);
     }
 }
+
+    
