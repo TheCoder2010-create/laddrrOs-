@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById } from '@/services/feedback-service';
 import { OneOnOneHistoryItem, getOneOnOneHistory, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitAmDirectResponse } from '@/services/feedback-service';
 import type { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -62,7 +62,7 @@ const auditEventIcons = {
     'default': Info,
 }
 
-function AuditTrail({ trail, handleScrollToCase }: { trail: AuditEvent[], handleScrollToCase: (e: React.MouseEvent, caseId: string) => void }) {
+function AuditTrail({ trail, handleViewCaseDetails }: { trail: AuditEvent[], handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
     if (!trail || trail.length === 0) return null;
 
     return (
@@ -92,11 +92,11 @@ function AuditTrail({ trail, handleScrollToCase }: { trail: AuditEvent[], handle
                                             
                                             if (lineParentMatch) {
                                                 const parentId = lineParentMatch[2];
-                                                return <div key={i}>Claim submitted for case <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
+                                                return <div key={i}>Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
                                             }
                                             if (lineChildMatch) {
                                                 const childId = lineChildMatch[2];
-                                                return <div key={i}>New Case ID: <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a></div>
+                                                return <div key={i}>New Case ID: <a href="#" onClick={(e) => handleViewCaseDetails(e, childId)} className="font-mono text-primary hover:underline">{childId}</a></div>
                                             }
                                             return <div key={i}>{line}</div>
                                         })}
@@ -771,7 +771,7 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     );
 }
 
-function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void, handleScrollToCase: (e: React.MouseEvent, caseId: string) => void }) {
+function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
     const { role } = useRole();
     const [resolutionSummary, setResolutionSummary] = useState('');
     const [interimUpdate, setInterimUpdate] = useState('');
@@ -900,14 +900,14 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
     return null; // No action panel for other statuses
 }
 
-function CaseDetailsModal({ caseItem, open, onOpenChange }: { caseItem: Feedback | OneOnOneHistoryItem | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails }: { caseItem: Feedback | OneOnOneHistoryItem | null, open: boolean, onOpenChange: (open: boolean) => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
     const subject = isOneOnOne ? `1-on-1 Escalation: ${caseItem.employeeName} & ${caseItem.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary : caseItem.message;
-    const auditTrail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail : caseItem.auditTrail;
+    const auditTrail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
     const resolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.supervisorResponse : caseItem.resolution;
 
     return (
@@ -925,7 +925,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange }: { caseItem: Feedback
                             <Label className="text-base">Initial Submission Context</Label>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{initialMessage}</p>
                         </div>
-                        {auditTrail && <AuditTrail trail={auditTrail} handleScrollToCase={() => {}} />}
+                        <AuditTrail trail={auditTrail(caseItem as any)} handleViewCaseDetails={handleViewCaseDetails} />
                         {resolution && (
                              <div className="space-y-2">
                                 <Label className="text-base">Final Resolution</Label>
@@ -956,6 +956,7 @@ function ActionItemsContent() {
   const { role } = useRole();
   const accordionRef = useRef<HTMLDivElement>(null);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
+  const [viewingCaseDetails, setViewingCaseDetails] = useState<Feedback | OneOnOneHistoryItem | null>(null);
   
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
@@ -973,22 +974,9 @@ function ActionItemsContent() {
         const localClosed1on1: OneOnOneHistoryItem[] = [];
         const localClosedIdentified: Feedback[] = [];
         const localClosedRetaliation: Feedback[] = [];
-
+        
         const allFeedback = [...fetchedFeedback];
         let allHistory = [...history];
-
-        // For HR Head, if they have active retaliation claims, ensure parent cases are loaded for context.
-        if (role === 'HR Head') {
-            const activeHrRetaliationClaims = allFeedback.filter(item => item.criticality === 'Retaliation Claim' && item.assignedTo?.includes(role));
-            const parentCaseIds = activeHrRetaliationClaims.map(c => c.parentCaseId).filter((id): id is string => !!id);
-
-            parentCaseIds.forEach(parentId => {
-                const parentCase = allFeedback.find(f => f.trackingId === parentId);
-                if (parentCase && !allFeedback.some(item => item.trackingId === parentId)) {
-                    allFeedback.push(parentCase);
-                }
-            });
-        }
         
         const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
         const finalDispositionEvents = ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"];
@@ -1103,18 +1091,13 @@ function ActionItemsContent() {
     };
   }, [fetchFeedback]);
 
-  const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
+  const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
-      const caseElement = accordionRef.current?.querySelector(`#accordion-item-${caseId}`);
-      caseElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      
-      // Use a timeout to ensure the element is visible before trying to click the trigger
-      setTimeout(() => {
-          const trigger = caseElement?.querySelector('[data-radix-collection-item]');
-          if (trigger instanceof HTMLElement) {
-              trigger.click();
-          }
-      }, 300);
+      e.stopPropagation();
+      const caseItem = await getFeedbackById(caseId);
+      if (caseItem) {
+          setViewingCaseDetails(caseItem);
+      }
   };
 
   if (isLoading) {
@@ -1241,10 +1224,10 @@ function ActionItemsContent() {
                         </>
                      )}
 
-                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} handleScrollToCase={handleScrollToCase} />}
-                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} handleScrollToCase={handleScrollToCase}/> }
+                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} handleViewCaseDetails={handleViewCaseDetails} />}
+                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} handleViewCaseDetails={handleViewCaseDetails}/> }
 
-                    <ActionPanel item={item} onUpdate={fetchFeedback} handleScrollToCase={handleScrollToCase} />
+                    <ActionPanel item={item} onUpdate={fetchFeedback} handleViewCaseDetails={handleViewCaseDetails} />
                     
                     {!isOneOnOne && item.resolution && (
                          <div className="space-y-2">
@@ -1265,6 +1248,12 @@ function ActionItemsContent() {
 
   return (
     <div className="p-4 md:p-8" ref={accordionRef}>
+      <CaseDetailsModal 
+        caseItem={viewingCaseDetails} 
+        open={!!viewingCaseDetails} 
+        onOpenChange={(open) => !open && setViewingCaseDetails(null)}
+        handleViewCaseDetails={handleViewCaseDetails}
+      />
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground">
