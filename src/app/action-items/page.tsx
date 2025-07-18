@@ -986,13 +986,13 @@ function ActionItemsContent() {
                 
                 isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
                 
-                const isAssignedToOpenCase = (item.assignedTo?.includes(role as Role) ?? false);
+                // An item is actionable if the current role is in the assignedTo array for an open case
+                const isActionableForRole = !isItemClosed && (item.assignedTo?.includes(role as Role) ?? false);
                 
-                // For HR Head, an "open" case is anything not explicitly closed/resolved.
-                // This prevents cases from disappearing from their view when it's pending employee ack.
-                const isHrViewingOpenCase = role === 'HR Head' && !isItemClosed;
+                // An item is also part of history if the role was ever involved in the audit trail.
+                const wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
 
-                wasInvolved = isAssignedToOpenCase || isHrViewingOpenCase || (item.auditTrail?.some(e => e.actor === role) ?? false);
+                wasInvolved = isActionableForRole || wasEverInvolved;
 
                 if (wasInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
