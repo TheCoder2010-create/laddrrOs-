@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById, requestAnonymousInformation, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById, requestAnonymousInformation, submitEmployeeFeedbackAcknowledgement, submitAnonymousReply } from '@/services/feedback-service';
 import { OneOnOneHistoryItem, getOneOnOneHistory, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitAmDirectResponse } from '@/services/feedback-service';
 import type { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -1044,12 +1044,8 @@ function ActionItemsContent() {
   const [anonymousConcerns, setAnonymousConcerns] = useState<Feedback[]>([]);
   const [retaliationClaims, setRetaliationClaims] = useState<Feedback[]>([]);
   
-  const [closedToDoItems, setClosedToDoItems] = useState<Feedback[]>([]);
-  const [closedOneOnOneEscalations, setClosedOneOnOneEscalations] = useState<OneOnOneHistoryItem[]>([]);
-  const [closedIdentifiedConcerns, setClosedIdentifiedConcerns] = useState<Feedback[]>([]);
-  const [closedAnonymousConcerns, setClosedAnonymousConcerns] = useState<Feedback[]>([]);
-  const [closedRetaliationClaims, setClosedRetaliationClaims] = useState<Feedback[]>([]);
-  
+  const [allClosedItems, setAllClosedItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
   const accordionRef = useRef<HTMLDivElement>(null);
@@ -1069,84 +1065,64 @@ function ActionItemsContent() {
         const activeAnonymousConcerns: Feedback[] = [];
         const activeRetaliationClaims: Feedback[] = [];
         
-        const localClosedToDo: Feedback[] = [];
-        const localClosed1on1: OneOnOneHistoryItem[] = [];
-        const localClosedIdentified: Feedback[] = [];
-        const localClosedAnonymous: Feedback[] = [];
-        const localClosedRetaliation: Feedback[] = [];
-        
-        const allFeedback = [...fetchedFeedback];
-        let allHistory = [...history];
+        const localAllClosed: (Feedback | OneOnOneHistoryItem)[] = [];
+
+        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
         
         const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
         const finalDispositionEvents = ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"];
-
-        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...allFeedback, ...allHistory];
         
         allItems.forEach(item => {
             let wasInvolved = false;
-            let category: 'todo' | '1on1' | 'concern' | 'anonymous' | 'retaliation' | 'none' = 'none';
             let isItemClosed = false;
             
-            let finalDispositionEvent: AuditEvent | undefined;
-
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
-                if (insight) {
-                    finalDispositionEvent = insight.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
-                    
-                    isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
-                    
-                    const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
-                    const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
-                    const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-                    
-                    const isActionable = isAmMatch || isManagerMatch || isHrMatch;
-                    
-                    wasInvolved = isActionable || (insight.auditTrail?.some(e => e.actor === role) ?? false);
-                    
-                    if (wasInvolved) category = '1on1';
-                }
+                if (!insight) return;
+
+                const finalDispositionEvent = insight.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
+                isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
+                
+                const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
+                const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
+                const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+                
+                const isActionable = isAmMatch || isManagerMatch || isHrMatch;
+                const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+
+                if (isActionable) activeOneOnOneEscalations.push(item);
+                else if (isItemClosed && wasEverInvolved) localAllClosed.push(item);
+
             } else { // It's a Feedback item
-                if (item.source === 'Voice – In Silence' && !item.assignedTo?.includes(role as Role)) return;
-                
-                finalDispositionEvent = item.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
-                
+                const finalDispositionEvent = item.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
                 isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
-                
-                // An item is actionable if the current role is in the assignedTo array for an open case
+
                 const isActionableForRole = !isItemClosed && (item.assignedTo?.includes(role as Role) ?? false);
-                
-                // An item is also part of history if the role was ever involved in the audit trail.
-                let wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
-                
-                if (isActionableForRole || wasEverInvolved) {
-                    if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
-                        category = 'todo';
-                    } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
-                        category = 'retaliation';
-                    } else if (item.isAnonymous) {
-                        category = 'anonymous';
-                    } else {
-                        category = 'concern';
-                    }
+                const wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+
+                if (isActionableForRole) {
+                    if (item.status === 'To-Do') activeToDoItems.push(item);
+                    else if (item.criticality === 'Retaliation Claim') activeRetaliationClaims.push(item);
+                    else if (item.isAnonymous) activeAnonymousConcerns.push(item);
+                    else activeIdentifiedConcerns.push(item);
+                } else if (isItemClosed && wasEverInvolved) {
+                    localAllClosed.push(item);
                 }
-            }
-            
-            if (!isItemClosed && (category !== 'none')) {
-                if (category === '1on1') activeOneOnOneEscalations.push(item as OneOnOneHistoryItem);
-                else if (category === 'todo') activeToDoItems.push(item as Feedback);
-                else if (category === 'retaliation') activeRetaliationClaims.push(item as Feedback);
-                else if (category === 'anonymous') activeAnonymousConcerns.push(item as Feedback);
-                else if (category === 'concern') activeIdentifiedConcerns.push(item as Feedback);
-            } else if (isItemClosed && (category !== 'none')) {
-                if (category === '1on1') localClosed1on1.push(item as OneOnOneHistoryItem);
-                else if (category === 'todo') localClosedToDo.push(item as Feedback);
-                else if (category === 'retaliation') localClosedRetaliation.push(item as Feedback);
-                else if (item.isAnonymous) localClosedAnonymous.push(item as Feedback);
-                else if (category === 'concern') localClosedIdentified.push(item as Feedback);
             }
         });
+        
+        // Handle HR Head seeing parent cases of retaliation claims
+        if (role === 'HR Head') {
+            const parentCaseIds = activeRetaliationClaims.map(c => c.parentCaseId).filter((id): id is string => !!id);
+            if (parentCaseIds.length > 0) {
+                const parentCases = await getFeedbackByIds(parentCaseIds);
+                parentCases.forEach(pCase => {
+                    if (!localAllClosed.some(closedItem => ('trackingId' in closedItem) && closedItem.trackingId === pCase.trackingId)) {
+                        localAllClosed.push(pCase);
+                    }
+                });
+            }
+        }
 
         const sortFn = (a: Feedback | OneOnOneHistoryItem, b: Feedback | OneOnOneHistoryItem) => {
             const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
@@ -1159,12 +1135,7 @@ function ActionItemsContent() {
         setIdentifiedConcerns(activeIdentifiedConcerns.sort(sortFn));
         setAnonymousConcerns(activeAnonymousConcerns.sort(sortFn));
         setRetaliationClaims(activeRetaliationClaims.sort(sortFn));
-        
-        setClosedToDoItems(localClosedToDo.sort(sortFn));
-        setClosedOneOnOneEscalations(localClosed1on1.sort(sortFn));
-        setClosedIdentifiedConcerns(localClosedIdentified.sort(sortFn));
-        setClosedAnonymousConcerns(localClosedAnonymous.sort(sortFn));
-        setClosedRetaliationClaims(localClosedRetaliation.sort(sortFn));
+        setAllClosedItems(localAllClosed.sort(sortFn));
 
     } catch (error) {
       console.error("Failed to fetch feedback", error);
@@ -1190,14 +1161,23 @@ function ActionItemsContent() {
   const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
       e.stopPropagation();
-      const allItems: (Feedback | OneOnOneHistoryItem)[] = [...toDoItems, ...oneOnOneEscalations, ...identifiedConcerns, ...anonymousConcerns, ...retaliationClaims, ...closedToDoItems, ...closedOneOnOneEscalations, ...closedIdentifiedConcerns, ...closedAnonymousConcerns, ...closedRetaliationClaims];
-      const caseItem = allItems.find(item => ('analysis' in item ? item.id : item.trackingId) === caseId);
+      
+      const allItems: (Feedback | OneOnOneHistoryItem)[] = [
+          ...toDoItems, ...oneOnOneEscalations, ...identifiedConcerns, ...anonymousConcerns, ...retaliationClaims, ...allClosedItems
+      ];
+      
+      let caseItem = allItems.find(item => ('analysis' in item ? item.id : item.trackingId) === caseId);
+
+      if (!caseItem) {
+         try {
+             caseItem = await getFeedbackById(caseId);
+         } catch (error) {
+             console.error("Could not fetch case details", error);
+         }
+      }
 
       if (caseItem) {
           setViewingCaseDetails(caseItem);
-      } else {
-         const fetchedItem = await getFeedbackById(caseId);
-         if(fetchedItem) setViewingCaseDetails(fetchedItem);
       }
   };
 
@@ -1235,12 +1215,12 @@ function ActionItemsContent() {
             )}>
                <Icon className="h-6 w-6" /> {title}
             </h2>
-            {renderFeedbackList(items)}
+            {renderFeedbackList(items, false)}
         </div>
     );
   };
 
-  const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[]) => {
+  const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[], isClosedSection: boolean) => {
     return (
         <Accordion 
             type="single" 
@@ -1256,7 +1236,7 @@ function ActionItemsContent() {
             const rawSubject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
             const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
             
-            const statusBadge = () => {
+            const getStatusBadge = () => {
               const auditTrail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail : item.auditTrail;
               const finalDispositionEvent = auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
               
@@ -1296,13 +1276,36 @@ function ActionItemsContent() {
                   default: return <Badge variant="secondary">{feedbackStatus || 'N/A'}</Badge>;
               }
             }
+            
+            const getTypeBadge = () => {
+                if (!isClosedSection) return null;
+
+                let type: "1-on-1" | "Anonymous" | "Identified" | "To-Do" | "Retaliation" = "Identified";
+                let variant: "default" | "secondary" | "destructive" = "secondary";
+                
+                if (isOneOnOne) {
+                    type = "1-on-1";
+                } else {
+                    if (item.status === 'To-Do') type = "To-Do";
+                    else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
+                        type = "Retaliation";
+                        variant = "destructive";
+                    } else if (item.isAnonymous) {
+                        type = "Anonymous";
+                        variant = "default";
+                    }
+                }
+                
+                return <Badge variant={variant} className="mr-2">{type}</Badge>;
+            }
 
 
             return (
             <AccordionItem value={id} key={id} id={`accordion-item-${id}`}>
                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {getTypeBadge()}
                             <span className="font-medium truncate">{subject}</span>
                         </div>
                         <div className="flex items-center gap-4 pl-4 mr-4">
@@ -1312,7 +1315,7 @@ function ActionItemsContent() {
                             >
                                ID: {id}
                             </span>
-                            {statusBadge()}
+                            {getStatusBadge()}
                         </div>
                     </div>
                 </AccordionTrigger>
@@ -1346,17 +1349,8 @@ function ActionItemsContent() {
   }
 
   const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length + identifiedConcerns.length + anonymousConcerns.length + retaliationClaims.length;
-  const allClosedItemsCount = closedToDoItems.length + closedOneOnOneEscalations.length + closedIdentifiedConcerns.length + closedAnonymousConcerns.length + closedRetaliationClaims.length;
   
   const ClosedItemsSection = () => {
-    const categories = [
-        { title: "To-Do Lists", icon: ListTodo, items: closedToDoItems },
-        { title: "1-on-1 Escalations", icon: UserCog, items: closedOneOnOneEscalations },
-        { title: "Identified Concerns", icon: Users, items: closedIdentifiedConcerns },
-        { title: "Anonymous Concerns", icon: UserX, items: closedAnonymousConcerns },
-        { title: "Retaliation Claims", icon: Flag, items: closedRetaliationClaims, isSevere: true },
-    ].filter(cat => cat.items.length > 0);
-
     return (
         <div className="mt-8">
             <Accordion type="single" collapsible className="w-full">
@@ -1364,19 +1358,11 @@ function ActionItemsContent() {
                     <AccordionTrigger className="flex w-full items-center justify-between px-4 py-3 text-lg font-semibold text-muted-foreground hover:no-underline [&_svg]:ml-auto">
                         <div className="flex items-center gap-3">
                             <FolderClosed />
-                            Closed Items ({allClosedItemsCount})
+                            Closed Items ({allClosedItems.length})
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-2 pt-4 md:p-4 space-y-4">
-                       {categories.map(cat => (
-                            <div key={cat.title} className="p-3 border rounded-md">
-                                <h3 className={cn("text-lg font-semibold mb-3 flex items-center gap-3", cat.isSevere ? "text-destructive" : "text-muted-foreground")}>
-                                    <cat.icon className="h-5 w-5" />
-                                    {cat.title}
-                                </h3>
-                                {renderFeedbackList(cat.items)}
-                            </div>
-                       ))}
+                       {renderFeedbackList(allClosedItems, true)}
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
@@ -1422,7 +1408,7 @@ function ActionItemsContent() {
         </CardContent>
       </Card>
       
-      {allClosedItemsCount > 0 && <ClosedItemsSection />}
+      {allClosedItems.length > 0 && <ClosedItemsSection />}
     </div>
   );
 }
