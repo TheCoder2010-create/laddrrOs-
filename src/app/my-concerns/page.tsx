@@ -697,6 +697,7 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
 
 
 function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, accordionRef }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', accordionRef: React.RefObject<HTMLDivElement> }) {
+    const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
@@ -722,8 +723,11 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     let filteredCases;
                     if (concernType === 'retaliation') {
                         filteredCases = fetchedCases.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId);
+                    } else if (concernType === 'other') {
+                        // Show cases where I am the submitter and it's not a retaliation claim
+                         filteredCases = fetchedCases.filter(c => c.submittedBy === role && c.criticality !== 'Retaliation Claim');
                     } else {
-                        filteredCases = fetchedCases.filter(c => c.criticality !== 'Retaliation Claim');
+                        filteredCases = fetchedCases;
                     }
 
                     setCases(filteredCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
@@ -734,7 +738,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
             setIsLoading(false);
         };
         loadCases();
-    }, [storageKey, allCases, concernType]);
+    }, [storageKey, allCases, concernType, role]);
     
     const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
         e.preventDefault();
@@ -1010,6 +1014,10 @@ function MyConcernsContent() {
 
   useEffect(() => {
     fetchAllCases();
+    window.addEventListener('feedbackUpdated', fetchAllCases);
+    return () => {
+      window.removeEventListener('feedbackUpdated', fetchAllCases);
+    };
   }, [fetchAllCases]);
 
 
