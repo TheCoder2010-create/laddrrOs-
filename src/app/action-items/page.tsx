@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById, requestAnonymousInformation } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById, requestAnonymousInformation, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
 import { OneOnOneHistoryItem, getOneOnOneHistory, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitAmDirectResponse } from '@/services/feedback-service';
 import type { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -662,9 +662,9 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
         if (!resolution || !role) return;
         setIsSubmitting(true);
         try {
-            await resolveFeedback(feedback.trackingId, role, resolution);
+            await submitSupervisorUpdate(feedback.trackingId, role, resolution);
             setResolution('');
-            toast({ title: "Case Resolved", description: "You have resolved the anonymous concern."});
+            toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
             onUpdate();
         } finally {
             setIsSubmitting(false);
@@ -747,10 +747,10 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         </AccordionContent>
                     </AccordionItem>
                     <AccordionItem value="resolve" className="border rounded-lg bg-muted/20">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 3: Resolve Directly</AccordionTrigger>
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 3: Propose Resolution</AccordionTrigger>
                         <AccordionContent className="p-4 border-t">
                              <p className="text-xs text-muted-foreground mb-2">
-                                If you have enough information to close this case, provide a final resolution summary. This will be visible to the anonymous user.
+                                Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.
                             </p>
                             <Textarea 
                                 id="resolve-directly"
@@ -761,7 +761,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             />
                             <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Resolve Case
+                                Submit for Acknowledgement
                             </Button>
                         </AccordionContent>
                     </AccordionItem>
@@ -1079,6 +1079,23 @@ function ActionItemsContent() {
 
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...allFeedback, ...allHistory];
         
+        // When HR Head is viewing, find all retaliation claims and add their parent cases to the list of items to process
+        if (role === 'HR Head') {
+            const retaliationParentIds = new Set<string>();
+            fetchedFeedback.forEach(c => {
+                if (c.parentCaseId) {
+                    retaliationParentIds.add(c.parentCaseId);
+                }
+            });
+
+            retaliationParentIds.forEach(parentId => {
+                const parentCase = allItems.find(item => ('trackingId' in item) && item.trackingId === parentId);
+                if (parentCase && !allItems.some(item => ('trackingId' in item) && item.trackingId === parentId)) {
+                    allItems.push(parentCase);
+                }
+            });
+        }
+        
         allItems.forEach(item => {
             let wasInvolved = false;
             let category: 'todo' | '1on1' | 'concern' | 'retaliation' | 'none' = 'none';
@@ -1115,19 +1132,17 @@ function ActionItemsContent() {
                 
                 // An item is also part of history if the role was ever involved in the audit trail.
                 let wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
-
-                // Special case for HR Head: if they are viewing a retaliation claim, the parent case should be considered "involved".
-                if (role === 'HR Head' && item.parentCaseId) {
-                    const childClaim = allFeedback.find(c => c.parentCaseId === item.trackingId);
-                    if (childClaim?.assignedTo?.includes(role)) {
-                        wasEverInvolved = true;
-                    }
+                
+                // Special case for HR viewing a retaliation claim's parent case
+                const isParentOfRetaliationClaim = role === 'HR Head' && allFeedback.some(c => c.parentCaseId === item.trackingId);
+                if (isParentOfRetaliationClaim) {
+                    wasEverInvolved = true;
                 }
 
                 if (isActionableForRole || wasEverInvolved) {
                     if (item.status === 'To-Do' || item.auditTrail?.some(e => e.event === 'To-Do List Created')) {
                         category = 'todo';
-                    } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
+                    } else if (item.criticality === 'Retaliation Claim' || item.parentCaseId || isParentOfRetaliationClaim) {
                         category = 'retaliation';
                     } else {
                         category = 'concern';
@@ -1188,9 +1203,14 @@ function ActionItemsContent() {
   const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
       e.stopPropagation();
-      const caseItem = await getFeedbackById(caseId);
+      const allItems: (Feedback | OneOnOneHistoryItem)[] = [...toDoItems, ...oneOnOneEscalations, ...identifiedConcerns, ...retaliationClaims, ...closedToDoItems, ...closedOneOnOneEscalations, ...closedIdentifiedConcerns, ...closedRetaliationClaims];
+      const caseItem = allItems.find(item => ('analysis' in item ? item.id : item.trackingId) === caseId);
+
       if (caseItem) {
           setViewingCaseDetails(caseItem);
+      } else {
+         const fetchedItem = await getFeedbackById(caseId);
+         if(fetchedItem) setViewingCaseDetails(fetchedItem);
       }
   };
 

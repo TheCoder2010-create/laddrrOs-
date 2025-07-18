@@ -1,7 +1,9 @@
 
+
 "use client"
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from './use-toast';
 
 export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Voice – In Silence' | 'Anonymous';
 
@@ -14,6 +16,7 @@ export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const { toast } = useToast();
 
     useEffect(() => {
         try {
@@ -51,7 +54,5 @@ export const useRole = () => {
     // We add 'Voice – In Silence' separately for the selection screen
     const allAvailableRoles: Role[] = [...availableRoles, 'Voice – In Silence'];
 
-    return { role, setRole: setCurrentRole, isLoading, availableRoles: allAvailableRoles };
+    return { role, setRole: setCurrentRole, isLoading, availableRoles: allAvailableRoles, toast };
 };
-
-    

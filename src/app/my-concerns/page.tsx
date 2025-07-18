@@ -854,7 +854,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                {item.status === 'Pending Identity Reveal' && (
                                    <RevealIdentityWidget item={item} onUpdate={onUpdate} />
                                )}
-                               {item.status === 'Pending Employee Acknowledgment' && !item.isAnonymous && (
+                               {item.status === 'Pending Employee Acknowledgment' && (
                                     <AcknowledgementWidget 
                                         item={item} 
                                         onUpdate={onUpdate}
@@ -995,11 +995,10 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
 }
 
 function MyConcernsContent() {
-  const { role } = useRole();
+  const { role, toast } = useRole();
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const accordionRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
   const [showIdDialog, setShowIdDialog] = useState(false);
   const [newCaseId, setNewCaseId] = useState('');
@@ -1126,5 +1125,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    
