@@ -1208,12 +1208,12 @@ function ActionItemsContent() {
             )}>
                <Icon className="h-6 w-6" /> {title}
             </h2>
-            {renderFeedbackList(items, false)}
+            {renderFeedbackList(items)}
         </div>
     );
   };
 
-  const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[], isClosedSection: boolean) => {
+  const renderFeedbackList = (items: (Feedback | OneOnOneHistoryItem)[]) => {
     return (
         <Accordion 
             type="single" 
@@ -1271,8 +1271,6 @@ function ActionItemsContent() {
             }
             
             const getTypeBadge = () => {
-                if (!isClosedSection) return null;
-
                 let type: "1-on-1" | "Anonymous" | "Identified" | "To-Do" | "Retaliation" = "Identified";
                 let variant: "default" | "secondary" | "destructive" = "secondary";
                 
@@ -1299,9 +1297,9 @@ function ActionItemsContent() {
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="font-medium truncate">{subject}</span>
+                            {getTypeBadge()}
                         </div>
                         <div className="flex items-center gap-4 pl-4">
-                            {getTypeBadge()}
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
@@ -1346,16 +1344,16 @@ function ActionItemsContent() {
   const ClosedItemsSection = () => {
     return (
         <div className="mt-8">
-            <div className="border rounded-lg">
+            <div className="border rounded-t-lg">
                 <div className="flex w-full items-center justify-between px-4 py-3 text-lg font-semibold text-muted-foreground border-b bg-muted/30">
                     <div className="flex items-center gap-3">
                         <FolderClosed />
                         Closed Items ({allClosedItems.length})
                     </div>
                 </div>
-                <div className="p-2 md:p-4 space-y-4">
-                   {renderFeedbackList(allClosedItems, true)}
-                </div>
+            </div>
+            <div className="border border-t-0 rounded-b-lg p-2 md:p-4 space-y-4">
+               {renderFeedbackList(allClosedItems)}
             </div>
         </div>
     );
