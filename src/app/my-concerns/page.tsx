@@ -854,14 +854,14 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                {item.status === 'Pending Identity Reveal' && (
                                    <RevealIdentityWidget item={item} onUpdate={onUpdate} />
                                )}
-                               {item.status === 'Pending Employee Acknowledgment' && (
+                               {item.status === 'Pending Employee Acknowledgment' && !item.isAnonymous && (
                                     <AcknowledgementWidget 
                                         item={item} 
                                         onUpdate={onUpdate}
                                         title="Action Required: Acknowledge Response"
                                         description="A response has been provided for your concern. Please review and provide your feedback."
                                         responderEventActor={responderEvent?.actor}
-                                        responderEventDetails={responderEvent?.details}
+                                        responderEventDetails={item.supervisorUpdate}
                                     />
                                )}
                                <div className="space-y-2">
