@@ -547,7 +547,7 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                 <Label htmlFor="hr-response" className="font-medium">Submit Final Resolution to Employee</Label>
                 <Textarea
                     id="hr-response"
-                    placeholder="e.g., 'After reviewing the case, we have spoken with all parties involved and have implemented the following corrective actions...'"
+                    placeholder="e.g., 'After reviewing the case, we have taken the following steps...'"
                     value={response}
                     onChange={(e) => setResponse(e.target.value)}
                     rows={4}
@@ -1143,7 +1143,7 @@ function ActionItemsContent() {
                 if (category === '1on1') localClosed1on1.push(item as OneOnOneHistoryItem);
                 else if (category === 'todo') localClosedToDo.push(item as Feedback);
                 else if (category === 'retaliation') localClosedRetaliation.push(item as Feedback);
-                else if (category === 'anonymous') localClosedAnonymous.push(item as Feedback);
+                else if (item.isAnonymous) localClosedAnonymous.push(item as Feedback);
                 else if (category === 'concern') localClosedIdentified.push(item as Feedback);
             }
         });
@@ -1347,6 +1347,43 @@ function ActionItemsContent() {
 
   const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length + identifiedConcerns.length + anonymousConcerns.length + retaliationClaims.length;
   const allClosedItemsCount = closedToDoItems.length + closedOneOnOneEscalations.length + closedIdentifiedConcerns.length + closedAnonymousConcerns.length + closedRetaliationClaims.length;
+  
+  const ClosedItemsSection = () => {
+    const categories = [
+        { title: "To-Do Lists", icon: ListTodo, items: closedToDoItems },
+        { title: "1-on-1 Escalations", icon: UserCog, items: closedOneOnOneEscalations },
+        { title: "Identified Concerns", icon: Users, items: closedIdentifiedConcerns },
+        { title: "Anonymous Concerns", icon: UserX, items: closedAnonymousConcerns },
+        { title: "Retaliation Claims", icon: Flag, items: closedRetaliationClaims, isSevere: true },
+    ].filter(cat => cat.items.length > 0);
+
+    return (
+        <div className="mt-8">
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="closed-items" className="border rounded-lg">
+                    <AccordionTrigger className="flex w-full items-center justify-between px-4 py-3 text-lg font-semibold text-muted-foreground hover:no-underline [&_svg]:ml-auto">
+                        <div className="flex items-center gap-3">
+                            <FolderClosed />
+                            Closed Items ({allClosedItemsCount})
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-2 pt-4 md:p-4 space-y-4">
+                       {categories.map(cat => (
+                            <div key={cat.title} className="p-3 border rounded-md">
+                                <h3 className={cn("text-lg font-semibold mb-3 flex items-center gap-3", cat.isSevere ? "text-destructive" : "text-muted-foreground")}>
+                                    <cat.icon className="h-5 w-5" />
+                                    {cat.title}
+                                </h3>
+                                {renderFeedbackList(cat.items)}
+                            </div>
+                       ))}
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </div>
+    );
+  };
+
 
   return (
     <div className="p-4 md:p-8" ref={accordionRef}>
@@ -1385,52 +1422,7 @@ function ActionItemsContent() {
         </CardContent>
       </Card>
       
-      {allClosedItemsCount > 0 && (
-          <div className="mt-8">
-            <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="closed-items" className="border rounded-lg">
-                    <AccordionTrigger className="flex w-full items-center justify-between px-4 py-3 hover:no-underline [&_svg]:ml-auto">
-                        <div className="flex items-center gap-3 text-lg font-semibold text-muted-foreground">
-                           <FolderClosed />
-                           Closed Items
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="p-2 space-y-4">
-                        {closedToDoItems.length > 0 && (
-                            <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><ListTodo className="h-5 w-5" />To-Do Lists</h3>
-                                {renderFeedbackList(closedToDoItems)}
-                            </div>
-                        )}
-                        {closedOneOnOneEscalations.length > 0 && (
-                             <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserCog className="h-5 w-5" />1-on-1 Escalations</h3>
-                                {renderFeedbackList(closedOneOnOneEscalations)}
-                            </div>
-                        )}
-                        {closedIdentifiedConcerns.length > 0 && (
-                             <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><Users className="h-5 w-5" />Identified Concerns</h3>
-                                {renderFeedbackList(closedIdentifiedConcerns)}
-                            </div>
-                        )}
-                        {closedAnonymousConcerns.length > 0 && (
-                             <div>
-                                <h3 className="text-lg font-semibold mb-2 text-muted-foreground flex items-center gap-3 px-2"><UserX className="h-5 w-5" />Anonymous Concerns</h3>
-                                {renderFeedbackList(closedAnonymousConcerns)}
-                            </div>
-                        )}
-                        {closedRetaliationClaims.length > 0 && (
-                             <div>
-                                <h3 className="text-lg font-semibold mb-2 text-destructive flex items-center gap-3 px-2"><Flag className="h-5 w-5" />Retaliation Claims</h3>
-                                {renderFeedbackList(closedRetaliationClaims)}
-                            </div>
-                        )}
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
-          </div>
-      )}
+      {allClosedItemsCount > 0 && <ClosedItemsSection />}
     </div>
   );
 }
