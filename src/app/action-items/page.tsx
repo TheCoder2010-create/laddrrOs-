@@ -798,14 +798,16 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
         const insight = item.analysis.criticalCoachingInsight;
         if (!insight) return null;
         
+        if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
+            return <HrReviewWidget item={item} onUpdate={onUpdate} />
+        }
+        
         let widgetProps;
         if (role === 'AM' && insight.status === 'pending_am_review') {
              widgetProps = { title: "1-on-1 Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
         } else if (role === 'Manager' && insight.status === 'pending_manager_review') {
              widgetProps = { title: "1-on-1 Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
-        } else if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
-            return <HrReviewWidget item={item} onUpdate={onUpdate} />
-        }
+        } 
 
         if (widgetProps) {
             return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />
@@ -831,13 +833,11 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
         return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
     
-    if (!feedback.assignedTo?.includes(role!)) return null;
-    
-    if (feedback.status === 'To-Do') {
+    if (feedback.status === 'To-Do' && feedback.assignedTo?.includes(role!)) {
         return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />
     }
     
-    if (feedback.isAnonymous && feedback.status === 'Pending Manager Action') {
+    if (feedback.isAnonymous && feedback.status === 'Pending Manager Action' && feedback.assignedTo?.includes(role!)) {
         return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
@@ -847,7 +847,7 @@ function ActionPanel({ item, onUpdate, handleScrollToCase }: { item: Feedback | 
         feedback.status === 'Pending Manager Action' ||
         (feedback.status === 'Pending HR Action' && !feedback.isAnonymous);
         
-    if (isEscalatedConcern) {
+    if (isEscalatedConcern && feedback.assignedTo?.includes(role!)) {
         let title = 'Your Action Required';
         let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
 
@@ -973,11 +973,27 @@ function ActionItemsContent() {
         const localClosed1on1: OneOnOneHistoryItem[] = [];
         const localClosedIdentified: Feedback[] = [];
         const localClosedRetaliation: Feedback[] = [];
+
+        const allFeedback = [...fetchedFeedback];
+        let allHistory = [...history];
+
+        // For HR Head, if they have active retaliation claims, ensure parent cases are loaded for context.
+        if (role === 'HR Head') {
+            const activeHrRetaliationClaims = allFeedback.filter(item => item.criticality === 'Retaliation Claim' && item.assignedTo?.includes(role));
+            const parentCaseIds = activeHrRetaliationClaims.map(c => c.parentCaseId).filter((id): id is string => !!id);
+
+            parentCaseIds.forEach(parentId => {
+                const parentCase = allFeedback.find(f => f.trackingId === parentId);
+                if (parentCase && !allFeedback.some(item => item.trackingId === parentId)) {
+                    allFeedback.push(parentCase);
+                }
+            });
+        }
         
         const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
         const finalDispositionEvents = ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"];
 
-        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
+        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...allFeedback, ...allHistory];
         
         allItems.forEach(item => {
             let wasInvolved = false;
@@ -1014,7 +1030,15 @@ function ActionItemsContent() {
                 const isActionableForRole = !isItemClosed && (item.assignedTo?.includes(role as Role) ?? false);
                 
                 // An item is also part of history if the role was ever involved in the audit trail.
-                const wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+                let wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
+
+                // Special case for HR Head: if they are viewing a retaliation claim, the parent case should be considered "involved".
+                if (role === 'HR Head' && item.parentCaseId) {
+                    const childClaim = allFeedback.find(c => c.parentCaseId === item.trackingId);
+                    if (childClaim?.assignedTo?.includes(role)) {
+                        wasEverInvolved = true;
+                    }
+                }
 
                 wasInvolved = isActionableForRole || wasEverInvolved;
 
