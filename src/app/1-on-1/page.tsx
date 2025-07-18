@@ -10,7 +10,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote, CheckCircle2, XCircle } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, addHours } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -268,6 +268,36 @@ function ToDoSection({ role }: { role: Role }) {
                     </p>
                 </div>
             )}
+        </div>
+    );
+}
+
+function SlaTimer({ expiryTimestamp }: { expiryTimestamp: number }) {
+    const [timeLeft, setTimeLeft] = useState(expiryTimestamp - Date.now());
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimeLeft(expiryTimestamp - Date.now());
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [expiryTimestamp]);
+
+    const formatTime = (ms: number) => {
+        if (ms <= 0) return '00:00:00';
+        const totalSeconds = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="flex items-center gap-2">
+            <Timer className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-mono text-muted-foreground">
+                {formatTime(timeLeft)}
+            </span>
         </div>
     );
 }
@@ -572,9 +602,14 @@ function HistorySection({ role }: { role: Role }) {
                                                 {canSupervisorAct && (
                                                     <div className="mt-4">
                                                         {addressingInsightId !== item.id ? (
-                                                            <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
-                                                                Address Insight
-                                                            </Button>
+                                                            <div className="flex items-center gap-4">
+                                                                <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
+                                                                    Address Insight
+                                                                </Button>
+                                                                {insight.auditTrail && (
+                                                                    <SlaTimer expiryTimestamp={addHours(new Date(insight.auditTrail[0].timestamp), 48).getTime()} />
+                                                                )}
+                                                            </div>
                                                         ) : (
                                                             <div className="space-y-2 bg-background/50 p-3 rounded-md">
                                                                 <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
