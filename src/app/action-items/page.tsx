@@ -1073,7 +1073,6 @@ function ActionItemsContent() {
         const finalDispositionEvents = ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"];
         
         allItems.forEach(item => {
-            let wasInvolved = false;
             let isItemClosed = false;
             
             if ('analysis' in item) { // It's a OneOnOneHistoryItem
@@ -1111,19 +1110,6 @@ function ActionItemsContent() {
             }
         });
         
-        // Handle HR Head seeing parent cases of retaliation claims
-        if (role === 'HR Head') {
-            const parentCaseIds = activeRetaliationClaims.map(c => c.parentCaseId).filter((id): id is string => !!id);
-            if (parentCaseIds.length > 0) {
-                const parentCases = await getFeedbackByIds(parentCaseIds);
-                parentCases.forEach(pCase => {
-                    if (!localAllClosed.some(closedItem => ('trackingId' in closedItem) && closedItem.trackingId === pCase.trackingId)) {
-                        localAllClosed.push(pCase);
-                    }
-                });
-            }
-        }
-
         const sortFn = (a: Feedback | OneOnOneHistoryItem, b: Feedback | OneOnOneHistoryItem) => {
             const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
             const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
@@ -1296,7 +1282,7 @@ function ActionItemsContent() {
                     }
                 }
                 
-                return <Badge variant={variant} className="mr-2">{type}</Badge>;
+                return <Badge variant={variant}>{type}</Badge>;
             }
 
 
@@ -1305,10 +1291,10 @@ function ActionItemsContent() {
                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {getTypeBadge()}
                             <span className="font-medium truncate">{subject}</span>
                         </div>
                         <div className="flex items-center gap-4 pl-4 mr-4">
+                            {isClosedSection && getTypeBadge()}
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
