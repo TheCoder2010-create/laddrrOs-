@@ -10,7 +10,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById, requestAnonymousInformation } from '@/services/feedback-service';
 import { OneOnOneHistoryItem, getOneOnOneHistory, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitAmDirectResponse } from '@/services/feedback-service';
 import type { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -59,6 +59,8 @@ const auditEventIcons = {
     'Retaliation Claim Submitted': Flag,
     'Retaliation Claim Filed': Flag,
     'Update Added': MessageSquare,
+    'Information Requested': MessageCircleQuestion,
+    'Anonymous User Responded': MessageSquare,
     'default': Info,
 }
 
@@ -640,6 +642,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     const [revealReason, setRevealReason] = useState('');
     const [resolution, setResolution] = useState('');
     const [update, setUpdate] = useState('');
+    const [question, setQuestion] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleRequestIdentity = async () => {
@@ -681,81 +684,126 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
         }
     };
     
+    const handleRequestInformation = async () => {
+        if (!question || !role) return;
+        setIsSubmitting(true);
+        try {
+            await requestAnonymousInformation(feedback.trackingId, role, question);
+            setQuestion('');
+            toast({ title: "Question Submitted", description: "The user has been notified to provide more information." });
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
     return (
         <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
             <Label className="text-base font-semibold">Your Action Required</Label>
-            <p className="text-sm text-muted-foreground">
-                This is an anonymous submission. You can add confidential interim updates, resolve it directly, or request the user reveal their identity.
-            </p>
-             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="interim-update" className="font-medium">Option 1: Add Interim Update (Confidential)</Label>
-                <p className="text-xs text-muted-foreground">
-                    Log your investigation steps or notes. This will NOT be shared with the anonymous submitter but will be visible to HR.
-                </p>
-                <Textarea 
-                    id="interim-update"
-                    placeholder="e.g., 'Investigating the team schedule for the past month...'"
-                    value={update}
-                    onChange={(e) => setUpdate(e.target.value)}
-                    rows={3}
-                />
-                <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary">
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Confidential Update
-                </Button>
-            </div>
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="resolve-directly" className="font-medium">Option 2: Resolve Directly</Label>
-                <p className="text-xs text-muted-foreground">
-                    If you have enough information to close this case, provide a final resolution summary. This will be visible to the anonymous user.
-                </p>
-                <Textarea 
-                    id="resolve-directly"
-                    placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines...'"
-                    value={resolution}
-                    onChange={(e) => setResolution(e.target.value)}
-                    rows={4}
-                />
-                <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Resolve Case
-                </Button>
-            </div>
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="revealReason" className="font-medium">Option 3: Request Identity Reveal</Label>
-                 <p className="text-xs text-muted-foreground">
-                    If you cannot proceed without more details, explain why you need to know their identity. This message will be shown to the user.
-                </p>
-                <Textarea 
-                    id="revealReason"
-                    placeholder="e.g., 'Thank you for raising this. To investigate fully, I need to speak with you directly. I assure you this will be handled with confidentiality and without retaliation.'"
-                    value={revealReason}
-                    onChange={(e) => setRevealReason(e.target.value)}
-                    rows={4}
-                />
-                 <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button disabled={!revealReason || isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Request Identity Reveal
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
-                                Acknowledge & Continue
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
+            
+            {feedback.status === 'Pending Anonymous Reply' ? (
+                 <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                    <p className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Awaiting User Response</p>
+                    <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
+                </div>
+            ) : (
+                <Accordion type="multiple" className="w-full space-y-2">
+                    <AccordionItem value="update" className="border rounded-lg bg-muted/20">
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 1: Add Interim Update (Confidential)</AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                            <p className="text-xs text-muted-foreground mb-2">
+                                Log your investigation steps or notes. This will NOT be shared with the anonymous submitter but will be visible to HR.
+                            </p>
+                            <Textarea 
+                                id="interim-update"
+                                placeholder="e.g., 'Investigating the team schedule for the past month...'"
+                                value={update}
+                                onChange={(e) => setUpdate(e.target.value)}
+                                rows={3}
+                            />
+                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-2">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Add Confidential Update
+                            </Button>
+                        </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="question" className="border rounded-lg bg-muted/20">
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 2: Ask for More Information Anonymously</AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                            <p className="text-xs text-muted-foreground mb-2">
+                                Ask a clarifying question. The user will see this question and can respond without revealing their identity.
+                            </p>
+                            <Textarea 
+                                id="ask-question"
+                                placeholder="e.g., 'Can you provide a more specific date range for when this occurred?'"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                                rows={3}
+                            />
+                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-2">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Send Question
+                            </Button>
+                        </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="resolve" className="border rounded-lg bg-muted/20">
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 3: Resolve Directly</AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                             <p className="text-xs text-muted-foreground mb-2">
+                                If you have enough information to close this case, provide a final resolution summary. This will be visible to the anonymous user.
+                            </p>
+                            <Textarea 
+                                id="resolve-directly"
+                                placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines...'"
+                                value={resolution}
+                                onChange={(e) => setResolution(e.target.value)}
+                                rows={4}
+                            />
+                            <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Resolve Case
+                            </Button>
+                        </AccordionContent>
+                    </AccordionItem>
+                     <AccordionItem value="reveal" className="border rounded-lg bg-muted/20">
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 4: Request Identity Reveal</AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                            <p className="text-xs text-muted-foreground mb-2">
+                                If you cannot proceed without more details, explain why you need to know their identity. This message will be shown to the user.
+                            </p>
+                            <Textarea 
+                                id="revealReason"
+                                placeholder="e.g., 'Thank you for raising this. To investigate fully, I need to speak with you directly. I assure you this will be handled with confidentiality and without retaliation.'"
+                                value={revealReason}
+                                onChange={(e) => setRevealReason(e.target.value)}
+                                rows={4}
+                            />
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button disabled={!revealReason || isSubmitting} className="mt-2">
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Request Identity Reveal
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
+                                            Acknowledge & Continue
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
+            )}
         </div>
     );
 }
@@ -885,7 +933,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />
     }
     
-    if (feedback.isAnonymous && feedback.status === 'Pending Manager Action' && feedback.assignedTo?.includes(role!)) {
+    if (feedback.isAnonymous && (feedback.status === 'Pending Manager Action' || feedback.status === 'Pending Anonymous Reply') && feedback.assignedTo?.includes(role!)) {
         return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
@@ -1056,7 +1104,7 @@ function ActionItemsContent() {
                     if (wasInvolved) category = '1on1';
                 }
             } else { // It's a Feedback item
-                if (item.source === 'Voice – In Silence') return;
+                if (item.source === 'Voice – In Silence' && !item.assignedTo?.includes(role as Role)) return;
                 
                 finalDispositionEvent = item.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
                 
@@ -1235,6 +1283,7 @@ function ActionItemsContent() {
                   case 'Pending HR Action': return <Badge className="bg-black text-white">HR Review</Badge>;
                   case 'Final Disposition Required': return <Badge variant="destructive">Final Disposition</Badge>;
                   case 'Pending Identity Reveal': return <Badge variant="secondary">Reveal Requested</Badge>;
+                  case 'Pending Anonymous Reply': return <Badge className="bg-blue-500 text-white">Awaiting Reply</Badge>;
                   case 'Retaliation Claim': return <Badge variant="destructive">Retaliation Claim</Badge>;
                   case 'Closed': return <Badge variant="secondary">Closed</Badge>;
                   default: return <Badge variant="secondary">{feedbackStatus || 'N/A'}</Badge>;

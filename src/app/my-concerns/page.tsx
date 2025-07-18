@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
@@ -327,6 +328,56 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
     );
 }
 
+function AnonymousReplyWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void}) {
+    const { toast } = useToast();
+    const [reply, setReply] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const request = item.auditTrail?.find(e => e.event === 'Information Requested');
+
+    const handleReply = async () => {
+        if (!reply) return;
+        setIsSubmitting(true);
+        try {
+            await submitAnonymousReply(item.trackingId, reply);
+            toast({ title: "Reply Sent", description: "Your anonymous reply has been sent to the manager." });
+            onUpdate();
+        } catch (error) {
+            toast({ variant: "destructive", title: "Reply Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+         <Card className="border-2 border-blue-500/50 bg-blue-500/5 rounded-lg">
+            <CardHeader>
+                <CardTitle className="text-lg text-blue-700 dark:text-blue-400">Action Required: Your manager has requested more information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="p-3 bg-background/50 rounded-md border">
+                    <p className="font-semibold text-foreground">Manager's Question:</p>
+                    <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{request?.details}</p>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="anonymous-reply">Your Anonymous Reply</Label>
+                    <Textarea 
+                        id="anonymous-reply"
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        placeholder="Provide the additional information requested here..."
+                        rows={5}
+                    />
+                </div>
+                <Button onClick={handleReply} disabled={isSubmitting || !reply}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Reply
+                </Button>
+            </CardContent>
+         </Card>
+    )
+}
+
 function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void}) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -587,6 +638,8 @@ const auditEventIcons = {
     'Retaliation Claim Filed': Flag,
     'Identity Revealed': User,
     'Identity Reveal Requested': UserX,
+    'Information Requested': MessageCircleQuestion,
+    'Anonymous User Responded': MessageSquare,
     'Resolved': CheckCircle,
     'Update Added': MessageSquare,
     'default': Info,
@@ -759,6 +812,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                             case 'Pending Manager Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
                             case 'Pending Supervisor Action': return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><Clock className="h-3 w-3" />Reviewing</Badge>;
                             case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
+                            case 'Pending Anonymous Reply': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
                             case 'Pending HR Action': return <Badge className="bg-black text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
                             case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
                             case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Closed</Badge>;
@@ -790,6 +844,9 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2 px-4">
+                               {item.status === 'Pending Anonymous Reply' && item.isAnonymous && (
+                                   <AnonymousReplyWidget item={item} onUpdate={onUpdate} />
+                               )}
                                {item.status === 'Pending Identity Reveal' && (
                                    <RevealIdentityWidget item={item} onUpdate={onUpdate} />
                                )}

@@ -1,4 +1,5 @@
 
+
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -25,6 +26,7 @@ export type FeedbackStatus =
   | 'Pending Supervisor Action'
   | 'Pending Manager Action'
   | 'Pending Identity Reveal'
+  | 'Pending Anonymous Reply'
   | 'Pending HR Action'
   | 'Pending Employee Acknowledgment' // New status for identified concerns
   | 'Pending Acknowledgement' // For FYI notifications
@@ -924,7 +926,7 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
   }
   
   // If the case requires interaction (like identity reveal), return the full object.
-  if (feedback.status === 'Pending Identity Reveal') {
+  if (feedback.status === 'Pending Identity Reveal' || feedback.status === 'Pending Anonymous Reply') {
       return { found: true, feedback };
   }
 
@@ -1347,4 +1349,39 @@ export async function employeeAcknowledgeMessageRead(trackingId: string, actor: 
     }
 }
 
+export async function requestAnonymousInformation(trackingId: string, actor: Role, question: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.status = 'Pending Anonymous Reply';
+    
+    item.auditTrail?.push({
+        event: 'Information Requested',
+        timestamp: new Date(),
+        actor: actor,
+        details: question,
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
+export async function submitAnonymousReply(trackingId: string, reply: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    item.status = 'Pending Manager Action';
+    
+    item.auditTrail?.push({
+        event: 'Anonymous User Responded',
+        timestamp: new Date(),
+        actor: 'Anonymous',
+        details: reply,
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
     
