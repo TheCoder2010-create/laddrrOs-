@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
@@ -1039,14 +1038,16 @@ function MyConcernsContent() {
   return (
     <div className="p-4 md:p-8">
       <Dialog open={showIdDialog} onOpenChange={setShowIdDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>✅ Submission Received</DialogTitle>
-            <DialogDescription>
-                Your feedback has been submitted anonymously. Please copy and save the tracking ID below. It is the ONLY way to check the status of your submission later.
-            </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+                Please copy and save the tracking ID below — it is the only way to check the status of your submission in the future.
+                <br/><br/>
+                You may check for updates after 2 business days, as the reviewer may request additional information or provide updates regarding the status of your concern.
+            </p>
             <Alert>
               <AlertTitle className="font-semibold">Your Tracking ID</AlertTitle>
               <div className="flex items-center justify-between mt-2">
@@ -1057,9 +1058,6 @@ function MyConcernsContent() {
               </div>
             </Alert>
           </div>
-          <DialogFooter>
-            <Button onClick={() => setShowIdDialog(false)}>I have saved my ID</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
       <Card>
@@ -1125,3 +1123,5 @@ export default function MyConcernsPage() {
 
     
 }
+
+    
