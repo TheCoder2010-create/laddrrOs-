@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -1111,7 +1110,7 @@ function ActionItemsContent() {
                     else if (item.criticality === 'Retaliation Claim') activeRetaliationClaims.push(item);
                     else if (item.isAnonymous) activeAnonymousConcerns.push(item);
                     else activeIdentifiedConcerns.push(item);
-                } else if (isItemClosed && wasEverInvolved) {
+                } else if (isItemClosed && (wasEverInvolved || item.isAnonymous)) {
                     localAllClosed.push(item);
                 }
             }
@@ -1296,10 +1295,10 @@ function ActionItemsContent() {
                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <span className="font-medium truncate">{subject}</span>
-                            {getTypeBadge()}
+                             <span className="font-medium truncate">{subject}</span>
                         </div>
                         <div className="flex items-center gap-4 pl-4">
+                            {getTypeBadge()}
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
@@ -1348,7 +1347,7 @@ function ActionItemsContent() {
                 <div className="flex w-full items-center justify-between px-4 py-3 text-lg font-semibold text-muted-foreground border-b bg-muted/30">
                     <div className="flex items-center gap-3">
                         <FolderClosed />
-                        Closed Items ({allClosedItems.length})
+                        Closed Items
                     </div>
                 </div>
             </div>
