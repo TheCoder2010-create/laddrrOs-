@@ -607,7 +607,7 @@ function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrai
                             if (!event.details) return null;
 
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
-                            const childMatch = event.details.match(regex);
+                            const childMatch = event.details.match(childRegex);
 
                             if (childMatch) {
                                 const childId = childMatch[2];
