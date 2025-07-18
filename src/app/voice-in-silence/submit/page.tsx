@@ -16,9 +16,11 @@ import { trackFeedback, TrackedFeedback } from '@/services/feedback-service';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format, formatDistanceToNow } from 'date-fns';
-import type { AuditEvent } from '@/services/feedback-service';
+import type { AuditEvent, Feedback } from '@/services/feedback-service';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getFeedbackByIds } from '@/services/feedback-service';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
@@ -139,6 +141,7 @@ function TrackingForm() {
   const [trackingId, setTrackingId] = useState('');
   const [isTracking, setIsTracking] = useState(false);
   const [searchResult, setSearchResult] = useState<TrackedFeedback | null>(null);
+  const [fullCase, setFullCase] = useState<Feedback | null>(null);
   const [notFound, setNotFound] = useState(false);
   const { toast } = useToast();
   
@@ -153,11 +156,17 @@ function TrackingForm() {
     }
     setIsTracking(true);
     setSearchResult(null);
+    setFullCase(null);
     setNotFound(false);
     try {
       const result = await trackFeedback({ trackingId });
       if (result.found && result.feedback) {
         setSearchResult(result.feedback);
+        if (result.feedback.status === 'Pending Identity Reveal') {
+            const [fullCaseData] = await getFeedbackByIds([trackingId]);
+            setFullCase(fullCaseData);
+        }
+
       } else {
         setNotFound(true);
       }
@@ -199,6 +208,8 @@ function TrackingForm() {
             {isTracking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Track"}
           </Button>
         </div>
+
+        {isTracking && <Skeleton className="h-48 w-full" />}
 
         {searchResult && (
            <Card className="mt-6">

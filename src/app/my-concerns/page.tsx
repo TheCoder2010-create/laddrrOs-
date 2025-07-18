@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
@@ -51,7 +50,6 @@ import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 import { Alert } from '@/components/ui/alert';
 
 
-const getAnonymousCaseKey = (role: string | null) => role ? `anonymous_cases_${role.replace(/\s/g, '_')}` : null;
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
 const getRetaliationCaseKey = (role: string | null) => role ? `direct_retaliation_cases_${role.replace(/\s/g, '_')}` : null;
 
@@ -377,16 +375,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                             <ShieldCheck className="h-5 w-5 mt-1 flex-shrink-0 text-blue-500" />
                             <div className="w-full">
                                 <h3 className="font-bold text-base text-foreground">Your Manager's Commitment & Request</h3>
-                                <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap">
-                                    <p className="font-semibold">Manager’s Acknowledgment:</p>
-                                    <blockquote className="border-l-2 pl-4 italic">
-                                        "I acknowledge my responsibility to protect the employee from any form of bias, retaliation, or adverse consequence during this process. I am committed to handling this matter with fairness, discretion, and confidentiality."
-                                    </blockquote>
-                                    <p className="font-semibold mt-4">Manager’s Reason:</p>
-                                    <blockquote className="border-l-2 pl-4 italic">
-                                        {revealRequest?.details}
-                                    </blockquote>
-                                </div>
+                                <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: revealRequest?.details?.replace(/\n/g, '<br />') || '' }} />
                                 <h3 className="font-bold mt-4 text-base text-foreground">Please Acknowledge This Message</h3>
                                 <p className="text-sm mt-1">
                                     Your identity has <strong>not</strong> been revealed. By clicking the button below, you are only confirming that you’ve read this message.<br/>You will decide whether or not to reveal your identity in the next step.
@@ -401,7 +390,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                     <>
                         <div className="p-3 bg-background/50 rounded-md border">
                             <p className="font-semibold text-foreground">Manager's Message:</p>
-                            <div className="text-muted-foreground mt-1 whitespace-pre-wrap prose prose-sm prose-p:my-1">{revealRequest?.details}</div>
+                            <div className="text-muted-foreground mt-1 whitespace-pre-wrap prose prose-sm prose-p:my-1" dangerouslySetInnerHTML={{ __html: revealRequest?.details?.replace(/\n/g, '<br />') || '' }} />
                         </div>
                         <p className="text-sm text-muted-foreground">
                             To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be escalated to HR for a final review while your identity remains anonymous.
@@ -660,7 +649,6 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
 
-    // New state for anonymous tracking
     const [trackingIdInput, setTrackingIdInput] = useState('');
     const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
     const [isTracking, setIsTracking] = useState(false);
@@ -715,8 +703,9 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
         setNotFound(false);
         try {
             const [foundCase] = await getFeedbackByIds([trackingIdInput]);
-            if (foundCase) {
+            if (foundCase && foundCase.isAnonymous) {
                 setTrackedCase(foundCase);
+                onUpdate();
             } else {
                 setNotFound(true);
             }
@@ -726,6 +715,15 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
             setIsTracking(false);
         }
     };
+    
+    useEffect(() => {
+        if (trackedCase) {
+             const updatedCase = allCases.find(c => c.trackingId === trackedCase.trackingId);
+             if (updatedCase) {
+                 setTrackedCase(updatedCase);
+             }
+        }
+    }, [allCases, trackedCase]);
 
     if (isLoading) return <Skeleton className="h-24 w-full" />;
 
@@ -936,7 +934,6 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
 }
 
 function MyConcernsContent() {
-  const [remountKey, setRemountKey] = useState(0);
   const { role, toast } = useRole();
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1027,15 +1024,15 @@ function MyConcernsContent() {
                 </TabsList>
                 <TabsContent value="identity-revealed">
                     <IdentifiedConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" key={`identified-${remountKey}`} allCases={allCases} concernType="other" accordionRef={accordionRef} />
+                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} title="Track My Anonymous Submissions" key={`anonymous-${remountKey}`} allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} title="Track My Anonymous Submissions" allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
                 </TabsContent>
                  <TabsContent value="retaliation">
                     <DirectRetaliationForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" key={`retaliation-${remountKey}`} allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -1063,5 +1060,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    

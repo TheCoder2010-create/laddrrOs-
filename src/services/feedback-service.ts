@@ -1,5 +1,4 @@
 
-
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -1257,8 +1256,8 @@ export async function requestIdentityReveal(trackingId: string, actor: Role, rea
     const item = allFeedback[feedbackIndex];
     item.status = 'Pending Identity Reveal';
 
-    // The acknowledgment text is now hardcoded in the UI, so we just need the reason here.
-    const details = reason;
+    const commitmentText = `**Manager’s Acknowledgment:**\n"I acknowledge my responsibility to protect the employee from any form of bias, retaliation, or adverse consequence during this process. I am committed to handling this matter with fairness, discretion, and confidentiality."\n\n**Manager’s Reason:**`;
+    const details = `${commitmentText}\n"${reason}"`;
     
     item.auditTrail?.push({
         event: 'Identity Reveal Requested',
