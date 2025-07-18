@@ -1290,11 +1290,11 @@ function ActionItemsContent() {
             <AccordionItem value={id} key={id} id={`accordion-item-${id}`}>
                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="font-medium truncate">{subject}</span>
-                        </div>
-                        <div className="flex items-center gap-4 pl-4 mr-4">
                             {isClosedSection && getTypeBadge()}
+                        </div>
+                        <div className="flex items-center gap-4 pl-4">
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
