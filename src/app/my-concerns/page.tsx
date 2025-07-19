@@ -810,9 +810,13 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
                     
                     const handleDownload = (itemToDownload: Feedback) => {
-                        if (itemToDownload.auditTrail && itemToDownload.auditTrail.length > 0) {
-                            downloadAuditTrailPDF(itemToDownload.auditTrail, itemToDownload.subject, itemToDownload.trackingId);
-                        }
+                        downloadAuditTrailPDF({
+                            title: itemToDownload.subject,
+                            trackingId: itemToDownload.trackingId,
+                            initialMessage: itemToDownload.message,
+                            trail: itemToDownload.auditTrail || [],
+                            finalResolution: itemToDownload.resolution
+                        });
                     };
 
                     const getStatusBadge = (item: Feedback) => {

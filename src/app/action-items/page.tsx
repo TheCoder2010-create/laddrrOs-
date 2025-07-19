@@ -1008,15 +1008,20 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     const isOneOnOne = 'analysis' in caseItem;
     const subject = isOneOnOne ? `1-on-1 Escalation: ${caseItem.employeeName} & ${caseItem.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
-    const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary : caseItem.message;
-    const auditTrail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
-    const resolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.supervisorResponse : caseItem.resolution;
-    
+    const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
+    const trail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
+    const finalResolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution'))?.details : caseItem.resolution;
+
     const handleDownload = () => {
-        const trail = auditTrail(caseItem as any);
-        if (trail.length > 0) {
-            downloadAuditTrailPDF(trail, subject, trackingId);
-        }
+        const caseDetails = {
+            title: subject,
+            trackingId,
+            initialMessage,
+            aiSummary: isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.reason : undefined,
+            finalResolution,
+            trail: trail(caseItem as any) || [],
+        };
+        downloadAuditTrailPDF(caseDetails);
     };
 
     return (
@@ -1034,11 +1039,11 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
                             <Label className="text-base">Initial Submission Context</Label>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{initialMessage}</p>
                         </div>
-                        <AuditTrail trail={auditTrail(caseItem as any)} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/>
-                        {resolution && (
+                        <AuditTrail trail={trail(caseItem as any)} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/>
+                        {finalResolution && (
                              <div className="space-y-2">
                                 <Label className="text-base">Final Resolution</Label>
-                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{resolution}</p>
+                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{finalResolution}</p>
                             </div>
                         )}
                     </div>
@@ -1243,10 +1248,19 @@ function ActionItemsContent() {
             const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
             
             const handleDownload = () => {
-                const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail : item.auditTrail;
-                if (trail && trail.length > 0) {
-                    downloadAuditTrailPDF(trail, subject, id);
-                }
+                const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
+                const initialMessage = isOneOnOne ? item.analysis.criticalCoachingInsight?.summary || 'N/A' : item.message;
+                const finalResolution = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution'))?.details : item.resolution;
+                 const aiSummary = isOneOnOne ? item.analysis.criticalCoachingInsight?.reason : item.summary;
+
+                downloadAuditTrailPDF({
+                    title: subject,
+                    trackingId: id,
+                    initialMessage,
+                    trail,
+                    aiSummary,
+                    finalResolution
+                });
             };
             
             const getStatusBadge = () => {

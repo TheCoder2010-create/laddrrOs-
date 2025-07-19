@@ -384,9 +384,14 @@ function VaultContent() {
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
                     
                     const handleDownload = () => {
-                        if (feedback.auditTrail && feedback.auditTrail.length > 0) {
-                            downloadAuditTrailPDF(feedback.auditTrail, feedback.subject, feedback.trackingId);
-                        }
+                        downloadAuditTrailPDF({
+                            title: feedback.subject,
+                            trackingId: feedback.trackingId,
+                            initialMessage: feedback.message,
+                            trail: feedback.auditTrail || [],
+                            aiSummary: feedback.summary ? `Criticality: ${feedback.criticality}\nReason: ${feedback.criticalityReasoning}` : undefined,
+                            finalResolution: feedback.resolution
+                        });
                     };
 
                     return (
