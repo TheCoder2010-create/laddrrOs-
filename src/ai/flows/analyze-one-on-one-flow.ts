@@ -12,6 +12,8 @@ import { saveFeedback } from '@/services/feedback-service';
 import { v4 as uuidv4 } from 'uuid';
 import { getRoleByName } from '@/lib/role-mapping';
 
+const generateTrackingId = () => `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
+
 export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
   const result = await analyzeOneOnOneFlow(input);
   const submittedAt = new Date();
@@ -28,7 +30,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
   if (result.criticalCoachingInsight && input.oneOnOneId) {
       const allFeedback = [];
       const newFeedback = {
-          trackingId: uuidv4(),
+          trackingId: generateTrackingId(),
           oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
           subject: `Critical Coaching Insight from 1-on-1 with ${input.employeeName}`,
           message: `A critical coaching insight was identified during a 1-on-1 session between ${input.supervisorName} and ${input.employeeName}. See details below.
@@ -70,7 +72,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
   if (result.actionItems && result.actionItems.length > 0) {
       const allFeedback = [];
       const newActionItemRecord = {
-          trackingId: uuidv4(),
+          trackingId: generateTrackingId(),
           oneOnOneId: input.oneOnOneId,
           subject: `Action Items from 1-on-1 with ${input.employeeName}`,
           message: `The following action items were generated from your 1-on-1 on ${new Date().toLocaleDateString()}.`,

@@ -12,6 +12,9 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
 import { summarizeAnonymousFeedback } from '@/ai/flows/summarize-anonymous-feedback-flow';
 
+// Helper function to generate a new ID format
+const generateTrackingId = () => `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
+
 export interface AuditEvent {
   event: string;
   timestamp: Date | string; 
@@ -220,7 +223,7 @@ export async function getActiveCoachingPlansForSupervisor(supervisorName: string
 
 export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id' | 'assignedTo'>): Promise<OneOnOneHistoryItem> {
     const history = await getOneOnOneHistory();
-    const newHistoryItem: OneOnOneHistoryItem = { ...item, id: uuidv4(), assignedTo: null };
+    const newHistoryItem: OneOnOneHistoryItem = { ...item, id: generateTrackingId(), assignedTo: null };
     history.unshift(newHistoryItem);
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, history);
     return newHistoryItem;
@@ -533,7 +536,7 @@ export async function updateCoachingRecommendationStatus(
         // Create notification for AM and Manager
         const allFeedback = getFeedbackFromStorage();
         const notification: Feedback = {
-            trackingId: uuidv4(),
+            trackingId: generateTrackingId(),
             subject: `Development Plan Started by ${supervisorName}`,
             message: `${supervisorName} has accepted a coaching recommendation and started a new development plan for the area: "${recommendation.area}".\n\n**Recommendation:** ${recommendation.recommendation}\n**Resource:** ${recommendation.type} - "${recommendation.resource}"\n**Timeline:** ${data?.startDate ? new Date(data.startDate).toLocaleDateString() : 'N/A'} to ${data?.endDate ? new Date(data.endDate).toLocaleDateString() : 'N/A'}.`,
             submittedAt: new Date(),
@@ -704,7 +707,7 @@ export const saveFeedbackToStorage = (feedback: Feedback[]): void => {
 
 export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
   const allFeedback = getFeedbackFromStorage();
-  const trackingId = uuidv4();
+  const trackingId = generateTrackingId();
   const submittedAt = new Date();
 
   const newFeedback: Feedback = {
@@ -769,7 +772,7 @@ export async function summarizeFeedback(trackingId: string): Promise<void> {
 
 export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
-    const trackingId = uuidv4();
+    const trackingId = generateTrackingId();
     const newFeedback: Feedback = {
         ...input,
         trackingId,
@@ -792,7 +795,7 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
 
 export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
-    const trackingId = uuidv4();
+    const trackingId = generateTrackingId();
     const newFeedback: Feedback = {
         trackingId: trackingId,
         subject: input.subject,
@@ -819,7 +822,7 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
 
 export async function submitDirectRetaliationReport(input: DirectRetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
-    const trackingId = uuidv4();
+    const trackingId = generateTrackingId();
     const newRetaliationCase: Feedback = {
         trackingId,
         subject: input.subject,
@@ -846,7 +849,7 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
 
 export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
-    const childCaseId = uuidv4();
+    const childCaseId = generateTrackingId();
 
     // Create the new child retaliation case
     const newRetaliationCase: Feedback = {
