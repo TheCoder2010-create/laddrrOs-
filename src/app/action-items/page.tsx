@@ -16,7 +16,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -63,12 +64,18 @@ const auditEventIcons = {
     'default': Info,
 }
 
-function AuditTrail({ trail, handleViewCaseDetails }: { trail: AuditEvent[], handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
+function AuditTrail({ trail, handleViewCaseDetails, onDownload }: { trail: AuditEvent[], handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
     if (!trail || trail.length === 0) return null;
 
     return (
         <div className="space-y-2">
-            <Label className="text-base">Case History</Label>
+            <div className="flex justify-between items-center">
+                <Label className="text-base">Case History</Label>
+                <Button variant="ghost" size="sm" onClick={onDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                </Button>
+            </div>
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
@@ -1004,6 +1011,13 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary : caseItem.message;
     const auditTrail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
     const resolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.supervisorResponse : caseItem.resolution;
+    
+    const handleDownload = () => {
+        const trail = auditTrail(caseItem as any);
+        if (trail.length > 0) {
+            downloadAuditTrailPDF(trail, subject, trackingId);
+        }
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1020,7 +1034,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
                             <Label className="text-base">Initial Submission Context</Label>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{initialMessage}</p>
                         </div>
-                        <AuditTrail trail={auditTrail(caseItem as any)} handleViewCaseDetails={handleViewCaseDetails} />
+                        <AuditTrail trail={auditTrail(caseItem as any)} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/>
                         {resolution && (
                              <div className="space-y-2">
                                 <Label className="text-base">Final Resolution</Label>
@@ -1228,6 +1242,13 @@ function ActionItemsContent() {
             const rawSubject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
             const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
             
+            const handleDownload = () => {
+                const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail : item.auditTrail;
+                if (trail && trail.length > 0) {
+                    downloadAuditTrailPDF(trail, subject, id);
+                }
+            };
+            
             const getStatusBadge = () => {
               const auditTrail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail : item.auditTrail;
               const finalDispositionEvent = auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
@@ -1319,8 +1340,8 @@ function ActionItemsContent() {
                         </>
                      )}
 
-                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} handleViewCaseDetails={handleViewCaseDetails} />}
-                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} handleViewCaseDetails={handleViewCaseDetails}/> }
+                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload} />}
+                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/> }
 
                     <ActionPanel item={item} onUpdate={fetchFeedback} handleViewCaseDetails={handleViewCaseDetails} />
                     

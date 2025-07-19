@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -48,6 +48,7 @@ import {
 import { cn } from '@/lib/utils';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 
 
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
@@ -644,11 +645,17 @@ const auditEventIcons = {
     'default': Info,
 }
 
-function CaseHistory({ trail, handleScrollToCase }: { trail: Feedback['auditTrail'], handleScrollToCase: (e: React.MouseEvent, caseId: string) => void }) {
+function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedback['auditTrail'], handleScrollToCase: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
     if (!trail || trail.length === 0) return null;
     return (
         <div className="space-y-2">
-            <Label>Case History</Label>
+            <div className="flex justify-between items-center">
+                <Label>Case History</Label>
+                <Button variant="ghost" size="sm" onClick={onDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                </Button>
+            </div>
             <div className="relative p-4 border rounded-md bg-muted/50">
                  <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
@@ -802,6 +809,12 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
                     
+                    const handleDownload = (itemToDownload: Feedback) => {
+                        if (itemToDownload.auditTrail && itemToDownload.auditTrail.length > 0) {
+                            downloadAuditTrailPDF(itemToDownload.auditTrail, itemToDownload.subject, itemToDownload.trackingId);
+                        }
+                    };
+
                     const getStatusBadge = (item: Feedback) => {
                         const { status, resolution } = item;
                         if (status === 'Closed' && resolution) {
@@ -868,7 +881,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                     <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.message}</p>
                                 </div>
                                
-                                <CaseHistory trail={item.auditTrail} handleScrollToCase={handleScrollToCase} />
+                                <CaseHistory trail={item.auditTrail} handleScrollToCase={handleScrollToCase} onDownload={() => handleDownload(item)} />
                                 
                                  {item.resolution && (
                                     <div className="space-y-2">
@@ -953,7 +966,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                                 </div>
                                             )}
 
-                                           <CaseHistory trail={retaliationCase.auditTrail} handleScrollToCase={handleScrollToCase} />
+                                           <CaseHistory trail={retaliationCase.auditTrail} handleScrollToCase={handleScrollToCase} onDownload={() => handleDownload(retaliationCase)} />
 
                                         </div>
                                     </div>

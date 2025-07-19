@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -114,12 +115,18 @@ const auditEventIcons = {
     'default': Info,
 }
 
-function AuditTrail({ trail }: { trail: AuditEvent[] }) {
+function AuditTrail({ trail, onDownload }: { trail: AuditEvent[], onDownload: () => void }) {
     if (!trail || trail.length === 0) return null;
 
     return (
         <div className="space-y-2">
-            <Label className="text-base">Case History</Label>
+            <div className="flex justify-between items-center">
+                <Label className="text-base">Case History</Label>
+                <Button variant="ghost" size="sm" onClick={onDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                </Button>
+            </div>
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
@@ -375,6 +382,13 @@ function VaultContent() {
                     const config = criticalityConfig[feedback.criticality || 'Low'];
                     const Icon = config?.icon || Info;
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
+                    
+                    const handleDownload = () => {
+                        if (feedback.auditTrail && feedback.auditTrail.length > 0) {
+                            downloadAuditTrailPDF(feedback.auditTrail, feedback.subject, feedback.trackingId);
+                        }
+                    };
+
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
                         <AccordionTrigger className="w-full px-4 py-3 text-left">
@@ -438,7 +452,7 @@ function VaultContent() {
                                 <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
                             </div>
 
-                            {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} />}
+                            {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} onDownload={handleDownload} />}
 
                             <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />
                         </AccordionContent>
