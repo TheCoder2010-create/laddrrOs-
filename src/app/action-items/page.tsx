@@ -279,7 +279,6 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                             This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to the employee for final acknowledgement.
                         </p>
                          <Textarea 
-                            placeholder="Document your actions here..."
                             value={resolutionNotes}
                             onChange={(e) => setResolutionNotes(e.target.value)}
                             rows={4}
@@ -305,10 +304,6 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                         </p>
                         <Textarea 
                             id={`action-notes-${item.id}`}
-                            placeholder={action === 'coach' 
-                                ? "Log your coaching notes..."
-                                : "Describe your conversation..."
-                            }
                             value={actionNotes}
                             onChange={(e) => setActionNotes(e.target.value)}
                             rows={4}
@@ -415,7 +410,6 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                         </p>
                         <div className="w-full space-y-3">
                              <Textarea 
-                                placeholder="Document your final actions here..."
                                 value={resolutionNotes}
                                 onChange={(e) => setResolutionNotes(e.target.value)}
                                 rows={4}
@@ -449,7 +443,6 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                                  <Label htmlFor="final-notes">Reasoning / Notes</Label>
                                  <Textarea
                                      id="final-notes"
-                                     placeholder={`Provide reasoning for selecting this action...`}
                                      value={finalActionNotes}
                                      onChange={(e) => setFinalActionNotes(e.target.value)}
                                      rows={4}
@@ -533,7 +526,6 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                 <Label htmlFor="hr-update" className="font-medium">Add Interim Update (Confidential)</Label>
                 <Textarea
                     id="hr-update"
-                    placeholder="Add confidential notes for your records..."
                     value={update}
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
@@ -546,7 +538,7 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                 </div>
                 <Button onClick={handleAddUpdate} disabled={!update || isSubmittingUpdate}>
                     {isSubmittingUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Confidential Update
+                    Add Update
                 </Button>
             </div>
             
@@ -554,7 +546,6 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                 <Label htmlFor="hr-response" className="font-medium">Submit Final Resolution to Employee</Label>
                 <Textarea
                     id="hr-response"
-                    placeholder="Provide your final resolution summary..."
                     value={response}
                     onChange={(e) => setResponse(e.target.value)}
                     rows={4}
@@ -610,7 +601,6 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                 </p>
                 <Textarea 
                     id="add-update"
-                    placeholder="Add your notes here..."
                     value={update}
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
@@ -630,7 +620,6 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                 {(canManagerAct || canHrAct) && (
                     <Textarea 
                         id="resolve-case"
-                        placeholder="Provide your final resolution summary..."
                         value={resolution}
                         onChange={(e) => setResolution(e.target.value)}
                         rows={4}
@@ -834,7 +823,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         />
                         <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit for Acknowledgement
+                            Submit
                         </Button>
                     </div>
                 </div>
@@ -883,7 +872,6 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                     <Label htmlFor="final-notes">Reasoning / Final Notes</Label>
                     <Textarea
                         id="final-notes"
-                        placeholder="Provide reasoning for your selection..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         rows={4}
@@ -1020,7 +1008,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                         onChange={(e) => setResolutionSummary(e.target.value)}
                         rows={4}
                     />
-                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, true)} disabled={!resolutionSummary}>Submit for Acknowledgement</Button>
+                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, true)} disabled={!resolutionSummary}>Submit</Button>
                 </div>
             </div>
         );

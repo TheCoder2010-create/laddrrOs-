@@ -125,7 +125,7 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
       <div className="space-y-4 py-4">
         <div className="space-y-2">
           <Label htmlFor="participant">Participant</Label>
-          <Input id="participant" placeholder="Enter name..." value={participant} onChange={e => setParticipant(e.target.value)} />
+          <Input id="participant" value={participant} onChange={e => setParticipant(e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label>Date</Label>
@@ -619,7 +619,6 @@ function HistorySection({ role }: { role: Role }) {
                                                                     id={`supervisor-response-${item.id}`}
                                                                     value={supervisorResponse}
                                                                     onChange={(e) => setSupervisorResponse(e.target.value)}
-                                                                    placeholder="Explain the actions you took..."
                                                                     rows={4}
                                                                     className="bg-background"
                                                                 />
@@ -629,7 +628,7 @@ function HistorySection({ role }: { role: Role }) {
                                                                         disabled={isSubmittingResponse || !supervisorResponse}
                                                                     >
                                                                         {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
-                                                                        Submit for Acknowledgement
+                                                                        Submit
                                                                     </Button>
                                                                     <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
                                                                         Cancel
@@ -682,7 +681,6 @@ function HistorySection({ role }: { role: Role }) {
                                                                     id={`retry-response-${item.id}`}
                                                                     value={retryResponse}
                                                                     onChange={(e) => setRetryResponse(e.target.value)}
-                                                                    placeholder="Describe your follow-up actions..."
                                                                     rows={4}
                                                                     className="bg-background"
                                                                 />
