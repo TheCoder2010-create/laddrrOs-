@@ -34,11 +34,11 @@ import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const criticalityConfig = {
-    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
-    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' },
-    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' },
-    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' },
-    'Retaliation Claim': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
+    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' as const },
+    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' as const },
+    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' as const },
+    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' as const },
+    'Retaliation Claim': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' as const },
 };
 
 const auditEventIcons = {
@@ -283,6 +283,7 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                             onChange={(e) => setResolutionNotes(e.target.value)}
                             rows={4}
                             className="bg-background"
+                            placeholder="Document your final resolution actions here..."
                          />
                          <div className="flex gap-2">
                              <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmittingManager || !resolutionNotes}>
@@ -308,6 +309,7 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                             onChange={(e) => setActionNotes(e.target.value)}
                             rows={4}
                             className="bg-background"
+                            placeholder={action === 'coach' ? 'Enter your coaching notes...' : 'Enter your direct response...'}
                         />
                         <div className="flex gap-2">
                             <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
@@ -414,6 +416,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                                 onChange={(e) => setResolutionNotes(e.target.value)}
                                 rows={4}
                                 className="bg-background"
+                                placeholder="Enter your final resolution notes..."
                              />
                              <div className="flex gap-2">
                                  <Button className="bg-black hover:bg-black/80 text-white" onClick={handleHrSubmit} disabled={isSubmitting || !resolutionNotes}>
@@ -447,6 +450,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                                      onChange={(e) => setFinalActionNotes(e.target.value)}
                                      rows={4}
                                      className="bg-background"
+                                     placeholder="Provide your justification for this final action..."
                                  />
                                  <div className="flex gap-2">
                                      <Button className="bg-black hover:bg-black/80 text-white" onClick={handleFinalHrDecision} disabled={isSubmittingFinal || !finalActionNotes}>
@@ -529,6 +533,7 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                     value={update}
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
+                    placeholder="Log your confidential investigation notes here..."
                 />
                  <div className="space-y-2">
                     <Label htmlFor="hr-update-file" className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -549,6 +554,7 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                     value={response}
                     onChange={(e) => setResponse(e.target.value)}
                     rows={4}
+                    placeholder="Provide your final resolution summary to the employee..."
                 />
                 <Button variant="destructive" onClick={handleSubmitResponse} disabled={!response || isSubmittingResponse}>
                     {isSubmittingResponse && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -604,6 +610,7 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                     value={update}
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
+                    placeholder="Enter your update..."
                 />
                 <Button onClick={handleAddUpdate} disabled={!update}>Add Update</Button>
             </div>
@@ -623,6 +630,7 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                         value={resolution}
                         onChange={(e) => setResolution(e.target.value)}
                         rows={4}
+                        placeholder="Enter your final resolution statement..."
                     />
                 )}
                 
@@ -710,7 +718,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Label className="font-medium flex items-center gap-2 cursor-help">
-                                            Add Updates <Info className="h-4 w-4 text-muted-foreground" />
+                                            Add Update <Info className="h-4 w-4 text-muted-foreground" />
                                         </Label>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -724,6 +732,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                 onChange={(e) => setUpdate(e.target.value)}
                                 rows={3}
                                 className="flex-grow"
+                                placeholder="Log your private notes..."
                             />
                             <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -750,6 +759,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                 onChange={(e) => setQuestion(e.target.value)}
                                 rows={3}
                                 className="flex-grow"
+                                placeholder="Ask a clarifying question..."
                             />
                             <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-auto w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -776,6 +786,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                 onChange={(e) => setRevealReason(e.target.value)}
                                 rows={3}
                                 className="flex-grow"
+                                placeholder="Explain why identity is needed..."
                             />
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -820,6 +831,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             value={resolution}
                             onChange={(e) => setResolution(e.target.value)}
                             rows={4}
+                            placeholder="Propose a resolution..."
                         />
                         <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -876,6 +888,7 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         onChange={(e) => setNotes(e.target.value)}
                         rows={4}
                         className="bg-background"
+                        placeholder="Provide reasoning for this final action..."
                     />
                     <div className="flex gap-2">
                         <Button className="bg-black hover:bg-black/80 text-white" onClick={handleSubmit} disabled={isSubmitting || !notes}>
@@ -995,6 +1008,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                         value={interimUpdate}
                         onChange={(e) => setInterimUpdate(e.target.value)}
                         rows={3}
+                        placeholder="Add your notes..."
                     />
                     <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, false)} disabled={!interimUpdate}>Add Update to History</Button>
                 </div>
@@ -1007,6 +1021,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                         value={resolutionSummary}
                         onChange={(e) => setResolutionSummary(e.target.value)}
                         rows={4}
+                        placeholder="Add your final resolution notes..."
                     />
                     <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, true)} disabled={!resolutionSummary}>Submit</Button>
                 </div>
@@ -1297,10 +1312,10 @@ function ActionItemsContent() {
               if (isOneOnOne) {
                   const insightStatus = item.analysis.criticalCoachingInsight?.status;
                   switch (insightStatus) {
-                      case 'pending_am_review': return <Badge className="bg-orange-500 text-white">AM Review</Badge>;
-                      case 'pending_manager_review': return <Badge className="bg-red-700 text-white">Manager Review</Badge>;
+                      case 'pending_am_review': return <Badge variant="secondary">AM Review</Badge>;
+                      case 'pending_manager_review': return <Badge variant="secondary">Manager Review</Badge>;
                       case 'pending_hr_review':
-                      case 'pending_final_hr_action': return <Badge className="bg-black text-white">HR Review</Badge>;
+                      case 'pending_final_hr_action': return <Badge variant="secondary">HR Review</Badge>;
                       case 'resolved': return <Badge variant="success">Resolved</Badge>;
                       default: return <Badge variant="secondary">{insightStatus?.replace(/_/g, ' ')}</Badge>;
                   }
@@ -1312,10 +1327,10 @@ function ActionItemsContent() {
                   case 'Pending Supervisor Action': return <Badge variant="destructive">Supervisor Action</Badge>;
                   case 'Pending Manager Action': return <Badge variant="destructive">Manager Action</Badge>;
                   case 'Pending Employee Acknowledgment': return <Badge variant="destructive">Employee Ack.</Badge>;
-                  case 'Pending HR Action': return <Badge className="bg-black text-white">HR Review</Badge>;
+                  case 'Pending HR Action': return <Badge variant="secondary">HR Review</Badge>;
                   case 'Final Disposition Required': return <Badge variant="destructive">Final Disposition</Badge>;
                   case 'Pending Identity Reveal': return <Badge variant="secondary">Reveal Requested</Badge>;
-                  case 'Pending Anonymous Reply': return <Badge className="bg-blue-500 text-white">Awaiting Reply</Badge>;
+                  case 'Pending Anonymous Reply': return <Badge className="bg-blue-500/20 text-blue-500">Awaiting Reply</Badge>;
                   case 'Retaliation Claim': return <Badge variant="destructive">Retaliation Claim</Badge>;
                   case 'Closed': return <Badge variant="secondary">Closed</Badge>;
                   default: return <Badge variant="secondary">{feedbackStatus || 'N/A'}</Badge>;

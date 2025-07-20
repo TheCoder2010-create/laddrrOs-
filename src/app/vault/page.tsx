@@ -101,10 +101,10 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
 }
 
 const criticalityConfig = {
-    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
-    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' },
-    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' },
-    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' },
+    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' as const },
+    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' as const },
+    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' as const },
+    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' as const },
 };
 
 const auditEventIcons = {
@@ -302,7 +302,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             )}
                         </p>
                          <Textarea 
-                            placeholder="Add a note (optional)..."
+                            placeholder="Add a note..."
                             value={assignmentComment}
                             onChange={(e) => setAssignmentComment(e.target.value)}
                             className="w-full text-sm"
@@ -474,7 +474,7 @@ function VaultContent() {
     switch(status) {
         case 'Resolved': return <Badge variant='success'>Resolved</Badge>;
         case 'In Progress': return <Badge variant='secondary'>In Progress</Badge>;
-        case 'Pending Anonymous Reply': return <Badge className="bg-blue-500 text-white">Awaiting Reply</Badge>;
+        case 'Pending Anonymous Reply': return <Badge className="bg-blue-500/20 text-blue-500">Awaiting Reply</Badge>;
         default: return <Badge variant='default'>Open</Badge>;
     }
   }
@@ -523,14 +523,14 @@ function VaultContent() {
                         <AccordionTrigger className="w-full px-4 py-3 text-left">
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    {feedback.criticality ? (
-                                        <Badge variant={config?.badge as any || 'secondary'}>{feedback.criticality}</Badge>
-                                    ) : (
-                                        <Badge variant="outline">Unanalyzed</Badge>
-                                    )}
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                     {feedback.criticality ? (
+                                        <Badge variant={config.badge}>{feedback.criticality}</Badge>
+                                    ) : (
+                                        <Badge variant="outline">Unanalyzed</Badge>
+                                    )}
                                     {getStatusBadge(feedback.status)}
                                 </div>
                             </div>
