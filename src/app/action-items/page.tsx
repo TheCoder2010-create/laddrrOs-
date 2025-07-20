@@ -278,7 +278,7 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                             This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to the employee for final acknowledgement.
                         </p>
                          <Textarea 
-                            placeholder="e.g., I have scheduled a mediated session between the TL and employee, and will be implementing a new communication protocol for the team..."
+                            placeholder="Document your actions here..."
                             value={resolutionNotes}
                             onChange={(e) => setResolutionNotes(e.target.value)}
                             rows={4}
@@ -305,8 +305,8 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                         <Textarea 
                             id={`action-notes-${item.id}`}
                             placeholder={action === 'coach' 
-                                ? "e.g., Coached Ben on active listening and validating concerns before offering solutions..."
-                                : "e.g., I spoke with Casey to understand their perspective and we've agreed on a path forward..."
+                                ? "Log your coaching notes..."
+                                : "Describe your conversation..."
                             }
                             value={actionNotes}
                             onChange={(e) => setActionNotes(e.target.value)}
@@ -414,7 +414,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                         </p>
                         <div className="w-full space-y-3">
                              <Textarea 
-                                placeholder="e.g., I have met with all parties involved and have put a formal performance improvement plan in place for the supervisor..."
+                                placeholder="Document your final actions here..."
                                 value={resolutionNotes}
                                 onChange={(e) => setResolutionNotes(e.target.value)}
                                 rows={4}
@@ -448,7 +448,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                                  <Label htmlFor="final-notes">Reasoning / Notes</Label>
                                  <Textarea
                                      id="final-notes"
-                                     placeholder={`Provide reasoning for selecting: ${finalAction}`}
+                                     placeholder={`Provide reasoning for selecting this action...`}
                                      value={finalActionNotes}
                                      onChange={(e) => setFinalActionNotes(e.target.value)}
                                      rows={4}
@@ -532,7 +532,7 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                 <Label htmlFor="hr-update" className="font-medium">Add Interim Update (Confidential)</Label>
                 <Textarea
                     id="hr-update"
-                    placeholder="e.g., 'Met with the alleged party on [Date]. Their statement is...' These notes are for your records and will not be shared."
+                    placeholder="Add confidential notes for your records..."
                     value={update}
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
@@ -553,7 +553,7 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
                 <Label htmlFor="hr-response" className="font-medium">Submit Final Resolution to Employee</Label>
                 <Textarea
                     id="hr-response"
-                    placeholder="e.g., 'After reviewing the case, we have taken the following steps...'"
+                    placeholder="Provide your final resolution summary..."
                     value={response}
                     onChange={(e) => setResponse(e.target.value)}
                     rows={4}
@@ -609,7 +609,7 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                 </p>
                 <Textarea 
                     id="add-update"
-                    placeholder="e.g., 'Met with the team to discuss communication protocols...'"
+                    placeholder="Add your notes here..."
                     value={update}
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
@@ -629,7 +629,7 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                 {(canManagerAct || canHrAct) && (
                     <Textarea 
                         id="resolve-case"
-                        placeholder="e.g., 'Thank you for this feedback. We have implemented new guidelines...'"
+                        placeholder="Provide your final resolution summary..."
                         value={resolution}
                         onChange={(e) => setResolution(e.target.value)}
                         rows={4}
@@ -722,7 +722,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             </p>
                             <Textarea 
                                 id="interim-update"
-                                placeholder="e.g., 'Investigating the team schedule...'"
+                                placeholder="Add your notes here..."
                                 value={update}
                                 onChange={(e) => setUpdate(e.target.value)}
                                 rows={3}
@@ -740,7 +740,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             </p>
                             <Textarea 
                                 id="ask-question"
-                                placeholder="e.g., 'Can you provide a more specific date...'"
+                                placeholder="Ask your question here..."
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                                 rows={3}
@@ -758,7 +758,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             </p>
                             <Textarea 
                                 id="revealReason"
-                                placeholder="e.g., 'To investigate fully, I need to speak with you directly...'"
+                                placeholder="Explain your reasoning here..."
                                 value={revealReason}
                                 onChange={(e) => setRevealReason(e.target.value)}
                                 rows={3}
@@ -795,7 +795,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         </p>
                         <Textarea 
                             id="resolve-directly"
-                            placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines...'"
+                            placeholder="Provide your resolution summary..."
                             value={resolution}
                             onChange={(e) => setResolution(e.target.value)}
                             rows={4}
@@ -851,7 +851,7 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                     <Label htmlFor="final-notes">Reasoning / Final Notes</Label>
                     <Textarea
                         id="final-notes"
-                        placeholder={`Provide reasoning for selecting: ${disposition}`}
+                        placeholder="Provide reasoning for your selection..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         rows={4}
@@ -972,7 +972,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                     <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
                     <Textarea 
                         id={`interim-update-${feedback.trackingId}`}
-                        placeholder="e.g., 'Met with employee on 10/26 to discuss concerns. We've scheduled a follow-up.'"
+                        placeholder="Add your notes here..."
                         value={interimUpdate}
                         onChange={(e) => setInterimUpdate(e.target.value)}
                         rows={3}
@@ -985,7 +985,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                     <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
                     <Textarea 
                         id={`final-resolution-${feedback.trackingId}`}
-                        placeholder="e.g., 'After reviewing the situation, we have taken the following steps...'"
+                        placeholder="Provide your resolution summary..."
                         value={resolutionSummary}
                         onChange={(e) => setResolutionSummary(e.target.value)}
                         rows={4}

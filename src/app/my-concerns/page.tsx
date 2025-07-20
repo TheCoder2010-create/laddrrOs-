@@ -93,7 +93,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
                     id="anon-subject" 
                     value={subject} 
                     onChange={e => setSubject(e.target.value)} 
-                    placeholder="e.g., Suggestion for team workflow, Unfair treatment concern" 
+                    placeholder="Enter a subject for your concern..." 
                     required 
                 />
             </div>
@@ -103,7 +103,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
                     id="anon-concern" 
                     value={concern} 
                     onChange={e => setConcern(e.target.value)} 
-                    placeholder="Please describe the situation in detail without revealing your identity. Include examples, dates, and impact if possible." 
+                    placeholder="Describe the situation in detail..." 
                     rows={8} 
                     required 
                 />
@@ -195,7 +195,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                     id="subject" 
                     value={subject} 
                     onChange={e => setSubject(e.target.value)} 
-                    placeholder="e.g., Unfair project assignment, Issue with team communication" 
+                    placeholder="Enter a subject for your concern..." 
                     required 
                 />
             </div>
@@ -205,7 +205,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                     id="concern" 
                     value={concern} 
                     onChange={e => setConcern(e.target.value)} 
-                    placeholder="Please describe the situation in detail. Include specific examples, dates, and impact if possible." 
+                    placeholder="Describe the situation in detail..." 
                     rows={8} 
                     required 
                 />
@@ -294,7 +294,7 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                     id="retaliation-subject"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g., Retaliation after informal feedback, Biased project assignments"
+                    placeholder="Enter a subject for your report..."
                     required
                 />
             </div>
@@ -304,7 +304,7 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                     id="retaliation-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe the retaliation or bias you observed. Please include dates, individuals involved, specific actions or comments, and the impact on you or your work."
+                    placeholder="Describe the incident in detail..."
                     rows={8}
                     required
                 />
@@ -540,7 +540,7 @@ function AcknowledgementWidget({ item, onUpdate, title, description, responderEv
                         id={`ack-comments-${item.trackingId}`}
                         value={comments}
                         onChange={(e) => setComments(e.target.value)}
-                        placeholder="Provide more detail about your selection..."
+                        placeholder="Provide more detail here..."
                         rows={3}
                         className="bg-background"
                     />
@@ -605,7 +605,7 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                     id="retaliation-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe the retaliation or bias you observed. Please include dates, individuals involved, specific actions or comments, and the impact on you or your work."
+                    placeholder="Describe the incident in detail..."
                     rows={8}
                     required
                 />

@@ -270,7 +270,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         </div>
                         <div className="flex items-center justify-between">
                             <p className="text-xs text-muted-foreground">
-                                {isUnassignMode ? 'Select roles to remove from the case.' : 'Select roles to investigate.'}
+                                {isUnassignMode ? 'Select roles to remove.' : 'Select roles to investigate.'}
                             </p>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -321,7 +321,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             Ask a clarifying question to the anonymous user.
                         </p>
                         <Textarea 
-                            placeholder="e.g., 'Can you provide a more specific date range...'"
+                            placeholder="Ask a clarifying question..."
                             value={informationRequest}
                             onChange={(e) => setInformationRequest(e.target.value)}
                             rows={4}
@@ -339,7 +339,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             Log your investigation steps or notes.
                         </p>
                         <Textarea 
-                            placeholder="Provide an update on the case..."
+                            placeholder="Add your notes here..."
                             value={updateComment}
                             onChange={(e) => setUpdateComment(e.target.value)}
                             rows={4}
@@ -377,7 +377,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                  <div className="p-4 border rounded-lg bg-background space-y-3">
                     <Label className="font-medium">Add Update</Label>
                     <Textarea 
-                        placeholder="Provide an update on the case..."
+                        placeholder="Add your notes here..."
                         value={updateComment}
                         onChange={(e) => setUpdateComment(e.target.value)}
                     />

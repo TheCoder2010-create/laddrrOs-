@@ -165,7 +165,7 @@ function MyDevelopmentWidget() {
                             id="rejection-reason"
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
-                            placeholder="e.g., I have already read this book, I prefer a different learning style, etc."
+                            placeholder="Provide your justification here..."
                         />
                     </div>
                     <DialogFooter>
@@ -377,7 +377,7 @@ function AmReviewWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, re
                 <Label htmlFor={`am-notes-${rec.id}`}>Your Decision & Notes</Label>
                 <Textarea 
                     id={`am-notes-${rec.id}`}
-                    placeholder="e.g., I agree this isn't a priority now, let's focus on X instead. OR I believe this is a critical skill, let's discuss how to approach it."
+                    placeholder="Provide your reasoning here..."
                     value={amNotes}
                     onChange={(e) => setAmNotes(e.target.value)}
                     rows={3}

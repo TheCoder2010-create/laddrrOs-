@@ -362,7 +362,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           <AccordionTrigger><MessageSquareQuote className="mr-2" /> Feedback & Conversation Capture</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="primaryFeedback" render={({ field }) => (
-                                  <FormItem><FormLabel>Primary Feedback / Talking Points {!hasMedia && <span className="text-destructive">*</span>}</FormLabel><FormControl><Textarea rows={5} placeholder="What was the core message delivered? (Optional if recording is provided)" {...field} /></FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>Primary Feedback / Talking Points {!hasMedia && <span className="text-destructive">*</span>}</FormLabel><FormControl><Textarea rows={5} placeholder="What was the core message delivered?" {...field} /></FormControl><FormMessage /></FormItem>
                                )} />
                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                    <FormField control={form.control} name="feedbackTone" render={({ field }) => (
@@ -373,7 +373,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                                    )} />
                                </div>
                                <FormField control={form.control} name="improvementAreas" render={({ field }) => (
-                                  <FormItem><FormLabel>Specific Areas for Improvement {form.getValues("feedbackTone") === 'Corrective' && <span className="text-destructive">*</span>}</FormLabel><FormControl><Input placeholder="e.g., meeting deadlines, communication style" {...field} /></FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>Specific Areas for Improvement {form.getValues("feedbackTone") === 'Corrective' && <span className="text-destructive">*</span>}</FormLabel><FormControl><Input placeholder="Describe specific areas for improvement..." {...field} /></FormControl><FormMessage /></FormItem>
                                )} />
                                <FormField control={form.control} name="growthRating" render={({ field }) => (
                                   <FormItem><FormLabel>Growth/Performance Trajectory (1=Needs significant improvement, 5=Exceeding expectations) <span className="text-destructive">*</span></FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="1" /></FormControl><FormLabel className="font-normal">1</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="2" /></FormControl><FormLabel className="font-normal">2</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="3" /></FormControl><FormLabel className="font-normal">3</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="4" /></FormControl><FormLabel className="font-normal">4</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="5" /></FormControl><FormLabel className="font-normal">5</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
@@ -387,13 +387,13 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                                   <FormItem><FormLabel>Did employee show signs of stress or disengagement?</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem><SelectItem value="Unsure">Unsure</SelectItem></SelectContent></Select><FormMessage /></FormItem>
                                )} />
                               <FormField control={form.control} name="stressDescription" render={({ field }) => (
-                                  <FormItem><FormLabel>If yes, describe</FormLabel><FormControl><Textarea placeholder="e.g., body language, tone of voice, specific comments" {...field} /></FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>If yes, describe</FormLabel><FormControl><Textarea placeholder="Describe body language, tone, or comments..." {...field} /></FormControl><FormMessage /></FormItem>
                                )} />
                               <FormField control={form.control} name="expressedAspirations" render={({ field }) => (
                                   <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Did employee express career aspirations or goals?</FormLabel></FormItem>
                                )} />
                               <FormField control={form.control} name="aspirationDetails" render={({ field }) => (
-                                  <FormItem><FormLabel>If yes, what were they?</FormLabel><FormControl><Textarea placeholder="e.g., promotion, new projects, learning new skills" {...field} /></FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>If yes, what were they?</FormLabel><FormControl><Textarea placeholder="Describe their goals or aspirations..." {...field} /></FormControl><FormMessage /></FormItem>
                                )} />
                           </AccordionContent>
                       </AccordionItem>
@@ -404,7 +404,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                                   <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Did you specifically appreciate the employee for something?</FormLabel></FormItem>
                                )} />
                               <FormField control={form.control} name="appreciationMessage" render={({ field }) => (
-                                  <FormItem><FormLabel>If yes, what was the message?</FormLabel><FormControl><Textarea placeholder="e.g., Thank you for your work on Project X..." {...field} /></FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>If yes, what was the message?</FormLabel><FormControl><Textarea placeholder="Describe the appreciation message..." {...field} /></FormControl><FormMessage /></FormItem>
                                )} />
                               <FormField control={form.control} name="isCrossFunctional" render={({ field }) => (
                                   <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Was the contribution cross-functional?</FormLabel></FormItem>

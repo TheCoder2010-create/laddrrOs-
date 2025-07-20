@@ -619,7 +619,7 @@ function HistorySection({ role }: { role: Role }) {
                                                                     id={`supervisor-response-${item.id}`}
                                                                     value={supervisorResponse}
                                                                     onChange={(e) => setSupervisorResponse(e.target.value)}
-                                                                    placeholder="Explain the actions you took to resolve this concern..."
+                                                                    placeholder="Explain the actions you took..."
                                                                     rows={4}
                                                                     className="bg-background"
                                                                 />
@@ -682,7 +682,7 @@ function HistorySection({ role }: { role: Role }) {
                                                                     id={`retry-response-${item.id}`}
                                                                     value={retryResponse}
                                                                     onChange={(e) => setRetryResponse(e.target.value)}
-                                                                    placeholder="e.g., I met with Casey again, apologized for the miscommunication, and we have created a new plan..."
+                                                                    placeholder="Describe your follow-up actions..."
                                                                     rows={4}
                                                                     className="bg-background"
                                                                 />
@@ -809,7 +809,7 @@ function OneOnOnePage({ role }: { role: Role }) {
         title: "Meeting Cancelled",
         description: `Meeting ${meetingId} has been removed.`,
     })
-    setMeetings(meetings.filter(m => m.id !== meetingId));
+    setMeetings(meetings.filter(m => m.id !== m.id));
   }
 
   const handleStartMeeting = (meeting: Meeting) => {

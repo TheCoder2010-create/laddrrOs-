@@ -63,7 +63,7 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
         <Label htmlFor="title">Subject</Label>
         <Input
           id="title"
-          placeholder="e.g., Feedback on Project Phoenix, Concerns about team dynamics"
+          placeholder="Enter a subject for your feedback..."
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           disabled={isSubmitting}
@@ -73,7 +73,7 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
         <Label htmlFor="message">Your Message</Label>
         <Textarea
           id="message"
-          placeholder="Please describe the situation, event, or feedback in detail. Include dates, times, and specific examples if possible. Do not include any personal identifying information."
+          placeholder="Describe the situation in detail..."
           rows={10}
           value={message}
           onChange={(e) => setMessage(e.target.value)}

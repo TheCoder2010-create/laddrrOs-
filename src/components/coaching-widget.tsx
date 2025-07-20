@@ -109,7 +109,7 @@ export default function CoachingWidget() {
                             id="rejection-reason"
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
-                            placeholder="e.g., I have already read this book, I prefer a different learning style, etc."
+                            placeholder="Provide your justification here..."
                         />
                     </div>
                     <DialogFooter>

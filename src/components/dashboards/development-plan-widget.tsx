@@ -137,7 +137,7 @@ export default function DevelopmentPlanWidget() {
                             id="checkin-notes"
                             value={checkInNotes}
                             onChange={(e) => setCheckInNotes(e.target.value)}
-                            placeholder="e.g., I tried the 'state my path' technique from the book. It was difficult but...' or 'This podcast episode had a great tip on...'"
+                            placeholder="Log your learnings and attempts here..."
                             rows={5}
                             className="pr-12 pb-12"
                         />
