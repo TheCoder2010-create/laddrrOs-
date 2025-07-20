@@ -731,7 +731,6 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             </TooltipProvider>
                             <Textarea 
                                 id="interim-update"
-                                placeholder="Add your notes here..."
                                 value={update}
                                 onChange={(e) => setUpdate(e.target.value)}
                                 rows={3}
@@ -739,7 +738,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             />
                             <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Confidential Update
+                                Add Update
                             </Button>
                         </div>
                         
@@ -758,7 +757,6 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             </TooltipProvider>
                             <Textarea 
                                 id="ask-question"
-                                placeholder="Ask your question here..."
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                                 rows={3}
@@ -785,7 +783,6 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                             </TooltipProvider>
                             <Textarea 
                                 id="revealReason"
-                                placeholder="Explain your reasoning here..."
                                 value={revealReason}
                                 onChange={(e) => setRevealReason(e.target.value)}
                                 rows={3}
@@ -831,7 +828,6 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         </TooltipProvider>
                         <Textarea 
                             id="resolve-directly"
-                            placeholder="Provide your resolution summary..."
                             value={resolution}
                             onChange={(e) => setResolution(e.target.value)}
                             rows={4}
@@ -1008,7 +1004,6 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                     <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
                     <Textarea 
                         id={`interim-update-${feedback.trackingId}`}
-                        placeholder="Add your notes here..."
                         value={interimUpdate}
                         onChange={(e) => setInterimUpdate(e.target.value)}
                         rows={3}
@@ -1021,7 +1016,6 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                     <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
                     <Textarea 
                         id={`final-resolution-${feedback.trackingId}`}
-                        placeholder="Provide your resolution summary..."
                         value={resolutionSummary}
                         onChange={(e) => setResolutionSummary(e.target.value)}
                         rows={4}
