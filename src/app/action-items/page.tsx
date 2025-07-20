@@ -718,7 +718,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
                             <Label className="font-medium">Add Updates</Label>
                             <p className="text-xs text-muted-foreground flex-grow">
-                                Log your investigation steps or notes. This will NOT be shared with the anonymous submitter but will be visible to HR.
+                                Log your investigation steps or notes.
                             </p>
                             <Textarea 
                                 id="interim-update"
