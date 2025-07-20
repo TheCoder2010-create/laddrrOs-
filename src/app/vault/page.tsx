@@ -245,105 +245,126 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
             <Label className="text-base font-semibold">Case Management</Label>
             
             {role === 'HR Head' && (
-                <Accordion type="multiple" className="w-full space-y-2">
-                    <AccordionItem value="assign" className="border rounded-lg bg-background">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Assign Case</AccordionTrigger>
-                        <AccordionContent className="p-4 border-t">
-                            <p className="text-xs text-muted-foreground mb-2">
-                                Select one or more roles to investigate this case.
-                                {feedback.assignedTo && feedback.assignedTo.length > 0 && (
-                                    <span className="block mt-1">
-                                        Currently assigned to: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
-                                    </span>
-                                )}
-                            </p>
-                            <div className="flex gap-4 items-start">
-                                <div className="flex flex-col gap-2">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline">
-                                                Select Roles <ChevronDown className="ml-2 h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="w-56">
-                                            <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            {availableRolesForAssignment.map(r => (
-                                                <DropdownMenuCheckboxItem
-                                                    key={r}
-                                                    checked={assignees.includes(r)}
-                                                    onCheckedChange={() => handleAssigneeChange(r)}
-                                                >
-                                                    {r}
-                                                </DropdownMenuCheckboxItem>
-                                            ))}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning}>
-                                        {isAssigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Assign
-                                    </Button>
-                                </div>
-                                <div className="flex-1 space-y-2">
-                                    <Textarea 
-                                        placeholder="Add an assignment note (optional)..."
-                                        value={assignmentComment}
-                                        onChange={(e) => setAssignmentComment(e.target.value)}
-                                        className="w-full"
-                                        rows={4}
-                                    />
-                                </div>
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                     <AccordionItem value="ask" className="border rounded-lg bg-background">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Ask for Information</AccordionTrigger>
-                        <AccordionContent className="p-4 border-t">
-                             <p className="text-xs text-muted-foreground mb-2">
-                                Ask a clarifying question. The user will see this question when they track their case and can respond anonymously.
-                            </p>
-                            <Textarea 
-                                placeholder="e.g., 'Can you provide a more specific date range for when this occurred?'"
-                                value={informationRequest}
-                                onChange={(e) => setInformationRequest(e.target.value)}
-                                rows={3}
-                            />
-                            <Button className="mt-2" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
-                                {isRequestingInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Send Question
-                            </Button>
-                        </AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="resolve" className="border rounded-lg bg-background">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Resolve Case</AccordionTrigger>
-                        <AccordionContent className="p-4 border-t">
-                            <Textarea 
-                                placeholder="Explain the final resolution..."
-                                value={resolutionComment}
-                                onChange={(e) => setResolutionComment(e.target.value)}
-                                rows={3}
-                            />
-                            <Button className="mt-2" variant="success" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
-                                {isResolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Mark as Resolved
-                            </Button>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
+                <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Assign Case Card */}
+                    <div className="p-4 border rounded-lg bg-background space-y-3">
+                        <Label className="font-medium">Assign Case</Label>
+                        <p className="text-xs text-muted-foreground">
+                            Select roles to investigate.
+                            {feedback.assignedTo && feedback.assignedTo.length > 0 && (
+                                <span className="block mt-1">
+                                    Currently: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
+                                </span>
+                            )}
+                        </p>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full justify-between">
+                                    <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select Roles'}</span>
+                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                                <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {availableRolesForAssignment.map(r => (
+                                    <DropdownMenuCheckboxItem
+                                        key={r}
+                                        checked={assignees.includes(r)}
+                                        onCheckedChange={() => handleAssigneeChange(r)}
+                                    >
+                                        {r}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                         <Textarea 
+                            placeholder="Add an assignment note (optional)..."
+                            value={assignmentComment}
+                            onChange={(e) => setAssignmentComment(e.target.value)}
+                            className="w-full text-sm"
+                            rows={2}
+                        />
+                        <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} className="w-full">
+                            {isAssigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Assign
+                        </Button>
+                    </div>
+
+                    {/* Ask for Information Card */}
+                    <div className="p-4 border rounded-lg bg-background space-y-3">
+                        <Label className="font-medium">Ask for Information</Label>
+                         <p className="text-xs text-muted-foreground">
+                            Ask a clarifying question to the anonymous user.
+                        </p>
+                        <Textarea 
+                            placeholder="e.g., 'Can you provide a more specific date range...'"
+                            value={informationRequest}
+                            onChange={(e) => setInformationRequest(e.target.value)}
+                            rows={4}
+                        />
+                        <Button className="w-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
+                            {isRequestingInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Send Question
+                        </Button>
+                    </div>
+
+                     {/* Add Update Card */}
+                    <div className="p-4 border rounded-lg bg-background space-y-3">
+                        <Label className="font-medium">Add Update</Label>
+                         <p className="text-xs text-muted-foreground">
+                            Log your investigation steps or notes.
+                        </p>
+                        <Textarea 
+                            placeholder="Provide an update on the case..."
+                            value={updateComment}
+                            onChange={(e) => setUpdateComment(e.target.value)}
+                            rows={4}
+                        />
+                        <Button className="w-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
+                            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Add Update
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Resolve Case Card */}
+                 <div className="p-4 border rounded-lg bg-background space-y-3">
+                    <Label className="font-medium">Resolve Case</Label>
+                     <p className="text-xs text-muted-foreground">
+                        Provide the final resolution summary to close the case.
+                    </p>
+                    <Textarea 
+                        placeholder="Explain the final resolution..."
+                        value={resolutionComment}
+                        onChange={(e) => setResolutionComment(e.target.value)}
+                        rows={3}
+                    />
+                    <Button variant="success" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
+                        {isResolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Mark as Resolved
+                    </Button>
+                </div>
+                </>
+
             )}
 
-            <div className="p-4 border rounded-lg bg-background space-y-3">
-                <Label className="font-medium">Add Update</Label>
-                <Textarea 
-                    placeholder="Provide an update on the case..."
-                    value={updateComment}
-                    onChange={(e) => setUpdateComment(e.target.value)}
-                />
-                <Button onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
-                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Update
-                </Button>
-            </div>
+            {/* View for non-HR Head assignees */}
+            {role !== 'HR Head' && (
+                 <div className="p-4 border rounded-lg bg-background space-y-3">
+                    <Label className="font-medium">Add Update</Label>
+                    <Textarea 
+                        placeholder="Provide an update on the case..."
+                        value={updateComment}
+                        onChange={(e) => setUpdateComment(e.target.value)}
+                    />
+                    <Button onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
+                        {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add Update
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
