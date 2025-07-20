@@ -30,6 +30,7 @@ interface MainSidebarProps {
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
   const { availableRoles } = useRole();
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
+  const currentUserName = currentUser.name;
   const pathname = usePathname();
   const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
   const [actionItemCount, setActionItemCount] = useState(0);
@@ -42,7 +43,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     try {
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
-      const currentUserName = roleUserMapping[currentRole].name;
 
       // Vault count (HR Head only)
       if (currentRole === 'HR Head') {
