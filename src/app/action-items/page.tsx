@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
@@ -716,56 +717,83 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <Label className="font-medium">Add Updates</Label>
-                            <p className="text-xs text-muted-foreground flex-grow">
-                                Log your investigation steps or notes.
-                            </p>
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Add Updates <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Log your investigation steps or notes.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                             <Textarea 
                                 id="interim-update"
                                 placeholder="Add your notes here..."
                                 value={update}
                                 onChange={(e) => setUpdate(e.target.value)}
                                 rows={3}
+                                className="flex-grow"
                             />
-                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-2 w-full">
+                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Add Confidential Update
                             </Button>
                         </div>
                         
                         <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <Label className="font-medium">Additional Information</Label>
-                            <p className="text-xs text-muted-foreground flex-grow">
-                                Ask a clarifying question. The user will see this and can respond anonymously.
-                            </p>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Additional Information <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Ask a clarifying question. The user will see this and can respond anonymously.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                             <Textarea 
                                 id="ask-question"
                                 placeholder="Ask your question here..."
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                                 rows={3}
+                                className="flex-grow"
                             />
-                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-2 w-full">
+                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-auto w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Send Question
                             </Button>
                         </div>
 
                         <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <Label className="font-medium">Request Identity</Label>
-                            <p className="text-xs text-muted-foreground flex-grow">
-                                If you cannot proceed, explain why you need their identity.
-                            </p>
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Request Identity <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>If you cannot proceed, explain why you need their identity.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                             <Textarea 
                                 id="revealReason"
                                 placeholder="Explain your reasoning here..."
                                 value={revealReason}
                                 onChange={(e) => setRevealReason(e.target.value)}
                                 rows={3}
+                                className="flex-grow"
                             />
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button disabled={!revealReason || isSubmitting} className="mt-2 w-full">
+                                    <Button disabled={!revealReason || isSubmitting} className="mt-auto w-full">
                                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Request Identity Reveal
                                     </Button>
@@ -789,10 +817,18 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                     </div>
                     
                     <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                         <Label className="font-medium">Resolution</Label>
-                         <p className="text-xs text-muted-foreground">
-                            Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.
-                        </p>
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Label className="font-medium flex items-center gap-2 cursor-help">
+                                        Resolution <Info className="h-4 w-4 text-muted-foreground" />
+                                    </Label>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <Textarea 
                             id="resolve-directly"
                             placeholder="Provide your resolution summary..."
