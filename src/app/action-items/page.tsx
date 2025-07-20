@@ -716,7 +716,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <Label className="font-medium">1. Add Interim Update (Confidential)</Label>
+                            <Label className="font-medium">Add Updates</Label>
                             <p className="text-xs text-muted-foreground flex-grow">
                                 Log your investigation steps or notes. This will NOT be shared with the anonymous submitter but will be visible to HR.
                             </p>
@@ -734,7 +734,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         </div>
                         
                         <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <Label className="font-medium">2. Ask for More Information</Label>
+                            <Label className="font-medium">Additional Information</Label>
                             <p className="text-xs text-muted-foreground flex-grow">
                                 Ask a clarifying question. The user will see this and can respond anonymously.
                             </p>
@@ -752,7 +752,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                         </div>
 
                         <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <Label className="font-medium">3. Request Identity Reveal</Label>
+                            <Label className="font-medium">Request Identity</Label>
                             <p className="text-xs text-muted-foreground flex-grow">
                                 If you cannot proceed, explain why you need their identity.
                             </p>
@@ -789,7 +789,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                     </div>
                     
                     <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                         <Label className="font-medium">4. Propose Resolution</Label>
+                         <Label className="font-medium">Resolution</Label>
                          <p className="text-xs text-muted-foreground">
                             Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.
                         </p>
