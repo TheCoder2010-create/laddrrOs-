@@ -270,15 +270,10 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         </div>
                         <p className="text-xs text-muted-foreground">
                             {isUnassignMode ? 'Select roles to remove from the case.' : 'Select roles to investigate.'}
-                            {feedback.assignedTo && feedback.assignedTo.length > 0 && (
-                                <span className="block mt-1">
-                                    Currently: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
-                                </span>
-                            )}
                         </p>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full justify-between">
+                                <Button variant="outline" size="sm" className="justify-between">
                                     <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select Roles'}</span>
                                     <ChevronDown className="ml-2 h-4 w-4" />
                                 </Button>
@@ -297,6 +292,13 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
+                        <p className="text-xs text-muted-foreground">
+                            {feedback.assignedTo && feedback.assignedTo.length > 0 && (
+                                <span className="block">
+                                    Currently: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
+                                </span>
+                            )}
+                        </p>
                          <Textarea 
                             placeholder="Add a note (optional)..."
                             value={assignmentComment}
