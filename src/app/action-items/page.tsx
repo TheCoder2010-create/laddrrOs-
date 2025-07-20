@@ -1113,6 +1113,9 @@ function ActionItemsContent() {
                 else if (isItemClosed && wasEverInvolved) localAllClosed.push(item);
 
             } else { // It's a Feedback item
+                // Exclude cases from "Voice – in Silence" as they are handled on a separate page
+                if (item.source === 'Voice – In Silence') return;
+
                 const finalDispositionEvent = item.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
                 isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
 
@@ -1137,7 +1140,7 @@ function ActionItemsContent() {
         
         const sortFn = (a: Feedback | OneOnOneHistoryItem, b: Feedback | OneOnOneHistoryItem) => {
             const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
-            const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
+            const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(a.date);
             return dateB.getTime() - dateA.getTime();
         };
         
@@ -1474,3 +1477,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
