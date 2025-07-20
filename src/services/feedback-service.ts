@@ -1376,7 +1376,12 @@ export async function submitAnonymousReply(trackingId: string, reply: string): P
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    item.status = 'Pending Manager Action';
+    
+    if (item.source === 'Voice – In Silence') {
+        item.status = 'In Progress'; // Keep it in HR's view
+    } else {
+        item.status = 'Pending Manager Action';
+    }
     
     item.auditTrail?.push({
         event: 'Anonymous User Responded',

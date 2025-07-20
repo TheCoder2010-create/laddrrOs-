@@ -9,10 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info } from 'lucide-react';
+import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
-import { trackFeedback, TrackedFeedback } from '@/services/feedback-service';
+import { trackFeedback, TrackedFeedback, submitAnonymousReply } from '@/services/feedback-service';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format, formatDistanceToNow } from 'date-fns';
@@ -96,6 +96,8 @@ const publicAuditEventIcons = {
     'Assigned': Send,
     'Update Added': MessageSquare,
     'Resolved': CheckCircle,
+    'Information Requested': MessageCircleQuestion,
+    'Anonymous User Responded': MessageSquare,
     'default': Info,
 }
 
@@ -110,12 +112,18 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
                 <div className="space-y-4">
                     {trail.map((event, index) => {
                         const Icon = publicAuditEventIcons[event.event as keyof typeof publicAuditEventIcons] || publicAuditEventIcons.default;
+                        
                         let eventText = event.event;
+                        let detailsText = event.details;
+
                         if (event.event === 'Assigned') {
                             eventText = 'Case assigned for review';
+                            detailsText = undefined; // Don't show assignment notes publicly
                         } else if (event.event === 'Update Added') {
                             eventText = 'An update was added to the case';
+                            detailsText = undefined; // Don't show private updates
                         }
+
                         return (
                             <div key={index} className="flex items-start gap-4 relative">
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
@@ -123,9 +131,10 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {eventText}
+                                        {eventText} by <span className="text-primary">{event.actor}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                    {detailsText && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{detailsText}</p>}
                                 </div>
                             </div>
                         );
@@ -140,8 +149,7 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
 function TrackingForm() {
   const [trackingId, setTrackingId] = useState('');
   const [isTracking, setIsTracking] = useState(false);
-  const [searchResult, setSearchResult] = useState<TrackedFeedback | null>(null);
-  const [fullCase, setFullCase] = useState<Feedback | null>(null);
+  const [searchResult, setSearchResult] = useState<Feedback | null>(null);
   const [notFound, setNotFound] = useState(false);
   const { toast } = useToast();
   
@@ -156,17 +164,11 @@ function TrackingForm() {
     }
     setIsTracking(true);
     setSearchResult(null);
-    setFullCase(null);
     setNotFound(false);
     try {
-      const result = await trackFeedback({ trackingId });
-      if (result.found && result.feedback) {
-        setSearchResult(result.feedback);
-        if (result.feedback.status === 'Pending Identity Reveal') {
-            const [fullCaseData] = await getFeedbackByIds([trackingId]);
-            setFullCase(fullCaseData);
-        }
-
+      const [foundCase] = await getFeedbackByIds([trackingId]);
+      if (foundCase && foundCase.source === 'Voice – In Silence') {
+        setSearchResult(foundCase);
       } else {
         setNotFound(true);
       }
@@ -183,13 +185,64 @@ function TrackingForm() {
     }
   };
 
-  const getStatusVariant = (status?: string) => {
+  const getStatusBadge = (status?: string) => {
     switch(status) {
-        case 'Resolved': return 'success';
-        case 'In Progress': return 'secondary';
-        default: return 'default';
+        case 'Resolved': return <Badge variant='success'>Resolved</Badge>;
+        case 'In Progress': return <Badge variant='secondary'>In Progress</Badge>;
+        case 'Pending Anonymous Reply': return <Badge variant='destructive'>Action Required</Badge>;
+        default: return <Badge variant='default'>Open</Badge>;
     }
   }
+
+  function ReplyWidget({ item }: { item: Feedback }) {
+    const [reply, setReply] = useState('');
+    const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+    
+    const request = item.auditTrail?.find(e => e.event === 'Information Requested');
+    if (!request) return null;
+
+    const handleReply = async () => {
+        if (!reply) return;
+        setIsSubmittingReply(true);
+        try {
+            await submitAnonymousReply(item.trackingId, reply);
+            toast({ title: "Reply Sent", description: "Your anonymous reply has been sent to the HR Head." });
+            handleTrack(); // Re-fetch the case to show the updated status
+        } catch (error) {
+            toast({ variant: "destructive", title: "Reply Failed" });
+        } finally {
+            setIsSubmittingReply(false);
+        }
+    };
+
+    return (
+         <Card className="border-2 border-blue-500/50 bg-blue-500/5 rounded-lg mt-4">
+            <CardHeader>
+                <CardTitle className="text-lg text-blue-700 dark:text-blue-400">Action Required: The HR Head has requested more information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="p-3 bg-background/50 rounded-md border">
+                    <p className="font-semibold text-foreground">HR Head's Question:</p>
+                    <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{request?.details}</p>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="anonymous-reply">Your Anonymous Reply</Label>
+                    <Textarea 
+                        id="anonymous-reply"
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        placeholder="Provide the additional information requested here..."
+                        rows={5}
+                    />
+                </div>
+                <Button onClick={handleReply} disabled={isSubmittingReply || !reply}>
+                    {isSubmittingReply && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Reply
+                </Button>
+            </CardContent>
+         </Card>
+    )
+}
   
   return (
      <CardContent className="space-y-6">
@@ -216,17 +269,19 @@ function TrackingForm() {
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 <span>Submission Status</span>
-                <Badge variant={getStatusVariant(searchResult.status)}>{searchResult.status || 'Open'}</Badge>
+                {getStatusBadge(searchResult.status)}
               </CardTitle>
               <CardDescription>
                 Submitted on {format(new Date(searchResult.submittedAt), "PPP p")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {searchResult.status === 'Pending Anonymous Reply' && <ReplyWidget item={searchResult} />}
+
                <div>
                   <Label>Assigned To</Label>
                   <p className="text-muted-foreground">
-                    {searchResult.status === 'Resolved' ? 'Case Closed' : `Under review by ${searchResult.assignedTo || 'HR Head'}`}
+                    {searchResult.status === 'Resolved' ? 'Case Closed' : `Under review by ${searchResult.assignedTo && searchResult.assignedTo.length > 0 ? searchResult.assignedTo.join(', ') : 'HR Head'}`}
                   </p>
               </div>
               <div>
@@ -248,7 +303,7 @@ function TrackingForm() {
            <Alert variant="destructive" className="mt-6">
             <AlertTitle>Not Found</AlertTitle>
             <AlertDescription>
-              No submission found with that Tracking ID. Please check the ID and try again.
+              No "Voice - in Silence" submission found with that Tracking ID. Please check the ID and try again.
             </AlertDescription>
           </Alert>
         )}

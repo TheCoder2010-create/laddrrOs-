@@ -11,13 +11,13 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, assignFeedback, addFeedbackUpdate, resolveFeedback, markAllFeedbackAsViewed, summarizeFeedback } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, assignFeedback, addFeedbackUpdate, resolveFeedback, markAllFeedbackAsViewed, summarizeFeedback, requestAnonymousInformation } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -112,6 +112,8 @@ const auditEventIcons = {
     'Assigned': Send,
     'Update Added': MessageSquare,
     'Resolved': CheckCircle,
+    'Information Requested': MessageCircleQuestion,
+    'Anonymous User Responded': MessageSquare,
     'default': Info,
 }
 
@@ -155,10 +157,17 @@ function AuditTrail({ trail, onDownload }: { trail: AuditEvent[], onDownload: ()
 
 function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
+    const { toast } = useToast();
     const [assignees, setAssignees] = useState<Role[]>([]);
     const [assignmentComment, setAssignmentComment] = useState('');
     const [updateComment, setUpdateComment] = useState('');
     const [resolutionComment, setResolutionComment] = useState('');
+    const [informationRequest, setInformationRequest] = useState('');
+
+    const [isAssigning, setIsAssigning] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isResolving, setIsResolving] = useState(false);
+    const [isRequestingInfo, setIsRequestingInfo] = useState(false);
 
     const handleAssigneeChange = (role: Role) => {
         setAssignees(prev => 
@@ -168,25 +177,64 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
     const handleAssign = async () => {
         if (assignees.length === 0) return;
-        await assignFeedback(feedback.trackingId, assignees, role!, assignmentComment);
-        setAssignmentComment('');
-        setAssignees([]);
-        onUpdate();
+        setIsAssigning(true);
+        try {
+            await assignFeedback(feedback.trackingId, assignees, role!, assignmentComment);
+            toast({ title: "Case Assigned", description: `Case has been assigned to ${assignees.join(', ')}.`});
+            setAssignmentComment('');
+            setAssignees([]);
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Assignment Failed" });
+        } finally {
+            setIsAssigning(false);
+        }
     }
 
     const handleAddUpdate = async () => {
         if (!updateComment) return;
-        await addFeedbackUpdate(feedback.trackingId, role!, updateComment);
-        setUpdateComment('');
-        onUpdate();
+        setIsUpdating(true);
+        try {
+            await addFeedbackUpdate(feedback.trackingId, role!, updateComment);
+            toast({ title: "Update Added", description: "Your notes have been added to the case history." });
+            setUpdateComment('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Update Failed" });
+        } finally {
+            setIsUpdating(false);
+        }
     }
 
     const handleResolve = async () => {
         if (!resolutionComment) return;
-        await resolveFeedback(feedback.trackingId, role!, resolutionComment);
-        setResolutionComment('');
-        onUpdate();
+        setIsResolving(true);
+        try {
+            await resolveFeedback(feedback.trackingId, role!, resolutionComment);
+            toast({ title: "Case Resolved", description: "This case has been marked as resolved." });
+            setResolutionComment('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Resolution Failed" });
+        } finally {
+            setIsResolving(false);
+        }
     }
+
+    const handleRequestInfo = async () => {
+        if (!informationRequest) return;
+        setIsRequestingInfo(true);
+        try {
+            await requestAnonymousInformation(feedback.trackingId, role!, informationRequest);
+            toast({ title: "Information Requested", description: "The anonymous user has been prompted to reply."});
+            setInformationRequest('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Request Failed" });
+        } finally {
+            setIsRequestingInfo(false);
+        }
+    };
     
     const canTakeAction = role === 'HR Head' || feedback.assignedTo?.includes(role!);
 
@@ -197,51 +245,91 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
             <Label className="text-base font-semibold">Case Management</Label>
             
             {role === 'HR Head' && (
-                <div className="p-4 border rounded-lg bg-background space-y-3">
-                    <Label className="font-medium">Assign Case</Label>
-                    <p className="text-sm text-muted-foreground">
-                        Select one or more roles to investigate this case.
-                        {feedback.assignedTo && feedback.assignedTo.length > 0 && (
-                            <span className="block mt-1">
-                                Currently assigned to: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
-                            </span>
-                        )}
-                    </p>
-                    <div className="flex gap-4 items-start">
-                         <div className="flex flex-col gap-2">
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">
-                                        Select Roles <ChevronDown className="ml-2 h-4 w-4" />
+                <Accordion type="multiple" className="w-full space-y-2">
+                    <AccordionItem value="assign" className="border rounded-lg bg-background">
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Assign Case</AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                            <p className="text-xs text-muted-foreground mb-2">
+                                Select one or more roles to investigate this case.
+                                {feedback.assignedTo && feedback.assignedTo.length > 0 && (
+                                    <span className="block mt-1">
+                                        Currently assigned to: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
+                                    </span>
+                                )}
+                            </p>
+                            <div className="flex gap-4 items-start">
+                                <div className="flex flex-col gap-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline">
+                                                Select Roles <ChevronDown className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-56">
+                                            <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            {availableRolesForAssignment.map(r => (
+                                                <DropdownMenuCheckboxItem
+                                                    key={r}
+                                                    checked={assignees.includes(r)}
+                                                    onCheckedChange={() => handleAssigneeChange(r)}
+                                                >
+                                                    {r}
+                                                </DropdownMenuCheckboxItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning}>
+                                        {isAssigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Assign
                                     </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56">
-                                    <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {availableRolesForAssignment.map(r => (
-                                         <DropdownMenuCheckboxItem
-                                            key={r}
-                                            checked={assignees.includes(r)}
-                                            onCheckedChange={() => handleAssigneeChange(r)}
-                                        >
-                                            {r}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button onClick={handleAssign} disabled={assignees.length === 0}>Assign</Button>
-                        </div>
-                        <div className="flex-1 space-y-2">
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <Textarea 
+                                        placeholder="Add an assignment note (optional)..."
+                                        value={assignmentComment}
+                                        onChange={(e) => setAssignmentComment(e.target.value)}
+                                        className="w-full"
+                                        rows={4}
+                                    />
+                                </div>
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                     <AccordionItem value="ask" className="border rounded-lg bg-background">
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Ask for Information</AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                             <p className="text-xs text-muted-foreground mb-2">
+                                Ask a clarifying question. The user will see this question when they track their case and can respond anonymously.
+                            </p>
                             <Textarea 
-                                placeholder="Add an assignment note (optional)..."
-                                value={assignmentComment}
-                                onChange={(e) => setAssignmentComment(e.target.value)}
-                                className="w-full"
-                                rows={4}
+                                placeholder="e.g., 'Can you provide a more specific date range for when this occurred?'"
+                                value={informationRequest}
+                                onChange={(e) => setInformationRequest(e.target.value)}
+                                rows={3}
                             />
-                        </div>
-                    </div>
-                </div>
+                            <Button className="mt-2" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
+                                {isRequestingInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Send Question
+                            </Button>
+                        </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="resolve" className="border rounded-lg bg-background">
+                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Resolve Case</AccordionTrigger>
+                        <AccordionContent className="p-4 border-t">
+                            <Textarea 
+                                placeholder="Explain the final resolution..."
+                                value={resolutionComment}
+                                onChange={(e) => setResolutionComment(e.target.value)}
+                                rows={3}
+                            />
+                            <Button className="mt-2" variant="success" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
+                                {isResolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Mark as Resolved
+                            </Button>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             )}
 
             <div className="p-4 border rounded-lg bg-background space-y-3">
@@ -251,20 +339,11 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     value={updateComment}
                     onChange={(e) => setUpdateComment(e.target.value)}
                 />
-                <Button onClick={handleAddUpdate} disabled={!updateComment}>Add Update</Button>
+                <Button onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
+                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Add Update
+                </Button>
             </div>
-
-            {role === 'HR Head' && (
-                <div className="p-4 border rounded-lg bg-background space-y-3">
-                    <Label className="font-medium">Resolve Case</Label>
-                    <Textarea 
-                        placeholder="Explain the final resolution..."
-                        value={resolutionComment}
-                        onChange={(e) => setResolutionComment(e.target.value)}
-                    />
-                    <Button variant="success" onClick={handleResolve} disabled={!resolutionComment}>Mark as Resolved</Button>
-                </div>
-            )}
         </div>
     );
 }
@@ -281,7 +360,7 @@ function VaultContent() {
     try {
       const feedback = await getAllFeedback();
       const vaultItems = feedback.filter(f => f.source === 'Voice – In Silence');
-      setAllFeedback(vaultItems);
+      setAllFeedback(vaultItems.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
       const unreadVaultIds = vaultItems.filter(c => !c.viewed).map(c => c.trackingId);
       if (unreadVaultIds.length > 0) {
         await markAllFeedbackAsViewed(unreadVaultIds);
@@ -348,11 +427,12 @@ function VaultContent() {
     );
   }
 
-  const getStatusVariant = (status?: string) => {
+  const getStatusBadge = (status?: string) => {
     switch(status) {
-        case 'Resolved': return 'success';
-        case 'In Progress': return 'secondary';
-        default: return 'default';
+        case 'Resolved': return <Badge variant='success'>Resolved</Badge>;
+        case 'In Progress': return <Badge variant='secondary'>In Progress</Badge>;
+        case 'Pending Anonymous Reply': return <Badge className="bg-blue-500 text-white">Awaiting Reply</Badge>;
+        default: return <Badge variant='default'>Open</Badge>;
     }
   }
 
@@ -407,7 +487,7 @@ function VaultContent() {
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Badge variant={getStatusVariant(feedback.status)} className="mr-2">{feedback.status || 'Open'}</Badge>
+                                    {getStatusBadge(feedback.status)}
                                 </div>
                             </div>
                         </AccordionTrigger>
