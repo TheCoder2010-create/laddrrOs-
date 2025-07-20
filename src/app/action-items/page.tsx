@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -49,7 +50,6 @@ const auditEventIcons = {
     'HR Resolution Submitted': ShieldCheckIcon,
     'Resolved': CheckCircle,
     'Identity Reveal Requested': UserX,
-    'Identity Revealed': User,
     'User acknowledged manager\'s assurance message': CheckCircle,
     'Identity Reveal Declined; Escalated to HR': ShieldCheckIcon,
     'Employee Accepted Resolution': CheckCircle,
@@ -713,80 +713,59 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                     <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
                 </div>
             ) : (
-                <Accordion type="multiple" className="w-full space-y-2">
-                    <AccordionItem value="update" className="border rounded-lg bg-muted/20">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 1: Add Interim Update (Confidential)</AccordionTrigger>
-                        <AccordionContent className="p-4 border-t">
-                            <p className="text-xs text-muted-foreground mb-2">
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                            <Label className="font-medium">1. Add Interim Update (Confidential)</Label>
+                            <p className="text-xs text-muted-foreground flex-grow">
                                 Log your investigation steps or notes. This will NOT be shared with the anonymous submitter but will be visible to HR.
                             </p>
                             <Textarea 
                                 id="interim-update"
-                                placeholder="e.g., 'Investigating the team schedule for the past month...'"
+                                placeholder="e.g., 'Investigating the team schedule...'"
                                 value={update}
                                 onChange={(e) => setUpdate(e.target.value)}
                                 rows={3}
                             />
-                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-2">
+                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-2 w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Add Confidential Update
                             </Button>
-                        </AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="question" className="border rounded-lg bg-muted/20">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 2: Ask for More Information Anonymously</AccordionTrigger>
-                        <AccordionContent className="p-4 border-t">
-                            <p className="text-xs text-muted-foreground mb-2">
-                                Ask a clarifying question. The user will see this question and can respond without revealing their identity.
+                        </div>
+                        
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                            <Label className="font-medium">2. Ask for More Information</Label>
+                            <p className="text-xs text-muted-foreground flex-grow">
+                                Ask a clarifying question. The user will see this and can respond anonymously.
                             </p>
                             <Textarea 
                                 id="ask-question"
-                                placeholder="e.g., 'Can you provide a more specific date range for when this occurred?'"
+                                placeholder="e.g., 'Can you provide a more specific date...'"
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                                 rows={3}
                             />
-                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-2">
+                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-2 w-full">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Send Question
                             </Button>
-                        </AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="resolve" className="border rounded-lg bg-muted/20">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 3: Propose Resolution</AccordionTrigger>
-                        <AccordionContent className="p-4 border-t">
-                             <p className="text-xs text-muted-foreground mb-2">
-                                Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.
-                            </p>
-                            <Textarea 
-                                id="resolve-directly"
-                                placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines...'"
-                                value={resolution}
-                                onChange={(e) => setResolution(e.target.value)}
-                                rows={4}
-                            />
-                            <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Submit for Acknowledgement
-                            </Button>
-                        </AccordionContent>
-                    </AccordionItem>
-                     <AccordionItem value="reveal" className="border rounded-lg bg-muted/20">
-                        <AccordionTrigger className="px-4 py-3 text-sm font-medium">Option 4: Request Identity Reveal</AccordionTrigger>
-                        <AccordionContent className="p-4 border-t">
-                            <p className="text-xs text-muted-foreground mb-2">
-                                If you cannot proceed without more details, explain why you need to know their identity. This message will be shown to the user.
+                        </div>
+
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                            <Label className="font-medium">3. Request Identity Reveal</Label>
+                            <p className="text-xs text-muted-foreground flex-grow">
+                                If you cannot proceed, explain why you need their identity.
                             </p>
                             <Textarea 
                                 id="revealReason"
-                                placeholder="e.g., 'Thank you for raising this. To investigate fully, I need to speak with you directly. I assure you this will be handled with confidentiality and without retaliation.'"
+                                placeholder="e.g., 'To investigate fully, I need to speak with you directly...'"
                                 value={revealReason}
                                 onChange={(e) => setRevealReason(e.target.value)}
-                                rows={4}
+                                rows={3}
                             />
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button disabled={!revealReason || isSubmitting} className="mt-2">
+                                    <Button disabled={!revealReason || isSubmitting} className="mt-2 w-full">
                                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Request Identity Reveal
                                     </Button>
@@ -806,9 +785,27 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
+                        </div>
+                    </div>
+                    
+                    <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                         <Label className="font-medium">4. Propose Resolution</Label>
+                         <p className="text-xs text-muted-foreground">
+                            Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.
+                        </p>
+                        <Textarea 
+                            id="resolve-directly"
+                            placeholder="e.g., 'Thank you for this feedback. We have reviewed the team's workflow and will be implementing new guidelines...'"
+                            value={resolution}
+                            onChange={(e) => setResolution(e.target.value)}
+                            rows={4}
+                        />
+                        <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit for Acknowledgement
+                        </Button>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -1477,5 +1474,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
