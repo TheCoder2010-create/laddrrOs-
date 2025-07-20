@@ -268,30 +268,32 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <Label htmlFor="assign-mode-switch" className="text-xs">{isUnassignMode ? 'Unassign' : 'Assign'}</Label>
                             </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            {isUnassignMode ? 'Select roles to remove from the case.' : 'Select roles to investigate.'}
-                        </p>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="justify-between">
-                                    <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select Roles'}</span>
-                                    <ChevronDown className="ml-2 h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                                <DropdownMenuLabel>{isUnassignMode ? 'Currently Assigned' : 'Assignable Roles'}</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {assignableRolesForDropdown.map(r => (
-                                    <DropdownMenuCheckboxItem
-                                        key={r}
-                                        checked={assignees.includes(r)}
-                                        onCheckedChange={() => handleAssigneeChange(r)}
-                                    >
-                                        {r}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">
+                                {isUnassignMode ? 'Select roles to remove from the case.' : 'Select roles to investigate.'}
+                            </p>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="justify-between">
+                                        <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select Roles'}</span>
+                                        <ChevronDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56">
+                                    <DropdownMenuLabel>{isUnassignMode ? 'Currently Assigned' : 'Assignable Roles'}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {assignableRolesForDropdown.map(r => (
+                                        <DropdownMenuCheckboxItem
+                                            key={r}
+                                            checked={assignees.includes(r)}
+                                            onCheckedChange={() => handleAssigneeChange(r)}
+                                        >
+                                            {r}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                         <p className="text-xs text-muted-foreground">
                             {feedback.assignedTo && feedback.assignedTo.length > 0 && (
                                 <span className="block">
