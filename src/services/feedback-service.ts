@@ -1010,25 +1010,31 @@ export async function markAllFeedbackAsViewed(idsToMark?: string[]): Promise<voi
 }
 
 /**
- * Assigns a feedback item to a new role.
+ * Assigns a feedback item to new roles, adding them to any existing assignees.
  */
-export async function assignFeedback(trackingId: string, assignees: Role[], actor: Role, comment: string): Promise<void> {
+export async function assignFeedback(trackingId: string, newAssignees: Role[], actor: Role, comment: string): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    item.assignedTo = assignees;
+    
+    // Combine new assignees with existing ones, ensuring no duplicates.
+    const currentAssignees = new Set(item.assignedTo || []);
+    newAssignees.forEach(assignee => currentAssignees.add(assignee));
+    item.assignedTo = Array.from(currentAssignees);
+
     item.status = 'In Progress';
     item.auditTrail?.push({
         event: 'Assigned',
         timestamp: new Date(),
         actor,
-        details: `Case assigned to ${assignees.join(', ')}.${comment ? `\nNote: "${comment}"` : ''}`,
+        details: `Case assigned to ${newAssignees.join(', ')}.${comment ? `\nNote: "${comment}"` : ''}`,
     });
 
     saveFeedbackToStorage(allFeedback);
 }
+
 
 /**
  * Adds a general update to a feedback item's audit trail.
