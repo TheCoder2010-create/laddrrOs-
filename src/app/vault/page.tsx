@@ -40,6 +40,7 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
+import { Switch } from '@/components/ui/switch';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -110,6 +111,7 @@ const auditEventIcons = {
     'Submitted': FileCheck,
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
+    'Unassigned': UserX,
     'Update Added': MessageSquare,
     'Resolved': CheckCircle,
     'Information Requested': MessageCircleQuestion,
@@ -163,11 +165,17 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     const [updateComment, setUpdateComment] = useState('');
     const [resolutionComment, setResolutionComment] = useState('');
     const [informationRequest, setInformationRequest] = useState('');
+    const [isUnassignMode, setIsUnassignMode] = useState(false);
 
     const [isAssigning, setIsAssigning] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isResolving, setIsResolving] = useState(false);
     const [isRequestingInfo, setIsRequestingInfo] = useState(false);
+    
+    useEffect(() => {
+        // Reset selections when toggling modes
+        setAssignees([]);
+    }, [isUnassignMode]);
 
     const handleAssigneeChange = (role: Role) => {
         setAssignees(prev => 
@@ -179,8 +187,8 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         if (assignees.length === 0) return;
         setIsAssigning(true);
         try {
-            await assignFeedback(feedback.trackingId, assignees, role!, assignmentComment);
-            toast({ title: "Case Assigned", description: `Case has been assigned to ${assignees.join(', ')}.`});
+            await assignFeedback(feedback.trackingId, assignees, role!, assignmentComment, isUnassignMode ? 'unassign' : 'assign');
+            toast({ title: `Case ${isUnassignMode ? 'Unassigned' : 'Assigned'}`, description: `Case has been updated for ${assignees.join(', ')}.`});
             setAssignmentComment('');
             setAssignees([]);
             onUpdate();
@@ -240,6 +248,10 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
     if (!canTakeAction || feedback.status === 'Resolved') return null;
 
+    const assignableRolesForDropdown = isUnassignMode 
+        ? (feedback.assignedTo || []) 
+        : availableRolesForAssignment;
+
     return (
         <div className="p-4 border-t mt-4 space-y-4">
             <Label className="text-base font-semibold">Case Management</Label>
@@ -247,11 +259,17 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
             {role === 'HR Head' && (
                 <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Assign Case Card */}
+                    {/* Assign/Unassign Case Card */}
                     <div className="p-4 border rounded-lg bg-background space-y-3">
-                        <Label className="font-medium">Assign Case</Label>
+                        <div className="flex justify-between items-center">
+                            <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
+                            <div className="flex items-center space-x-2">
+                                <Switch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
+                                <Label htmlFor="assign-mode-switch" className="text-xs">{isUnassignMode ? 'Unassign' : 'Assign'}</Label>
+                            </div>
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                            Select roles to investigate.
+                            {isUnassignMode ? 'Select roles to remove from the case.' : 'Select roles to investigate.'}
                             {feedback.assignedTo && feedback.assignedTo.length > 0 && (
                                 <span className="block mt-1">
                                     Currently: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
@@ -266,9 +284,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56">
-                                <DropdownMenuLabel>Assignable Roles</DropdownMenuLabel>
+                                <DropdownMenuLabel>{isUnassignMode ? 'Currently Assigned' : 'Assignable Roles'}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {availableRolesForAssignment.map(r => (
+                                {assignableRolesForDropdown.map(r => (
                                     <DropdownMenuCheckboxItem
                                         key={r}
                                         checked={assignees.includes(r)}
@@ -280,7 +298,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             </DropdownMenuContent>
                         </DropdownMenu>
                          <Textarea 
-                            placeholder="Add an assignment note (optional)..."
+                            placeholder="Add a note (optional)..."
                             value={assignmentComment}
                             onChange={(e) => setAssignmentComment(e.target.value)}
                             className="w-full text-sm"
@@ -288,7 +306,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         />
                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} className="w-full">
                             {isAssigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Assign
+                            {isUnassignMode ? 'Unassign Selected' : 'Assign Selected'}
                         </Button>
                     </div>
 
@@ -485,14 +503,15 @@ function VaultContent() {
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
                     
                     const handleDownload = () => {
-                        downloadAuditTrailPDF({
+                        const caseDetails = {
                             title: feedback.subject,
                             trackingId: feedback.trackingId,
                             initialMessage: feedback.message,
-                            trail: feedback.auditTrail || [],
                             aiSummary: feedback.summary ? `Criticality: ${feedback.criticality}\nReason: ${feedback.criticalityReasoning}` : undefined,
-                            finalResolution: feedback.resolution
-                        });
+                            finalResolution: feedback.resolution,
+                            trail: feedback.auditTrail || [],
+                        };
+                        downloadAuditTrailPDF(caseDetails);
                     };
 
                     return (

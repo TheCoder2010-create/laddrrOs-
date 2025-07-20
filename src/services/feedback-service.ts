@@ -1010,26 +1010,37 @@ export async function markAllFeedbackAsViewed(idsToMark?: string[]): Promise<voi
 }
 
 /**
- * Assigns a feedback item to new roles, adding them to any existing assignees.
+ * Assigns or unassigns roles for a feedback item.
  */
-export async function assignFeedback(trackingId: string, newAssignees: Role[], actor: Role, comment: string): Promise<void> {
+export async function assignFeedback(
+    trackingId: string, 
+    roles: Role[], 
+    actor: Role, 
+    comment: string,
+    mode: 'assign' | 'unassign' = 'assign'
+): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    
-    // Combine new assignees with existing ones, ensuring no duplicates.
     const currentAssignees = new Set(item.assignedTo || []);
-    newAssignees.forEach(assignee => currentAssignees.add(assignee));
+
+    if (mode === 'assign') {
+        roles.forEach(role => currentAssignees.add(role));
+        item.status = 'In Progress';
+    } else { // unassign
+        roles.forEach(role => currentAssignees.delete(role));
+    }
+    
     item.assignedTo = Array.from(currentAssignees);
 
-    item.status = 'In Progress';
+    const eventName = mode === 'assign' ? 'Assigned' : 'Unassigned';
     item.auditTrail?.push({
-        event: 'Assigned',
+        event: eventName,
         timestamp: new Date(),
         actor,
-        details: `Case assigned to ${newAssignees.join(', ')}.${comment ? `\nNote: "${comment}"` : ''}`,
+        details: `Case ${eventName.toLowerCase()} for ${roles.join(', ')}.${comment ? `\nNote: "${comment}"` : ''}`,
     });
 
     saveFeedbackToStorage(allFeedback);
