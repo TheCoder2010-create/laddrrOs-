@@ -35,6 +35,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
+  const [voiceInSilenceCount, setVoiceInSilenceCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
@@ -43,22 +44,30 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const history = await getOneOnOneHistory();
       const currentUserName = roleUserMapping[currentRole].name;
 
-      // Vault count
+      // Vault count (HR Head only)
       if (currentRole === 'HR Head') {
         setVaultFeedbackCount(feedback.filter(c => !c.viewed && c.status === 'Open' && c.source === 'Voice – In Silence').length);
       } else {
         setVaultFeedbackCount(0);
       }
       
+      // Voice - in Silence count (for assignees)
+       setVoiceInSilenceCount(feedback.filter(f => 
+            f.source === 'Voice – In Silence' && 
+            f.assignedTo?.includes(currentRole) &&
+            f.status !== 'Resolved'
+        ).length);
+
+
       // Action items count
       let totalActionItems = 0;
-      // Regular feedback items
+      // Regular feedback items (excluding Voice-in-Silence)
       totalActionItems += feedback.filter(f => {
          const isAssigned = f.assignedTo?.includes(currentRole as any);
          const isActionable = f.status !== 'Resolved' && f.status !== 'Closed';
-         // Exclude To-Do lists as they are handled on the 1-on-1 page
          const isNotToDo = f.status !== 'To-Do';
-         return isAssigned && isActionable && isNotToDo;
+         const isNotVoiceInSilence = f.source !== 'Voice – In Silence';
+         return isAssigned && isActionable && isNotToDo && isNotVoiceInSilence;
       }).length;
 
       // Escalated 1-on-1 insights
@@ -123,8 +132,9 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setActionItemCount(0);
       setMessageCount(0);
       setCoachingCount(0);
+      setVoiceInSilenceCount(0);
     }
-  }, [currentRole, currentUser.name]);
+  }, [currentRole, currentUserName]);
 
 
   useEffect(() => {
@@ -151,7 +161,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns' },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
-    { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
+    { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence', badge: voiceInSilenceCount > 0 ? voiceInSilenceCount : null, badgeVariant: 'destructive' as const },
   ];
 
   const hrMenuItems = [
