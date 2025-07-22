@@ -527,6 +527,8 @@ function VaultContent() {
                     const criticalityBadgeVariant = badgeVariants({ variant: criticalityConfig[feedback.criticality || 'Low']?.badge || 'secondary' });
                     const Icon = criticalityConfig[feedback.criticality || 'Low']?.icon || Info;
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
+                    const rawSubject = feedback.subject;
+                    const capitalizedSubject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
                     
                     const handleDownload = () => {
                         const caseDetails = {
@@ -545,13 +547,14 @@ function VaultContent() {
                         <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&[data-state=open]>svg]:rotate-180">
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <span className="font-medium truncate">{feedback.subject}</span>
+                                    <span className="font-medium truncate">{capitalizedSubject}</span>
+                                    {!feedback.criticality && (
+                                        <Badge variant="outline">Unanalyzed</Badge>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-4 pl-4">
-                                     {feedback.criticality ? (
+                                     {feedback.criticality && (
                                         <Badge className={criticalityBadgeVariant}>{feedback.criticality}</Badge>
-                                    ) : (
-                                        <Badge variant="outline">Unanalyzed</Badge>
                                     )}
                                     {getStatusBadge(feedback.status)}
                                 </div>
