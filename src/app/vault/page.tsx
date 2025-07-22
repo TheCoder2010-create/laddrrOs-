@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { availableRolesForAssignment } from '@/hooks/use-role';
@@ -317,10 +318,15 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
                     {/* Ask for Information Card */}
                     <div className="p-4 border rounded-lg bg-background space-y-3">
-                        <Label className="font-medium">Ask for Information</Label>
-                         <p className="text-xs text-muted-foreground">
-                            Ask a clarifying question to the anonymous user.
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <Label className="font-medium">Ask for Information</Label>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-60 text-sm">Ask a clarifying question to the anonymous user.</PopoverContent>
+                            </Popover>
+                        </div>
                         <div className="relative">
                             <Textarea 
                                 placeholder="Ask a clarifying question..."
@@ -337,10 +343,15 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
                      {/* Add Update Card */}
                     <div className="p-4 border rounded-lg bg-background space-y-3">
-                        <Label className="font-medium">Add Update</Label>
-                         <p className="text-xs text-muted-foreground">
-                            Log your investigation steps or notes.
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <Label className="font-medium">Add Update</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-60 text-sm">Log your investigation steps or notes.</PopoverContent>
+                            </Popover>
+                        </div>
                         <div className="relative">
                             <Textarea 
                                 placeholder="Add your notes here..."
@@ -358,10 +369,15 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
                 {/* Resolve Case Card */}
                  <div className="p-4 border rounded-lg bg-background space-y-3">
-                    <Label className="font-medium">Resolve Case</Label>
-                     <p className="text-xs text-muted-foreground">
-                        Provide the final resolution summary to close the case.
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <Label className="font-medium">Resolve Case</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-60 text-sm">Provide the final resolution summary to close the case.</PopoverContent>
+                        </Popover>
+                    </div>
                     <div className="relative">
                         <Textarea 
                             placeholder="Explain the final resolution..."
