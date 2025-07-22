@@ -47,7 +47,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
+import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapping';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 
@@ -532,7 +532,7 @@ function AcknowledgementWidget({ item, onUpdate, title, description, responderEv
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
                 <div className="p-3 bg-muted/80 rounded-md border">
-                    <p className="font-semibold text-foreground">{responderEventActor}'s Response:</p>
+                    <p className="font-semibold text-foreground">{formatActorName(responderEventActor)}'s Response:</p>
                     <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{responderEventDetails}</p>
                 </div>
                 <div className="space-y-2 pt-2">
@@ -688,7 +688,7 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {event.event} by <span className="text-primary">{event.actor}</span>
+                                        {event.event} by <span className="text-primary">{formatActorName(event.actor)}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                                     {renderDetails()}
@@ -1141,5 +1141,3 @@ export default function MyConcernsPage() {
 
     
 }
-
-    

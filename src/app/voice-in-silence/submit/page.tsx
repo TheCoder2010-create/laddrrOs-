@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getFeedbackByIds } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatActorName } from '@/lib/role-mapping';
 
 
 function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
@@ -131,7 +132,7 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {eventText} by <span className="text-primary">{event.actor}</span>
+                                        {eventText} by <span className="text-primary">{formatActorName(event.actor)}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                                     {detailsText && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{detailsText}</p>}

@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { CustomSwitch } from '@/components/ui/custom-switch';
+import { formatActorName } from '@/lib/role-mapping';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -138,7 +139,7 @@ function AuditTrail({ trail, onDownload }: { trail: AuditEvent[], onDownload: ()
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {event.event} by <span className="text-primary">{event.actor}</span>
+                                        {event.event} by <span className="text-primary">{formatActorName(event.actor)}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                                     {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
@@ -251,21 +252,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         <div className="space-y-4">
             {role === 'HR Head' && (
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Assign/Unassign Case Card */}
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex justify-between items-center">
                             <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm w-auto" side="top" align="end">
-                                  Select roles to investigate or remove.
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="flex items-center justify-between">
                             <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
+                        </div>
+                        <div className="flex items-center justify-end">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button 
@@ -312,18 +304,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         </div>
                     </div>
 
-                    {/* Ask for Information Card */}
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex items-center justify-between">
                             <Label className="font-medium">Ask for Information</Label>
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm w-auto" side="top" align="end">
-                                  Ask a clarifying question to the anonymous user.
-                                </PopoverContent>
-                            </Popover>
                         </div>
                         <div className="relative flex-grow">
                             <Textarea 
@@ -338,18 +321,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         </div>
                     </div>
 
-                     {/* Add Update Card */}
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex items-center justify-between">
                             <Label className="font-medium">Add Update</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm w-auto" side="top" align="end">
-                                  Log your investigation steps or notes.
-                                </PopoverContent>
-                            </Popover>
                         </div>
                         <div className="relative flex-grow">
                             <Textarea 
@@ -364,18 +338,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         </div>
                     </div>
 
-                    {/* Resolve Case Card */}
                     <div className="p-4 border rounded-lg bg-background space-y-3 md:col-span-3">
                         <div className="flex items-center justify-between">
                             <Label className="font-medium">Resolve Case</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
-                                </PopoverTrigger>
-                                <PopoverContent className="text-sm w-auto" side="top" align="end">
-                                Provide the final resolution summary to close the case.
-                                </PopoverContent>
-                            </Popover>
                         </div>
                         <div className="relative">
                             <Textarea 
@@ -393,7 +358,6 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                 </div>
             )}
 
-            {/* View for non-HR Head assignees */}
             {role !== 'HR Head' && (
                  <div className="p-4 border rounded-lg bg-background space-y-3">
                     <Label className="font-medium">Add Update</Label>
@@ -574,10 +538,8 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <span className="font-medium truncate">{capitalizedSubject}</span>
-                                    {feedback.criticality ? (
+                                    {feedback.criticality && (
                                         <Badge className={cn(criticalityBadgeVariant)}>{feedback.criticality}</Badge>
-                                    ) : (
-                                        <Badge variant="outline">Unanalyzed</Badge>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-4 pl-4">

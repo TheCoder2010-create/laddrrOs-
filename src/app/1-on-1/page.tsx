@@ -45,7 +45,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
+import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapping';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
@@ -641,14 +641,14 @@ function HistorySection({ role }: { role: Role }) {
 
                                                 {insight.supervisorResponse && (
                                                     <div className="mt-4 p-3 bg-muted/80 rounded-md border">
-                                                        <p className="font-semibold text-foreground text-sm">Your Response</p>
+                                                        <p className="font-semibold text-foreground text-sm">Your Response ({formatActorName(item.supervisorName)})</p>
                                                         <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
                                                     </div>
                                                 )}
 
                                                 {insight.employeeAcknowledgement && (
                                                     <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
-                                                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Employee Acknowledgement</p>
+                                                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Employee Acknowledgement ({formatActorName(item.employeeName)})</p>
                                                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
                                                     </div>
                                                 )}
@@ -659,7 +659,7 @@ function HistorySection({ role }: { role: Role }) {
                                                         
                                                         {amCoachingNotes && (
                                                              <div className="p-3 bg-muted/80 rounded-md border">
-                                                                <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes</p>
+                                                                <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
                                                                 <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
                                                             </div>
                                                         )}
@@ -755,14 +755,14 @@ function HistorySection({ role }: { role: Role }) {
                                                 
                                                 {insight.supervisorResponse && (
                                                     <div className="mt-2 p-3 bg-muted/80 rounded-md border">
-                                                        <p className="font-semibold text-foreground text-sm">{item.supervisorName}'s (TL) Response</p>
+                                                        <p className="font-semibold text-foreground text-sm">{formatActorName(item.supervisorName)}'s (TL) Response</p>
                                                         <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
                                                     </div>
                                                 )}
 
                                                 {insight.employeeAcknowledgement && (
                                                     <div className="mt-2 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
-                                                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Your Acknowledgement</p>
+                                                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Your Acknowledgement ({formatActorName(item.employeeName)})</p>
                                                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
                                                     </div>
                                                 )}

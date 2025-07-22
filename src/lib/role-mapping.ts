@@ -20,4 +20,21 @@ export const getRoleByName = (name: string): Role | undefined => {
     return undefined;
 }
 
+export const formatActorName = (actor: Role | string | undefined): string => {
+    if (!actor) return 'System';
     
+    // Check if actor is a valid role first
+    if (Object.keys(roleUserMapping).includes(actor as string)) {
+        const user = roleUserMapping[actor as Role];
+        return `${user.role} - ${user.name}`;
+    }
+
+    // Check if actor is a name
+    const role = getRoleByName(actor as string);
+    if (role) {
+        return `${role} - ${actor}`;
+    }
+
+    // Fallback for simple strings like 'Anonymous' or 'System'
+    return actor as string;
+};

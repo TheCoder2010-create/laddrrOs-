@@ -31,6 +31,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatActorName } from '@/lib/role-mapping';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' as const },
@@ -122,7 +123,7 @@ function AuditTrail({ trail, handleViewCaseDetails, onDownload }: { trail: Audit
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {event.event} by <span className="text-primary">{event.actor}</span>
+                                        {event.event} by <span className="text-primary">{formatActorName(event.actor)}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                                     {renderDetails()}
@@ -259,13 +260,13 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
         <div className="space-y-6">
              <div className="space-y-4">
                 {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
-                {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
-                {renderAuditEntry("Employee Acknowledged", `${item.employeeName}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                {renderAuditEntry("Supervisor Responded", `${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Employee Acknowledged", `${formatActorName(item.employeeName)}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
                 
                 {isManagerWidget && renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
                 {isManagerWidget && renderAuditEntry("AM Responded to Employee", "AM Response to Employee", insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
 
-                {isManagerWidget && renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
+                {isManagerWidget && renderAuditEntry("Supervisor Retry Action", `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
                 {isManagerWidget && renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
             </div>
         
@@ -395,10 +396,10 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
         <div className="space-y-6">
             <div className="space-y-4">
                 {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
-                {renderAuditEntry("Supervisor Responded", `${item.supervisorName}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Supervisor Responded", `${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
                 {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor !== 'HR Head')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
                 {renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
-                {renderAuditEntry("Supervisor Retry Action", `${item.supervisorName}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
+                {renderAuditEntry("Supervisor Retry Action", `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
                 {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, "bg-muted/80", "text-foreground")}
                  {renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
             </div>
@@ -1508,5 +1509,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
