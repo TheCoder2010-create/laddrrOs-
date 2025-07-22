@@ -317,7 +317,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     </div>
 
                     {/* Ask for Information Card */}
-                    <div className="p-4 border rounded-lg bg-background space-y-3">
+                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex items-center gap-2">
                             <Label className="font-medium">Ask for Information</Label>
                              <Popover>
@@ -327,13 +327,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverContent className="w-60 text-sm">Ask a clarifying question to the anonymous user.</PopoverContent>
                             </Popover>
                         </div>
-                        <div className="relative">
+                        <div className="relative flex-grow">
                             <Textarea 
                                 placeholder="Ask a clarifying question..."
                                 value={informationRequest}
                                 onChange={(e) => setInformationRequest(e.target.value)}
-                                rows={4}
-                                className="pr-10 pb-10"
+                                className="pr-10 pb-10 h-full"
                             />
                             <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
                                 {isRequestingInfo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
@@ -342,7 +341,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     </div>
 
                      {/* Add Update Card */}
-                    <div className="p-4 border rounded-lg bg-background space-y-3">
+                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex items-center gap-2">
                             <Label className="font-medium">Add Update</Label>
                             <Popover>
@@ -352,13 +351,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverContent className="w-60 text-sm">Log your investigation steps or notes.</PopoverContent>
                             </Popover>
                         </div>
-                        <div className="relative">
+                        <div className="relative flex-grow">
                             <Textarea 
                                 placeholder="Add your notes here..."
                                 value={updateComment}
                                 onChange={(e) => setUpdateComment(e.target.value)}
-                                rows={4}
-                                className="pr-10 pb-10"
+                                className="pr-10 pb-10 h-full"
                             />
                             <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
                                 {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
@@ -426,7 +424,7 @@ function VaultContent() {
     try {
       const feedback = await getAllFeedback();
       const vaultItems = feedback.filter(f => f.source === 'Voice – In Silence');
-      setAllFeedback(vaultItems.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
+      setAllFeedback(vaultItems.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.date).getTime()));
       const unreadVaultIds = vaultItems.filter(c => !c.viewed).map(c => c.trackingId);
       if (unreadVaultIds.length > 0) {
         await markAllFeedbackAsViewed(unreadVaultIds);
