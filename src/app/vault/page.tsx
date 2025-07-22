@@ -248,7 +248,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         : availableRolesForAssignment;
 
     return (
-        <div className="p-4 border-t mt-4 space-y-4">
+        <div className="p-4 mt-4 space-y-4">
             {role === 'HR Head' && (
                 <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
