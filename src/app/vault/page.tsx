@@ -249,14 +249,13 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
     return (
         <div className="p-4 border-t mt-4 space-y-4">
-            
             {role === 'HR Head' && (
                 <>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Assign/Unassign Case Card */}
-                    <div className="p-4 border rounded-lg bg-background space-y-3">
+                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex justify-between items-center">
-                            <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
+                            <Label className="font-medium">Assign Case</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
@@ -319,7 +318,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="text-sm" side="top" sideOffset={10}>
+                                <PopoverContent className="text-sm w-auto" side="top" sideOffset={10}>
                                   Ask a clarifying question to the anonymous user.
                                 </PopoverContent>
                             </Popover>
@@ -345,7 +344,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="text-sm" side="top" sideOffset={10}>
+                                <PopoverContent className="text-sm w-auto" side="top" sideOffset={10}>
                                   Log your investigation steps or notes.
                                 </PopoverContent>
                             </Popover>
@@ -372,7 +371,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             <PopoverTrigger asChild>
                                 <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                             </PopoverTrigger>
-                            <PopoverContent className="text-sm" side="top" sideOffset={10}>
+                            <PopoverContent className="text-sm w-auto" side="top" sideOffset={10}>
                               Provide the final resolution summary to close the case.
                             </PopoverContent>
                         </Popover>
@@ -548,10 +547,10 @@ function VaultContent() {
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <span className="font-medium truncate">{capitalizedSubject}</span>
-                                    {!feedback.criticality ? (
-                                        <Badge variant="outline">Unanalyzed</Badge>
-                                    ) : (
+                                    {feedback.criticality ? (
                                         <Badge className={cn(criticalityBadgeVariant, "ml-2")}>{feedback.criticality}</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="ml-2">Unanalyzed</Badge>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-4 pl-4">
