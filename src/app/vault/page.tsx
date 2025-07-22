@@ -649,7 +649,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                        ID: {feedback.trackingId}
                                     </span>
                                 </div>
-                                <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
+                                <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md">{feedback.message}</p>
                             </div>
 
                             {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} onDownload={handleDownload} />}
@@ -719,4 +719,3 @@ export default function VaultPage() {
       </div>
     );
 }
-
