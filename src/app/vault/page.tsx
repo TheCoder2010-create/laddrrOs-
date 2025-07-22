@@ -252,7 +252,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         <div className="space-y-4">
             {role === 'HR Head' && (
                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2">
                         <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                             <Label className="font-medium">Assign Case</Label>
                              <div className="flex items-center justify-between mt-2">
@@ -275,6 +275,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                                 key={r}
                                                 checked={assignees.includes(r)}
                                                 onCheckedChange={() => handleAssigneeChange(r)}
+                                                onSelect={(e) => e.preventDefault()}
                                             >
                                                 {r}
                                             </DropdownMenuCheckboxItem>
