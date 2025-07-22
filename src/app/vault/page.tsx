@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX, LogOut } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -413,7 +413,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 }
 
 
-function VaultContent() {
+function VaultContent({ onLogout }: { onLogout: () => void }) {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
@@ -504,12 +504,20 @@ function VaultContent() {
     <div className="p-4 md:p-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold font-headline mb-2 text-foreground">
-            🔒 Feedback Vault
-          </CardTitle>
-           <CardDescription className="text-base text-muted-foreground italic">
-            Confidential submissions from Voice – in Silence, with AI-powered analysis.
-          </CardDescription>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="text-2xl font-bold font-headline mb-2 text-foreground">
+                        🔒 Feedback Vault
+                    </CardTitle>
+                    <CardDescription className="text-base text-muted-foreground italic">
+                        Confidential submissions from Voice – in Silence, with AI-powered analysis.
+                    </CardDescription>
+                </div>
+                <Button variant="ghost" onClick={onLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                </Button>
+            </div>
         </CardHeader>
         <CardContent>
           {allFeedback.length === 0 ? (
@@ -548,9 +556,9 @@ function VaultContent() {
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <span className="font-medium truncate">{capitalizedSubject}</span>
                                     {feedback.criticality ? (
-                                        <Badge className={cn(criticalityBadgeVariant, "ml-2")}>{feedback.criticality}</Badge>
+                                        <Badge className={cn(criticalityBadgeVariant)}>{feedback.criticality}</Badge>
                                     ) : (
-                                        <Badge variant="outline" className="ml-2">Unanalyzed</Badge>
+                                        <Badge variant="outline">Unanalyzed</Badge>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-4 pl-4">
@@ -623,7 +631,7 @@ function VaultContent() {
 
 export default function VaultPage() {
     const [isUnlocked, setIsUnlocked] = useState(false);
-    const { role } = useRole();
+    const { role, setRole } = useRole();
 
     useEffect(() => {
         setIsUnlocked(false);
@@ -631,16 +639,16 @@ export default function VaultPage() {
 
     return (
       <div className="relative min-h-screen">
-          <div className="absolute top-4 left-4 z-10">
-              <Button variant="ghost" asChild>
-                  <Link href="/">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Dashboard
-                  </Link>
-              </Button>
-          </div>
           {role !== 'HR Head' ? (
               <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+                  <div className="absolute top-4 left-4 z-10">
+                      <Button variant="ghost" asChild>
+                          <Link href="/">
+                              <ArrowLeft className="mr-2 h-4 w-4" />
+                              Back to Dashboard
+                          </Link>
+                      </Button>
+                  </div>
                   <Card className="max-w-md">
                       <CardHeader>
                           <CardTitle>Access Denied</CardTitle>
@@ -652,10 +660,20 @@ export default function VaultPage() {
                   </Card>
               </div>
           ) : !isUnlocked ? (
-              <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />
+               <>
+                    <div className="absolute top-4 left-4 z-10">
+                        <Button variant="ghost" asChild>
+                            <Link href="/">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Dashboard
+                            </Link>
+                        </Button>
+                    </div>
+                    <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />
+               </>
           ) : (
-              <div className="pt-16">
-                  <VaultContent />
+              <div className="pt-4">
+                  <VaultContent onLogout={() => setRole(null)} />
               </div>
           )}
       </div>
