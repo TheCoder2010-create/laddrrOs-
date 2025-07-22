@@ -92,7 +92,8 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
                     </div>
                 </CardFooter>
             </Card>
-    )
+        </div>
+    );
 }
 
 const criticalityConfig = {
