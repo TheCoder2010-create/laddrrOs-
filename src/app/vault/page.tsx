@@ -269,7 +269,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="justify-between">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="justify-between"
+                                      disabled={isUnassignMode && (!feedback.assignedTo || feedback.assignedTo.length === 0)}
+                                    >
                                         <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select'}</span>
                                         <ChevronDown className="ml-2 h-4 w-4" />
                                     </Button>
