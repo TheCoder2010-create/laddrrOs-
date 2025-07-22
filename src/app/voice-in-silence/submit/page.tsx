@@ -9,10 +9,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion } from 'lucide-react';
+import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion, UserX, UserPlus, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
-import { trackFeedback, TrackedFeedback, submitAnonymousReply } from '@/services/feedback-service';
+import { trackFeedback, TrackedFeedback, submitAnonymousReply, submitAnonymousAcknowledgement } from '@/services/feedback-service';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format, formatDistanceToNow } from 'date-fns';
@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import { getFeedbackByIds } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatActorName } from '@/lib/role-mapping';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
@@ -97,6 +99,11 @@ const publicAuditEventIcons = {
     'Assigned': Send,
     'Update Added': MessageSquare,
     'Resolved': CheckCircle,
+    'Resolution Provided by HR': MessageSquare,
+    'Resolution Accepted': CheckCircle,
+    'User Escalated to Ombudsman': UserX,
+    'User Escalated to Grievance Office': UserPlus,
+    'Case Closed': FileCheck,
     'Information Requested': MessageCircleQuestion,
     'Anonymous User Responded': MessageSquare,
     'default': Info,
@@ -189,8 +196,10 @@ function TrackingForm() {
   const getStatusBadge = (status?: string) => {
     switch(status) {
         case 'Resolved': return <Badge variant='success'>Resolved</Badge>;
+        case 'Closed': return <Badge variant='secondary'>Closed</Badge>;
         case 'In Progress': return <Badge variant='secondary'>In Progress</Badge>;
         case 'Pending Anonymous Reply': return <Badge variant='destructive'>Action Required</Badge>;
+        case 'Pending Anonymous Acknowledgement': return <Badge variant='destructive'>Action Required</Badge>;
         default: return <Badge variant='default'>Open</Badge>;
     }
   }
@@ -243,7 +252,116 @@ function TrackingForm() {
             </CardContent>
          </Card>
     )
-}
+  }
+
+  function FinalAcknowledgementWidget({ item }: { item: Feedback }) {
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [escalationPath, setEscalationPath] = useState('');
+      const [justification, setJustification] = useState('');
+      const [isEscalateDialogOpen, setIsEscalateDialogOpen] = useState(false);
+
+      const handleAccept = async () => {
+          setIsSubmitting(true);
+          try {
+              await submitAnonymousAcknowledgement(item.trackingId, true, '', '');
+              toast({ title: "Resolution Accepted", description: "This case is now closed." });
+              handleTrack();
+          } catch (error) {
+              toast({ variant: "destructive", title: "Action Failed" });
+          } finally {
+              setIsSubmitting(false);
+          }
+      };
+
+      const handleEscalateSubmit = async () => {
+          if (!escalationPath || !justification) {
+              toast({ variant: 'destructive', title: "Missing Information", description: "Please select an escalation path and provide a justification."});
+              return;
+          }
+          setIsSubmitting(true);
+          try {
+              await submitAnonymousAcknowledgement(item.trackingId, false, escalationPath, justification);
+              toast({ title: "Case Escalated", description: `Your final justification has been logged and the case is now closed.` });
+              setIsEscalateDialogOpen(false);
+              handleTrack();
+          } catch (error) {
+              toast({ variant: "destructive", title: "Action Failed" });
+          } finally {
+              setIsSubmitting(false);
+          }
+      }
+
+      return (
+          <>
+            <Dialog open={isEscalateDialogOpen} onOpenChange={setIsEscalateDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Challenge & Escalate Resolution</DialogTitle>
+                        <DialogDescription>
+                            Please provide your final justification for challenging this outcome. This will be logged with the case before it is formally closed and routed.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="escalation-path">Escalate To</Label>
+                            <Select onValueChange={setEscalationPath} value={escalationPath}>
+                                <SelectTrigger id="escalation-path">
+                                    <SelectValue placeholder="Select a final destination..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Ombudsman">Ombudsman</SelectItem>
+                                    <SelectItem value="Grievance Office">Grievance Office</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                             <Label htmlFor="justification">Justification</Label>
+                             <Textarea
+                                id="justification"
+                                value={justification}
+                                onChange={(e) => setJustification(e.target.value)}
+                                placeholder="Explain why you are challenging the resolution..."
+                                rows={6}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                        <Button variant="destructive" onClick={handleEscalateSubmit} disabled={isSubmitting || !escalationPath || !justification}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit Final Justification
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Card className="border-2 border-blue-500/50 bg-blue-500/5 rounded-lg mt-4">
+                <CardHeader>
+                    <CardTitle className="text-lg text-blue-700 dark:text-blue-400">Action Required: A resolution has been provided by HR</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="p-3 bg-background/50 rounded-md border">
+                        <p className="font-semibold text-foreground">HR Head's Final Resolution:</p>
+                        <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{item.resolution}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Please review the resolution. If you are satisfied, you can accept it to close the case. If not, you may challenge and escalate it, which will also close the case but log your dissatisfaction and final comments.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                         <Button variant="success" onClick={handleAccept} disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Accept Resolution
+                        </Button>
+                        <Button variant="destructive" onClick={() => setIsEscalateDialogOpen(true)} disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Challenge & Escalate
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+          </>
+      );
+  }
   
   return (
      <CardContent className="space-y-6">
@@ -278,11 +396,13 @@ function TrackingForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               {searchResult.status === 'Pending Anonymous Reply' && <ReplyWidget item={searchResult} />}
+              {searchResult.status === 'Pending Anonymous Acknowledgement' && <FinalAcknowledgementWidget item={searchResult} />}
+
 
                <div>
                   <Label>Assigned To</Label>
                   <p className="text-muted-foreground">
-                    {searchResult.status === 'Resolved' ? 'Case Closed' : `Under review by ${searchResult.assignedTo && searchResult.assignedTo.length > 0 ? searchResult.assignedTo.join(', ') : 'HR Head'}`}
+                    {searchResult.status === 'Resolved' || searchResult.status === 'Closed' ? 'Case Closed' : `Under review by ${searchResult.assignedTo && searchResult.assignedTo.length > 0 ? searchResult.assignedTo.join(', ') : 'HR Head'}`}
                   </p>
               </div>
               <div>
@@ -290,7 +410,7 @@ function TrackingForm() {
                 <p className="text-muted-foreground">{searchResult.subject}</p>
               </div>
               {searchResult.auditTrail && <PublicAuditTrail trail={searchResult.auditTrail} />}
-              {searchResult.resolution && (
+              {searchResult.resolution && searchResult.status !== 'Pending Anonymous Acknowledgement' && (
                 <div>
                   <Label>Final Resolution</Label>
                   <p className="text-muted-foreground whitespace-pre-wrap p-4 border rounded-md bg-muted/50">{searchResult.resolution}</p>

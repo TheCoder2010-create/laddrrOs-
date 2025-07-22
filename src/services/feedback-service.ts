@@ -32,6 +32,7 @@ export type FeedbackStatus =
   | 'Pending Anonymous Reply'
   | 'Pending HR Action'
   | 'Pending Employee Acknowledgment' // New status for identified concerns
+  | 'Pending Anonymous Acknowledgement' // For anonymous users to ack HR resolution
   | 'Pending Acknowledgement' // For FYI notifications
   | 'Final Disposition Required' // For HR's final action
   | 'To-Do'
@@ -928,8 +929,8 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
     return { found: false };
   }
   
-  // If the case requires interaction (like identity reveal), return the full object.
-  if (feedback.status === 'Pending Identity Reveal' || feedback.status === 'Pending Anonymous Reply') {
+  // If the case requires interaction, return the full object.
+  if (['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Anonymous Acknowledgement'].includes(feedback.status || '')) {
       return { found: true, feedback };
   }
 
@@ -1207,6 +1208,48 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     saveFeedbackToStorage(allFeedback);
 }
 
+export async function submitAnonymousAcknowledgement(
+    trackingId: string, 
+    accepted: boolean, 
+    escalationPath: string, 
+    justification: string
+): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    if (item.status !== 'Pending Anonymous Acknowledgement') return;
+
+    if (accepted) {
+        item.status = 'Resolved';
+        item.auditTrail?.push({
+            event: 'Resolution Accepted',
+            timestamp: new Date(),
+            actor: 'Anonymous',
+            details: 'Anonymous user accepted the final resolution from HR.'
+        });
+    } else {
+        item.status = 'Closed';
+        item.resolution = `Case closed after user escalated to ${escalationPath}.\n\nUser Justification: ${justification}`;
+        item.auditTrail?.push({
+            event: 'User Escalated to ' + escalationPath,
+            timestamp: new Date(),
+            actor: 'Anonymous',
+            details: `User challenged the HR resolution and chose to escalate to the ${escalationPath}.\n\nJustification: ${justification}`
+        });
+    }
+
+    item.auditTrail?.push({
+        event: 'Case Closed',
+        timestamp: new Date(),
+        actor: 'System',
+        details: 'The case was closed following the anonymous user\'s final decision.'
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+
 
 /**
  * Resolves a feedback item.
@@ -1218,15 +1261,28 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
     if (feedbackIndex === -1) return;
 
     const feedback = allFeedback[feedbackIndex];
-    feedback.status = 'Resolved';
-    feedback.resolution = resolution;
-    feedback.assignedTo = [];
-    feedback.auditTrail?.push({
-        event: 'Resolved',
-        timestamp: new Date(),
-        actor,
-        details: resolution
-    });
+    
+    // For anonymous "Voice - in Silence" cases, resolving it puts it in a pending state for the user
+    if (feedback.source === 'Voice – In Silence' && actor === 'HR Head') {
+        feedback.status = 'Pending Anonymous Acknowledgement';
+        feedback.resolution = resolution;
+        feedback.auditTrail?.push({
+            event: 'Resolution Provided by HR',
+            timestamp: new Date(),
+            actor,
+            details: resolution,
+        });
+    } else {
+        feedback.status = 'Resolved';
+        feedback.resolution = resolution;
+        feedback.assignedTo = [];
+        feedback.auditTrail?.push({
+            event: 'Resolved',
+            timestamp: new Date(),
+            actor,
+            details: resolution
+        });
+    }
 
     saveFeedbackToStorage(allFeedback);
 }
