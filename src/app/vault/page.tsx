@@ -253,9 +253,11 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
             {role === 'HR Head' && (
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                        <div className="flex justify-between items-center">
+                         <div>
                             <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
-                            <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
+                            <div className='mt-2'>
+                                <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
+                            </div>
                         </div>
                         <div className="flex items-center justify-end">
                             <DropdownMenu>
@@ -631,7 +633,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                        ID: {feedback.trackingId}
                                     </span>
                                 </div>
-                                <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md">{feedback.message}</p>
+                                <p className="whitespace-pre-wrap text-base border rounded-md p-4">{feedback.message}</p>
                             </div>
 
                             {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} onDownload={handleDownload} />}
