@@ -936,9 +936,9 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         
         let widgetProps;
         if (role === 'AM' && insight.status === 'pending_am_review') {
-             widgetProps = { title: "1-on-1 Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
+             widgetProps = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
         } else if (role === 'Manager' && insight.status === 'pending_manager_review') {
-             widgetProps = { title: "1-on-1 Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
+             widgetProps = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
         } 
 
         if (widgetProps) {
@@ -1038,7 +1038,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
+    const subject = isOneOnOne ? `Escalation: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
@@ -1366,9 +1366,9 @@ function ActionItemsContent() {
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                              <span className="font-medium truncate">{subject}</span>
+                             {getTypeBadge()}
                         </div>
                         <div className="flex items-center gap-4 pl-4 mr-2">
-                            {getTypeBadge()}
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"
                                 onClick={(e) => { e.stopPropagation(); }}
@@ -1509,3 +1509,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
