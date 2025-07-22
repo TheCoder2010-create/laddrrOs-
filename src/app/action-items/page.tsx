@@ -16,7 +16,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download, Bot, BrainCircuit } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -245,29 +245,37 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
         }
     };
     
-    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
-        const entry = insight.auditTrail?.find(e => e.event === event);
-        if (!details && !entry?.details) return null;
+    const renderAuditEntry = (title: string, content: string | undefined, icon: React.ElementType, iconClass: string) => {
+        if (!content) return null;
+        const Icon = icon;
         return (
-            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
-                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
+            <div className="flex items-start gap-4">
+                <div className={cn("flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center", iconClass)}>
+                    <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                    <p className="font-semibold text-foreground">{title}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>
+                </div>
             </div>
         );
     };
 
+    const managerAuditEntries = [
+        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes` },
+        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee` },
+        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes` },
+        { event: 'Employee Acknowledged', label: `Final Employee Acknowledgement`, details: insight.employeeAcknowledgement },
+    ];
+
     return (
         <div className="space-y-6">
-             <div className="space-y-4">
-                {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
-                {renderAuditEntry("Supervisor Responded", `${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
-                {renderAuditEntry("Employee Acknowledged", `${formatActorName(item.employeeName)}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+            <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
+                {renderAuditEntry("Initial AI Insight", `${insight.summary}\n\nWhy it matters: ${insight.reason}`, Bot, "text-red-500 border-red-500/30")}
+                {renderAuditEntry(`${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, User, "text-muted-foreground border-border")}
+                {renderAuditEntry(`${formatActorName(item.employeeName)}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, User, "text-blue-500 border-blue-500/30")}
                 
-                {isManagerWidget && renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
-                {isManagerWidget && renderAuditEntry("AM Responded to Employee", "AM Response to Employee", insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
-
-                {isManagerWidget && renderAuditEntry("Supervisor Retry Action", `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
-                {isManagerWidget && renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
+                {isManagerWidget && managerAuditEntries.map(entry => renderAuditEntry(entry.label, entry.details || insight.auditTrail?.find(e => e.event === entry.event)?.details, Users, "text-muted-foreground border-border"))}
             </div>
         
             <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
@@ -323,11 +331,11 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                     <>
                         <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
                         <div className="flex gap-4">
-                            <Button variant="secondary" onClick={() => handleActionClick('coach')}>
-                                <Users className="mr-2 h-4 w-4" />
+                            <Button variant="secondary" className="bg-yellow-400/80 text-yellow-900 hover:bg-yellow-400/90" onClick={() => handleActionClick('coach')}>
+                                <BrainCircuit className="mr-2 h-4 w-4" />
                                 Coach Supervisor
                             </Button>
-                            <Button onClick={() => handleActionClick('address')}>
+                            <Button onClick={() => handleActionClick('address')} className="bg-blue-600 text-white hover:bg-blue-700">
                                 <ChevronsRight className="mr-2 h-4 w-4" />
                                 Address Employee
                             </Button>
@@ -1038,7 +1046,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `Escalation: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
+    const subject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
@@ -1509,5 +1517,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
