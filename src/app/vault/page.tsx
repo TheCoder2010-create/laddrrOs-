@@ -376,6 +376,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     );
 }
 
+const HIDDEN_SUMMARIES_KEY = 'vault_hidden_summaries';
 
 function VaultContent({ onLogout }: { onLogout: () => void }) {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
@@ -383,6 +384,17 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
   const [hiddenSummaries, setHiddenSummaries] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+        const storedHidden = localStorage.getItem(HIDDEN_SUMMARIES_KEY);
+        if (storedHidden) {
+            setHiddenSummaries(new Set(JSON.parse(storedHidden)));
+        }
+    } catch (error) {
+        console.error("Failed to load hidden summaries from localStorage", error);
+    }
+  }, []);
 
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true);
@@ -427,11 +439,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
         });
         fetchFeedback();
         // Ensure the newly generated summary is visible
-        setHiddenSummaries(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(trackingId);
-            return newSet;
-        });
+        toggleSummaryVisibility(trackingId, false);
     } catch (error) {
         console.error("Failed to summarize feedback", error);
         toast({
@@ -444,14 +452,26 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
     }
   };
 
-  const toggleSummaryVisibility = (trackingId: string) => {
+  const toggleSummaryVisibility = (trackingId: string, shouldHide?: boolean) => {
     setHiddenSummaries(prev => {
         const newSet = new Set(prev);
-        if (newSet.has(trackingId)) {
-            newSet.delete(trackingId);
-        } else {
+        const isCurrentlyHidden = newSet.has(trackingId);
+
+        // If shouldHide is explicitly provided, use it. Otherwise, toggle.
+        const hide = shouldHide !== undefined ? shouldHide : !isCurrentlyHidden;
+
+        if (hide) {
             newSet.add(trackingId);
+        } else {
+            newSet.delete(trackingId);
         }
+        
+        try {
+            localStorage.setItem(HIDDEN_SUMMARIES_KEY, JSON.stringify(Array.from(newSet)));
+        } catch (error) {
+            console.error("Failed to save hidden summaries to localStorage", error);
+        }
+
         return newSet;
     });
   };
@@ -561,7 +581,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                         variant="ghost" 
                                         size="icon" 
                                         className="absolute top-2 right-2 h-6 w-6" 
-                                        onClick={() => toggleSummaryVisibility(feedback.trackingId)}
+                                        onClick={() => toggleSummaryVisibility(feedback.trackingId, true)}
                                     >
                                         <X className="h-4 w-4" />
                                      </Button>
@@ -596,7 +616,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                         {feedback.summary && isSummaryHidden && (
                                             <Button
                                                 size="sm"
-                                                onClick={() => toggleSummaryVisibility(feedback.trackingId)}
+                                                onClick={() => toggleSummaryVisibility(feedback.trackingId, false)}
                                                 variant="ghost"
                                                 className="text-primary"
                                             >
