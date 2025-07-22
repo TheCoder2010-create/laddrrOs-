@@ -857,7 +857,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <p className="font-medium truncate">{accordionTitle}</p>
                                 </div>
-                                <div className="flex items-center gap-4 pl-4">
+                                <div className="flex items-center gap-4 pl-4 mr-2">
                                     <span className="text-xs text-muted-foreground font-mono cursor-text">
                                         ID: {item.trackingId}
                                     </span>

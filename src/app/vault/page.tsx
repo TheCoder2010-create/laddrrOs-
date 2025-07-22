@@ -251,11 +251,11 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     return (
         <div className="space-y-4">
             {role === 'HR Head' && (
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                          <div className="space-y-2">
                              <Label className="font-medium">Assign Case</Label>
-                            <div className="flex items-center justify-between mt-2">
+                             <div className="flex items-center justify-between mt-2">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -303,11 +303,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             </Button>
                         </div>
                     </div>
-
+                    
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                        <div className="flex items-center justify-between">
-                            <Label className="font-medium">Ask Information</Label>
-                        </div>
+                        <Label className="font-medium">Ask Information</Label>
                         <div className="relative flex-grow">
                             <Textarea 
                                 placeholder="Ask a clarifying question..."
@@ -320,11 +318,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             </Button>
                         </div>
                     </div>
-
-                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                        <div className="flex items-center justify-between">
-                            <Label className="font-medium">Add Update</Label>
-                        </div>
+                    
+                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3 md:col-span-1">
+                        <Label className="font-medium">Add Update</Label>
                         <div className="relative flex-grow">
                             <Textarea 
                                 placeholder="Add your notes here..."
@@ -338,10 +334,8 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         </div>
                     </div>
 
-                    <div className="p-4 border rounded-lg bg-background space-y-3 md:col-span-3">
-                        <div className="flex items-center justify-between">
-                            <Label className="font-medium">Resolve Case</Label>
-                        </div>
+                    <div className="p-4 border rounded-lg bg-background space-y-3 md:col-span-2">
+                        <Label className="font-medium">Resolve Case</Label>
                         <div className="relative">
                             <Textarea 
                                 placeholder="Explain the final resolution..."

@@ -1367,7 +1367,7 @@ function ActionItemsContent() {
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                              <span className="font-medium truncate">{subject}</span>
                         </div>
-                        <div className="flex items-center gap-4 pl-4">
+                        <div className="flex items-center gap-4 pl-4 mr-2">
                             {getTypeBadge()}
                             <span 
                                 className="text-xs text-muted-foreground font-mono cursor-text"

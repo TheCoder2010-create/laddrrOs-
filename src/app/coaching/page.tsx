@@ -274,7 +274,7 @@ function MyDevelopmentWidget() {
                                                 <p className="font-semibold">{rec.area}</p>
                                                 <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
                                             </div>
-                                            <div className="mr-4">
+                                            <div className="mr-2">
                                                 {getStatusBadge(rec.status)}
                                             </div>
                                         </div>
