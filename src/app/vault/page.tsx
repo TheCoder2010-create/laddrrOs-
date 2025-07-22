@@ -38,7 +38,7 @@ import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { CustomSwitch } from '@/components/ui/custom-switch';
 import { formatActorName } from '@/lib/role-mapping';
 
-function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
+function VaultLoginPage({ onUnlock }: { onUnlock: () => void; }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -253,8 +253,8 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
             {role === 'HR Head' && (
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                         <div>
-                            <Label className="font-medium">Assign Case</Label>
+                         <div className="space-y-2">
+                             <Label className="font-medium">Assign Case</Label>
                             <div className="flex items-center justify-between mt-2">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <DropdownMenu>
@@ -562,7 +562,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                         <Badge className={cn(criticalityBadgeVariant)}>{feedback.criticality}</Badge>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-4 pl-4">
+                                <div className="flex items-center gap-4 pl-4 mr-2">
                                     {getStatusBadge(feedback.status)}
                                 </div>
                             </div>
