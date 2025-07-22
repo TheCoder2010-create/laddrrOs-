@@ -101,10 +101,10 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
 }
 
 const criticalityConfig = {
-    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
-    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' },
-    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' },
-    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' },
+    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' as const },
+    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' as const },
+    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' as const },
+    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' as const },
 };
 
 const auditEventIcons = {
@@ -368,7 +368,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     />
                     <Button variant="success" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
                         {isResolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Mark as Resolved
+                        Resolved
                     </Button>
                 </div>
                 </>
@@ -523,7 +523,7 @@ function VaultContent() {
 
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
-                        <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
+                        <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&[data-state=open]>svg]:rotate-180">
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <span className="font-medium truncate">{feedback.subject}</span>
@@ -641,3 +641,4 @@ export default function VaultPage() {
       </div>
     );
 }
+
