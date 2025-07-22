@@ -215,7 +215,10 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         setIsResolving(true);
         try {
             await resolveFeedback(feedback.trackingId, role!, resolutionComment);
-            toast({ title: "Case Resolved", description: "This case has been marked as resolved." });
+            toast({ 
+                title: "Resolution Submitted", 
+                description: "The resolution has been sent to the user for acknowledgement. If the complainant is not satisfied, they will have the option to escalate the case." 
+            });
             setResolutionComment('');
             onUpdate();
         } catch (error) {
@@ -242,14 +245,14 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
     
     const canTakeAction = role === 'HR Head' || feedback.assignedTo?.includes(role!);
 
-    if (!canTakeAction || feedback.status === 'Resolved') return null;
+    if (!canTakeAction || feedback.status === 'Resolved' || feedback.status === 'Closed') return null;
 
     const assignableRolesForDropdown = isUnassignMode 
         ? (feedback.assignedTo || []) 
         : availableRolesForAssignment;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-2">
             {role === 'HR Head' && (
                  <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2">
@@ -493,8 +496,10 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
   const getStatusBadge = (status?: string) => {
     switch(status) {
         case 'Resolved': return <Badge variant='success'>Resolved</Badge>;
+        case 'Closed': return <Badge variant='secondary'>Closed</Badge>;
         case 'In Progress': return <Badge variant='secondary'>In Progress</Badge>;
         case 'Pending Anonymous Reply': return <Badge className="bg-blue-500/20 text-blue-500">Awaiting Reply</Badge>;
+        case 'Pending Anonymous Acknowledgement': return <Badge className="bg-blue-500/20 text-blue-500">Pending User Ack.</Badge>;
         default: return <Badge variant='default'>Open</Badge>;
     }
   }
