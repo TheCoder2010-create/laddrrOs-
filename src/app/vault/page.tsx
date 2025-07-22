@@ -270,9 +270,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             </div>
                         </div>
                         <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">
-                                {isUnassignMode ? 'Select roles to remove.' : 'Select roles to investigate.'}
-                            </p>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto text-sm">Select roles to investigate or remove.</PopoverContent>
+                            </Popover>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" size="sm" className="justify-between">
@@ -324,7 +327,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-60 text-sm">Ask a clarifying question to the anonymous user.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm">Ask a clarifying question to the anonymous user.</PopoverContent>
                             </Popover>
                         </div>
                         <div className="relative flex-grow">
@@ -348,7 +351,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-60 text-sm">Log your investigation steps or notes.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm">Log your investigation steps or notes.</PopoverContent>
                             </Popover>
                         </div>
                         <div className="relative flex-grow">
@@ -373,7 +376,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             <PopoverTrigger asChild>
                                 <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-60 text-sm">Provide the final resolution summary to close the case.</PopoverContent>
+                            <PopoverContent className="w-auto text-sm">Provide the final resolution summary to close the case.</PopoverContent>
                         </Popover>
                     </div>
                     <div className="relative">

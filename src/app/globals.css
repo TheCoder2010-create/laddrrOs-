@@ -50,7 +50,7 @@ body {
     --foreground: 210 17% 98%;
     --card: 216 23% 16%;
     --card-foreground: 210 17% 98%;
-    --popover: 216 23% 16%;
+    --popover: 216 23% 16% / 0.2;
     --popover-foreground: 210 17% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 222 47% 11%;
