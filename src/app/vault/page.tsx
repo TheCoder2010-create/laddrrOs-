@@ -255,7 +255,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2">
                         <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                             <Label className="font-medium">Assign Case</Label>
-                             <div className="flex items-center justify-between mt-2">
+                             <div className="flex items-center justify-between">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -379,6 +379,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
   const [hiddenSummaries, setHiddenSummaries] = useState<Set<string>>(new Set());
   const { toast } = useToast();
+  const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     try {
@@ -527,7 +528,13 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
             </div>
           ) : (
              <Popover>
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion 
+                  type="single" 
+                  collapsible 
+                  className="w-full"
+                  value={openAccordionItem}
+                  onValueChange={setOpenAccordionItem}
+                >
                 {allFeedback.map((feedback) => {
                     const criticalityBadgeVariant = badgeVariants({ variant: criticalityConfig[feedback.criticality || 'Low']?.badge || 'secondary' });
                     const Icon = criticalityConfig[feedback.criticality || 'Low']?.icon || Info;
