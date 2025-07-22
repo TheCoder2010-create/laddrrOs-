@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -271,11 +272,14 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
     return (
         <div className="space-y-6">
             <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
-                {renderAuditEntry("Initial AI Insight", `${insight.summary}\n\nWhy it matters: ${insight.reason}`, Bot, "text-red-500 border-red-500/30")}
+                {renderAuditEntry("AI Critical Insight", `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, Bot, "text-red-500 border-red-500/30")}
                 {renderAuditEntry(`${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, User, "text-muted-foreground border-border")}
                 {renderAuditEntry(`${formatActorName(item.employeeName)}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, User, "text-blue-500 border-blue-500/30")}
                 
-                {isManagerWidget && managerAuditEntries.map(entry => renderAuditEntry(entry.label, entry.details || insight.auditTrail?.find(e => e.event === entry.event)?.details, Users, "text-muted-foreground border-border"))}
+                {isManagerWidget && managerAuditEntries.map(entry => {
+                    const content = entry.details || insight.auditTrail?.find(e => e.event === entry.event)?.details;
+                    return content ? <div key={entry.label}>{renderAuditEntry(entry.label, content, Users, "text-muted-foreground border-border")}</div> : null;
+                })}
             </div>
         
             <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
@@ -1046,7 +1050,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
+    const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
@@ -1372,9 +1376,9 @@ function ActionItemsContent() {
             <AccordionItem value={id} key={id} id={`accordion-item-${id}`}>
                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                     <div className="flex justify-between items-center w-full">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                             <span className="font-medium truncate">{subject}</span>
-                             {getTypeBadge()}
+                         <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <span className="font-medium truncate">{subject}</span>
+                            {getTypeBadge()}
                         </div>
                         <div className="flex items-center gap-4 pl-4 mr-2">
                             <span 
