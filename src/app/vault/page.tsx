@@ -249,13 +249,13 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         : availableRolesForAssignment;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-2">
             {role === 'HR Head' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                         <div className="space-y-2">
-                             <Label className="font-medium">Assign Case</Label>
-                             <div className="flex items-center justify-between mt-2">
+                 <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                        <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
+                            <Label className="font-medium">Assign Case</Label>
+                            <div className="flex items-center justify-between mt-2">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -282,59 +282,59 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                                {feedback.assignedTo && feedback.assignedTo.length > 0 && (
+                                    <span className="block">
+                                        Currently: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
+                                    </span>
+                                )}
+                            </p>
+                            <div className="relative">
+                                 <Textarea 
+                                    placeholder="Add a note..."
+                                    value={assignmentComment}
+                                    onChange={(e) => setAssignmentComment(e.target.value)}
+                                    className="w-full text-sm pr-12 pb-12"
+                                    rows={2}
+                                />
+                                 <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
+                                    {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                                </Button>
+                            </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            {feedback.assignedTo && feedback.assignedTo.length > 0 && (
-                                <span className="block">
-                                    Currently: <span className="font-semibold text-primary">{feedback.assignedTo.join(', ')}</span>
-                                </span>
-                            )}
-                        </p>
-                        <div className="relative">
-                             <Textarea 
-                                placeholder="Add a note..."
-                                value={assignmentComment}
-                                onChange={(e) => setAssignmentComment(e.target.value)}
-                                className="w-full text-sm pr-12 pb-12"
-                                rows={2}
-                            />
-                             <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
-                                {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
-                            </Button>
+                        
+                        <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
+                            <Label className="font-medium">Ask Information</Label>
+                            <div className="relative flex-grow">
+                                <Textarea 
+                                    placeholder="Ask a clarifying question..."
+                                    value={informationRequest}
+                                    onChange={(e) => setInformationRequest(e.target.value)}
+                                    className="pr-12 pb-12 h-full"
+                                />
+                                <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
+                                    {isRequestingInfo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                        <Label className="font-medium">Ask Information</Label>
-                        <div className="relative flex-grow">
-                            <Textarea 
-                                placeholder="Ask a clarifying question..."
-                                value={informationRequest}
-                                onChange={(e) => setInformationRequest(e.target.value)}
-                                className="pr-12 pb-12 h-full"
-                            />
-                            <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
-                                {isRequestingInfo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
-                            </Button>
-                        </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3 md:col-span-1">
-                        <Label className="font-medium">Add Update</Label>
-                        <div className="relative flex-grow">
-                            <Textarea 
-                                placeholder="Add your notes here..."
-                                value={updateComment}
-                                onChange={(e) => setUpdateComment(e.target.value)}
-                                className="pr-12 pb-12 h-full"
-                            />
-                            <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
-                                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
-                            </Button>
+                        
+                        <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
+                            <Label className="font-medium">Add Update</Label>
+                            <div className="relative flex-grow">
+                                <Textarea 
+                                    placeholder="Add your notes here..."
+                                    value={updateComment}
+                                    onChange={(e) => setUpdateComment(e.target.value)}
+                                    className="pr-12 pb-12 h-full"
+                                />
+                                <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
+                                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="p-4 border rounded-lg bg-background space-y-3 md:col-span-2">
+                    <div className="p-4 border rounded-lg bg-background space-y-3">
                         <Label className="font-medium">Resolve Case</Label>
                         <div className="relative">
                             <Textarea 
@@ -349,7 +349,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             </Button>
                         </div>
                     </div>
-                </div>
+                </>
             )}
 
             {role !== 'HR Head' && (
