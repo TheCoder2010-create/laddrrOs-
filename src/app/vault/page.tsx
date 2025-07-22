@@ -616,19 +616,21 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                 <div className="flex justify-between items-center gap-4">
                                     <div className="flex items-center gap-2">
                                         <Label className="text-base">Original Submission</Label>
-                                         <Button
-                                            size="sm"
-                                            onClick={() => handleSummarize(feedback.trackingId)}
-                                            disabled={isSummarizingThis || !!feedback.summary}
-                                            variant="ghost"
-                                         >
-                                            {isSummarizingThis ? (
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Bot className="mr-2 h-4 w-4" />
-                                            )}
-                                            Summarize
-                                        </Button>
+                                         {!feedback.summary && (
+                                             <Button
+                                                size="sm"
+                                                onClick={() => handleSummarize(feedback.trackingId)}
+                                                disabled={isSummarizingThis}
+                                                variant="ghost"
+                                             >
+                                                {isSummarizingThis ? (
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Bot className="mr-2 h-4 w-4" />
+                                                )}
+                                                Summarize
+                                            </Button>
+                                         )}
                                         {feedback.summary && isSummaryHidden && (
                                             <Button
                                                 size="sm"
