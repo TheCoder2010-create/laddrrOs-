@@ -606,7 +606,7 @@ function HistorySection({ role }: { role: Role }) {
                                                                 <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
                                                                     Address Insight
                                                                 </Button>
-                                                                {insight.auditTrail && (
+                                                                {insight.auditTrail && insight.auditTrail.length > 0 && (
                                                                     <SlaTimer expiryTimestamp={addHours(new Date(insight.auditTrail[0].timestamp), 48).getTime()} />
                                                                 )}
                                                             </div>
