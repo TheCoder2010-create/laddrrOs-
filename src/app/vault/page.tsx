@@ -261,7 +261,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm" side="top">
+                                <PopoverContent className="text-sm" side="top" sideOffset={10}>
                                   Select roles to investigate or remove.
                                 </PopoverContent>
                             </Popover>
@@ -319,7 +319,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm" side="top">
+                                <PopoverContent className="text-sm" side="top" sideOffset={10}>
                                   Ask a clarifying question to the anonymous user.
                                 </PopoverContent>
                             </Popover>
@@ -345,7 +345,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm" side="top">
+                                <PopoverContent className="text-sm" side="top" sideOffset={10}>
                                   Log your investigation steps or notes.
                                 </PopoverContent>
                             </Popover>
@@ -372,7 +372,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             <PopoverTrigger asChild>
                                 <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto text-sm" side="top">
+                            <PopoverContent className="text-sm" side="top" sideOffset={10}>
                               Provide the final resolution summary to close the case.
                             </PopoverContent>
                         </Popover>
@@ -548,14 +548,13 @@ function VaultContent() {
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <span className="font-medium truncate">{capitalizedSubject}</span>
-                                    {!feedback.criticality && (
+                                    {!feedback.criticality ? (
                                         <Badge variant="outline">Unanalyzed</Badge>
+                                    ) : (
+                                        <Badge className={cn(criticalityBadgeVariant, "ml-2")}>{feedback.criticality}</Badge>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-4 pl-4">
-                                     {feedback.criticality && (
-                                        <Badge className={criticalityBadgeVariant}>{feedback.criticality}</Badge>
-                                    )}
                                     {getStatusBadge(feedback.status)}
                                 </div>
                             </div>
