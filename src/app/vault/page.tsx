@@ -264,18 +264,15 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     <div className="p-4 border rounded-lg bg-background space-y-3">
                         <div className="flex justify-between items-center">
                             <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
-                            <div className="flex items-center space-x-2">
-                                <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
-                                <Label htmlFor="assign-mode-switch" className="text-xs">{isUnassignMode ? 'Unassign' : 'Assign'}</Label>
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between">
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm">Select roles to investigate or remove.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm" side="top">Select roles to investigate or remove.</PopoverContent>
                             </Popover>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" size="sm" className="justify-between">
@@ -283,7 +280,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                         <ChevronDown className="ml-2 h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56">
+                                <DropdownMenuContent>
                                     <DropdownMenuLabel>{isUnassignMode ? 'Currently Assigned' : 'Assignable Roles'}</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     {assignableRolesForDropdown.map(r => (
@@ -310,7 +307,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 placeholder="Add a note..."
                                 value={assignmentComment}
                                 onChange={(e) => setAssignmentComment(e.target.value)}
-                                className="w-full text-sm pr-10 pb-10"
+                                className="w-full text-sm input pr-12 pb-12"
                                 rows={2}
                             />
                              <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
@@ -321,13 +318,13 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
                     {/* Ask for Information Card */}
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between">
                             <Label className="font-medium">Ask for Information</Label>
                              <Popover>
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm">Ask a clarifying question to the anonymous user.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm" side="top">Ask a clarifying question to the anonymous user.</PopoverContent>
                             </Popover>
                         </div>
                         <div className="relative flex-grow">
@@ -335,7 +332,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 placeholder="Ask a clarifying question..."
                                 value={informationRequest}
                                 onChange={(e) => setInformationRequest(e.target.value)}
-                                className="pr-10 pb-10 h-full"
+                                className="input pr-12 pb-12 h-full"
                             />
                             <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
                                 {isRequestingInfo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
@@ -345,13 +342,13 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
                      {/* Add Update Card */}
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between">
                             <Label className="font-medium">Add Update</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm">Log your investigation steps or notes.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm" side="top">Log your investigation steps or notes.</PopoverContent>
                             </Popover>
                         </div>
                         <div className="relative flex-grow">
@@ -359,7 +356,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 placeholder="Add your notes here..."
                                 value={updateComment}
                                 onChange={(e) => setUpdateComment(e.target.value)}
-                                className="pr-10 pb-10 h-full"
+                                className="input pr-12 pb-12 h-full"
                             />
                             <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
                                 {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
@@ -370,13 +367,13 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
                 {/* Resolve Case Card */}
                  <div className="p-4 border rounded-lg bg-background space-y-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between">
                         <Label className="font-medium">Resolve Case</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto text-sm">Provide the final resolution summary to close the case.</PopoverContent>
+                            <PopoverContent className="w-auto text-sm" side="top">Provide the final resolution summary to close the case.</PopoverContent>
                         </Popover>
                     </div>
                     <div className="relative">
@@ -385,7 +382,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             value={resolutionComment}
                             onChange={(e) => setResolutionComment(e.target.value)}
                             rows={3}
-                            className="pr-10 pb-10"
+                            className="input pr-12 pb-12"
                         />
                         <Button variant="success" size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
                             {isResolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4"/>}
