@@ -40,7 +40,7 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
-import { Switch } from '@/components/ui/switch';
+import { CustomSwitch } from '@/components/ui/custom-switch';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
     const [username, setUsername] = useState('');
@@ -264,7 +264,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         <div className="flex justify-between items-center">
                             <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
                             <div className="flex items-center space-x-2">
-                                <Switch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
+                                <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <Label htmlFor="assign-mode-switch" className="text-xs">{isUnassignMode ? 'Unassign' : 'Assign'}</Label>
                             </div>
                         </div>
@@ -301,17 +301,18 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 </span>
                             )}
                         </p>
-                         <Textarea 
-                            placeholder="Add a note..."
-                            value={assignmentComment}
-                            onChange={(e) => setAssignmentComment(e.target.value)}
-                            className="w-full text-sm input"
-                            rows={2}
-                        />
-                        <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} className="w-full">
-                            {isAssigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isUnassignMode ? 'Unassign Selected' : 'Assign Selected'}
-                        </Button>
+                        <div className="relative">
+                             <Textarea 
+                                placeholder="Add a note..."
+                                value={assignmentComment}
+                                onChange={(e) => setAssignmentComment(e.target.value)}
+                                className="w-full text-sm pr-10 pb-10"
+                                rows={2}
+                            />
+                             <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
+                                {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Ask for Information Card */}
@@ -320,17 +321,18 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                          <p className="text-xs text-muted-foreground">
                             Ask a clarifying question to the anonymous user.
                         </p>
-                        <Textarea 
-                            placeholder="Ask a clarifying question..."
-                            value={informationRequest}
-                            onChange={(e) => setInformationRequest(e.target.value)}
-                            rows={4}
-                            className="input"
-                        />
-                        <Button className="w-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
-                            {isRequestingInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Send Question
-                        </Button>
+                        <div className="relative">
+                            <Textarea 
+                                placeholder="Ask a clarifying question..."
+                                value={informationRequest}
+                                onChange={(e) => setInformationRequest(e.target.value)}
+                                rows={4}
+                                className="pr-10 pb-10"
+                            />
+                            <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
+                                {isRequestingInfo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                            </Button>
+                        </div>
                     </div>
 
                      {/* Add Update Card */}
@@ -339,17 +341,18 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                          <p className="text-xs text-muted-foreground">
                             Log your investigation steps or notes.
                         </p>
-                        <Textarea 
-                            placeholder="Add your notes here..."
-                            value={updateComment}
-                            onChange={(e) => setUpdateComment(e.target.value)}
-                            rows={4}
-                            className="input"
-                        />
-                        <Button className="w-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
-                            {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Add Update
-                        </Button>
+                        <div className="relative">
+                            <Textarea 
+                                placeholder="Add your notes here..."
+                                value={updateComment}
+                                onChange={(e) => setUpdateComment(e.target.value)}
+                                rows={4}
+                                className="pr-10 pb-10"
+                            />
+                            <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
+                                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -359,17 +362,18 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                      <p className="text-xs text-muted-foreground">
                         Provide the final resolution summary to close the case.
                     </p>
-                    <Textarea 
-                        placeholder="Explain the final resolution..."
-                        value={resolutionComment}
-                        onChange={(e) => setResolutionComment(e.target.value)}
-                        rows={3}
-                        className="input"
-                    />
-                    <Button variant="success" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
-                        {isResolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Resolved
-                    </Button>
+                    <div className="relative">
+                        <Textarea 
+                            placeholder="Explain the final resolution..."
+                            value={resolutionComment}
+                            onChange={(e) => setResolutionComment(e.target.value)}
+                            rows={3}
+                            className="pr-10 pb-10"
+                        />
+                        <Button variant="success" size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
+                            {isResolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4"/>}
+                        </Button>
+                    </div>
                 </div>
                 </>
 
@@ -641,4 +645,3 @@ export default function VaultPage() {
       </div>
     );
 }
-
