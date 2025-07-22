@@ -14,8 +14,8 @@ body {
     --card-foreground: 215 28% 17%;
     --popover: 0 0% 100%;
     --popover-foreground: 215 28% 17%;
-    --tooltip: 0 0% 100%;
-    --tooltip-foreground: 215 28% 17%;
+    --tooltip-background: 220 23% 11% / 0.2;
+    --tooltip-foreground: 210 17% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 98%;
     --secondary: 45 79% 48%;
@@ -54,7 +54,7 @@ body {
     --card-foreground: 210 17% 98%;
     --popover: 216 23% 16%;
     --popover-foreground: 210 17% 98%;
-    --tooltip: 216 23% 16% / 0.2;
+    --tooltip-background: 216 23% 16% / 0.2;
     --tooltip-foreground: 210 17% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 222 47% 11%;
@@ -97,14 +97,8 @@ body {
   }
 }
 
-.input {
-  background: none;
-  border: none;
-  outline: none;
-  width: 100%;
-  padding: 10px 20px;
-  font-size: 16px;
-  border-radius: var(--radius);
-  box-shadow: inset 2px 5px 10px rgb(5, 5, 5);
-  color: #fff;
+@layer utilities {
+  .input-shadow {
+    box-shadow: inset 2px 5px 10px rgb(5, 5, 5);
+  }
 }

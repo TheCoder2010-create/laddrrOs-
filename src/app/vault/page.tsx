@@ -260,7 +260,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="text-sm" side="top" align="end">
+                                <PopoverContent className="text-sm w-auto" side="top" align="end">
                                   Select roles to investigate or remove.
                                 </PopoverContent>
                             </Popover>
@@ -299,7 +299,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 placeholder="Add a note..."
                                 value={assignmentComment}
                                 onChange={(e) => setAssignmentComment(e.target.value)}
-                                className="w-full text-sm input pr-12 pb-12"
+                                className="w-full text-sm pr-12 pb-12"
                                 rows={2}
                             />
                              <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
@@ -326,7 +326,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 placeholder="Ask a clarifying question..."
                                 value={informationRequest}
                                 onChange={(e) => setInformationRequest(e.target.value)}
-                                className="input pr-12 pb-12 h-full"
+                                className="pr-12 pb-12 h-full"
                             />
                             <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
                                 {isRequestingInfo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
@@ -352,7 +352,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 placeholder="Add your notes here..."
                                 value={updateComment}
                                 onChange={(e) => setUpdateComment(e.target.value)}
-                                className="input pr-12 pb-12 h-full"
+                                className="pr-12 pb-12 h-full"
                             />
                             <Button size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
                                 {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
@@ -380,7 +380,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             value={resolutionComment}
                             onChange={(e) => setResolutionComment(e.target.value)}
                             rows={3}
-                            className="input pr-12 pb-12"
+                            className="pr-12 pb-12"
                         />
                         <Button variant="success" size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
                             {isResolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4"/>}
