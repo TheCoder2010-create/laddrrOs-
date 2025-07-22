@@ -248,10 +248,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         : availableRolesForAssignment;
 
     return (
-        <div className="p-4 mt-4 space-y-4">
+        <div className="space-y-4">
             {role === 'HR Head' && (
-                <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Assign/Unassign Case Card */}
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex justify-between items-center">
@@ -364,36 +363,34 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             </Button>
                         </div>
                     </div>
-                </div>
 
-                {/* Resolve Case Card */}
-                 <div className="p-4 border rounded-lg bg-background space-y-3">
-                    <div className="flex items-center justify-between">
-                        <Label className="font-medium">Resolve Case</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
-                            </PopoverTrigger>
-                            <PopoverContent className="text-sm w-auto" side="top" align="end">
-                              Provide the final resolution summary to close the case.
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                    <div className="relative">
-                        <Textarea 
-                            placeholder="Explain the final resolution..."
-                            value={resolutionComment}
-                            onChange={(e) => setResolutionComment(e.target.value)}
-                            rows={3}
-                            className="pr-12 pb-12"
-                        />
-                        <Button variant="success" size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
-                            {isResolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4"/>}
-                        </Button>
+                    {/* Resolve Case Card */}
+                    <div className="p-4 border rounded-lg bg-background space-y-3 md:col-span-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="font-medium">Resolve Case</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
+                                </PopoverTrigger>
+                                <PopoverContent className="text-sm w-auto" side="top" align="end">
+                                Provide the final resolution summary to close the case.
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div className="relative">
+                            <Textarea 
+                                placeholder="Explain the final resolution..."
+                                value={resolutionComment}
+                                onChange={(e) => setResolutionComment(e.target.value)}
+                                rows={3}
+                                className="pr-12 pb-12"
+                            />
+                            <Button variant="success" size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
+                                {isResolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4"/>}
+                            </Button>
+                        </div>
                     </div>
                 </div>
-                </>
-
             )}
 
             {/* View for non-HR Head assignees */}
