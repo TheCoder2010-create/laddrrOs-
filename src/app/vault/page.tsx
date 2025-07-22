@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX, LogOut } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX, LogOut, X } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -417,6 +417,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
   const [allFeedback, setAllFeedback] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSummarizing, setIsSummarizing] = useState<string | null>(null);
+  const [hiddenSummaries, setHiddenSummaries] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   const fetchFeedback = useCallback(async () => {
@@ -461,6 +462,12 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
             description: "AI summary and criticality have been added to the case.",
         });
         fetchFeedback();
+        // Ensure the newly generated summary is visible
+        setHiddenSummaries(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(trackingId);
+            return newSet;
+        });
     } catch (error) {
         console.error("Failed to summarize feedback", error);
         toast({
@@ -471,6 +478,18 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
     } finally {
         setIsSummarizing(null);
     }
+  };
+
+  const toggleSummaryVisibility = (trackingId: string) => {
+    setHiddenSummaries(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(trackingId)) {
+            newSet.delete(trackingId);
+        } else {
+            newSet.add(trackingId);
+        }
+        return newSet;
+    });
   };
 
   if (isLoading) {
@@ -535,6 +554,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                     const Icon = criticalityConfig[feedback.criticality || 'Low']?.icon || Info;
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
                     const capitalizedSubject = feedback.subject.charAt(0).toUpperCase() + feedback.subject.slice(1);
+                    const isSummaryHidden = hiddenSummaries.has(feedback.trackingId);
                     
                     const handleDownload = () => {
                         const caseDetails = {
@@ -573,8 +593,16 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                 </div>
                             )}
 
-                            {feedback.summary && (
-                                <div className={cn("p-4 rounded-lg border space-y-3", criticalityConfig[feedback.criticality || 'Low']?.color || 'bg-blue-500/20 text-blue-500')}>
+                            {feedback.summary && !isSummaryHidden && (
+                                <div className={cn("p-4 rounded-lg border space-y-3 relative", criticalityConfig[feedback.criticality || 'Low']?.color || 'bg-blue-500/20 text-blue-500')}>
+                                     <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="absolute top-2 right-2 h-6 w-6" 
+                                        onClick={() => toggleSummaryVisibility(feedback.trackingId)}
+                                    >
+                                        <X className="h-4 w-4" />
+                                     </Button>
                                      <div className="flex items-center gap-2 font-bold">
                                         <Icon className="h-5 w-5" />
                                         <span>AI Analysis: {feedback.criticality}</span>
@@ -601,6 +629,17 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                             )}
                                             Summarize
                                         </Button>
+                                        {feedback.summary && isSummaryHidden && (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => toggleSummaryVisibility(feedback.trackingId)}
+                                                variant="ghost"
+                                                className="text-primary"
+                                            >
+                                                <Bot className="mr-2 h-4 w-4" />
+                                                Show Analysis
+                                            </Button>
+                                        )}
                                     </div>
                                     <span 
                                         className="text-xs text-muted-foreground font-mono cursor-text"
@@ -678,3 +717,4 @@ export default function VaultPage() {
       </div>
     );
 }
+
