@@ -260,7 +260,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="text-sm w-auto" side="top" align="end">
+                                <PopoverContent className="text-sm" side="top" align="end">
                                   Select roles to investigate or remove.
                                 </PopoverContent>
                             </Popover>
@@ -274,9 +274,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                         <ChevronDown className="ml-2 h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    <DropdownMenuLabel>{isUnassignMode ? 'Currently Assigned' : 'Assignable Roles'}</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
+                                <DropdownMenuContent className="w-auto justify-start">
                                     {assignableRolesForDropdown.map(r => (
                                         <DropdownMenuCheckboxItem
                                             key={r}
@@ -534,8 +532,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                     const criticalityBadgeVariant = badgeVariants({ variant: criticalityConfig[feedback.criticality || 'Low']?.badge || 'secondary' });
                     const Icon = criticalityConfig[feedback.criticality || 'Low']?.icon || Info;
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
-                    const rawSubject = feedback.subject;
-                    const capitalizedSubject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
+                    const capitalizedSubject = feedback.subject.charAt(0).toUpperCase() + feedback.subject.slice(1);
                     
                     const handleDownload = () => {
                         const caseDetails = {
