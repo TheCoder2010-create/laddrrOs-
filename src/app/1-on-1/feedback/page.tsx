@@ -124,7 +124,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
       setAudioFile(null);
       updateTranscript(null);
       
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = recorder;
       const audioChunks: Blob[] = [];
 
@@ -138,7 +138,8 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         setRecordedAudioUri(audioUrl);
         setFinalRecordingDuration(recordingTime);
         
-        const audioDataUri = await dataUriFromFile(new File([audioBlob], "recording.webm"));
+        const audioFile = new File([audioBlob], "recording.webm", { type: 'audio/webm' });
+        const audioDataUri = await dataUriFromFile(audioFile);
         form.setValue('conversationRecordingDataUri', audioDataUri);
         updateTranscript("Audio has been recorded. The AI will transcribe and analyze it directly.");
 
@@ -610,3 +611,5 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
+
+    
