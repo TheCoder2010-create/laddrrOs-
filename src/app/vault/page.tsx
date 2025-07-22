@@ -92,7 +92,6 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
                     </div>
                 </CardFooter>
             </Card>
-        </div>
     )
 }
 
@@ -254,7 +253,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                          <div>
-                            <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
+                            <Label className="font-medium">Assign Case</Label>
                             <div className="flex items-center justify-between mt-2">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <DropdownMenu>
@@ -306,7 +305,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex items-center justify-between">
-                            <Label className="font-medium">Ask for Information</Label>
+                            <Label className="font-medium">Ask Information</Label>
                         </div>
                         <div className="relative flex-grow">
                             <Textarea 
