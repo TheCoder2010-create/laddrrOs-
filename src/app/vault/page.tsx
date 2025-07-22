@@ -249,13 +249,13 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         : availableRolesForAssignment;
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-4">
             {role === 'HR Head' && (
                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                             <Label className="font-medium">Assign Case</Label>
-                            <div className="flex items-center justify-between mt-2">
+                             <div className="flex items-center justify-between mt-2">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -653,45 +653,49 @@ export default function VaultPage() {
         setIsUnlocked(false);
     }, [role]);
 
+    if (role !== 'HR Head') {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+              <div className="absolute top-4 left-4 z-10">
+                  <Button variant="ghost" asChild>
+                      <Link href="/">
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Back to Dashboard
+                      </Link>
+                  </Button>
+              </div>
+              <Card className="max-w-md">
+                  <CardHeader>
+                      <CardTitle>Access Denied</CardTitle>
+                      <CardDescription>You do not have permission to view this page.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <p>The Vault is restricted to the HR Head role.</p>
+                  </CardContent>
+              </Card>
+          </div>
+        )
+    }
+
+    if (!isUnlocked) {
+        return (
+            <>
+                <div className="absolute top-4 left-4 z-10">
+                    <Button variant="ghost" asChild>
+                        <Link href="/">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Dashboard
+                        </Link>
+                    </Button>
+                </div>
+                <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />
+            </>
+        )
+    }
+
     return (
-      <div className="relative min-h-screen">
-          {role !== 'HR Head' ? (
-              <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
-                  <div className="absolute top-4 left-4 z-10">
-                      <Button variant="ghost" asChild>
-                          <Link href="/">
-                              <ArrowLeft className="mr-2 h-4 w-4" />
-                              Back to Dashboard
-                          </Link>
-                      </Button>
-                  </div>
-                  <Card className="max-w-md">
-                      <CardHeader>
-                          <CardTitle>Access Denied</CardTitle>
-                          <CardDescription>You do not have permission to view this page.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <p>The Vault is restricted to the HR Head role.</p>
-                      </CardContent>
-                  </Card>
-              </div>
-          ) : !isUnlocked ? (
-               <>
-                    <div className="absolute top-4 left-4 z-10">
-                        <Button variant="ghost" asChild>
-                            <Link href="/">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Dashboard
-                            </Link>
-                        </Button>
-                    </div>
-                    <VaultLoginPage onUnlock={() => setIsUnlocked(true)} />
-               </>
-          ) : (
-              <div className="pt-4">
-                  <VaultContent onLogout={() => setRole(null)} />
-              </div>
-          )}
-      </div>
+        <div className="pt-4">
+            <VaultContent onLogout={() => setRole(null)} />
+        </div>
     );
 }
