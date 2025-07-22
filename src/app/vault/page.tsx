@@ -255,35 +255,33 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                          <div>
                             <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
-                            <div className='mt-2'>
+                            <div className="flex items-center justify-between mt-2">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-end">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="justify-between"
-                                      disabled={isUnassignMode && (!feedback.assignedTo || feedback.assignedTo.length === 0)}
-                                    >
-                                        <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select'}</span>
-                                        <ChevronDown className="ml-2 h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-auto justify-start">
-                                    {assignableRolesForDropdown.map(r => (
-                                        <DropdownMenuCheckboxItem
-                                            key={r}
-                                            checked={assignees.includes(r)}
-                                            onCheckedChange={() => handleAssigneeChange(r)}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="justify-between"
+                                          disabled={isUnassignMode && (!feedback.assignedTo || feedback.assignedTo.length === 0)}
                                         >
-                                            {r}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                            <span>Select</span>
+                                            <ChevronDown className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-auto" align="start">
+                                        {assignableRolesForDropdown.map(r => (
+                                            <DropdownMenuCheckboxItem
+                                                key={r}
+                                                checked={assignees.includes(r)}
+                                                onCheckedChange={() => handleAssigneeChange(r)}
+                                            >
+                                                {r}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
                         <p className="text-xs text-muted-foreground">
                             {feedback.assignedTo && feedback.assignedTo.length > 0 && (
