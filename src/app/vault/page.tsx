@@ -270,7 +270,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" size="sm" className="justify-between">
-                                        <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select Roles'}</span>
+                                        <span>{assignees.length > 0 ? `${assignees.length} selected` : 'Select'}</span>
                                         <ChevronDown className="ml-2 h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
