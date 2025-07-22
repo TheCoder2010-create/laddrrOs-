@@ -255,12 +255,12 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                     {/* Assign/Unassign Case Card */}
                     <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
                         <div className="flex justify-between items-center">
-                            <Label className="font-medium">Assign Case</Label>
+                            <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="text-sm" side="top" sideOffset={10}>
+                                <PopoverContent className="text-sm w-auto" side="top" align="end">
                                   Select roles to investigate or remove.
                                 </PopoverContent>
                             </Popover>
@@ -318,7 +318,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="text-sm w-auto" side="top" sideOffset={10}>
+                                <PopoverContent className="text-sm w-auto" side="top" align="end">
                                   Ask a clarifying question to the anonymous user.
                                 </PopoverContent>
                             </Popover>
@@ -344,7 +344,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="text-sm w-auto" side="top" sideOffset={10}>
+                                <PopoverContent className="text-sm w-auto" side="top" align="end">
                                   Log your investigation steps or notes.
                                 </PopoverContent>
                             </Popover>
@@ -371,7 +371,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             <PopoverTrigger asChild>
                                 <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                             </PopoverTrigger>
-                            <PopoverContent className="text-sm w-auto" side="top" sideOffset={10}>
+                            <PopoverContent className="text-sm w-auto" side="top" align="end">
                               Provide the final resolution summary to close the case.
                             </PopoverContent>
                         </Popover>
