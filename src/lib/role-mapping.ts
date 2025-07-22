@@ -22,19 +22,22 @@ export const getRoleByName = (name: string): Role | undefined => {
 
 export const formatActorName = (actor: Role | string | undefined): string => {
     if (!actor) return 'System';
+
+    if (actor === 'Anonymous') return 'Anonymous';
     
     // Check if actor is a valid role first
     if (Object.keys(roleUserMapping).includes(actor as string)) {
         const user = roleUserMapping[actor as Role];
-        return `${user.role} - ${user.name}`;
+        if (user.role === 'Anonymous' || user.role === 'Voice – In Silence') return 'Anonymous';
+        return `${user.name} - ${user.role}`;
     }
 
     // Check if actor is a name
     const role = getRoleByName(actor as string);
     if (role) {
-        return `${role} - ${actor}`;
+        return `${actor} - ${role}`;
     }
 
-    // Fallback for simple strings like 'Anonymous' or 'System'
+    // Fallback for simple strings like 'System'
     return actor as string;
 };
