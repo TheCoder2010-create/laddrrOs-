@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -681,7 +680,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
         try {
             await addFeedbackUpdate(feedback.trackingId, role, update);
             setUpdate('');
-            toast({ title: "Update Added", description: "Your notes have been added to the case history." });
+            toast({ title: "Update Added" });
             onUpdate();
         } finally {
             setIsSubmitting(false);
@@ -920,7 +919,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         } else {
             await addFeedbackUpdate(trackingId, role, comment);
             setInterimUpdate('');
-            toast({ title: "Update Added", description: "Your notes have been added to the case history." });
+            toast({ title: "Update Added" });
         }
         onUpdate();
     }
@@ -996,9 +995,11 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
 
 
         return (
-            <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-                <Label className="text-base font-semibold">{title}</Label>
-                 <p className="text-sm text-muted-foreground">{description}</p>
+            <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
+                <div className="space-y-2">
+                    <Label className="text-base font-semibold">{title}</Label>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
                 
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
                     <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
@@ -1010,7 +1011,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
                         rows={3}
                         placeholder="Add your notes..."
                     />
-                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, false)} disabled={!interimUpdate}>Add Update to History</Button>
+                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, false)} disabled={!interimUpdate}>Add Update</Button>
                 </div>
 
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
@@ -1507,3 +1508,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
