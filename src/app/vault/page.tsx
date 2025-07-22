@@ -21,12 +21,6 @@ import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, 
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -255,7 +249,6 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
     return (
         <div className="p-4 border-t mt-4 space-y-4">
-            <Label className="text-base font-semibold">Case Management</Label>
             
             {role === 'HR Head' && (
                 <>
@@ -268,7 +261,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm" side="top">Select roles to investigate or remove.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm" side="top">
+                                  Select roles to investigate or remove.
+                                </PopoverContent>
                             </Popover>
                         </div>
                         <div className="flex items-center justify-between">
@@ -324,7 +319,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm" side="top">Ask a clarifying question to the anonymous user.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm" side="top">
+                                  Ask a clarifying question to the anonymous user.
+                                </PopoverContent>
                             </Popover>
                         </div>
                         <div className="relative flex-grow">
@@ -348,7 +345,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 <PopoverTrigger asChild>
                                     <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto text-sm" side="top">Log your investigation steps or notes.</PopoverContent>
+                                <PopoverContent className="w-auto text-sm" side="top">
+                                  Log your investigation steps or notes.
+                                </PopoverContent>
                             </Popover>
                         </div>
                         <div className="relative flex-grow">
@@ -373,7 +372,9 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             <PopoverTrigger asChild>
                                 <button className="text-muted-foreground hover:text-foreground"><Info className="h-4 w-4" /></button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto text-sm" side="top">Provide the final resolution summary to close the case.</PopoverContent>
+                            <PopoverContent className="w-auto text-sm" side="top">
+                              Provide the final resolution summary to close the case.
+                            </PopoverContent>
                         </Popover>
                     </div>
                     <div className="relative">
@@ -520,7 +521,7 @@ function VaultContent() {
               </p>
             </div>
           ) : (
-             <TooltipProvider>
+             <Popover>
                 <Accordion type="single" collapsible className="w-full">
                 {allFeedback.map((feedback) => {
                     const criticalityBadgeVariant = badgeVariants({ variant: criticalityConfig[feedback.criticality || 'Low']?.badge || 'secondary' });
@@ -610,7 +611,7 @@ function VaultContent() {
                     )
                 })}
                 </Accordion>
-            </TooltipProvider>
+            </Popover>
           )}
         </CardContent>
       </Card>
