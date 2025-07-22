@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
-import { Badge } from '@/components/ui/badge';
+import { Badge, badgeVariants } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -101,10 +101,10 @@ function VaultLoginPage({ onUnlock }: { onUnlock: () => void }) {
 }
 
 const criticalityConfig = {
-    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' as const },
-    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' as const },
-    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' as const },
-    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' as const },
+    'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' },
+    'High': { icon: AlertTriangle, color: 'bg-orange-500/20 text-orange-500', badge: 'destructive' },
+    'Medium': { icon: Info, color: 'bg-yellow-500/20 text-yellow-500', badge: 'secondary' },
+    'Low': { icon: CheckCircle, color: 'bg-green-500/20 text-green-500', badge: 'success' },
 };
 
 const auditEventIcons = {
@@ -305,7 +305,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             placeholder="Add a note..."
                             value={assignmentComment}
                             onChange={(e) => setAssignmentComment(e.target.value)}
-                            className="w-full text-sm"
+                            className="w-full text-sm input"
                             rows={2}
                         />
                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} className="w-full">
@@ -325,6 +325,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             value={informationRequest}
                             onChange={(e) => setInformationRequest(e.target.value)}
                             rows={4}
+                            className="input"
                         />
                         <Button className="w-full" onClick={handleRequestInfo} disabled={!informationRequest || isRequestingInfo}>
                             {isRequestingInfo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -343,6 +344,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                             value={updateComment}
                             onChange={(e) => setUpdateComment(e.target.value)}
                             rows={4}
+                            className="input"
                         />
                         <Button className="w-full" onClick={handleAddUpdate} disabled={!updateComment || isUpdating}>
                             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -362,6 +364,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                         value={resolutionComment}
                         onChange={(e) => setResolutionComment(e.target.value)}
                         rows={3}
+                        className="input"
                     />
                     <Button variant="success" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
                         {isResolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -502,8 +505,8 @@ function VaultContent() {
              <TooltipProvider>
                 <Accordion type="single" collapsible className="w-full">
                 {allFeedback.map((feedback) => {
-                    const config = criticalityConfig[feedback.criticality || 'Low'];
-                    const Icon = config?.icon || Info;
+                    const criticalityBadgeVariant = badgeVariants({ variant: criticalityConfig[feedback.criticality || 'Low']?.badge || 'secondary' });
+                    const Icon = criticalityConfig[feedback.criticality || 'Low']?.icon || Info;
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
                     
                     const handleDownload = () => {
@@ -520,14 +523,14 @@ function VaultContent() {
 
                     return (
                     <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
-                        <AccordionTrigger className="w-full px-4 py-3 text-left">
+                        <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <span className="font-medium truncate">{feedback.subject}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-4 pl-4">
                                      {feedback.criticality ? (
-                                        <Badge variant={config.badge}>{feedback.criticality}</Badge>
+                                        <Badge className={criticalityBadgeVariant}>{feedback.criticality}</Badge>
                                     ) : (
                                         <Badge variant="outline">Unanalyzed</Badge>
                                     )}
@@ -544,7 +547,7 @@ function VaultContent() {
                             )}
 
                             {feedback.summary && (
-                                <div className={cn("p-4 rounded-lg border space-y-3", config?.color || 'bg-blue-500/20 text-blue-500')}>
+                                <div className={cn("p-4 rounded-lg border space-y-3", criticalityConfig[feedback.criticality || 'Low']?.color || 'bg-blue-500/20 text-blue-500')}>
                                      <div className="flex items-center gap-2 font-bold">
                                         <Icon className="h-5 w-5" />
                                         <span>AI Analysis: {feedback.criticality}</span>
