@@ -1038,7 +1038,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `1-on-1 Escalation: ${caseItem.employeeName} & ${caseItem.supervisorName}` : caseItem.subject;
+    const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
@@ -1279,7 +1279,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const rawSubject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
+            const rawSubject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : item.subject;
             const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
             
             const handleDownload = () => {
