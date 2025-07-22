@@ -567,7 +567,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                 </div>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-4 pt-4 px-4">
+                        <AccordionContent className="space-y-2 pt-4 px-4">
                             {feedback.assignedTo && feedback.assignedTo.length > 0 && (
                                  <div className="flex items-center gap-2 text-sm font-medium p-2 bg-muted rounded-md w-fit">
                                     <Users className="h-4 w-4 text-muted-foreground"/>
