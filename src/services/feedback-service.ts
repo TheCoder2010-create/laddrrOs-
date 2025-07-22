@@ -1272,6 +1272,12 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
             actor,
             details: resolution,
         });
+        feedback.auditTrail?.push({
+            event: 'Notification to HR',
+            timestamp: new Date(),
+            actor: 'System',
+            details: 'The resolution has been sent to the user for final acknowledgement. If the complainant is dissatisfied, they will have the option to escalate the case to the Ombudsman or Grievance Office.'
+        });
     } else {
         feedback.status = 'Resolved';
         feedback.resolution = resolution;
