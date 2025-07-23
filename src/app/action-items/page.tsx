@@ -1029,7 +1029,6 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         if (!insight) return null;
         
         const isClosed = insight.status === 'resolved';
-        let isActionableForRole = false;
         let wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
         
         if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || (isClosed && wasEverInvolved))) {
@@ -1248,7 +1247,7 @@ function ActionItemsContent() {
 
                 if (isActionable) {
                     activeOneOnOneEscalations.push(item);
-                } else if (isClosed && wasEverInvolved) {
+                } else if (isItemClosed && wasEverInvolved) {
                     localAllClosed.push(item);
                 }
 
