@@ -48,6 +48,7 @@ const auditEventIcons = {
     'To-Do List Created': ListTodo,
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
+    'Unassigned': UserX,
     'Supervisor Responded': MessageSquare,
     'HR Resolution Submitted': ShieldCheckIcon,
     'Resolved': CheckCircle,
@@ -377,7 +378,11 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
     
     const isActionable = item.assignedTo === 'HR Head';
-    const isClosed = insight.status === 'resolved';
+    const isClosed = insight.status === 'resolved' || ['pending_final_hr_action'].includes(insight.status);
+    const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+    
+    const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
+
 
     const handleHrSubmit = async () => {
         if (!resolutionNotes || !role) return;
@@ -409,7 +414,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
         }
     }
 
-    const renderAuditEntry = (title: string, content: string | undefined, icon: React.ElementType, iconClass: string) => {
+    const renderAuditEntry = (title: string, content: string | undefined, icon: React.ElementType, iconClass: string, timestamp?: string | Date) => {
         if (!content) return null;
         const Icon = icon;
         return (
@@ -419,7 +424,8 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                 </div>
                 <div className="flex-1">
                     <p className="font-semibold text-foreground">{title}</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>
+                    {timestamp && <p className="text-xs text-muted-foreground">{format(new Date(timestamp), 'PPP, p')}</p>}
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{content}</p>
                 </div>
             </div>
         );
@@ -441,32 +447,27 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     return (
         <div className="space-y-6">
             <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                {renderAuditEntry("AI Critical Insight", `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, Bot, "text-red-500 border-red-500/30")}
-                {renderAuditEntry(`${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, User, "text-muted-foreground border-border")}
-                {allEmployeeAcks[0] && renderAuditEntry(`First Employee Acknowledgement`, allEmployeeAcks[0].details, User, "text-blue-500 border-blue-500/30")}
+                {renderAuditEntry("AI Critical Insight", `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, Bot, "text-red-500 border-red-500/30", insight.auditTrail?.[0].timestamp)}
+                {renderAuditEntry(`${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, User, "text-muted-foreground border-border", insight.auditTrail?.find(e=>e.event === 'Supervisor Responded')?.timestamp)}
+                {allEmployeeAcks[0] && renderAuditEntry(`First Employee Acknowledgement`, allEmployeeAcks[0].details, User, "text-blue-500 border-blue-500/30", allEmployeeAcks[0].timestamp)}
                 
                 {managerAuditEntries.map(entry => {
                     const eventData = insight.auditTrail?.find(e => e.event === entry.event);
-                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, Users, "text-muted-foreground border-border")}</div>;
+                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, Users, "text-muted-foreground border-border", eventData.timestamp)}</div>;
                     return null;
                 })}
 
-                {allEmployeeAcks[1] && renderAuditEntry(`Second Employee Acknowledgement`, allEmployeeAcks[1].details, User, "text-blue-500 border-blue-500/30")}
+                {allEmployeeAcks[1] && renderAuditEntry(`Second Employee Acknowledgement`, allEmployeeAcks[1].details, User, "text-blue-500 border-blue-500/30", allEmployeeAcks[1].timestamp)}
 
                 {hrAuditEntries.map(entry => {
                     const eventData = insight.auditTrail?.find(e => e.event === entry.event);
-                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, ShieldCheckIcon, "text-muted-foreground border-border")}</div>;
+                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, ShieldCheckIcon, "text-muted-foreground border-border", eventData.timestamp)}</div>;
                     return null;
                 })}
 
-                {allEmployeeAcks[2] && renderAuditEntry(`Third Employee Acknowledgement`, allEmployeeAcks[2].details, User, "text-blue-500 border-blue-500/30")}
+                {allEmployeeAcks[2] && renderAuditEntry(`Third Employee Acknowledgement`, allEmployeeAcks[2].details, User, "text-blue-500 border-blue-500/30", allEmployeeAcks[2].timestamp)}
                 
-                {insight.auditTrail?.map((e, idx) => {
-                    if (["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event)) {
-                         return <div key={`${e.event}-${idx}`}>{renderAuditEntry(e.event, e.details, FileText, "text-gray-500 border-gray-500/30")}</div>;
-                    }
-                    return null;
-                })}
+                {finalDispositionEvent && <div key={`${finalDispositionEvent.event}-${finalDispositionEvent.timestamp}`}>{renderAuditEntry(finalDispositionEvent.event, finalDispositionEvent.details, FileText, "text-gray-500 border-gray-500/30", finalDispositionEvent.timestamp)}</div>}
             </div>
 
             {(isActionable && !isClosed) && (
@@ -536,7 +537,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     );
 }
 
-function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function RetaliationActionPanel({ feedback, onUpdate, handleViewCaseDetails }: { feedback: Feedback, onUpdate: () => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [response, setResponse] = useState('');
@@ -590,6 +591,12 @@ function RetaliationActionPanel({ feedback, onUpdate }: { feedback: Feedback, on
     return (
         <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
             <Label className="text-base font-semibold text-destructive">Action Required: Retaliation Claim</Label>
+            {feedback.parentCaseId && (
+                <div className="text-sm">
+                    This claim is linked to parent case: 
+                    <a href="#" onClick={(e) => handleViewCaseDetails(e, feedback.parentCaseId!)} className="font-mono text-primary hover:underline ml-2">{feedback.parentCaseId}</a>
+                </div>
+            )}
             <p className="text-sm text-muted-foreground">
                 A retaliation claim has been filed. Please investigate thoroughly. You can add confidential interim updates that are only visible to you. Once your investigation is complete, submit a final resolution summary to the employee for acknowledgment.
             </p>
@@ -1028,8 +1035,8 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         const insight = item.analysis.criticalCoachingInsight;
         if (!insight) return null;
         
-        const isClosed = insight.status === 'resolved';
-        let wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+        const isClosed = insight.status === 'resolved' || ['resolved', 'pending_final_hr_action'].includes(insight.status);
+        const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
         
         if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || (isClosed && wasEverInvolved))) {
             return <HrReviewWidget item={item} onUpdate={onUpdate} />
@@ -1043,10 +1050,12 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         } 
 
         if (widgetProps) {
-            if (isClosed) {
-                return <div className="p-4 border-t mt-4"><EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} /></div>
+            if (isClosed && wasEverInvolved) {
+                 return <div className="p-4 border-t mt-4"><EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} /></div>
             }
-            return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />
+            if (!isClosed) {
+                return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />
+            }
         }
         return null;
     }
@@ -1056,7 +1065,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
     
     // Retaliation claims are handled by a specific panel for HR Head
     if (role === 'HR Head' && feedback.status === 'Retaliation Claim') {
-        return <RetaliationActionPanel feedback={feedback} onUpdate={onUpdate} />;
+        return <RetaliationActionPanel feedback={feedback} onUpdate={onUpdate} handleViewCaseDetails={handleViewCaseDetails} />;
     }
 
     // For anonymous concerns escalated to HR, show the collaborative panel
@@ -1142,20 +1151,21 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
+    const subject = isOneOnOne ? `1-on-1 Escalation: ${caseItem.employeeName} & ${caseItem.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
-    const trail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
+    const trail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail || [] : caseItem.auditTrail || [];
     const finalResolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution') || e.event.includes('Disposition'))?.details : caseItem.resolution;
+    const aiSummary = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.reason : caseItem.summary;
 
     const handleDownload = () => {
         const caseDetails = {
             title: subject,
             trackingId,
             initialMessage,
-            aiSummary: isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.reason : undefined,
+            aiSummary,
             finalResolution,
-            trail: trail(caseItem as any) || [],
+            trail: trail,
         };
         downloadAuditTrailPDF(caseDetails);
     };
@@ -1175,7 +1185,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
                             <Label className="text-base">Initial Submission Context</Label>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{initialMessage}</p>
                         </div>
-                        <AuditTrail trail={trail(caseItem as any)} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/>
+                        <AuditTrail trail={trail} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/>
                         {finalResolution && (
                              <div className="space-y-2">
                                 <Label className="text-base">Final Resolution</Label>
