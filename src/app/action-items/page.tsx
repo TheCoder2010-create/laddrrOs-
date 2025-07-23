@@ -17,7 +17,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download, Bot, BrainCircuit, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download, Bot, BrainCircuit } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -256,35 +257,30 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                 </div>
                 <div className="flex-1">
                     <p className="font-semibold text-foreground">{title}</p>
-                    <p className="text-xs text-muted-foreground">{timestamp ? format(new Date(timestamp), "PPP, p") : ''}</p>
+                    {timestamp && <p className="text-xs text-muted-foreground">{format(new Date(timestamp), "PPP, p")}</p>}
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{content}</p>
                 </div>
             </div>
         );
     };
 
-    const managerAuditEntries = [
-        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes` },
-        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee` },
-        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes` },
-    ];
-    
-    const employeeAcknowledgements = insight.auditTrail?.filter(e => e.event === 'Employee Acknowledged') || [];
-    const firstAcknowledgement = employeeAcknowledgements[0];
-    const secondAcknowledgement = employeeAcknowledgements[1];
-
+    const allEmployeeAcks = insight.auditTrail?.filter(e => e.event === 'Employee Acknowledged') || [];
 
     const fullHistory = [
         { event: 'Critical Insight Identified', label: 'AI Critical Insight', details: `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, timestamp: insight.auditTrail?.[0]?.timestamp, icon: Bot, iconClass: "text-red-500 border-red-500/30" },
         { event: 'Supervisor Responded', label: `${formatActorName(item.supervisorName)}'s (TL) Response`, details: insight.supervisorResponse, timestamp: insight.auditTrail?.find(e => e.event === 'Supervisor Responded')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
-        { event: 'Employee Acknowledged', label: `First Employee Acknowledgement`, details: firstAcknowledgement?.details, timestamp: firstAcknowledgement?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
-        ...managerAuditEntries.map(entry => {
-             const eventData = insight.auditTrail?.find(e => e.event === entry.event);
-             return { event: entry.event, label: entry.label, details: eventData?.details, timestamp: eventData?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" };
-        }),
-        { event: 'Final Employee Acknowledgement', label: `Final Employee Acknowledgement`, details: secondAcknowledgement?.details, timestamp: secondAcknowledgement?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
-        { event: 'Manager Resolution', label: 'Manager Final Resolution', details: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
+        { event: 'Employee Acknowledged 1', label: `First Employee Acknowledgement`, details: allEmployeeAcks[0]?.details, timestamp: allEmployeeAcks[0]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
+        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes`, details: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
+        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee`, details: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
+        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, details: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
+        { event: 'Employee Acknowledged 2', label: `Second Employee Acknowledgement`, details: allEmployeeAcks[1]?.details, timestamp: allEmployeeAcks[1]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
+        { event: 'Manager Resolution', label: 'Manager Final Resolution', details: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.timestamp, icon: Briefcase, iconClass: "text-muted-foreground border-border" },
     ].filter(entry => entry.details);
+
+
+    const isClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
+    const isActionable = (role === 'AM' && insight.status === 'pending_am_review') || (role === 'Manager' && insight.status === 'pending_manager_review');
+
 
     return (
         <div className="space-y-6">
@@ -296,71 +292,73 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
                 ))}
             </div>
         
-            <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
-                <Label className={`font-semibold text-base ${titleColor}`}>Your Action</Label>
-                
-                {isManagerWidget ? (
-                     <div className="w-full space-y-3">
-                         <p className="text-sm text-muted-foreground">
-                            This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to the employee for final acknowledgement.
-                        </p>
-                         <Textarea 
-                            value={resolutionNotes}
-                            onChange={(e) => setResolutionNotes(e.target.value)}
-                            rows={4}
-                            className="bg-background"
-                            placeholder="Document your final resolution actions here..."
-                         />
-                         <div className="flex gap-2">
-                             <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmittingManager || !resolutionNotes}>
-                                {isSubmittingManager && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                Submit to Employee
-                             </Button>
+            {isActionable && !isClosed && (
+                <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
+                    <Label className={`font-semibold text-base ${titleColor}`}>Your Action</Label>
+                    
+                    {isManagerWidget ? (
+                         <div className="w-full space-y-3">
+                             <p className="text-sm text-muted-foreground">
+                                This case requires your direct intervention. Document the actions you will take to resolve this situation. This resolution will be sent to the employee for final acknowledgement.
+                            </p>
+                             <Textarea 
+                                value={resolutionNotes}
+                                onChange={(e) => setResolutionNotes(e.target.value)}
+                                rows={4}
+                                className="bg-background"
+                                placeholder="Document your final resolution actions here..."
+                             />
+                             <div className="flex gap-2">
+                                 <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmittingManager || !resolutionNotes}>
+                                    {isSubmittingManager && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                    Submit to Employee
+                                 </Button>
+                             </div>
                          </div>
-                     </div>
-                ) : action ? (
-                    <div className="w-full space-y-3">
-                        <Label htmlFor={`action-notes-${item.id}`}>
-                            {action === 'coach' ? 'Coaching Notes for Supervisor' : 'Notes for Employee'}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                            {action === 'coach' 
-                                ? 'Log your coaching notes for the supervisor. This will be visible to them.'
-                                : "Describe the conversation you had with the employee. This will be sent to them for acknowledgement."
-                            }
-                        </p>
-                        <Textarea 
-                            id={`action-notes-${item.id}`}
-                            value={actionNotes}
-                            onChange={(e) => setActionNotes(e.target.value)}
-                            rows={4}
-                            className="bg-background"
-                            placeholder={action === 'coach' ? 'Enter your coaching notes...' : 'Enter your direct response...'}
-                        />
-                        <div className="flex gap-2">
-                            <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                Submit
-                            </Button>
-                            <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
+                    ) : action ? (
+                        <div className="w-full space-y-3">
+                            <Label htmlFor={`action-notes-${item.id}`}>
+                                {action === 'coach' ? 'Coaching Notes for Supervisor' : 'Notes for Employee'}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                                {action === 'coach' 
+                                    ? 'Log your coaching notes for the supervisor. This will be visible to them.'
+                                    : "Describe the conversation you had with the employee. This will be sent to them for acknowledgement."
+                                }
+                            </p>
+                            <Textarea 
+                                id={`action-notes-${item.id}`}
+                                value={actionNotes}
+                                onChange={(e) => setActionNotes(e.target.value)}
+                                rows={4}
+                                className="bg-background"
+                                placeholder={action === 'coach' ? 'Enter your coaching notes...' : 'Enter your direct response...'}
+                            />
+                            <div className="flex gap-2">
+                                <Button onClick={handleAmActionSubmit} disabled={isSubmitting || !actionNotes}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                    Submit
+                                </Button>
+                                <Button variant="ghost" onClick={() => setAction(null)}>Cancel</Button>
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <>
-                        <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
-                        <div className="flex gap-4">
-                            <Button variant="secondary" className="bg-yellow-400/80 text-yellow-900 hover:bg-yellow-400/90" onClick={() => handleActionClick('coach')}>
-                                <BrainCircuit className="mr-2 h-4 w-4" />
-                                Coach Supervisor
-                            </Button>
-                            <Button onClick={() => handleActionClick('address')} className="bg-blue-600 text-white hover:bg-blue-700">
-                                <ChevronsRight className="mr-2 h-4 w-4" />
-                                Address Employee
-                            </Button>
-                        </div>
-                    </>
-                )}
-            </div>
+                    ) : (
+                        <>
+                            <p className="text-sm text-muted-foreground">This case now requires your review and action. Please select a path to resolution.</p>
+                            <div className="flex gap-4">
+                                <Button variant="secondary" className="bg-yellow-400/80 text-yellow-900 hover:bg-yellow-400/90" onClick={() => handleActionClick('coach')}>
+                                    <BrainCircuit className="mr-2 h-4 w-4" />
+                                    Coach Supervisor
+                                </Button>
+                                <Button onClick={() => handleActionClick('address')} className="bg-blue-600 text-white hover:bg-blue-700">
+                                    <ChevronsRight className="mr-2 h-4 w-4" />
+                                    Address Employee
+                                </Button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -376,9 +374,8 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     const [finalActionNotes, setFinalActionNotes] = useState('');
     const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
     
-    const isActionable = item.assignedTo === 'HR Head';
-    const isClosed = insight.status === 'resolved' || ['pending_final_hr_action'].includes(insight.status);
-    const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+    const isActionable = role === 'HR Head';
+    const isClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
     
     const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
 
@@ -432,41 +429,28 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     
     const allEmployeeAcks = insight.auditTrail?.filter(e => e.event === 'Employee Acknowledged') || [];
 
-    const managerAuditEntries = [
-        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes` },
-        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee` },
-        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes` },
-        { event: 'Manager Resolution', label: "Manager's Final Resolution" },
-    ];
-    
-    const hrAuditEntries = [
-        { event: 'HR Resolution', label: 'HR Final Resolution' },
-    ];
+    const fullHistory = [
+        { event: 'Critical Insight Identified', label: 'AI Critical Insight', details: `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, timestamp: insight.auditTrail?.[0].timestamp, icon: Bot, iconClass: "text-red-500 border-red-500/30" },
+        { event: 'Supervisor Responded', label: `${formatActorName(item.supervisorName)}'s (TL) Response`, details: insight.supervisorResponse, timestamp: insight.auditTrail?.find(e=>e.event === 'Supervisor Responded')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
+        { event: 'Employee Acknowledged 1', label: `First Employee Acknowledgement`, details: allEmployeeAcks[0]?.details, timestamp: allEmployeeAcks[0]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
+        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes`, details: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
+        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee`, details: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
+        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, details: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
+        { event: 'Employee Acknowledged 2', label: `Second Employee Acknowledgement`, details: allEmployeeAcks[1]?.details, timestamp: allEmployeeAcks[1]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
+        { event: 'Manager Resolution', label: "Manager's Final Resolution", details: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.timestamp, icon: Briefcase, iconClass: "text-muted-foreground border-border" },
+        { event: 'Employee Acknowledged 3', label: `Third Employee Acknowledgement`, details: allEmployeeAcks[2]?.details, timestamp: allEmployeeAcks[2]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
+        { event: 'HR Resolution', label: 'HR Final Resolution', details: insight.auditTrail?.find(e => e.event === 'HR Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'HR Resolution')?.timestamp, icon: ShieldCheckIcon, iconClass: "text-muted-foreground border-border" },
+        { event: 'Final Disposition', label: finalDispositionEvent?.event || "Final Disposition", details: finalDispositionEvent?.details, timestamp: finalDispositionEvent?.timestamp, icon: FileText, iconClass: "text-gray-500 border-gray-500/30" },
+    ].filter(entry => entry.details);
 
     return (
         <div className="space-y-6">
             <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                {renderAuditEntry("AI Critical Insight", `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, Bot, "text-red-500 border-red-500/30", insight.auditTrail?.[0].timestamp)}
-                {renderAuditEntry(`${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, User, "text-muted-foreground border-border", insight.auditTrail?.find(e=>e.event === 'Supervisor Responded')?.timestamp)}
-                {allEmployeeAcks[0] && renderAuditEntry(`First Employee Acknowledgement`, allEmployeeAcks[0].details, User, "text-blue-500 border-blue-500/30", allEmployeeAcks[0].timestamp)}
-                
-                {managerAuditEntries.map(entry => {
-                    const eventData = insight.auditTrail?.find(e => e.event === entry.event);
-                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, Users, "text-muted-foreground border-border", eventData.timestamp)}</div>;
-                    return null;
-                })}
-
-                {allEmployeeAcks[1] && renderAuditEntry(`Second Employee Acknowledgement`, allEmployeeAcks[1].details, User, "text-blue-500 border-blue-500/30", allEmployeeAcks[1].timestamp)}
-
-                {hrAuditEntries.map(entry => {
-                    const eventData = insight.auditTrail?.find(e => e.event === entry.event);
-                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, ShieldCheckIcon, "text-muted-foreground border-border", eventData.timestamp)}</div>;
-                    return null;
-                })}
-
-                {allEmployeeAcks[2] && renderAuditEntry(`Third Employee Acknowledgement`, allEmployeeAcks[2].details, User, "text-blue-500 border-blue-500/30", allEmployeeAcks[2].timestamp)}
-                
-                {finalDispositionEvent && <div key={`${finalDispositionEvent.event}-${finalDispositionEvent.timestamp}`}>{renderAuditEntry(finalDispositionEvent.event, finalDispositionEvent.details, FileText, "text-gray-500 border-gray-500/30", finalDispositionEvent.timestamp)}</div>}
+                {fullHistory.map((entry, index) => (
+                    <div key={`${entry.event}-${index}`}>
+                        {renderAuditEntry(entry.label, entry.details, entry.icon, entry.iconClass, entry.timestamp)}
+                    </div>
+                ))}
             </div>
 
             {(isActionable && !isClosed) && (
@@ -1043,7 +1027,6 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
             return <HrReviewWidget item={item} onUpdate={onUpdate} />;
         }
         
-        let widgetProps;
         const isAMActionable = role === 'AM' && insight.status === 'pending_am_review';
         const isManagerActionable = role === 'Manager' && insight.status === 'pending_manager_review';
 
@@ -1052,13 +1035,11 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
 
 
         if (isAMActionable || (isItemClosed && isAMInvolved)) {
-             widgetProps = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
+            const props = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
+            return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
         } else if (isManagerActionable || (isItemClosed && isManagerInvolved)) {
-             widgetProps = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
-        } 
-
-        if (widgetProps) {
-            return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />;
+            const props = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
+            return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
         }
         return null;
     }
@@ -1328,15 +1309,30 @@ function ActionItemsContent() {
       e.preventDefault();
       e.stopPropagation();
       
-      let caseItem = await getFeedbackById(caseId);
+      const allItems: (Feedback | OneOnOneHistoryItem)[] = [
+          ...toDoItems, 
+          ...oneOnOneEscalations, 
+          ...identifiedConcerns, 
+          ...anonymousConcerns, 
+          ...retaliationClaims, 
+          ...allClosedItems
+      ];
+      
+      let caseItem = allItems.find(item => ('analysis' in item ? item.id : item.trackingId) === caseId);
 
       if (caseItem) {
           setViewingCaseDetails(caseItem);
       } else {
-          const history = await getOneOnOneHistory();
-          const oneOnOneItem = history.find(item => item.id === caseId);
-          if (oneOnOneItem) {
-              setViewingCaseDetails(oneOnOneItem);
+           // Fallback to fetch from service if not in current view
+          let feedbackItem = await getFeedbackById(caseId);
+          if (feedbackItem) {
+               setViewingCaseDetails(feedbackItem);
+          } else {
+               const history = await getOneOnOneHistory();
+               const oneOnOneItem = history.find(item => item.id === caseId);
+               if (oneOnOneItem) {
+                   setViewingCaseDetails(oneOnOneItem);
+               }
           }
       }
   };
@@ -1393,8 +1389,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const rawSubject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
-            const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
+            const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
