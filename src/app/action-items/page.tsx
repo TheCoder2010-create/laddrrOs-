@@ -246,17 +246,18 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
         }
     };
     
-    const renderAuditEntry = (title: string, content: string | undefined, icon: React.ElementType, iconClass: string) => {
+    const renderAuditEntry = (title: string, content: string | undefined, timestamp: string | Date | undefined, icon: React.ElementType, iconClass: string) => {
         if (!content) return null;
         const Icon = icon;
         return (
-            <div className="flex items-start gap-4">
+             <div className="flex items-start gap-4">
                 <div className={cn("flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center", iconClass)}>
                     <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
                     <p className="font-semibold text-foreground">{title}</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>
+                    <p className="text-xs text-muted-foreground">{timestamp ? format(new Date(timestamp), "PPP, p") : ''}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{content}</p>
                 </div>
             </div>
         );
@@ -266,20 +267,33 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
         { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes` },
         { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee` },
         { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes` },
-        { event: 'Employee Acknowledged', label: `Final Employee Acknowledgement`, details: insight.employeeAcknowledgement },
     ];
+    
+    const employeeAcknowledgements = insight.auditTrail?.filter(e => e.event === 'Employee Acknowledged') || [];
+    const firstAcknowledgement = employeeAcknowledgements[0];
+    const secondAcknowledgement = employeeAcknowledgements[1];
+
+
+    const fullHistory = [
+        { event: 'Critical Insight Identified', label: 'AI Critical Insight', details: `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, timestamp: insight.auditTrail?.[0]?.timestamp, icon: Bot, iconClass: "text-red-500 border-red-500/30" },
+        { event: 'Supervisor Responded', label: `${formatActorName(item.supervisorName)}'s (TL) Response`, details: insight.supervisorResponse, timestamp: insight.auditTrail?.find(e => e.event === 'Supervisor Responded')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
+        { event: 'Employee Acknowledged', label: `First Employee Acknowledgement`, details: firstAcknowledgement?.details, timestamp: firstAcknowledgement?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
+        ...managerAuditEntries.map(entry => {
+             const eventData = insight.auditTrail?.find(e => e.event === entry.event);
+             return { event: entry.event, label: entry.label, details: eventData?.details, timestamp: eventData?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" };
+        }),
+        { event: 'Final Employee Acknowledgement', label: `Final Employee Acknowledgement`, details: secondAcknowledgement?.details, timestamp: secondAcknowledgement?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
+        { event: 'Manager Resolution', label: 'Manager Final Resolution', details: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
+    ].filter(entry => entry.details);
 
     return (
         <div className="space-y-6">
             <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
-                {renderAuditEntry("AI Critical Insight", `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, Bot, "text-red-500 border-red-500/30")}
-                {renderAuditEntry(`${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, User, "text-muted-foreground border-border")}
-                {renderAuditEntry(`${formatActorName(item.employeeName)}'s (Employee) Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor === item.employeeName)?.details, User, "text-blue-500 border-blue-500/30")}
-                
-                {isManagerWidget && managerAuditEntries.map(entry => {
-                    const content = entry.details || insight.auditTrail?.find(e => e.event === entry.event)?.details;
-                    return content ? <div key={entry.label}>{renderAuditEntry(entry.label, content, Users, "text-muted-foreground border-border")}</div> : null;
-                })}
+                {fullHistory.map(entry => (
+                    <div key={`${entry.event}-${entry.timestamp?.toString()}`}>
+                        {renderAuditEntry(entry.label, entry.details, entry.timestamp, entry.icon, entry.iconClass)}
+                    </div>
+                ))}
             </div>
         
             <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
@@ -358,10 +372,12 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     const [resolutionNotes, setResolutionNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    // State for the final action step
     const [finalAction, setFinalAction] = useState<string | null>(null);
     const [finalActionNotes, setFinalActionNotes] = useState('');
     const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
+    
+    const isActionable = item.assignedTo === 'HR Head';
+    const isClosed = insight.status === 'resolved';
 
     const handleHrSubmit = async () => {
         if (!resolutionNotes || !role) return;
@@ -393,89 +409,129 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
         }
     }
 
-    const renderAuditEntry = (event: string, label: string, details?: string, className?: string, textColor?: string) => {
-        const entry = insight.auditTrail?.find(e => e.event === event);
-        if (!details && !entry?.details) return null;
+    const renderAuditEntry = (title: string, content: string | undefined, icon: React.ElementType, iconClass: string) => {
+        if (!content) return null;
+        const Icon = icon;
         return (
-            <div className={`space-y-2 p-3 rounded-md border ${className}`}>
-                <p className={`font-bold text-sm ${textColor}`}>{label}</p>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{details || entry?.details}</p>
+            <div className="flex items-start gap-4">
+                <div className={cn("flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center", iconClass)}>
+                    <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                    <p className="font-semibold text-foreground">{title}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>
+                </div>
             </div>
         );
     };
+    
+    const allEmployeeAcks = insight.auditTrail?.filter(e => e.event === 'Employee Acknowledged') || [];
+
+    const managerAuditEntries = [
+        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes` },
+        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee` },
+        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes` },
+        { event: 'Manager Resolution', label: "Manager's Final Resolution" },
+    ];
+    
+    const hrAuditEntries = [
+        { event: 'HR Resolution', label: 'HR Final Resolution' },
+    ];
 
     return (
         <div className="space-y-6">
-            <div className="space-y-4">
-                {renderAuditEntry("Critical Insight Identified", "Initial AI Insight", insight.summary, "bg-red-500/10 border-red-500/20", "text-red-700 dark:text-red-500")}
-                {renderAuditEntry("Supervisor Responded", `${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, "bg-muted/80", "text-foreground")}
-                {renderAuditEntry("Employee Acknowledged", `First Employee Acknowledgement`, insight.auditTrail?.find(e => e.event === 'Employee Acknowledged' && e.actor !== 'HR Head')?.details, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
-                {renderAuditEntry("AM Coaching Notes", "AM Coaching Notes", undefined, "bg-orange-500/10 border-orange-500/20", "text-orange-700 dark:text-orange-500")}
-                {renderAuditEntry("Supervisor Retry Action", `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, undefined, "bg-muted/80", "text-foreground")}
-                {renderAuditEntry("Manager Resolution", "Manager's Final Resolution", insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, "bg-muted/80", "text-foreground")}
-                 {renderAuditEntry("Employee Acknowledged", `Final Employee Acknowledgement`, insight.employeeAcknowledgement, "bg-blue-500/10 border-blue-500/20", "text-blue-700 dark:text-blue-500")}
-            </div>
-            <div className="bg-black/10 dark:bg-gray-800/50 pt-4 p-4 rounded-lg flex flex-col items-start gap-4">
-                 {insight.status === 'pending_hr_review' && (
-                    <>
-                        <Label className="font-semibold text-black dark:text-white">Your Action</Label>
-                         <p className="text-sm text-muted-foreground">
-                            The automated workflow for this case has concluded. Document your final actions to resolve this situation. The employee will be asked for a final acknowledgement.
-                        </p>
-                        <div className="w-full space-y-3">
-                             <Textarea 
-                                value={resolutionNotes}
-                                onChange={(e) => setResolutionNotes(e.target.value)}
-                                rows={4}
-                                className="bg-background"
-                                placeholder="Enter your final resolution notes..."
-                             />
-                             <div className="flex gap-2">
-                                 <Button className="bg-black hover:bg-black/80 text-white" onClick={handleHrSubmit} disabled={isSubmitting || !resolutionNotes}>
-                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                    Submit Final HR Resolution
-                                 </Button>
-                             </div>
-                         </div>
-                    </>
-                )}
-                 {insight.status === 'pending_final_hr_action' && (
-                    <>
-                         <Label className="font-semibold text-black dark:text-white">Final Action Required</Label>
-                         <p className="text-sm text-muted-foreground">
-                            The employee remains dissatisfied. Please select a final action to formally close this case. This is the last step in the automated workflow.
-                         </p>
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                {renderAuditEntry("AI Critical Insight", `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, Bot, "text-red-500 border-red-500/30")}
+                {renderAuditEntry(`${formatActorName(item.supervisorName)}'s (TL) Response`, insight.supervisorResponse, User, "text-muted-foreground border-border")}
+                {allEmployeeAcks[0] && renderAuditEntry(`First Employee Acknowledgement`, allEmployeeAcks[0].details, User, "text-blue-500 border-blue-500/30")}
+                
+                {managerAuditEntries.map(entry => {
+                    const eventData = insight.auditTrail?.find(e => e.event === entry.event);
+                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, Users, "text-muted-foreground border-border")}</div>;
+                    return null;
+                })}
 
-                         {!finalAction ? (
-                             <div className="flex flex-wrap gap-2">
-                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
-                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
-                                 <Button variant="destructive" onClick={() => setFinalAction('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
-                             </div>
-                         ) : (
-                             <div className="w-full space-y-3">
-                                <p className="font-medium">Action: <span className="text-primary">{finalAction}</span></p>
-                                 <Label htmlFor="final-notes">Reasoning / Notes</Label>
-                                 <Textarea
-                                     id="final-notes"
-                                     value={finalActionNotes}
-                                     onChange={(e) => setFinalActionNotes(e.target.value)}
-                                     rows={4}
-                                     className="bg-background"
-                                     placeholder="Provide your justification for this final action..."
+                {allEmployeeAcks[1] && renderAuditEntry(`Second Employee Acknowledgement`, allEmployeeAcks[1].details, User, "text-blue-500 border-blue-500/30")}
+
+                {hrAuditEntries.map(entry => {
+                    const eventData = insight.auditTrail?.find(e => e.event === entry.event);
+                    if (eventData) return <div key={entry.event}>{renderAuditEntry(entry.label, eventData.details, ShieldCheckIcon, "text-muted-foreground border-border")}</div>;
+                    return null;
+                })}
+
+                {allEmployeeAcks[2] && renderAuditEntry(`Third Employee Acknowledgement`, allEmployeeAcks[2].details, User, "text-blue-500 border-blue-500/30")}
+                
+                {insight.auditTrail?.map((e, idx) => {
+                    if (["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event)) {
+                         return <div key={`${e.event}-${idx}`}>{renderAuditEntry(e.event, e.details, FileText, "text-gray-500 border-gray-500/30")}</div>;
+                    }
+                    return null;
+                })}
+            </div>
+
+            {(isActionable && !isClosed) && (
+                <div className="bg-black/10 dark:bg-gray-800/50 pt-4 p-4 rounded-lg flex flex-col items-start gap-4">
+                     {insight.status === 'pending_hr_review' && (
+                        <>
+                            <Label className="font-semibold text-black dark:text-white">Your Action</Label>
+                             <p className="text-sm text-muted-foreground">
+                                The automated workflow for this case has concluded. Document your final actions to resolve this situation. The employee will be asked for a final acknowledgement.
+                            </p>
+                            <div className="w-full space-y-3">
+                                 <Textarea 
+                                    value={resolutionNotes}
+                                    onChange={(e) => setResolutionNotes(e.target.value)}
+                                    rows={4}
+                                    className="bg-background"
+                                    placeholder="Enter your final resolution notes..."
                                  />
                                  <div className="flex gap-2">
-                                     <Button className="bg-black hover:bg-black/80 text-white" onClick={handleFinalHrDecision} disabled={isSubmittingFinal || !finalActionNotes}>
-                                        {isSubmittingFinal && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                        Submit Final Action
+                                     <Button className="bg-black hover:bg-black/80 text-white" onClick={handleHrSubmit} disabled={isSubmitting || !resolutionNotes}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        Submit Final HR Resolution
                                      </Button>
-                                     <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
                                  </div>
                              </div>
-                         )}
-                    </>
-                 )}
-            </div>
+                        </>
+                    )}
+                     {insight.status === 'pending_final_hr_action' && (
+                        <>
+                             <Label className="font-semibold text-black dark:text-white">Final Action Required</Label>
+                             <p className="text-sm text-muted-foreground">
+                                The employee remains dissatisfied. Please select a final action to formally close this case. This is the last step in the automated workflow.
+                             </p>
+
+                             {!finalAction ? (
+                                 <div className="flex flex-wrap gap-2">
+                                     <Button variant="secondary" onClick={() => setFinalAction('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
+                                     <Button variant="secondary" onClick={() => setFinalAction('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
+                                     <Button variant="destructive" onClick={() => setFinalAction('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
+                                 </div>
+                             ) : (
+                                 <div className="w-full space-y-3">
+                                    <p className="font-medium">Action: <span className="text-primary">{finalAction}</span></p>
+                                     <Label htmlFor="final-notes">Reasoning / Notes</Label>
+                                     <Textarea
+                                         id="final-notes"
+                                         value={finalActionNotes}
+                                         onChange={(e) => setFinalActionNotes(e.target.value)}
+                                         rows={4}
+                                         className="bg-background"
+                                         placeholder="Provide your justification for this final action..."
+                                     />
+                                     <div className="flex gap-2">
+                                         <Button className="bg-black hover:bg-black/80 text-white" onClick={handleFinalHrDecision} disabled={isSubmittingFinal || !finalActionNotes}>
+                                            {isSubmittingFinal && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                            Submit Final Action
+                                         </Button>
+                                         <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
+                                     </div>
+                                 </div>
+                             )}
+                        </>
+                     )}
+                </div>
+            )}
         </div>
     );
 }
@@ -583,20 +639,38 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
     const { toast } = useToast();
     const [update, setUpdate] = useState('');
     const [resolution, setResolution] = useState('');
+    const [isSubmittingUpdate, setIsSubmittingUpdate] = useState(false);
+    const [isSubmittingResolution, setIsSubmittingResolution] = useState(false);
 
     const handleAddUpdate = async () => {
         if (!update || !role) return;
-        await addFeedbackUpdate(feedback.trackingId, role, update);
-        setUpdate('');
-        toast({ title: "Update Added", description: "Your notes have been added to the case history." });
-        onUpdate();
+        setIsSubmittingUpdate(true);
+        try {
+            await addFeedbackUpdate(feedback.trackingId, role, update);
+            setUpdate('');
+            toast({ title: "Update Added", description: "Your notes have been added to the case history." });
+            onUpdate();
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Update Failed" });
+        } finally {
+            setIsSubmittingUpdate(false);
+        }
     }
 
     const handleResolve = async () => {
         if (!resolution || !role) return;
-        await submitCollaborativeResolution(feedback.trackingId, role, resolution);
-        toast({ title: "Resolution Statement Submitted", description: "The case will be resolved once all parties submit their statements." });
-        onUpdate();
+        setIsSubmittingResolution(true);
+        try {
+            await submitCollaborativeResolution(feedback.trackingId, role, resolution);
+            toast({ title: "Resolution Statement Submitted", description: "The case will be resolved once all parties submit their statements." });
+            onUpdate();
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Resolution Failed" });
+        } finally {
+            setIsSubmittingResolution(false);
+        }
     }
     
     const managerHasResolved = !!feedback.managerResolution;
@@ -623,8 +697,12 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                     onChange={(e) => setUpdate(e.target.value)}
                     rows={4}
                     placeholder="Enter your update..."
+                    disabled={isSubmittingUpdate}
                 />
-                <Button onClick={handleAddUpdate} disabled={!update}>Add Update</Button>
+                <Button onClick={handleAddUpdate} disabled={!update || isSubmittingUpdate}>
+                    {isSubmittingUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                    Add Update
+                </Button>
             </div>
             
             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
@@ -643,10 +721,18 @@ function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, 
                         onChange={(e) => setResolution(e.target.value)}
                         rows={4}
                         placeholder="Enter your final resolution statement..."
+                        disabled={isSubmittingResolution}
                     />
                 )}
                 
-                <Button variant="success" onClick={handleResolve} disabled={!resolution || (isManager && managerHasResolved) || (isHrHead && hrHasResolved)}>Submit Resolution</Button>
+                <Button 
+                    variant="success" 
+                    onClick={handleResolve} 
+                    disabled={!resolution || (isManager && managerHasResolved) || (isHrHead && hrHasResolved) || isSubmittingResolution}
+                >
+                    {isSubmittingResolution && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                    Submit Resolution
+                </Button>
             </div>
         </div>
     )
@@ -942,18 +1028,25 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         const insight = item.analysis.criticalCoachingInsight;
         if (!insight) return null;
         
-        if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) {
+        const isClosed = insight.status === 'resolved';
+        let isActionableForRole = false;
+        let wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+        
+        if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || (isClosed && wasEverInvolved))) {
             return <HrReviewWidget item={item} onUpdate={onUpdate} />
         }
         
         let widgetProps;
-        if (role === 'AM' && insight.status === 'pending_am_review') {
+        if (role === 'AM' && (insight.status === 'pending_am_review' || (isClosed && wasEverInvolved))) {
              widgetProps = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
-        } else if (role === 'Manager' && insight.status === 'pending_manager_review') {
+        } else if (role === 'Manager' && (insight.status === 'pending_manager_review' || (isClosed && wasEverInvolved))) {
              widgetProps = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
         } 
 
         if (widgetProps) {
+            if (isClosed) {
+                return <div className="p-4 border-t mt-4"><EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} /></div>
+            }
             return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />
         }
         return null;
@@ -1050,11 +1143,11 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
+    const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : caseItem.subject;
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? (item: OneOnOneHistoryItem) => item.analysis.criticalCoachingInsight?.auditTrail || [] : (item: Feedback) => item.auditTrail || [];
-    const finalResolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution'))?.details : caseItem.resolution;
+    const finalResolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution') || e.event.includes('Disposition'))?.details : caseItem.resolution;
 
     const handleDownload = () => {
         const caseDetails = {
@@ -1153,8 +1246,11 @@ function ActionItemsContent() {
                 const isActionable = isAmMatch || isManagerMatch || isHrMatch;
                 const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
 
-                if (isActionable) activeOneOnOneEscalations.push(item);
-                else if (isItemClosed && wasEverInvolved) localAllClosed.push(item);
+                if (isActionable) {
+                    activeOneOnOneEscalations.push(item);
+                } else if (isClosed && wasEverInvolved) {
+                    localAllClosed.push(item);
+                }
 
             } else { // It's a Feedback item
                 // Exclude cases from "Voice – in Silence" as they are handled on a separate page
@@ -1176,7 +1272,7 @@ function ActionItemsContent() {
                     else if (item.criticality === 'Retaliation Claim') activeRetaliationClaims.push(item);
                     else if (item.isAnonymous) activeAnonymousConcerns.push(item);
                     else activeIdentifiedConcerns.push(item);
-                } else if (isItemClosed && (wasEverInvolved || item.isAnonymous)) {
+                } else if (isItemClosed && (wasEverInvolved || item.submittedBy === role)) {
                     localAllClosed.push(item);
                 }
             }
@@ -1184,7 +1280,7 @@ function ActionItemsContent() {
         
         const sortFn = (a: Feedback | OneOnOneHistoryItem, b: Feedback | OneOnOneHistoryItem) => {
             const dateA = 'submittedAt' in a ? new Date(a.submittedAt) : new Date(a.date);
-            const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(a.date);
+            const dateB = 'submittedAt' in b ? new Date(b.submittedAt) : new Date(b.date);
             return dateB.getTime() - dateA.getTime();
         };
         
@@ -1291,13 +1387,13 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const rawSubject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : item.subject;
+            const rawSubject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : item.subject;
             const subject = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
                 const initialMessage = isOneOnOne ? item.analysis.criticalCoachingInsight?.summary || 'N/A' : item.message;
-                const finalResolution = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution'))?.details : item.resolution;
+                const finalResolution = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution') || e.event.includes('Disposition'))?.details : item.resolution;
                  const aiSummary = isOneOnOne ? item.analysis.criticalCoachingInsight?.reason : item.summary;
 
                 downloadAuditTrailPDF({
