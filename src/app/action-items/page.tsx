@@ -17,7 +17,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download, Bot, BrainCircuit } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download, Bot, BrainCircuit, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatActorName } from '@/lib/role-mapping';
 
 const criticalityConfig = {
@@ -1035,27 +1034,31 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         const insight = item.analysis.criticalCoachingInsight;
         if (!insight) return null;
         
-        const isClosed = insight.status === 'resolved' || ['resolved', 'pending_final_hr_action'].includes(insight.status);
+        const isItemClosed = insight.status === 'resolved' || ['resolved', 'pending_final_hr_action'].includes(insight.status);
         const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
         
-        if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || (isClosed && wasEverInvolved))) {
-            return <HrReviewWidget item={item} onUpdate={onUpdate} />
+        const isHRActionable = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+
+        if (isHRActionable || (isItemClosed && wasEverInvolved && role === 'HR Head')) {
+            return <HrReviewWidget item={item} onUpdate={onUpdate} />;
         }
         
         let widgetProps;
-        if (role === 'AM' && (insight.status === 'pending_am_review' || (isClosed && wasEverInvolved))) {
+        const isAMActionable = role === 'AM' && insight.status === 'pending_am_review';
+        const isManagerActionable = role === 'Manager' && insight.status === 'pending_manager_review';
+
+        const isAMInvolved = wasEverInvolved && role === 'AM';
+        const isManagerInvolved = wasEverInvolved && role === 'Manager';
+
+
+        if (isAMActionable || (isItemClosed && isAMInvolved)) {
              widgetProps = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
-        } else if (role === 'Manager' && (insight.status === 'pending_manager_review' || (isClosed && wasEverInvolved))) {
+        } else if (isManagerActionable || (isItemClosed && isManagerInvolved)) {
              widgetProps = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
         } 
 
         if (widgetProps) {
-            if (isClosed && wasEverInvolved) {
-                 return <div className="p-4 border-t mt-4"><EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} /></div>
-            }
-            if (!isClosed) {
-                return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />
-            }
+            return <EscalationWidget item={item} onUpdate={onUpdate} {...widgetProps} />;
         }
         return null;
     }
@@ -1152,7 +1155,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
 
     const isOneOnOne = 'analysis' in caseItem;
     const subject = isOneOnOne ? `1-on-1 Escalation: ${caseItem.employeeName} & ${caseItem.supervisorName}` : caseItem.subject;
-    const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
+    const trackingId = isOneOnOne ? item.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail || [] : caseItem.auditTrail || [];
     const finalResolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution') || e.event.includes('Disposition'))?.details : caseItem.resolution;
@@ -1325,22 +1328,16 @@ function ActionItemsContent() {
       e.preventDefault();
       e.stopPropagation();
       
-      const allItems: (Feedback | OneOnOneHistoryItem)[] = [
-          ...toDoItems, ...oneOnOneEscalations, ...identifiedConcerns, ...anonymousConcerns, ...retaliationClaims, ...allClosedItems
-      ];
-      
-      let caseItem = allItems.find(item => ('analysis' in item ? item.id : item.trackingId) === caseId);
-
-      if (!caseItem) {
-         try {
-             caseItem = await getFeedbackById(caseId);
-         } catch (error) {
-             console.error("Could not fetch case details", error);
-         }
-      }
+      let caseItem = await getFeedbackById(caseId);
 
       if (caseItem) {
           setViewingCaseDetails(caseItem);
+      } else {
+          const history = await getOneOnOneHistory();
+          const oneOnOneItem = history.find(item => item.id === caseId);
+          if (oneOnOneItem) {
+              setViewingCaseDetails(oneOnOneItem);
+          }
       }
   };
 
