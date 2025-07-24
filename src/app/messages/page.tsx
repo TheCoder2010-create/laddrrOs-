@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon, Info } from 'lucide-react';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, getAllFeedback, Feedback, resolveFeedback, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
-import { roleUserMapping } from '@/lib/role-mapping';
+import { roleUserMapping, formatActorName } from '@/lib/role-mapping';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { cn } from '@/lib/utils';
+
 
 function OneOnOneAcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -52,9 +54,21 @@ function OneOnOneAcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHisto
     };
     
     const wasHrAction = item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'HR Responded to Retaliation Claim');
+    
+    const supervisorResponse = item.analysis.criticalCoachingInsight?.supervisorResponse;
     const amResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Responded to Employee');
     const managerResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'Manager Resolution');
+    const retryNotes = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'Supervisor Retry Action');
+    const hrResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'HR Resolution');
 
+    const timelineEvents = [
+        { actor: item.supervisorName, actorRole: 'Team Lead', response: supervisorResponse, icon: User },
+        { actor: amResponse?.actor, actorRole: 'AM', response: amResponse?.details, icon: Users },
+        { actor: retryNotes?.actor, actorRole: 'Team Lead', response: retryNotes?.details, label: "Supervisor's Follow-up Notes", icon: User },
+        { actor: managerResponse?.actor, actorRole: 'Manager', response: managerResponse?.details, icon: Briefcase },
+        { actor: hrResponse?.actor, actorRole: 'HR Head', response: hrResponse?.details, icon: ShieldCheck },
+    ].filter(e => e.response);
+    
 
     return (
         <Card className="border-blue-500/50">
@@ -67,54 +81,37 @@ function OneOnOneAcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHisto
                     From your meeting with {item.supervisorName} on {format(new Date(item.date), 'PPP')}.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-                <div className="p-3 bg-muted/80 rounded-md border">
-                    <p className="font-semibold text-foreground">Supervisor's Response</p>
-                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                        {item.analysis.criticalCoachingInsight?.supervisorResponse}
-                    </p>
+            <CardContent className="pt-6 space-y-6">
+                <div className="relative pl-8">
+                    {timelineEvents.map((event, index) => {
+                        const Icon = event.icon;
+                        return (
+                        <div key={index} className="flex gap-4 relative">
+                             <div className="absolute top-0 -left-8 h-full flex items-center">
+                                <div className={cn(
+                                    "flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10",
+                                )}>
+                                    <Icon className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                {index < timelineEvents.length - 1 && (
+                                     <div className="absolute left-1/2 -translate-x-1/2 top-8 h-full w-px bg-border"></div>
+                                )}
+                            </div>
+                            <div className="pb-8 flex-1">
+                                <p className="font-semibold text-foreground">{event.label || `${formatActorName(event.actorRole)}'s Response`}</p>
+                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.response}</p>
+                            </div>
+                        </div>
+                    )})}
                 </div>
-                 {amResponse && (
-                     <div className="p-3 bg-orange-500/10 rounded-md border border-orange-500/20">
-                        <p className="font-semibold text-orange-700 dark:text-orange-500">{amResponse.actor}'s Response</p>
-                        <p className="text-sm text-orange-600 dark:text-orange-400 mt-1 whitespace-pre-wrap">{amResponse.details}</p>
-                    </div>
-                 )}
-                 {managerResponse && (
-                     <div className="p-3 bg-destructive/10 rounded-md border border-destructive/20">
-                        <p className="font-semibold text-destructive">{managerResponse.actor}'s Response</p>
-                        <p className="text-sm text-destructive/90 mt-1 whitespace-pre-wrap">{managerResponse.details}</p>
-                    </div>
-                 )}
-                 {item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'Supervisor Retry Action') && (
-                     <div className="p-3 bg-muted/80 rounded-md border">
-                        <p className="font-semibold text-foreground">Supervisor's Follow-up Notes</p>
-                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'Supervisor Retry Action')?.details}
+
+                <div className="space-y-4 pt-6 border-t border-dashed">
+                    <div className="space-y-1">
+                        <Label className="font-semibold text-base">Your Acknowledgement</Label>
+                        <p className="text-sm text-muted-foreground">
+                            Please review the latest response and provide feedback on the resolution.
                         </p>
                     </div>
-                )}
-                 {item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'Manager Resolution') && (
-                     <div className="p-3 bg-muted/80 rounded-md border">
-                        <p className="font-semibold text-foreground">Manager's Final Resolution</p>
-                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'Manager Resolution')?.details}
-                        </p>
-                    </div>
-                )}
-                {wasHrAction && (
-                     <div className="p-3 bg-muted/80 rounded-md border">
-                        <p className="font-semibold text-foreground">HR Head's Final Resolution</p>
-                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                            {item.analysis.criticalCoachingInsight?.auditTrail.find(e => e.event === 'HR Responded to Retaliation Claim')?.details}
-                        </p>
-                    </div>
-                )}
-                <div className="space-y-3">
-                    <Label className="font-semibold">Your Acknowledgement</Label>
-                    <p className="text-sm text-muted-foreground">
-                        Please review the latest response and provide feedback on the resolution.
-                    </p>
                     <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
                         <div className="flex items-center space-x-2">
                             <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
@@ -238,7 +235,7 @@ function ConcernAcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUp
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
                 <div className="p-3 bg-muted/80 rounded-md border">
-                    <p className="font-semibold text-foreground">{lastResponderEvent?.actor}'s Response:</p>
+                    <p className="font-semibold text-foreground">{formatActorName(lastResponderEvent?.actor)}'s Response:</p>
                     <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{item.supervisorUpdate}</p>
                 </div>
                 <div className="space-y-3">
