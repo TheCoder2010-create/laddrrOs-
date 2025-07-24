@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -103,13 +102,13 @@ function AuditTrail({ trail, handleViewCaseDetails, onDownload }: { trail: Audit
                                             
                                             if (lineParentMatch) {
                                                 const parentId = lineParentMatch[2];
-                                                return <div key={i}>Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
+                                                return <div key={`${index}-line-${i}`}>Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
                                             }
                                             if (lineChildMatch) {
                                                 const childId = lineChildMatch[2];
-                                                return <div key={i}>New Case ID: <a href="#" onClick={(e) => handleViewCaseDetails(e, childId)} className="font-mono text-primary hover:underline">{childId}</a></div>
+                                                return <div key={`${index}-line-${i}`}>New Case ID: <a href="#" onClick={(e) => handleViewCaseDetails(e, childId)} className="font-mono text-primary hover:underline">{childId}</a></div>
                                             }
-                                            return <div key={i}>{line}</div>
+                                            return <div key={`${index}-line-${i}`}>{line}</div>
                                         })}
                                     </div>
                                 );
@@ -119,7 +118,7 @@ function AuditTrail({ trail, handleViewCaseDetails, onDownload }: { trail: Audit
                         };
 
                         return (
-                            <div key={index} className="flex items-start gap-4 relative">
+                            <div key={`${event.event}-${index}`} className="flex items-start gap-4 relative">
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
                                     <Icon className="h-5 w-5 text-muted-foreground" />
                                 </div>
@@ -278,21 +277,21 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
     ].filter(entry => entry.details);
 
 
-    const isClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
+    const isItemClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
     const isActionable = (role === 'AM' && insight.status === 'pending_am_review') || (role === 'Manager' && insight.status === 'pending_manager_review');
 
 
     return (
         <div className="space-y-6">
             <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
-                {fullHistory.map(entry => (
-                    <div key={`${entry.event}-${entry.timestamp?.toString()}`}>
+                {fullHistory.map((entry, index) => (
+                    <div key={`${entry.event}-${index}`}>
                         {renderAuditEntry(entry.label, entry.details, entry.timestamp, entry.icon, entry.iconClass)}
                     </div>
                 ))}
             </div>
         
-            {isActionable && !isClosed && (
+            {isActionable && !isItemClosed && (
                 <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
                     <Label className={`font-semibold text-base ${titleColor}`}>Your Action</Label>
                     
@@ -375,7 +374,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
     
     const isActionable = role === 'HR Head';
-    const isClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
+    const isItemClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
     
     const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
 
@@ -453,7 +452,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                 ))}
             </div>
 
-            {(isActionable && !isClosed) && (
+            {(isActionable && !isItemClosed) && (
                 <div className="bg-black/10 dark:bg-gray-800/50 pt-4 p-4 rounded-lg flex flex-col items-start gap-4">
                      {insight.status === 'pending_hr_review' && (
                         <>
@@ -991,28 +990,95 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     );
 }
 
-function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
+function IdentifiedConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
+    const { toast } = useToast();
     const [resolutionSummary, setResolutionSummary] = useState('');
     const [interimUpdate, setInterimUpdate] = useState('');
-    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSupervisorUpdate = async (trackingId: string, isFinal: boolean) => {
+    const handleSupervisorUpdate = async (isFinal: boolean) => {
         const comment = isFinal ? resolutionSummary : interimUpdate;
         if (!comment || !role) return;
-
-        if (isFinal) {
-            await submitSupervisorUpdate(trackingId, role, comment);
-            setResolutionSummary('');
-            toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
-        } else {
-            await addFeedbackUpdate(trackingId, role, comment);
-            setInterimUpdate('');
-            toast({ title: "Update Added" });
+        
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, comment);
+            if (isFinal) {
+                setResolutionSummary('');
+                toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
+            } else {
+                setInterimUpdate('');
+                toast({ title: "Update Added" });
+            }
+            onUpdate();
+        } catch(e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: "Update Failed"});
+        } finally {
+            setIsSubmitting(false);
         }
-        onUpdate();
     }
-    
+
+    let title = 'Your Action Required';
+    let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
+
+    if (feedback.status === 'Pending Manager Action') {
+        title = 'Escalation: Review Required';
+        description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
+    } else if (feedback.status === 'Pending HR Action') {
+        title = 'Final Escalation: HR Review Required';
+        description = "This concern has been escalated to HR for final review. Provide your resolution summary to be sent to the employee for their final acknowledgment."
+    }
+
+    return (
+        <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
+            <div className="space-y-2">
+                <Label className="text-base font-semibold">{title}</Label>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+            
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
+                <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
+                <Textarea 
+                    id={`interim-update-${feedback.trackingId}`}
+                    value={interimUpdate}
+                    onChange={(e) => setInterimUpdate(e.target.value)}
+                    rows={3}
+                    placeholder="Add your notes..."
+                    disabled={isSubmitting}
+                />
+                <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Add Update
+                </Button>
+            </div>
+
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
+                <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
+                <Textarea 
+                    id={`final-resolution-${feedback.trackingId}`}
+                    value={resolutionSummary}
+                    onChange={(e) => setResolutionSummary(e.target.value)}
+                    rows={4}
+                    placeholder="Add your final resolution notes..."
+                    disabled={isSubmitting}
+                />
+                <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+
+function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
+    const { role } = useRole();
+
     // Render widget for 1-on-1 Escalations
     if ('analysis' in item) {
         const insight = item.analysis.criticalCoachingInsight;
@@ -1030,14 +1096,10 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         const isAMActionable = role === 'AM' && insight.status === 'pending_am_review';
         const isManagerActionable = role === 'Manager' && insight.status === 'pending_manager_review';
 
-        const isAMInvolved = wasEverInvolved && role === 'AM';
-        const isManagerInvolved = wasEverInvolved && role === 'Manager';
-
-
-        if (isAMActionable || (isItemClosed && isAMInvolved)) {
+        if (isAMActionable || (isItemClosed && wasEverInvolved && role === 'AM')) {
             const props = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
             return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
-        } else if (isManagerActionable || (isItemClosed && isManagerInvolved)) {
+        } else if (isManagerActionable || (isItemClosed && wasEverInvolved && role === 'Manager')) {
             const props = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
             return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
         }
@@ -1047,85 +1109,34 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
     // Render widgets for standard Feedback items
     const feedback = item;
     
-    // Retaliation claims are handled by a specific panel for HR Head
+    if (feedback.status === 'To-Do') {
+        return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+    
     if (role === 'HR Head' && feedback.status === 'Retaliation Claim') {
         return <RetaliationActionPanel feedback={feedback} onUpdate={onUpdate} handleViewCaseDetails={handleViewCaseDetails} />;
     }
 
-    // For anonymous concerns escalated to HR, show the collaborative panel
     if (feedback.isAnonymous && feedback.status === 'Pending HR Action' && (role === 'Manager' || role === 'HR Head')) {
         return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
 
-    // For identified concerns that were rejected by employee at HR level
     if (role === 'HR Head' && feedback.status === 'Final Disposition Required') {
         return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
     }
     
-    if (feedback.status === 'To-Do' && feedback.assignedTo?.includes(role!)) {
-        return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />
-    }
-    
-    if (feedback.isAnonymous && (feedback.status === 'Pending Manager Action' || feedback.status === 'Pending Anonymous Reply') && feedback.assignedTo?.includes(role!)) {
+    if (feedback.isAnonymous && (feedback.status === 'Pending Manager Action' || feedback.status === 'Pending Anonymous Reply')) {
         return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
+    
+    const isIdentifiedConcern = 
+        !feedback.isAnonymous &&
+        (feedback.status === 'Pending Supervisor Action' ||
+         feedback.status === 'Pending Manager Action' ||
+         feedback.status === 'Pending HR Action');
 
-    // This handles all identified concerns for TL, AM, Manager, and HR Head
-    const isEscalatedConcern = 
-        feedback.status === 'Pending Supervisor Action' ||
-        feedback.status === 'Pending Manager Action' ||
-        (feedback.status === 'Pending HR Action' && !feedback.isAnonymous);
-        
-    if (isEscalatedConcern && feedback.assignedTo?.includes(role!)) {
-        let title = 'Your Action Required';
-        let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
-
-        if (feedback.status === 'Pending Manager Action') {
-            title = 'Escalation: Review Required';
-            description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
-        } else if (feedback.status === 'Pending HR Action') {
-             if (feedback.isAnonymous) { // The collaborative case
-                return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
-            }
-            title = 'Final Escalation: HR Review Required';
-            description = "This concern has been escalated to HR for final review. Provide your resolution summary to be sent to the employee for their final acknowledgment."
-        }
-
-
-        return (
-            <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
-                <div className="space-y-2">
-                    <Label className="text-base font-semibold">{title}</Label>
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                </div>
-                
-                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                    <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
-                    <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
-                    <Textarea 
-                        id={`interim-update-${feedback.trackingId}`}
-                        value={interimUpdate}
-                        onChange={(e) => setInterimUpdate(e.target.value)}
-                        rows={3}
-                        placeholder="Add your notes..."
-                    />
-                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, false)} disabled={!interimUpdate}>Add Update</Button>
-                </div>
-
-                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                    <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
-                    <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
-                    <Textarea 
-                        id={`final-resolution-${feedback.trackingId}`}
-                        value={resolutionSummary}
-                        onChange={(e) => setResolutionSummary(e.target.value)}
-                        rows={4}
-                        placeholder="Add your final resolution notes..."
-                    />
-                    <Button onClick={() => handleSupervisorUpdate(feedback.trackingId, true)} disabled={!resolutionSummary}>Submit</Button>
-                </div>
-            </div>
-        );
+    if (isIdentifiedConcern) {
+        return <IdentifiedConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
     
     return null; // No action panel for other statuses
@@ -1135,8 +1146,8 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `1-on-1 Escalation: ${caseItem.employeeName} & ${caseItem.supervisorName}` : caseItem.subject;
-    const trackingId = isOneOnOne ? item.id : caseItem.trackingId;
+    const subject = isOneOnOne ? `1-on-1: ${caseItem.employeeName} & ${caseItem.supervisorName}` : (caseItem.subject || 'No Subject');
+    const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail || [] : caseItem.auditTrail || [];
     const finalResolution = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event.includes('Resolution') || e.event.includes('Disposition'))?.details : caseItem.resolution;
@@ -1389,7 +1400,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
+            const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
@@ -1618,3 +1629,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
