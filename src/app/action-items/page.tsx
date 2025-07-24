@@ -95,14 +95,12 @@ function AuditTrail({ item, handleViewCaseDetails, onDownload }: { item: Feedbac
     if (isOneOnOne) {
         const insight = item.analysis.criticalCoachingInsight;
         if (insight) {
-            // Prepend the initial AI insight as the first event in the history.
             const initialEvent: AuditEvent = {
                 event: 'Critical Insight Identified',
-                timestamp: insight.auditTrail?.[0]?.timestamp || item.date, // Use first event's time or fallback
+                timestamp: insight.auditTrail?.[0]?.timestamp || item.date,
                 actor: 'AI System',
                 details: `${insight.summary}\n\n**Reasoning:** ${insight.reason}`
             };
-             // Ensure the initial AI-generated event is first, followed by the rest.
             displayTrail = [initialEvent, ...(insight.auditTrail || [])];
         }
     } else {
@@ -301,7 +299,7 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
                 Escalation Details
             </h3>
             
-             {amCoachingNotes && (
+            {amCoachingNotes && (
                 <div className="p-3 bg-muted/80 rounded-md border">
                     <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
                     <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
