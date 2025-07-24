@@ -68,6 +68,9 @@ const auditEventIcons = {
     'Supervisor Retry Action': MessageSquare,
     'Manager Resolution': Briefcase,
     'HR Resolution': ShieldCheckIcon,
+    'Assigned to Ombudsman': UserX,
+    'Assigned to Grievance Office': UserPlus,
+    'Logged Dissatisfaction & Closed': FileText,
     'default': Info,
 }
 
@@ -854,7 +857,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                 <TooltipContent>
                                     <p>Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.</p>
                                 </TooltipContent>
-                            </Tooltip>
+                            </TooltipProvider>
                         </TooltipProvider>
                         <Textarea 
                             id="resolve-directly"
@@ -1343,7 +1346,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const subject = isOneOnOne ? `1-on-1 Escalation: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
+            const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
