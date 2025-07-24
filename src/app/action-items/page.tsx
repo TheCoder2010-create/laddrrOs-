@@ -43,8 +43,7 @@ const criticalityConfig = {
 
 const auditEventIcons = {
     'Submitted': FileCheck,
-    'Critical Insight Identified': ShieldAlert,
-    'To-Do List Created': ListTodo,
+    'Critical Insight Identified': Bot,
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
     'Unassigned': UserX,
@@ -55,6 +54,7 @@ const auditEventIcons = {
     'User acknowledged manager\'s assurance message': CheckCircle,
     'Identity Reveal Declined; Escalated to HR': ShieldCheckIcon,
     'Employee Accepted Resolution': CheckCircle,
+    'Employee Acknowledged': CheckCircle,
     'Employee Escalated Concern': AlertTriangle,
     'Final Disposition Required': ShieldAlert,
     'Final Disposition': FileCheck,
@@ -63,11 +63,36 @@ const auditEventIcons = {
     'Update Added': MessageSquare,
     'Information Requested': MessageCircleQuestion,
     'Anonymous User Responded': MessageSquare,
+    'AM Coaching Notes': BrainCircuit,
+    'AM Responded to Employee': MessageSquare,
+    'Supervisor Retry Action': MessageSquare,
+    'Manager Resolution': Briefcase,
+    'HR Resolution': ShieldCheckIcon,
     'default': Info,
 }
 
-function AuditTrail({ trail, handleViewCaseDetails, onDownload }: { trail: AuditEvent[], handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
-    if (!trail || trail.length === 0) return null;
+function AuditTrail({ item, handleViewCaseDetails, onDownload }: { item: Feedback | OneOnOneHistoryItem, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
+    
+    let displayTrail: AuditEvent[] = [];
+    const isOneOnOne = 'analysis' in item;
+
+    if (isOneOnOne) {
+        const insight = item.analysis.criticalCoachingInsight;
+        if (insight) {
+            // Prepend the initial AI insight as the first event in the history.
+            const initialEvent: AuditEvent = {
+                event: 'Critical Insight Identified',
+                timestamp: insight.auditTrail?.[0]?.timestamp || item.date, // Use first event's time or fallback
+                actor: 'AI System',
+                details: `${insight.summary}\n\n**Reasoning:** ${insight.reason}`
+            };
+            displayTrail = [initialEvent, ...(insight.auditTrail || [])];
+        }
+    } else {
+        displayTrail = item.auditTrail || [];
+    }
+
+    if (displayTrail.length === 0) return null;
 
     return (
         <div className="space-y-2">
@@ -81,7 +106,7 @@ function AuditTrail({ trail, handleViewCaseDetails, onDownload }: { trail: Audit
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
-                    {trail.map((event, index) => {
+                    {displayTrail.map((event, index) => {
                         const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
                         
                         const renderDetails = () => {
@@ -245,37 +270,6 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
             setIsSubmittingManager(false);
         }
     };
-    
-    const renderAuditEntry = (title: string, content: string | undefined, timestamp: string | Date | undefined, icon: React.ElementType, iconClass: string) => {
-        if (!content) return null;
-        const Icon = icon;
-        return (
-             <div className="flex items-start gap-4">
-                <div className={cn("flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center", iconClass)}>
-                    <Icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                    <p className="font-semibold text-foreground">{title}</p>
-                    {timestamp && <p className="text-xs text-muted-foreground">{format(new Date(timestamp), "PPP, p")}</p>}
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{content}</p>
-                </div>
-            </div>
-        );
-    };
-
-    const allEmployeeAcks = insight.auditTrail?.filter(e => e.event === 'Employee Acknowledged') || [];
-
-    const fullHistory = [
-        { event: 'Critical Insight Identified', label: 'AI Critical Insight', details: `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, timestamp: insight.auditTrail?.[0]?.timestamp, icon: Bot, iconClass: "text-red-500 border-red-500/30" },
-        { event: 'Supervisor Responded', label: `${formatActorName(item.supervisorName)}'s (TL) Response`, details: insight.supervisorResponse, timestamp: insight.auditTrail?.find(e => e.event === 'Supervisor Responded')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
-        { event: 'Employee Acknowledged 1', label: `First Employee Acknowledgement`, details: allEmployeeAcks[0]?.details, timestamp: allEmployeeAcks[0]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
-        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes`, details: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
-        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee`, details: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
-        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, details: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
-        { event: 'Employee Acknowledged 2', label: `Second Employee Acknowledgement`, details: allEmployeeAcks[1]?.details, timestamp: allEmployeeAcks[1]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
-        { event: 'Manager Resolution', label: 'Manager Final Resolution', details: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.timestamp, icon: Briefcase, iconClass: "text-muted-foreground border-border" },
-    ].filter(entry => entry.details);
-
 
     const isItemClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
     const isActionable = (role === 'AM' && insight.status === 'pending_am_review') || (role === 'Manager' && insight.status === 'pending_manager_review');
@@ -283,14 +277,6 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
 
     return (
         <div className="space-y-6">
-            <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
-                {fullHistory.map((entry, index) => (
-                    <div key={`${entry.event}-${index}`}>
-                        {renderAuditEntry(entry.label, entry.details, entry.timestamp, entry.icon, entry.iconClass)}
-                    </div>
-                ))}
-            </div>
-        
             {isActionable && !isItemClosed && (
                 <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
                     <Label className={`font-semibold text-base ${titleColor}`}>Your Action</Label>
@@ -375,8 +361,6 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     
     const isActionable = role === 'HR Head';
     const isItemClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
-    
-    const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
 
 
     const handleHrSubmit = async () => {
@@ -409,49 +393,8 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
         }
     }
 
-    const renderAuditEntry = (title: string, content: string | undefined, icon: React.ElementType, iconClass: string, timestamp?: string | Date) => {
-        if (!content) return null;
-        const Icon = icon;
-        return (
-            <div className="flex items-start gap-4">
-                <div className={cn("flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center", iconClass)}>
-                    <Icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                    <p className="font-semibold text-foreground">{title}</p>
-                    {timestamp && <p className="text-xs text-muted-foreground">{format(new Date(timestamp), 'PPP, p')}</p>}
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">{content}</p>
-                </div>
-            </div>
-        );
-    };
-    
-    const allEmployeeAcks = insight.auditTrail?.filter(e => e.event === 'Employee Acknowledged') || [];
-
-    const fullHistory = [
-        { event: 'Critical Insight Identified', label: 'AI Critical Insight', details: `${insight.summary}\n\n**Reasoning**: ${insight.reason}`, timestamp: insight.auditTrail?.[0].timestamp, icon: Bot, iconClass: "text-red-500 border-red-500/30" },
-        { event: 'Supervisor Responded', label: `${formatActorName(item.supervisorName)}'s (TL) Response`, details: insight.supervisorResponse, timestamp: insight.auditTrail?.find(e=>e.event === 'Supervisor Responded')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
-        { event: 'Employee Acknowledged 1', label: `First Employee Acknowledgement`, details: allEmployeeAcks[0]?.details, timestamp: allEmployeeAcks[0]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
-        { event: 'AM Coaching Notes', label: `${formatActorName('AM')}'s Coaching Notes`, details: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
-        { event: 'AM Responded to Employee', label: `${formatActorName('AM')}'s Response to Employee`, details: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'AM Responded to Employee')?.timestamp, icon: Users, iconClass: "text-muted-foreground border-border" },
-        { event: 'Supervisor Retry Action', label: `${formatActorName(item.supervisorName)}'s (TL) Retry Notes`, details: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Supervisor Retry Action')?.timestamp, icon: User, iconClass: "text-muted-foreground border-border" },
-        { event: 'Employee Acknowledged 2', label: `Second Employee Acknowledgement`, details: allEmployeeAcks[1]?.details, timestamp: allEmployeeAcks[1]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
-        { event: 'Manager Resolution', label: "Manager's Final Resolution", details: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'Manager Resolution')?.timestamp, icon: Briefcase, iconClass: "text-muted-foreground border-border" },
-        { event: 'Employee Acknowledged 3', label: `Third Employee Acknowledgement`, details: allEmployeeAcks[2]?.details, timestamp: allEmployeeAcks[2]?.timestamp, icon: User, iconClass: "text-blue-500 border-blue-500/30" },
-        { event: 'HR Resolution', label: 'HR Final Resolution', details: insight.auditTrail?.find(e => e.event === 'HR Resolution')?.details, timestamp: insight.auditTrail?.find(e => e.event === 'HR Resolution')?.timestamp, icon: ShieldCheckIcon, iconClass: "text-muted-foreground border-border" },
-        { event: 'Final Disposition', label: finalDispositionEvent?.event || "Final Disposition", details: finalDispositionEvent?.details, timestamp: finalDispositionEvent?.timestamp, icon: FileText, iconClass: "text-gray-500 border-gray-500/30" },
-    ].filter(entry => entry.details);
-
     return (
         <div className="space-y-6">
-            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                {fullHistory.map((entry, index) => (
-                    <div key={`${entry.event}-${index}`}>
-                        {renderAuditEntry(entry.label, entry.details, entry.icon, entry.iconClass, entry.timestamp)}
-                    </div>
-                ))}
-            </div>
-
             {(isActionable && !isItemClosed) && (
                 <div className="bg-black/10 dark:bg-gray-800/50 pt-4 p-4 rounded-lg flex flex-col items-start gap-4">
                      {insight.status === 'pending_hr_review' && (
@@ -1180,7 +1123,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
                             <Label className="text-base">Initial Submission Context</Label>
                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{initialMessage}</p>
                         </div>
-                        <AuditTrail trail={trail} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/>
+                        <AuditTrail item={caseItem} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/>
                         {finalResolution && (
                              <div className="space-y-2">
                                 <Label className="text-base">Final Resolution</Label>
@@ -1509,9 +1452,8 @@ function ActionItemsContent() {
                         </>
                      )}
 
-                    { !isOneOnOne && item.auditTrail && <AuditTrail trail={item.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload} />}
-                    { isOneOnOne && item.analysis.criticalCoachingInsight?.auditTrail && <AuditTrail trail={item.analysis.criticalCoachingInsight.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload}/> }
-
+                    <AuditTrail item={item} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload} />
+                    
                     <ActionPanel item={item} onUpdate={fetchFeedback} handleViewCaseDetails={handleViewCaseDetails} />
                     
                     {!isOneOnOne && item.resolution && (
@@ -1629,5 +1571,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
