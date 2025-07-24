@@ -715,25 +715,12 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
             setIsSubmitting(false);
         }
     }
-
-    const handleResolveDirectly = async () => {
-        if (!resolution || !role) return;
-        setIsSubmitting(true);
-        try {
-            await submitSupervisorUpdate(feedback.trackingId, role, resolution);
-            setResolution('');
-            toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
     
     const handleAddUpdate = async () => {
         if (!update || !role) return;
         setIsSubmitting(true);
         try {
-            await addFeedbackUpdate(feedback.trackingId, role, update);
+            await submitSupervisorUpdate(feedback.trackingId, role, update, false);
             setUpdate('');
             toast({ title: "Update Added" });
             onUpdate();
@@ -754,6 +741,19 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
             setIsSubmitting(false);
         }
     };
+
+    const handleResolveDirectly = async () => {
+        if (!resolution || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, resolution, true);
+            setResolution('');
+            toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
     
     return (
         <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
@@ -970,7 +970,7 @@ function IdentifiedConcernPanel({ feedback, onUpdate }: { feedback: Feedback, on
         
         setIsSubmitting(true);
         try {
-            await submitSupervisorUpdate(feedback.trackingId, role, comment);
+            await submitSupervisorUpdate(feedback.trackingId, role, comment, isFinal);
             if (isFinal) {
                 setResolutionSummary('');
                 toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });

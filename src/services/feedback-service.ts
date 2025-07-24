@@ -1105,25 +1105,34 @@ export async function submitCollaborativeResolution(trackingId: string, actor: R
  * Supervisor submits an update for a critical insight or identified concern.
  * This now sends it back to the employee for acknowledgment.
  */
-export async function submitSupervisorUpdate(trackingId: string, supervisor: Role, update: string): Promise<void> {
+export async function submitSupervisorUpdate(trackingId: string, actor: Role, comment: string, isFinal: boolean): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
     if (feedbackIndex === -1) return;
 
     const item = allFeedback[feedbackIndex];
-    item.supervisorUpdate = update;
-    item.status = 'Pending Employee Acknowledgment'; // Send for acknowledgment
-    item.assignedTo = []; // Unset assignee so it leaves the manager's queue
     
-    // Use a more specific event for HR to break the loop
-    const eventName = supervisor === 'HR Head' ? 'HR Resolution Submitted' : 'Supervisor Responded';
-
-    item.auditTrail?.push({
-        event: eventName,
-        timestamp: new Date(),
-        actor: supervisor,
-        details: update,
-    });
+    if (isFinal) {
+        item.supervisorUpdate = comment;
+        item.status = 'Pending Employee Acknowledgment';
+        item.assignedTo = []; // Unset assignee so it leaves the manager's queue
+        
+        const eventName = actor === 'HR Head' ? 'HR Resolution Submitted' : 'Supervisor Responded';
+        item.auditTrail?.push({
+            event: eventName,
+            timestamp: new Date(),
+            actor: actor,
+            details: comment,
+        });
+    } else {
+        // This is just an interim update, so only add to audit trail.
+        item.auditTrail?.push({
+            event: 'Update Added',
+            timestamp: new Date(),
+            actor: actor,
+            details: comment,
+        });
+    }
 
     saveFeedbackToStorage(allFeedback);
 }
