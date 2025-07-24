@@ -1027,7 +1027,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         const insight = item.analysis.criticalCoachingInsight;
         if (!insight) return null;
         
-        const isItemClosed = insight.status === 'resolved' || ['resolved', 'pending_final_hr_action'].includes(insight.status);
+        const isItemClosed = insight.status === 'resolved';
         const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
         
         const isHRActionable = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
