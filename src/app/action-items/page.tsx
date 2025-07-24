@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -16,7 +17,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download, Bot, BrainCircuit } from 'lucide-react';
+import { ListTodo, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, UserX, ShieldCheck as ShieldCheckIcon, FolderClosed, MessageCircleQuestion, UserPlus, FileText, Loader2, Link as LinkIcon, Paperclip, Users, Briefcase, ExternalLink, GitMerge, ChevronDown, Flag, UserCog, Download, Bot, BrainCircuit, CheckSquare } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +74,17 @@ const auditEventIcons = {
     'Logged Dissatisfaction & Closed': FileText,
     'default': Info,
 }
+
+const formatEventTitle = (event: string) => {
+  const prefixesToRemove = ["Supervisor ", "Employee ", "Manager ", "HR "];
+  for (const prefix of prefixesToRemove) {
+    if (event.startsWith(prefix)) {
+      return event.substring(prefix.length);
+    }
+  }
+  return event;
+};
+
 
 function AuditTrail({ item, handleViewCaseDetails, onDownload }: { item: Feedback | OneOnOneHistoryItem, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
     
@@ -152,7 +164,7 @@ function AuditTrail({ item, handleViewCaseDetails, onDownload }: { item: Feedbac
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {event.event} by <span className="text-primary">{formatActorName(event.actor)}</span>
+                                        {formatEventTitle(event.event)} by <span className="text-primary">{formatActorName(event.actor)}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                                     {renderDetails()}
@@ -1346,7 +1358,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
+            const subject = isOneOnOne ? item.analysis.criticalCoachingInsight?.summary : (item.subject || 'No Subject');
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
@@ -1355,7 +1367,7 @@ function ActionItemsContent() {
                  const aiSummary = isOneOnOne ? item.analysis.criticalCoachingInsight?.reason : item.summary;
 
                 downloadAuditTrailPDF({
-                    title: subject,
+                    title: subject || 'Case Details',
                     trackingId: id,
                     initialMessage,
                     trail,
