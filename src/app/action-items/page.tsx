@@ -76,14 +76,7 @@ const auditEventIcons = {
 }
 
 const formatEventTitle = (event: string) => {
-  const prefixesToRemove = ["Supervisor ", "Employee ", "Manager ", "HR "];
-  let newEvent = event;
-  for (const prefix of prefixesToRemove) {
-    if (newEvent.startsWith(prefix)) {
-      newEvent = newEvent.substring(prefix.length);
-    }
-  }
-  return newEvent;
+  return event.replace(/^(Supervisor|Employee|Manager|HR)\s/, '');
 };
 
 
@@ -1105,7 +1098,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `1-on-1: ${caseItem.employeeName} & ${caseItem.supervisorName}` : (caseItem.subject || 'No Subject');
+    const subject = isOneOnOne ? `${caseItem.employeeName} & ${caseItem.supervisorName}` : (caseItem.subject || 'No Subject');
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail || [] : caseItem.auditTrail || [];
@@ -1359,7 +1352,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
+            const subject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
