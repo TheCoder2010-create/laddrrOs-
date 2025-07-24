@@ -593,11 +593,13 @@ function HistorySection({ role }: { role: Role }) {
                                         </div>
 
                                         {insight && (
-                                            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                                                <h4 className="font-semibold text-destructive flex items-center gap-2">
-                                                <AlertTriangle className="h-4 w-4" />Critical Coaching Insight
-                                                </h4>
-                                                <p className="text-destructive/90 my-2 text-sm">{insight.summary}</p>
+                                            <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 space-y-4">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-destructive flex items-center gap-2">
+                                                        <AlertTriangle className="h-4 w-4" />Critical Coaching Insight
+                                                    </h4>
+                                                    <p className="text-destructive/90 text-sm">{insight.summary}</p>
+                                                </div>
                                                 
                                                 {canSupervisorAct && (
                                                     <div className="mt-4">
@@ -640,16 +642,16 @@ function HistorySection({ role }: { role: Role }) {
                                                 )}
 
                                                 {insight.supervisorResponse && (
-                                                    <div className="mt-4 p-3 bg-muted/80 rounded-md border">
+                                                    <div className="pt-4 border-t border-destructive/20 space-y-2">
                                                         <p className="font-semibold text-foreground text-sm">Your Response ({formatActorName(item.supervisorName)})</p>
-                                                        <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
+                                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{insight.supervisorResponse}</p>
                                                     </div>
                                                 )}
 
                                                 {insight.employeeAcknowledgement && (
-                                                    <div className="mt-4 p-3 bg-blue-500/10 rounded-md border border-blue-500/20">
-                                                        <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Employee Acknowledgement ({formatActorName(item.employeeName)})</p>
-                                                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
+                                                    <div className="pt-4 border-t border-destructive/20 space-y-2">
+                                                        <p className="font-semibold text-primary text-sm">Employee Acknowledgement ({formatActorName(item.employeeName)})</p>
+                                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap italic">"{insight.employeeAcknowledgement}"</p>
                                                     </div>
                                                 )}
 
