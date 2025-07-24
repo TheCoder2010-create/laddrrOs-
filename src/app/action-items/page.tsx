@@ -48,7 +48,8 @@ const auditEventIcons = {
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
     'Unassigned': UserX,
-    'Responded': MessageSquare,
+    'Supervisor Responded': MessageSquare,
+    'Employee Acknowledged': MessageSquare,
     'HR Resolution Submitted': ShieldCheckIcon,
     'Resolved': CheckCircle,
     'Identity Reveal Requested': UserX,
@@ -56,7 +57,7 @@ const auditEventIcons = {
     'Identity Reveal Declined; Escalated to HR': ShieldCheckIcon,
     'Employee Accepted Resolution': CheckCircle,
     'Acknowledged': CheckCircle,
-    'Escalated Concern': AlertTriangle,
+    'Employee Escalated Concern': AlertTriangle,
     'Final Disposition Required': ShieldAlert,
     'Final Disposition': FileCheck,
     'Retaliation Claim Submitted': Flag,
@@ -66,7 +67,7 @@ const auditEventIcons = {
     'Anonymous User Responded': MessageSquare,
     'AM Coaching Notes': BrainCircuit,
     'AM Responded to Employee': MessageSquare,
-    'Retry Action': MessageSquare,
+    'Supervisor Retry Action': MessageSquare,
     'Manager Resolution': Briefcase,
     'HR Resolution': ShieldCheckIcon,
     'Assigned to Ombudsman': UserX,
@@ -76,7 +77,14 @@ const auditEventIcons = {
 }
 
 const formatEventTitle = (event: string) => {
-  return event.replace(/^(Supervisor|Employee|Manager|HR)\s/, '');
+  const titlesToRemove = ['Supervisor ', 'Employee ', 'Manager ', 'HR '];
+  let formattedEvent = event;
+  for (const title of titlesToRemove) {
+    if (formattedEvent.startsWith(title)) {
+      formattedEvent = formattedEvent.substring(title.length);
+    }
+  }
+  return formattedEvent;
 };
 
 
@@ -95,6 +103,7 @@ function AuditTrail({ item, handleViewCaseDetails, onDownload }: { item: Feedbac
                 actor: 'AI System',
                 details: `${insight.summary}\n\n**Reasoning:** ${insight.reason}`
             };
+             // Ensure the initial AI-generated event is first, followed by the rest.
             displayTrail = [initialEvent, ...(insight.auditTrail || [])];
         }
     } else {
@@ -848,7 +857,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
-                            </AlertDialog>
+                             </AlertDialog>
                         </div>
                     </div>
                     
@@ -1036,25 +1045,45 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         const insight = item.analysis.criticalCoachingInsight;
         if (!insight) return null;
         
-        const isItemClosed = insight.status === 'resolved';
+        const isActionableForRole = () => {
+            if (role === 'AM' && insight.status === 'pending_am_review') return true;
+            if (role === 'Manager' && insight.status === 'pending_manager_review') return true;
+            if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) return true;
+            return false;
+        };
+
+        if (isActionableForRole()) {
+            if (role === 'AM') {
+                 const props = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
+                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
+            }
+             if (role === 'Manager') {
+                const props = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
+                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
+            }
+            if (role === 'HR Head') {
+                return <HrReviewWidget item={item} onUpdate={onUpdate} />;
+            }
+        }
+        
+        // This part is for showing historical, non-actionable views for involved parties.
         const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
+        const isItemClosed = insight.status === 'resolved';
         
-        const isHRActionable = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-
-        if (isHRActionable || (isItemClosed && wasEverInvolved && role === 'HR Head')) {
-            return <HrReviewWidget item={item} onUpdate={onUpdate} />;
+        if (isItemClosed && wasEverInvolved) {
+             if (role === 'AM') {
+                const props = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
+                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
+            }
+            if (role === 'Manager') {
+                 const props = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
+                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
+            }
+            if (role === 'HR Head') {
+                 return <HrReviewWidget item={item} onUpdate={onUpdate} />;
+            }
         }
-        
-        const isAMActionable = role === 'AM' && insight.status === 'pending_am_review';
-        const isManagerActionable = role === 'Manager' && insight.status === 'pending_manager_review';
 
-        if (isAMActionable || (isItemClosed && wasEverInvolved && role === 'AM')) {
-            const props = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
-            return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
-        } else if (isManagerActionable || (isItemClosed && wasEverInvolved && role === 'Manager')) {
-            const props = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
-            return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
-        }
         return null;
     }
 
