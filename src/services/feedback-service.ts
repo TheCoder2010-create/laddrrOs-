@@ -251,7 +251,7 @@ export async function submitSupervisorInsightResponse(historyId: string, respons
             item.analysis.criticalCoachingInsight!.auditTrail = [];
         }
         item.analysis.criticalCoachingInsight!.auditTrail.push({
-            event: 'Supervisor Responded',
+            event: 'Responded',
             timestamp: new Date(),
             actor: item.supervisorName,
             details: response,
@@ -280,7 +280,7 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
         insight.auditTrail = [];
     }
     insight.auditTrail.push({
-        event: 'Employee Acknowledged',
+        event: 'Acknowledged',
         timestamp: new Date(),
         actor: item.employeeName as Role,
         details: fullAcknowledgement,
@@ -292,22 +292,17 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
     const wasHrAction = insight.auditTrail?.some(e => e.event === 'HR Resolution');
 
     if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
-        // Resolve if employee is satisfied.
         insight.status = 'resolved';
     } else if (wasHrAction) {
-        // After HR intervention, if still not satisfied, route for final HR action.
         insight.status = 'pending_final_hr_action';
         item.assignedTo = 'HR Head';
     } else if (wasManagerAction) {
-        // After manager intervention, final escalation is to HR for review.
         insight.status = 'pending_hr_review';
         item.assignedTo = 'HR Head';
     } else if (wasRetry || wasAmResponse) {
-        // If it was a retry or an AM response and still not resolved, escalate to Manager
         insight.status = 'pending_manager_review';
         item.assignedTo = 'Manager';
     } else {
-        // First time not resolved, escalate to AM
         insight.status = 'pending_am_review';
         item.assignedTo = 'AM';
     }

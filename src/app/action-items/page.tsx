@@ -48,15 +48,14 @@ const auditEventIcons = {
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
     'Unassigned': UserX,
-    'Supervisor Responded': MessageSquare,
-    'Employee Acknowledged': MessageSquare,
+    'Responded': MessageSquare,
+    'Acknowledged': CheckCircle,
     'HR Resolution Submitted': ShieldCheckIcon,
     'Resolved': CheckCircle,
     'Identity Reveal Requested': UserX,
     'User acknowledged manager\'s assurance message': CheckCircle,
     'Identity Reveal Declined; Escalated to HR': ShieldCheckIcon,
     'Employee Accepted Resolution': CheckCircle,
-    'Acknowledged': CheckCircle,
     'Employee Escalated Concern': AlertTriangle,
     'Final Disposition Required': ShieldAlert,
     'Final Disposition': FileCheck,
@@ -235,7 +234,7 @@ function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () =>
     )
 }
 
-function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleColor, bgColor, borderColor }: { item: OneOnOneHistoryItem, onUpdate: () => void, title: string, titleIcon: React.ElementType, titleColor: string, bgColor: string, borderColor: string }) {
+function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
     const { toast } = useToast();
     const { role } = useRole();
@@ -291,13 +290,27 @@ function EscalationWidget({ item, onUpdate, title, titleIcon: TitleIcon, titleCo
 
     const isItemClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
     const isActionable = (role === 'AM' && insight.status === 'pending_am_review') || (role === 'Manager' && insight.status === 'pending_manager_review');
+    
+    const amCoachingNotes = insight?.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
 
 
     return (
         <div className="space-y-6">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                Escalation Details
+            </h3>
+            
+             {amCoachingNotes && (
+                <div className="p-3 bg-muted/80 rounded-md border">
+                    <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
+                </div>
+            )}
+
             {isActionable && !isItemClosed && (
-                <div className={`${bgColor} p-4 rounded-lg border ${borderColor} flex flex-col items-start gap-4`}>
-                    <Label className={`font-semibold text-base ${titleColor}`}>Your Action</Label>
+                 <div className="bg-orange-500/10 p-4 rounded-lg border border-orange-500/20 flex flex-col items-start gap-4">
+                    <Label className="font-semibold text-base text-orange-700 dark:text-orange-400">Your Action</Label>
                     
                     {isManagerWidget ? (
                          <div className="w-full space-y-3">
@@ -378,8 +391,8 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
     
     const isActionable = role === 'HR Head';
-    const isItemClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
-
+    const isPendingFinalAction = insight.status === 'pending_final_hr_action';
+    const isPendingInitialReview = insight.status === 'pending_hr_review';
 
     const handleHrSubmit = async () => {
         if (!resolutionNotes || !role) return;
@@ -413,9 +426,9 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
 
     return (
         <div className="space-y-6">
-            {(isActionable && !isItemClosed) && (
+            {isActionable && (
                 <div className="bg-black/10 dark:bg-gray-800/50 pt-4 p-4 rounded-lg flex flex-col items-start gap-4">
-                     {insight.status === 'pending_hr_review' && (
+                     {isPendingInitialReview && (
                         <>
                             <Label className="font-semibold text-black dark:text-white">Your Action</Label>
                              <p className="text-sm text-muted-foreground">
@@ -438,7 +451,7 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
                              </div>
                         </>
                     )}
-                     {insight.status === 'pending_final_hr_action' && (
+                     {isPendingFinalAction && (
                         <>
                              <Label className="font-semibold text-black dark:text-white">Final Action Required</Label>
                              <p className="text-sm text-muted-foreground">
@@ -1046,6 +1059,7 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         if (!insight) return null;
         
         const isActionableForRole = () => {
+            if (!role) return false;
             if (role === 'AM' && insight.status === 'pending_am_review') return true;
             if (role === 'Manager' && insight.status === 'pending_manager_review') return true;
             if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) return true;
@@ -1053,37 +1067,14 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         };
 
         if (isActionableForRole()) {
-            if (role === 'AM') {
-                 const props = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
-                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
-            }
-             if (role === 'Manager') {
-                const props = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
-                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
+            if (role === 'AM' || role === 'Manager') {
+                 return <EscalationWidget item={item} onUpdate={onUpdate} />;
             }
             if (role === 'HR Head') {
                 return <HrReviewWidget item={item} onUpdate={onUpdate} />;
             }
         }
         
-        // This part is for showing historical, non-actionable views for involved parties.
-        const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
-        const isItemClosed = insight.status === 'resolved';
-        
-        if (isItemClosed && wasEverInvolved) {
-             if (role === 'AM') {
-                const props = { title: "Escalation", titleIcon: AlertTriangle, titleColor: "text-orange-600 dark:text-orange-500", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/20" };
-                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
-            }
-            if (role === 'Manager') {
-                 const props = { title: "Escalation", titleIcon: Briefcase, titleColor: "text-red-600 dark:text-red-500", bgColor: "bg-red-500/10", borderColor: "border-red-500/20" };
-                return <EscalationWidget item={item} onUpdate={onUpdate} {...props} />;
-            }
-            if (role === 'HR Head') {
-                 return <HrReviewWidget item={item} onUpdate={onUpdate} />;
-            }
-        }
-
         return null;
     }
 
