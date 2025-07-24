@@ -546,6 +546,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                     const isSummarizingThis = isSummarizing === feedback.trackingId;
                     const capitalizedSubject = feedback.subject.charAt(0).toUpperCase() + feedback.subject.slice(1);
                     const isSummaryHidden = hiddenSummaries.has(feedback.trackingId);
+                    const isCaseClosed = feedback.status === 'Resolved' || feedback.status === 'Closed';
                     
                     const handleDownload = () => {
                         const caseDetails = {
@@ -555,6 +556,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                             aiSummary: feedback.summary ? `Criticality: ${feedback.criticality}\nReason: ${feedback.criticalityReasoning}` : undefined,
                             finalResolution: feedback.resolution,
                             trail: feedback.auditTrail || [],
+                            isCaseClosed: isCaseClosed,
                         };
                         downloadAuditTrailPDF(caseDetails);
                     };
@@ -632,10 +634,8 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                             </Button>
                                         )}
                                     </div>
-                                    <span 
-                                        className="text-xs text-muted-foreground font-mono cursor-text"
-                                    >
-                                       ID: {feedback.trackingId}
+                                    <span className="text-xs text-muted-foreground font-mono cursor-text">
+                                        {isCaseClosed ? `ID: ${feedback.trackingId}` : 'ID Hidden Until Closure'}
                                     </span>
                                 </div>
                                 <p className="whitespace-pre-wrap text-base border rounded-md p-4">{feedback.message}</p>

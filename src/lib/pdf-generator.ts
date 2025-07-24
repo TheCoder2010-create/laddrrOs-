@@ -18,6 +18,7 @@ interface CaseDetails {
     aiSummary?: string;
     finalResolution?: string;
     trail: AuditEvent[];
+    isCaseClosed?: boolean;
 }
 
 const addWrappedText = (doc: jsPDF, text: string, x: number, y: number, maxWidth: number) => {
@@ -31,13 +32,15 @@ export const downloadAuditTrailPDF = (caseDetails: CaseDetails) => {
     const doc = new jsPDF() as jsPDFWithAutoTable;
     let yPos = 20;
 
+    const displayTrackingId = caseDetails.isCaseClosed === false ? 'ID Hidden Until Closure' : caseDetails.trackingId;
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
     yPos = addWrappedText(doc, caseDetails.title, 14, yPos, 180);
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Tracking ID: ${caseDetails.trackingId}`, 14, yPos + 2);
+    doc.text(`Tracking ID: ${displayTrackingId}`, 14, yPos + 2);
     doc.text(`Report Generated: ${format(new Date(), 'PPP p')}`, 14, yPos + 7);
     yPos += 15;
 
