@@ -857,7 +857,7 @@ function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                                 <TooltipContent>
                                     <p>Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.</p>
                                 </TooltipContent>
-                            </TooltipProvider>
+                            </Tooltip>
                         </TooltipProvider>
                         <Textarea 
                             id="resolve-directly"
