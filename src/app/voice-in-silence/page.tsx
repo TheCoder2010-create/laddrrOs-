@@ -134,6 +134,7 @@ function AssignedCasesView({ cases, onUpdate }: { cases: Feedback[], onUpdate: (
                     {cases.map((feedback) => {
                         const config = criticalityConfig[feedback.criticality || 'Low'];
                         const Icon = config?.icon || Info;
+                        const isCaseClosed = feedback.status === 'Resolved' || feedback.status === 'Closed';
                         return (
                              <AccordionItem value={feedback.trackingId} key={feedback.trackingId}>
                                 <AccordionTrigger className="w-full px-4 py-3 text-left">
@@ -166,7 +167,7 @@ function AssignedCasesView({ cases, onUpdate }: { cases: Feedback[], onUpdate: (
                                         <div className="flex justify-between items-center gap-4">
                                             <Label className="text-base">Original Submission</Label>
                                             <span className="text-xs text-muted-foreground font-mono cursor-text">
-                                               ID: {feedback.trackingId}
+                                               {isCaseClosed ? `ID: ${feedback.trackingId}` : 'ID Hidden Until Closure'}
                                             </span>
                                         </div>
                                         <p className="whitespace-pre-wrap text-base text-muted-foreground p-4 border rounded-md bg-muted/50">{feedback.message}</p>
