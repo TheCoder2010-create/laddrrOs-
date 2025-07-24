@@ -48,15 +48,15 @@ const auditEventIcons = {
     'AI Analysis Completed': ChevronsRight,
     'Assigned': Send,
     'Unassigned': UserX,
-    'Supervisor Responded': MessageSquare,
+    'Responded': MessageSquare,
     'HR Resolution Submitted': ShieldCheckIcon,
     'Resolved': CheckCircle,
     'Identity Reveal Requested': UserX,
     'User acknowledged manager\'s assurance message': CheckCircle,
     'Identity Reveal Declined; Escalated to HR': ShieldCheckIcon,
     'Employee Accepted Resolution': CheckCircle,
-    'Employee Acknowledged': CheckCircle,
-    'Employee Escalated Concern': AlertTriangle,
+    'Acknowledged': CheckCircle,
+    'Escalated Concern': AlertTriangle,
     'Final Disposition Required': ShieldAlert,
     'Final Disposition': FileCheck,
     'Retaliation Claim Submitted': Flag,
@@ -66,7 +66,7 @@ const auditEventIcons = {
     'Anonymous User Responded': MessageSquare,
     'AM Coaching Notes': BrainCircuit,
     'AM Responded to Employee': MessageSquare,
-    'Supervisor Retry Action': MessageSquare,
+    'Retry Action': MessageSquare,
     'Manager Resolution': Briefcase,
     'HR Resolution': ShieldCheckIcon,
     'Assigned to Ombudsman': UserX,
@@ -77,12 +77,13 @@ const auditEventIcons = {
 
 const formatEventTitle = (event: string) => {
   const prefixesToRemove = ["Supervisor ", "Employee ", "Manager ", "HR "];
+  let newEvent = event;
   for (const prefix of prefixesToRemove) {
-    if (event.startsWith(prefix)) {
-      return event.substring(prefix.length);
+    if (newEvent.startsWith(prefix)) {
+      newEvent = newEvent.substring(prefix.length);
     }
   }
-  return event;
+  return newEvent;
 };
 
 
@@ -1358,7 +1359,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const subject = isOneOnOne ? item.analysis.criticalCoachingInsight?.summary : (item.subject || 'No Subject');
+            const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
