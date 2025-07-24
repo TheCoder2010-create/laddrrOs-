@@ -289,8 +289,6 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
     const isItemClosed = insight.status === 'resolved' || ['pending_final_hr_action', 'resolved'].includes(insight.status);
     const isActionable = (role === 'AM' && insight.status === 'pending_am_review') || (role === 'Manager' && insight.status === 'pending_manager_review');
     
-    const amCoachingNotes = insight?.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
-
 
     return (
         <div className="space-y-6">
@@ -298,13 +296,6 @@ function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpd
                 <AlertTriangle className="h-5 w-5 text-orange-500" />
                 Escalation Details
             </h3>
-            
-            {amCoachingNotes && (
-                <div className="p-3 bg-muted/80 rounded-md border">
-                    <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
-                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
-                </div>
-            )}
 
             {isActionable && !isItemClosed && (
                  <div className="bg-orange-500/10 p-4 rounded-lg border border-orange-500/20 flex flex-col items-start gap-4">
@@ -424,6 +415,10 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
 
     return (
         <div className="space-y-6">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                HR Review Details
+            </h3>
             {isActionable && (
                 <div className="bg-black/10 dark:bg-gray-800/50 pt-4 p-4 rounded-lg flex flex-col items-start gap-4">
                      {isPendingInitialReview && (

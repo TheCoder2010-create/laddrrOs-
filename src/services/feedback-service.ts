@@ -273,7 +273,7 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
     const item = allHistory[index];
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
 
-    const fullAcknowledgement = `${acknowledgement}${comments ? `\n\nComments: ${comments}` : ''}`;
+    const fullAcknowledgement = `${acknowledgement}${comments ? ` "${comments}"` : ''}`;
     insight.employeeAcknowledgement = fullAcknowledgement;
     
     if (!insight.auditTrail) {
@@ -1151,7 +1151,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
             event: 'Employee Accepted Resolution',
             timestamp: new Date(),
             actor: actor,
-            details: `Resolution accepted.${comments ? `\nComments: ${comments}` : ''}`
+            details: `Resolution accepted.${comments ? ` "${comments}"` : ''}`
         });
         item.auditTrail?.push({
             event: 'Resolved',
@@ -1160,7 +1160,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
             details: 'Case resolved after employee acknowledgment.',
         });
     } else {
-        const escalationDetails = `Resolution not accepted. Escalating further.${comments ? `\nComments: ${comments}` : ''}`;
+        const escalationDetails = `Resolution not accepted.${comments ? ` "${comments}"` : ''}`;
         
         let nextAssignee: Role | undefined = undefined;
         let nextStatus: FeedbackStatus = 'Pending Manager Action';
