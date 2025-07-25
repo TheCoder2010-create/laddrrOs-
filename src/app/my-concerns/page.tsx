@@ -646,6 +646,18 @@ const auditEventIcons = {
     'default': Info,
 }
 
+const formatEventTitle = (event: string) => {
+  const prefixesToRemove = ['Supervisor ', 'Employee ', 'Manager ', 'HR ', 'AM '];
+  let formattedEvent = event;
+  for (const prefix of prefixesToRemove) {
+    if (formattedEvent.startsWith(prefix)) {
+      formattedEvent = formattedEvent.substring(prefix.length);
+      break; 
+    }
+  }
+  return formattedEvent;
+};
+
 function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedback['auditTrail'], handleScrollToCase: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
     if (!trail || trail.length === 0) return null;
     return (
@@ -688,7 +700,7 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {event.event} by <span className="text-primary">{formatActorName(event.actor)}</span>
+                                        {formatEventTitle(event.event)} by <span className="text-primary">{formatActorName(event.actor)}</span>
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                                     {renderDetails()}
@@ -805,7 +817,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
              <Accordion type="single" collapsible className="w-full border rounded-lg" ref={accordionRef}>
                  {items.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
-                    const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim'];
+                    const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
 
@@ -880,7 +892,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                         title="Action Required: Acknowledge Response"
                                         description="A response has been provided for your concern. Please review and provide your feedback."
                                         responderEventActor={responderEvent?.actor}
-                                        responderEventDetails={item.supervisorUpdate}
+                                        responderEventDetails={responderEvent?.details}
                                     />
                                )}
                                <div className="space-y-2">
