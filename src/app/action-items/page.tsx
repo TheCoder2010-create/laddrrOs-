@@ -76,11 +76,12 @@ const auditEventIcons = {
 }
 
 const formatEventTitle = (event: string) => {
-  const titlesToRemove = ['Supervisor ', 'Employee ', 'Manager ', 'HR '];
+  const prefixesToRemove = ['Supervisor ', 'Employee ', 'Manager ', 'HR ', 'AM '];
   let formattedEvent = event;
-  for (const title of titlesToRemove) {
-    if (formattedEvent.startsWith(title)) {
-      formattedEvent = formattedEvent.substring(title.length);
+  for (const prefix of prefixesToRemove) {
+    if (formattedEvent.startsWith(prefix)) {
+      formattedEvent = formattedEvent.substring(prefix.length);
+      break; 
     }
   }
   return formattedEvent;
