@@ -997,8 +997,8 @@ function IdentifiedConcernPanel({ feedback, onUpdate }: { feedback: Feedback, on
     
     if (role === 'HR Head' && feedback.status === 'Pending HR Action') {
         return (
-            <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
-                <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-t mt-4 bg-background rounded-b-lg">
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
                     <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
                     <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
                     <Textarea 
@@ -1015,7 +1015,7 @@ function IdentifiedConcernPanel({ feedback, onUpdate }: { feedback: Feedback, on
                     </Button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
                     <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
                     <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
                     <Textarea 
@@ -1631,5 +1631,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
