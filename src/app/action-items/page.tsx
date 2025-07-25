@@ -994,9 +994,47 @@ function IdentifiedConcernPanel({ feedback, onUpdate }: { feedback: Feedback, on
     if (feedback.status === 'Pending Manager Action') {
         title = 'Escalation: Review Required';
         description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
-    } else if (feedback.status === 'Pending HR Action') {
-        title = 'Final Escalation: HR Review Required';
-        description = "This concern has been escalated to HR for final review. Provide your resolution summary to be sent to the employee for their final acknowledgment."
+    }
+    
+    // For HR Head, we don't need the extra container or description text.
+    if (role === 'HR Head' && feedback.status === 'Pending HR Action') {
+        return (
+            <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                    <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
+                    <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
+                    <Textarea 
+                        id={`interim-update-${feedback.trackingId}`}
+                        value={interimUpdate}
+                        onChange={(e) => setInterimUpdate(e.target.value)}
+                        rows={3}
+                        placeholder="Add your notes..."
+                        disabled={isSubmitting}
+                    />
+                    <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add Update
+                    </Button>
+                </div>
+
+                <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                    <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
+                    <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
+                    <Textarea 
+                        id={`final-resolution-${feedback.trackingId}`}
+                        value={resolutionSummary}
+                        onChange={(e) => setResolutionSummary(e.target.value)}
+                        rows={4}
+                        placeholder="Add your final resolution notes..."
+                        disabled={isSubmitting}
+                    />
+                    <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit
+                    </Button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -1112,7 +1150,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `${caseItem.employeeName} & ${caseItem.supervisorName}` : (caseItem.subject || 'No Subject');
+    const subject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : (caseItem.subject || 'No Subject');
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail || [] : caseItem.auditTrail || [];
