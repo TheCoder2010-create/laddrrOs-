@@ -807,9 +807,16 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
     
     const renderCaseList = (items: Feedback[]) => {
         if (items.length === 0) {
+             if (concernType === 'anonymous') {
+                return (
+                    <div className="mt-4 text-center py-8">
+                        {notFound && <p className="text-destructive">No submission found with that ID.</p>}
+                    </div>
+                )
+             }
             return (
                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">{notFound ? 'No submission found with that ID.' : 'You have not submitted any concerns of this type yet.'}</p>
+                    <p className="text-muted-foreground">You have not submitted any concerns of this type yet.</p>
                 </div>
             )
         }
@@ -846,7 +853,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                             case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Resolved</Badge>;
                             case 'Pending Manager Action': return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Manager Review</Badge>;
                             case 'Pending Supervisor Action': return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Reviewing</Badge>;
-                            case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Reveal Requested</Badge>;
+                            case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Action Required</Badge>;
                             case 'Pending Anonymous Reply': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
                             case 'Pending HR Action': return <Badge className="bg-black/80 text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
                             case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
@@ -882,7 +889,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                {item.status === 'Pending Anonymous Reply' && item.isAnonymous && (
                                    <AnonymousReplyWidget item={item} onUpdate={onUpdate} />
                                )}
-                               {item.status === 'Pending Identity Reveal' && (
+                               {item.status === 'Pending Identity Reveal' && concernType === 'anonymous' && (
                                    <RevealIdentityWidget item={item} onUpdate={onUpdate} />
                                )}
                                {item.status === 'Pending Employee Acknowledgment' && (
@@ -1155,3 +1162,5 @@ export default function MyConcernsPage() {
 
     
 }
+
+    
