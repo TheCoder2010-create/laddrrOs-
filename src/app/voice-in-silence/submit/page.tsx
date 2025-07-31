@@ -2,17 +2,18 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, ChangeEvent, useRef } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion, UserX, UserPlus, FileText } from 'lucide-react';
+import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion, UserX, UserPlus, FileText, Paperclip, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
 import { trackFeedback, TrackedFeedback, submitAnonymousReply, submitAnonymousAcknowledgement } from '@/services/feedback-service';
+import { rewriteText } from '@/ai/flows/rewrite-text-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format, formatDistanceToNow } from 'date-fns';
@@ -29,8 +30,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+        setFile(e.target.files[0]);
+        toast({ title: "File Attached", description: e.target.files[0].name });
+    }
+  };
+
+  const handleRewrite = async () => {
+    if (!message) {
+        toast({ variant: 'destructive', title: "Nothing to rewrite", description: "Please enter a message first." });
+        return;
+    }
+    setIsRewriting(true);
+    try {
+        const result = await rewriteText({ textToRewrite: message });
+        setMessage(result.rewrittenText);
+        toast({ title: "Text Rewritten", description: "Your message has been updated by the AI." });
+    } catch (error) {
+        console.error(error);
+        toast({ variant: 'destructive', title: "Rewrite Failed", description: "Could not rewrite the text." });
+    } finally {
+        setIsRewriting(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!subject || !message) {
@@ -43,7 +72,7 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
     }
     setIsSubmitting(true);
     try {
-      const result = await submitAnonymousFeedback({ subject, message });
+      const result = await submitAnonymousFeedback({ subject, message, file });
       onSubmitted(result);
     } catch (error) {
       console.error(error);
@@ -74,21 +103,48 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
       </div>
       <div className="space-y-2">
         <Label htmlFor="message">Your Message</Label>
-        <Textarea
-          id="message"
-          placeholder="Describe the situation in detail..."
-          rows={10}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          disabled={isSubmitting}
-        />
+        <div className="relative">
+            <Textarea
+              id="message"
+              placeholder="Describe the situation in detail..."
+              rows={10}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              disabled={isSubmitting || isRewriting}
+              className="pr-10"
+            />
+            <Input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={handleFileChange} 
+            />
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Attach file"
+            >
+                <Paperclip className="h-5 w-5" />
+            </Button>
+        </div>
+        {file && (
+            <p className="text-sm text-muted-foreground">
+                Attached: <span className="font-medium text-primary">{file.name}</span>
+            </p>
+        )}
       </div>
-       <CardFooter className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+      <div className="flex justify-between items-center">
+        <Button variant="outline" onClick={handleRewrite} disabled={isRewriting || isSubmitting || !message}>
+            {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            Rewrite with AI
+        </Button>
+        <Button onClick={handleSubmit} disabled={isSubmitting || isRewriting}>
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
           Submit Anonymously
         </Button>
-      </CardFooter>
+      </div>
     </CardContent>
   );
 }

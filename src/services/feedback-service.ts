@@ -92,6 +92,7 @@ export interface OneOnOneHistoryItem {
 export interface AnonymousFeedbackInput {
   subject: string;
   message: string;
+  file?: File | null;
 }
 export interface AnonymousFeedbackOutput {
   trackingId: string;
@@ -705,9 +706,10 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const allFeedback = getFeedbackFromStorage();
   const trackingId = generateTrackingId();
   const submittedAt = new Date();
+  const { file, ...rest } = input;
 
   const newFeedback: Feedback = {
-    ...input,
+    ...rest,
     trackingId,
     submittedAt,
     viewed: false,
@@ -719,9 +721,10 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
         event: 'Submitted',
         timestamp: submittedAt,
         actor: 'Anonymous',
-        details: 'Feedback was received by the system.',
+        details: `Feedback was received by the system.${file ? ` An attachment named "${file.name}" was included.` : ''}`,
       },
-    ]
+    ],
+    attachment: file ? { name: file.name, type: file.type, size: file.size } : undefined,
   };
 
   allFeedback.unshift(newFeedback);
