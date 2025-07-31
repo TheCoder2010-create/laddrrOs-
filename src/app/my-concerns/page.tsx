@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles } from 'lucide-react';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -50,6 +50,7 @@ import { cn } from '@/lib/utils';
 import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapping';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
+import { rewriteText } from '@/ai/flows/rewrite-text-flow';
 
 
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
@@ -61,6 +62,26 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
     const [subject, setSubject] = useState('');
     const [concern, setConcern] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isRewriting, setIsRewriting] = useState(false);
+
+    const handleRewrite = async () => {
+        if (!concern) {
+            toast({ variant: 'destructive', title: "Nothing to rewrite", description: "Please enter a message first." });
+            return;
+        }
+        setIsRewriting(true);
+        try {
+            const result = await rewriteText({ textToRewrite: concern });
+            setConcern(result.rewrittenText);
+            toast({ title: "Text Rewritten", description: "Your message has been updated by the AI." });
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Rewrite Failed", description: "Could not rewrite the text." });
+        } finally {
+            setIsRewriting(false);
+        }
+    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,6 +117,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
                     onChange={e => setSubject(e.target.value)} 
                     placeholder="Enter a subject for your concern..." 
                     required 
+                    disabled={isSubmitting || isRewriting}
                 />
             </div>
             <div className="space-y-2">
@@ -107,10 +129,15 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
                     placeholder="Describe the situation in detail..." 
                     rows={8} 
                     required 
+                    disabled={isSubmitting || isRewriting}
                 />
             </div>
-            <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
+            <div className="flex justify-between items-center">
+                 <Button variant="outline" type="button" onClick={handleRewrite} disabled={isRewriting || isSubmitting || !concern}>
+                    {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Rewrite with AI
+                </Button>
+                <Button type="submit" disabled={isSubmitting || isRewriting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                     Submit Anonymously
                 </Button>
