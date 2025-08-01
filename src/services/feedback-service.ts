@@ -105,6 +105,7 @@ export interface IdentifiedConcernInput {
     subject: string;
     message: string;
     criticality: 'Low' | 'Medium' | 'High' | 'Critical';
+    file?: File | null;
 }
 
 export interface RetaliationReportInput {
@@ -772,8 +773,10 @@ export async function summarizeFeedback(trackingId: string): Promise<void> {
 export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
     const trackingId = generateTrackingId();
+    const { file, ...rest } = input;
+    
     const newFeedback: Feedback = {
-        ...input,
+        ...rest,
         trackingId,
         submittedAt: new Date(),
         isAnonymous: true,
@@ -784,8 +787,9 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
             event: 'Submitted',
             timestamp: new Date(),
             actor: 'Anonymous',
-            details: 'A concern was submitted anonymously from a user dashboard.'
-        }]
+            details: `A concern was submitted anonymously from a user dashboard.${file ? ` An attachment named "${file.name}" was included.` : ''}`
+        }],
+        attachment: file ? { name: file.name, type: file.type, size: file.size } : undefined,
     };
     allFeedback.unshift(newFeedback);
     saveFeedbackToStorage(allFeedback);
@@ -795,24 +799,27 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
 export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
     const trackingId = generateTrackingId();
+    const { file, ...rest } = input;
+    
     const newFeedback: Feedback = {
         trackingId: trackingId,
-        subject: input.subject,
-        message: input.message,
+        subject: rest.subject,
+        message: rest.message,
         submittedAt: new Date(),
-        submittedBy: input.submittedByRole,
-        criticality: input.criticality,
+        submittedBy: rest.submittedByRole,
+        criticality: rest.criticality,
         status: 'Pending Supervisor Action', 
-        assignedTo: [input.recipient],
+        assignedTo: [rest.recipient],
         viewed: false,
         auditTrail: [
             {
                 event: 'Identified Concern Submitted',
                 timestamp: new Date(),
-                actor: input.submittedByRole,
-                details: `Concern submitted by ${input.submittedBy} (${input.submittedByRole}) to ${input.recipient}.`
+                actor: rest.submittedByRole,
+                details: `Concern submitted by ${rest.submittedBy} (${rest.submittedByRole}) to ${rest.recipient}.${file ? ` An attachment named "${file.name}" was included.` : ''}`
             }
-        ]
+        ],
+        attachment: file ? { name: file.name, type: file.type, size: file.size } : undefined,
     };
     allFeedback.unshift(newFeedback);
     saveFeedbackToStorage(allFeedback);
@@ -1478,4 +1485,6 @@ export async function submitAnonymousReply(trackingId: string, reply: string): P
 
     saveFeedbackToStorage(allFeedback);
 }
+    
+
     

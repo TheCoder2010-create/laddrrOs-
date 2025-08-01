@@ -63,6 +63,15 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
     const [concern, setConcern] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRewriting, setIsRewriting] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+            toast({ title: "File Attached", description: e.target.files[0].name });
+        }
+    };
 
     const handleRewrite = async () => {
         if (!concern) {
@@ -92,7 +101,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
 
         setIsSubmitting(true);
         try {
-            const result = await submitAnonymousConcernFromDashboard({ subject, message: concern });
+            const result = await submitAnonymousConcernFromDashboard({ subject, message: concern, file });
             onCaseSubmitted(result.trackingId);
         } catch (error) {
             toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
@@ -101,6 +110,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
             setIsSubmitting(false);
             setSubject('');
             setConcern('');
+            setFile(null);
         }
     };
 
@@ -122,15 +132,39 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
             </div>
             <div className="space-y-2">
                 <Label htmlFor="anon-concern">Details of Concern</Label>
-                <Textarea 
-                    id="anon-concern" 
-                    value={concern} 
-                    onChange={e => setConcern(e.target.value)} 
-                    placeholder="Describe the situation in detail..." 
-                    rows={8} 
-                    required 
-                    disabled={isSubmitting || isRewriting}
-                />
+                <div className="relative">
+                    <Textarea 
+                        id="anon-concern" 
+                        value={concern} 
+                        onChange={e => setConcern(e.target.value)} 
+                        placeholder="Describe the situation in detail..." 
+                        rows={8} 
+                        required 
+                        disabled={isSubmitting || isRewriting}
+                        className="pr-10"
+                    />
+                     <Input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        onChange={handleFileChange} 
+                    />
+                    <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                        onClick={() => fileInputRef.current?.click()}
+                        aria-label="Attach file"
+                    >
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
+                </div>
+                 {file && (
+                    <p className="text-sm text-muted-foreground">
+                        Attached: <span className="font-medium text-primary">{file.name}</span>
+                    </p>
+                )}
             </div>
             <div className="flex justify-between items-center">
                  <Button variant="outline" type="button" onClick={handleRewrite} disabled={isRewriting || isSubmitting || !concern}>
@@ -155,6 +189,15 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
     const [concern, setConcern] = useState('');
     const [criticality, setCriticality] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+            toast({ title: "File Attached", description: e.target.files[0].name });
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -173,6 +216,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                 subject,
                 message: concern,
                 criticality,
+                file,
             });
 
             const key = getIdentifiedCaseKey(role);
@@ -186,6 +230,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
             setSubject('');
             setConcern('');
             setRecipient('');
+            setFile(null);
             onCaseSubmitted();
         } catch (error) {
             toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
@@ -229,14 +274,38 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
             </div>
             <div className="space-y-2">
                 <Label htmlFor="concern">Details of Concern</Label>
-                <Textarea 
-                    id="concern" 
-                    value={concern} 
-                    onChange={e => setConcern(e.target.value)} 
-                    placeholder="Describe the situation in detail..." 
-                    rows={8} 
-                    required 
-                />
+                 <div className="relative">
+                    <Textarea 
+                        id="concern" 
+                        value={concern} 
+                        onChange={e => setConcern(e.target.value)} 
+                        placeholder="Describe the situation in detail..." 
+                        rows={8} 
+                        required
+                        className="pr-10"
+                    />
+                     <Input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        onChange={handleFileChange} 
+                    />
+                    <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                        onClick={() => fileInputRef.current?.click()}
+                        aria-label="Attach file"
+                    >
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
+                </div>
+                 {file && (
+                    <p className="text-sm text-muted-foreground">
+                        Attached: <span className="font-medium text-primary">{file.name}</span>
+                    </p>
+                )}
             </div>
             <div className="space-y-2">
                 <Label htmlFor="criticality">Perceived Criticality</Label>
@@ -269,10 +338,12 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
     const [description, setDescription] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
+             toast({ title: "File Attached", description: e.target.files[0].name });
         }
     };
 
@@ -328,23 +399,38 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
             </div>
             <div className="space-y-2">
                 <Label htmlFor="retaliation-description">Description of Incident</Label>
-                <Textarea
-                    id="retaliation-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe the incident in detail..."
-                    rows={8}
-                    required
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="retaliation-file">Attach Evidence (Optional)</Label>
-                <Input
-                    id="retaliation-file"
-                    type="file"
-                    onChange={handleFileChange}
-                />
-                <p className="text-xs text-muted-foreground">You can attach screenshots, documents, or audio recordings.</p>
+                <div className="relative">
+                    <Textarea
+                        id="retaliation-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe the incident in detail..."
+                        rows={8}
+                        required
+                        className="pr-10"
+                    />
+                    <Input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        onChange={handleFileChange} 
+                    />
+                    <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                        onClick={() => fileInputRef.current?.click()}
+                        aria-label="Attach file"
+                    >
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
+                </div>
+                 {file && (
+                    <p className="text-sm text-muted-foreground">
+                        Attached: <span className="font-medium text-primary">{file.name}</span>
+                    </p>
+                )}
             </div>
             <div className="flex justify-end">
                 <Button type="submit" variant="destructive" disabled={isSubmitting}>
@@ -1189,5 +1275,7 @@ export default function MyConcernsPage() {
 
     
 }
+
+    
 
     
