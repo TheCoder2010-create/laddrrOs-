@@ -153,7 +153,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
                         type="button"
                         variant="ghost" 
                         size="icon" 
-                        className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                        className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
                         onClick={() => fileInputRef.current?.click()}
                         aria-label="Attach file"
                     >
@@ -294,7 +294,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                         type="button"
                         variant="ghost" 
                         size="icon" 
-                        className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                        className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
                         onClick={() => fileInputRef.current?.click()}
                         aria-label="Attach file"
                     >
@@ -419,7 +419,7 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                         type="button"
                         variant="ghost" 
                         size="icon" 
-                        className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                        className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
                         onClick={() => fileInputRef.current?.click()}
                         aria-label="Attach file"
                     >
