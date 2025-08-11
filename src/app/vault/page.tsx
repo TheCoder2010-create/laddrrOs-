@@ -249,7 +249,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
 
     const assignableRolesForDropdown = isUnassignMode 
         ? (feedback.assignedTo || []) 
-        : availableRolesForAssignment;
+        : availableRolesForAssignment.filter(r => !feedback.assignedTo?.includes(r));
 
     return (
         <div className="space-y-2">
@@ -272,7 +272,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                             <ChevronDown className="ml-2 h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-auto" align="start">
+                                    <DropdownMenuContent className="w-auto" align="end">
                                         {assignableRolesForDropdown.map(r => (
                                             <DropdownMenuCheckboxItem
                                                 key={r}
