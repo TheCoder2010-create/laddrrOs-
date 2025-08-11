@@ -991,6 +991,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
+                    const canReportRetaliation = item.isAnonymous === false;
 
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
@@ -1083,7 +1084,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                                     </div>
                                 )}
 
-                                {item.isAnonymous === false && (
+                                {canReportRetaliation && (
                                     <div className="pt-4 border-t border-dashed">
                                         <Dialog open={retaliationDialogOpen && activeCaseId === item.trackingId} onOpenChange={(open) => {
                                             if (!open) setRetaliationDialogOpen(false);
@@ -1174,10 +1175,13 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
 
     return (
         <div className="mt-6 space-y-4">
-             <h3 className="text-lg font-semibold flex items-center gap-2 text-muted-foreground">
-                <List className="h-5 w-5" />
-                {title}
-            </h3>
+            {concernType !== 'anonymous' && (
+                 <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <List className="h-5 w-5" />
+                    {title}
+                </h3>
+            )}
+            
             {concernType === 'anonymous' && (
                 <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">Enter the tracking ID you saved after submission to see the status of your case.</p>
@@ -1204,6 +1208,7 @@ function MyConcernsContent() {
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const accordionRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState("identity-revealed");
 
   const [showIdDialog, setShowIdDialog] = useState(false);
   const [newCaseId, setNewCaseId] = useState('');
@@ -1242,7 +1247,7 @@ function MyConcernsContent() {
   };
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-4 md:p-8 space-y-8">
       <Dialog open={showIdDialog} onOpenChange={setShowIdDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -1276,7 +1281,7 @@ function MyConcernsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="identity-revealed">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="identity-revealed">
                         <User className="mr-2" />
@@ -1292,20 +1297,31 @@ function MyConcernsContent() {
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="identity-revealed">
-                    <IdentifiedConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
+                    <IdentifiedConcernForm onCaseSubmitted={() => {
+                        handleCaseSubmitted();
+                        setActiveTab("history"); // Switch to history tab after submission
+                    }} />
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} title="Track My Anonymous Submissions" allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
+                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} title="Track My Anonymous Submissions" allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
                 </TabsContent>
                  <TabsContent value="retaliation">
-                    <DirectRetaliationForm onCaseSubmitted={handleCaseSubmitted} />
-                    <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+                    <DirectRetaliationForm onCaseSubmitted={() => {
+                        handleCaseSubmitted();
+                        setActiveTab("history");
+                    }} />
                 </TabsContent>
             </Tabs>
         </CardContent>
       </Card>
+      
+      {/* Separate Widget for My Identified Concerns */}
+      <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
+      
+       {/* Separate Widget for My Retaliation Reports */}
+      <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+
     </div>
   );
 }
@@ -1333,4 +1349,5 @@ export default function MyConcernsPage() {
     
 
     
+
 
