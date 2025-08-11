@@ -1176,18 +1176,12 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
 
     return (
         <div className="mt-6">
-            {concernType !== 'anonymous' && (
-                <div className="space-y-4">
-                    <h3 className="text-xl font-semibold flex items-center gap-2">
-                        <List className="h-5 w-5" />
-                        {title}
-                    </h3>
-                    {renderCaseList(itemsToDisplay)}
-                </div>
-            )}
-            
-            {concernType === 'anonymous' && (
-                <div className="space-y-4">
+            <h3 className="text-xl font-semibold flex items-center gap-2">
+                <List className="h-5 w-5" />
+                {title}
+            </h3>
+            {concernType === 'anonymous' ? (
+                 <div className="space-y-4 mt-4">
                     <p className="text-sm text-muted-foreground">Enter the tracking ID you saved after submission to see the status of your case.</p>
                     <div className="flex items-center gap-2">
                         <Input 
@@ -1202,7 +1196,7 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                     </div>
                      {renderCaseList(itemsToDisplay)}
                 </div>
-            )}
+            ) : renderCaseList(itemsToDisplay)}
         </div>
     );
 }
@@ -1321,14 +1315,26 @@ function MyConcernsContent() {
       </Card>
       
       <Card>
-        <CardContent className="p-0">
-           <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
+        <CardHeader>
+             <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <List className="h-5 w-5" />
+                Raised Concerns
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+           <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="Raised Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
         </CardContent>
       </Card>
       
       <Card>
-        <CardContent className="p-0">
-          <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+         <CardHeader>
+             <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <List className="h-5 w-5" />
+                Retaliation Reports
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
         </CardContent>
       </Card>
 
@@ -1359,6 +1365,7 @@ export default function MyConcernsPage() {
     
 
     
+
 
 
 
