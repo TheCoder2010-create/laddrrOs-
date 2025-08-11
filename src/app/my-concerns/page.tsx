@@ -216,6 +216,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                 subject,
                 message: concern,
                 criticality,
+                isAnonymous: false,
                 file,
             });
 
@@ -1174,12 +1175,15 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
     }
 
     return (
-        <div className="mt-6 space-y-4">
+        <div className="mt-6">
             {concernType !== 'anonymous' && (
-                 <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <List className="h-5 w-5" />
-                    {title}
-                </h3>
+                <div className="space-y-4">
+                    <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <List className="h-5 w-5" />
+                        {title}
+                    </h3>
+                    {renderCaseList(itemsToDisplay)}
+                </div>
             )}
             
             {concernType === 'anonymous' && (
@@ -1196,9 +1200,9 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
                             Track
                         </Button>
                     </div>
+                     {renderCaseList(itemsToDisplay)}
                 </div>
             )}
-            {renderCaseList(itemsToDisplay)}
         </div>
     );
 }
@@ -1316,11 +1320,17 @@ function MyConcernsContent() {
         </CardContent>
       </Card>
       
-      {/* Separate Widget for My Identified Concerns */}
-      <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
+      <Card>
+        <CardContent className="p-0">
+           <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="My Identified Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
+        </CardContent>
+      </Card>
       
-       {/* Separate Widget for My Retaliation Reports */}
-      <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+      <Card>
+        <CardContent className="p-0">
+          <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="My Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+        </CardContent>
+      </Card>
 
     </div>
   );
@@ -1349,5 +1359,6 @@ export default function MyConcernsPage() {
     
 
     
+
 
 

@@ -105,6 +105,7 @@ export interface IdentifiedConcernInput {
     subject: string;
     message: string;
     criticality: 'Low' | 'Medium' | 'High' | 'Critical';
+    isAnonymous: false;
     file?: File | null;
 }
 
