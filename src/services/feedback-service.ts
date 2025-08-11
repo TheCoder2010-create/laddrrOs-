@@ -807,6 +807,7 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
         message: rest.message,
         submittedAt: new Date(),
         submittedBy: rest.submittedByRole,
+        isAnonymous: false,
         criticality: rest.criticality,
         status: 'Pending Supervisor Action', 
         assignedTo: [rest.recipient],
@@ -839,6 +840,7 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
         status: 'Retaliation Claim',
         assignedTo: ['HR Head'],
         viewed: false,
+        isAnonymous: false,
         auditTrail: [{
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
@@ -868,6 +870,7 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
         criticality: 'Retaliation Claim',
         status: 'Retaliation Claim',
         assignedTo: ['HR Head'],
+        isAnonymous: false,
         viewed: false,
         auditTrail: [{
             event: 'Retaliation Claim Submitted',
@@ -1480,6 +1483,33 @@ export async function submitAnonymousReply(trackingId: string, reply: string): P
         event: 'Anonymous User Responded',
         timestamp: new Date(),
         actor: 'Anonymous',
+        details: reply,
+    });
+
+    saveFeedbackToStorage(allFeedback);
+}
+    
+export async function submitIdentifiedReply(trackingId: string, actor: Role, reply: string): Promise<void> {
+    const allFeedback = getFeedbackFromStorage();
+    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+    if (feedbackIndex === -1) return;
+
+    const item = allFeedback[feedbackIndex];
+    
+    // Find the original question asker to re-assign the case to them.
+    const questionEvent = item.auditTrail?.find(e => e.event === 'Information Requested');
+    const originalAsker = questionEvent?.actor as Role;
+
+    if (originalAsker) {
+        item.assignedTo = [originalAsker];
+    }
+    // Return case to an actionable state for the manager
+    item.status = 'Pending Supervisor Action';
+    
+    item.auditTrail?.push({
+        event: 'User Responded to Information Request',
+        timestamp: new Date(),
+        actor: actor,
         details: reply,
     });
 
