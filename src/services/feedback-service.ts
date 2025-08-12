@@ -146,6 +146,7 @@ const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
 
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
+const getRetaliationCaseKey = (role: string | null) => role ? `direct_retaliation_cases_${role.replace(/\s/g, '_')}` : null;
 
 
 // ==========================================

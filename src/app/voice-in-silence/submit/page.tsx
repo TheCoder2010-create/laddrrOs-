@@ -122,7 +122,7 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="absolute top-2 right-2 text-muted-foreground hover:text-primary"
+                className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Attach file"
             >
@@ -159,7 +159,7 @@ const publicAuditEventIcons = {
     'Resolution Accepted': CheckCircle,
     'User Escalated to Ombudsman': UserX,
     'User Escalated to Grievance Office': UserPlus,
-    'Case Closed': FileCheck,
+    'Case Closed': FileText,
     'Information Requested': MessageCircleQuestion,
     'Anonymous User Responded': MessageSquare,
     'default': Info,
