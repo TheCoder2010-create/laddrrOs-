@@ -51,6 +51,7 @@ import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapp
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { rewriteText } from '@/ai/flows/rewrite-text-flow';
+import { Switch } from '@/components/ui/switch';
 
 
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
@@ -880,10 +881,8 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
 }
 
 
-function MySubmissions({ onUpdate, storageKey, allCases, concernType, accordionRef }: { onUpdate: () => void, storageKey: string | null, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', accordionRef: React.RefObject<HTMLDivElement> }) {
+function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType }: { items: Feedback[], onUpdate: () => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous' }) {
     const { role } = useRole();
-    const [cases, setCases] = useState<Feedback[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
 
@@ -891,38 +890,6 @@ function MySubmissions({ onUpdate, storageKey, allCases, concernType, accordionR
     const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
     const [isTracking, setIsTracking] = useState(false);
     const [notFound, setNotFound] = useState(false);
-
-    useEffect(() => {
-        if (concernType === 'anonymous') {
-            setIsLoading(false);
-            return;
-        }
-        const loadCases = async () => {
-            setIsLoading(true);
-            if (storageKey) {
-                const caseIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                if (caseIds.length > 0) {
-                    const fetchedCases = await getFeedbackByIds(caseIds);
-                    
-                    let filteredCases;
-                    if (concernType === 'retaliation') {
-                        filteredCases = fetchedCases.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId);
-                    } else if (concernType === 'other') {
-                        // Show cases where I am the submitter and it's not a retaliation claim
-                         filteredCases = fetchedCases.filter(c => c.submittedBy === role && c.criticality !== 'Retaliation Claim');
-                    } else {
-                        filteredCases = fetchedCases;
-                    }
-
-                    setCases(filteredCases.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
-                } else {
-                    setCases([]);
-                }
-            }
-            setIsLoading(false);
-        };
-        loadCases();
-    }, [storageKey, allCases, concernType, role]);
     
     const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
         e.preventDefault();
@@ -965,13 +932,9 @@ function MySubmissions({ onUpdate, storageKey, allCases, concernType, accordionR
              }
         }
     }, [allCases, trackedCase]);
-
-    if (isLoading) return <Skeleton className="h-24 w-full" />;
-
-    const itemsToDisplay = concernType === 'anonymous' && trackedCase ? [trackedCase] : cases;
     
-    const renderCaseList = (items: Feedback[]) => {
-        if (items.length === 0) {
+    const renderCaseList = (itemsToRender: Feedback[]) => {
+        if (itemsToRender.length === 0) {
              if (concernType === 'anonymous') {
                 return (
                     <div className="mt-4 text-center py-8">
@@ -981,13 +944,13 @@ function MySubmissions({ onUpdate, storageKey, allCases, concernType, accordionR
              }
             return (
                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">You have not submitted any concerns of this type yet.</p>
+                    <p className="text-muted-foreground">You have no {concernType === 'retaliation' ? 'retaliation reports' : 'concerns'} in this view.</p>
                 </div>
             )
         }
         return (
              <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
-                 {items.map(item => {
+                 {itemsToRender.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
                     const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
@@ -1176,9 +1139,11 @@ function MySubmissions({ onUpdate, storageKey, allCases, concernType, accordionR
         );
     }
 
-    return (
-        <div className="mt-6">
-            {concernType === 'anonymous' ? (
+    const itemsToDisplay = concernType === 'anonymous' && trackedCase ? [trackedCase] : items;
+
+    if (concernType === 'anonymous') {
+        return (
+            <div className="mt-6">
                  <div className="space-y-4 mt-4">
                     <p className="text-sm text-muted-foreground">Enter the tracking ID you saved after submission to see the status of your case.</p>
                     <div className="flex items-center gap-2">
@@ -1194,9 +1159,15 @@ function MySubmissions({ onUpdate, storageKey, allCases, concernType, accordionR
                     </div>
                      {renderCaseList(itemsToDisplay)}
                 </div>
-            ) : renderCaseList(itemsToDisplay)}
+            </div>
+        )
+    }
+
+    return (
+        <div className="mt-6">
+            {renderCaseList(itemsToDisplay)}
         </div>
-    );
+    )
 }
 
 function MyConcernsContent() {
@@ -1205,14 +1176,17 @@ function MyConcernsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const accordionRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState("identity-revealed");
+  const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
 
   const [showIdDialog, setShowIdDialog] = useState(false);
   const [newCaseId, setNewCaseId] = useState('');
 
+  const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
+
   const fetchAllCases = useCallback(() => {
     setIsLoading(true);
     getAllFeedback().then(data => {
-        setAllCases(data);
+        setAllCases(data.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
         setIsLoading(false);
     });
   }, []);
@@ -1241,6 +1215,16 @@ function MyConcernsContent() {
       description: 'Tracking ID copied to clipboard.',
     });
   };
+
+  const { raisedConcerns, receivedConcerns, retaliationReports } = useMemo(() => {
+    if (!role) return { raisedConcerns: [], receivedConcerns: [], retaliationReports: [] };
+
+    const myRaised = allCases.filter(c => c.submittedBy === role && c.criticality !== 'Retaliation Claim');
+    const myReceived = allCases.filter(c => c.assignedTo?.includes(role) && !c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const myRetaliation = allCases.filter(c => c.criticality === 'Retaliation Claim' && c.submittedBy === role);
+
+    return { raisedConcerns: myRaised, receivedConcerns: myReceived, retaliationReports: myRetaliation };
+  }, [allCases, role]);
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -1293,20 +1277,14 @@ function MyConcernsContent() {
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="identity-revealed">
-                    <IdentifiedConcernForm onCaseSubmitted={() => {
-                        handleCaseSubmitted();
-                        setActiveTab("history"); // Switch to history tab after submission
-                    }} />
+                    <IdentifiedConcernForm onCaseSubmitted={() => handleCaseSubmitted()} />
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
+                     <MySubmissions onUpdate={handleCaseSubmitted} items={[]} allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
                 </TabsContent>
                  <TabsContent value="retaliation">
-                    <DirectRetaliationForm onCaseSubmitted={() => {
-                        handleCaseSubmitted();
-                        setActiveTab("history");
-                    }} />
+                    <DirectRetaliationForm onCaseSubmitted={() => handleCaseSubmitted()} />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -1314,25 +1292,51 @@ function MyConcernsContent() {
       
       <Card>
         <CardHeader>
-             <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <List className="h-5 w-5" />
-                Raised Concerns
-            </CardTitle>
+            <div className="flex justify-between items-center">
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <List className="h-5 w-5" />
+                    {isSupervisor && viewMode === 'received' ? 'Received Concerns' : 'Raised Concerns'}
+                </CardTitle>
+                {isSupervisor && (
+                    <div className="flex items-center space-x-2">
+                        <Label htmlFor="view-mode-toggle" className="text-sm text-muted-foreground">
+                            {viewMode === 'raised' ? 'Showing Raised' : 'Showing Received'}
+                        </Label>
+                        <Switch
+                            id="view-mode-toggle"
+                            checked={viewMode === 'received'}
+                            onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
+                        />
+                    </div>
+                )}
+            </div>
         </CardHeader>
         <CardContent className="pt-0">
-           <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} allCases={allCases} concernType="other" accordionRef={accordionRef} />
+           <MySubmissions 
+                onUpdate={handleCaseSubmitted} 
+                items={viewMode === 'received' ? receivedConcerns : raisedConcerns}
+                allCases={allCases} 
+                concernType="other" 
+                accordionRef={accordionRef} 
+            />
         </CardContent>
       </Card>
       
       <Card>
          <CardHeader>
              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <List className="h-5 w-5" />
+                <Flag className="h-5 w-5" />
                 Retaliation Reports
             </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+          <MySubmissions 
+            onUpdate={handleCaseSubmitted} 
+            items={retaliationReports}
+            allCases={allCases} 
+            concernType="retaliation" 
+            accordionRef={accordionRef} 
+           />
         </CardContent>
       </Card>
 
@@ -1363,6 +1367,7 @@ export default function MyConcernsPage() {
     
 
     
+
 
 
 
