@@ -1359,7 +1359,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
                     
                     const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
-                    const canReportRetaliation = !item.isAnonymous;
+                    const canReportRetaliation = !item.isAnonymous && !isReceivedView && item.submittedBy === role;
 
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
@@ -1820,6 +1820,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
