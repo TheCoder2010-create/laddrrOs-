@@ -880,7 +880,7 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
 }
 
 
-function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, accordionRef }: { onUpdate: () => void, storageKey: string | null, title: string, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', accordionRef: React.RefObject<HTMLDivElement> }) {
+function MySubmissions({ onUpdate, storageKey, allCases, concernType, accordionRef }: { onUpdate: () => void, storageKey: string | null, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', accordionRef: React.RefObject<HTMLDivElement> }) {
     const { role } = useRole();
     const [cases, setCases] = useState<Feedback[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -986,12 +986,14 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
             )
         }
         return (
-             <Accordion type="single" collapsible className="w-full border rounded-lg" ref={accordionRef}>
+             <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
                  {items.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
                     const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
+                    
+                    const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
                     const canReportRetaliation = item.isAnonymous === false;
 
                     const isLinkedClaim = !!item.parentCaseId;
@@ -1176,10 +1178,6 @@ function MySubmissions({ onUpdate, storageKey, title, allCases, concernType, acc
 
     return (
         <div className="mt-6">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-                <List className="h-5 w-5" />
-                {title}
-            </h3>
             {concernType === 'anonymous' ? (
                  <div className="space-y-4 mt-4">
                     <p className="text-sm text-muted-foreground">Enter the tracking ID you saved after submission to see the status of your case.</p>
@@ -1302,7 +1300,7 @@ function MyConcernsContent() {
                 </TabsContent>
                 <TabsContent value="anonymous">
                     <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
-                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} title="Track My Anonymous Submissions" allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
+                     <MySubmissions onUpdate={handleCaseSubmitted} storageKey={null} allCases={allCases} concernType="anonymous" accordionRef={accordionRef} />
                 </TabsContent>
                  <TabsContent value="retaliation">
                     <DirectRetaliationForm onCaseSubmitted={() => {
@@ -1322,7 +1320,7 @@ function MyConcernsContent() {
             </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-           <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} title="Raised Concerns" allCases={allCases} concernType="other" accordionRef={accordionRef} />
+           <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getIdentifiedCaseKey(role)} allCases={allCases} concernType="other" accordionRef={accordionRef} />
         </CardContent>
       </Card>
       
@@ -1334,7 +1332,7 @@ function MyConcernsContent() {
             </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} title="Retaliation Reports" allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
+          <MySubmissions onUpdate={handleCaseSubmitted} storageKey={getRetaliationCaseKey(role)} allCases={allCases} concernType="retaliation" accordionRef={accordionRef} />
         </CardContent>
       </Card>
 
@@ -1365,6 +1363,7 @@ export default function MyConcernsPage() {
     
 
     
+
 
 
 
