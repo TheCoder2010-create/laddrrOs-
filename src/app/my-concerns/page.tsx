@@ -1220,7 +1220,7 @@ function MyConcernsContent() {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
 
     const identifiedRaised = allCases.filter(c => c.submittedBy === role && !c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const anonymousRaised = allCases.filter(c => c.submittedBy === role && c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const anonymousRaised = allCases.filter(c => c.submittedBy === role && c.isAnonymous);
     const retaliationRaised = allCases.filter(c => c.submittedBy === role && c.criticality === 'Retaliation Claim');
     
     const identifiedReceived = allCases.filter(c => c.assignedTo?.includes(role) && !c.isAnonymous && c.criticality !== 'Retaliation Claim');
@@ -1229,6 +1229,40 @@ function MyConcernsContent() {
 
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
+  
+  const renderSubmissions = () => {
+    const isReceivedView = isSupervisor && viewMode === 'received';
+    
+    let concernsToShow;
+    let concernType: 'other' | 'anonymous' | 'retaliation' = 'other';
+
+    switch (activeTab) {
+        case 'identity-revealed':
+            concernsToShow = isReceivedView ? identifiedReceived : identifiedRaised;
+            concernType = 'other';
+            break;
+        case 'anonymous':
+            concernsToShow = isReceivedView ? anonymousReceived : anonymousRaised;
+            concernType = 'anonymous';
+            break;
+        case 'retaliation':
+            concernsToShow = isReceivedView ? retaliationReceived : retaliationRaised;
+            concernType = 'retaliation';
+            break;
+        default:
+            concernsToShow = [];
+    }
+    
+    return (
+        <MySubmissions 
+            onUpdate={handleCaseSubmitted} 
+            items={concernsToShow}
+            allCases={allCases} 
+            concernType={concernType}
+            accordionRef={accordionRef} 
+        />
+    );
+  };
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -1315,49 +1349,7 @@ function MyConcernsContent() {
             </div>
         </CardHeader>
         <CardContent className="pt-0">
-             <Tabs defaultValue="identity-revealed" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="identity-revealed">
-                        <User className="mr-2" />
-                        Identified
-                    </TabsTrigger>
-                    <TabsTrigger value="anonymous">
-                        <UserX className="mr-2" />
-                        Anonymous
-                    </TabsTrigger>
-                    <TabsTrigger value="retaliation">
-                        <Flag className="mr-2" />
-                        Retaliation
-                    </TabsTrigger>
-                </TabsList>
-                <TabsContent value="identity-revealed">
-                    <MySubmissions 
-                        onUpdate={handleCaseSubmitted} 
-                        items={viewMode === 'received' ? identifiedReceived : identifiedRaised}
-                        allCases={allCases} 
-                        concernType="other" 
-                        accordionRef={accordionRef} 
-                    />
-                </TabsContent>
-                <TabsContent value="anonymous">
-                    <MySubmissions 
-                        onUpdate={handleCaseSubmitted} 
-                        items={viewMode === 'received' ? anonymousReceived : anonymousRaised}
-                        allCases={allCases} 
-                        concernType="anonymous" 
-                        accordionRef={accordionRef} 
-                    />
-                </TabsContent>
-                <TabsContent value="retaliation">
-                    <MySubmissions 
-                        onUpdate={handleCaseSubmitted} 
-                        items={viewMode === 'received' ? retaliationReceived : retaliationRaised}
-                        allCases={allCases} 
-                        concernType="retaliation" 
-                        accordionRef={accordionRef} 
-                    />
-                </TabsContent>
-            </Tabs>
+            {renderSubmissions()}
         </CardContent>
       </Card>
     </div>
