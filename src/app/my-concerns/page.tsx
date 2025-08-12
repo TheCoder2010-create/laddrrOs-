@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
@@ -715,11 +715,11 @@ function AcknowledgementWidget({ item, onUpdate, title, description, responderEv
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                     <Button onClick={() => handleAcknowledge(true)} variant="success" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Accept Resolution
                     </Button>
                     <Button onClick={() => handleAcknowledge(false)} variant="destructive" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         I'm Not Satisfied, {item.criticality === 'Retaliation Claim' ? 'Close Case' : 'Escalate'}
                     </Button>
                 </div>
@@ -1085,6 +1085,69 @@ function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedbac
     );
 }
 
+function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [finalAction, setFinalAction] = useState<string | null>(null);
+    const [finalActionNotes, setFinalActionNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!finalAction || !finalActionNotes || !role) {
+            toast({ variant: 'destructive', title: "Information Missing", description: "Please select an action and provide notes."});
+            return;
+        };
+        setIsSubmitting(true);
+        try {
+            await submitFinalDisposition(feedback.trackingId, role, finalAction, finalActionNotes);
+            toast({ title: "Final Action Logged", description: `The case has been closed and routed to ${finalAction}.`});
+            onUpdate();
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="p-4 border-t mt-4 space-y-4 bg-destructive/10 rounded-b-lg">
+            <Label className="text-base font-semibold text-destructive">Final Disposition Required</Label>
+            <p className="text-sm text-destructive/90">
+                The employee rejected the final resolution. Select a final action to formally close this case. This is the last step in the automated workflow.
+            </p>
+
+            {!finalAction ? (
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" onClick={() => setFinalAction('Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
+                    <Button variant="secondary" onClick={() => setFinalAction('Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
+                    <Button variant="destructive" onClick={() => setFinalAction('Log & Close')}><FileText className="mr-2" /> Log Dissatisfaction & Close</Button>
+                </div>
+            ) : (
+                <div className="w-full space-y-3">
+                    <p className="font-medium">Action: <span className="text-primary">{finalAction}</span></p>
+                    <Label htmlFor="final-notes">Reasoning / Final Notes</Label>
+                    <Textarea
+                        id="final-notes"
+                        value={finalActionNotes}
+                        onChange={(e) => setFinalActionNotes(e.target.value)}
+                        rows={4}
+                        className="bg-background"
+                        placeholder="Provide your justification for this final action..."
+                    />
+                    <div className="flex gap-2">
+                        <Button className="bg-black hover:bg-black/80 text-white" onClick={handleSubmit} disabled={isSubmitting || !finalActionNotes}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                        Submit Final Action
+                        </Button>
+                        <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -1115,6 +1178,10 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
         }
     }
 
+    if (feedback.status === 'Final Disposition Required' && role === 'HR Head') {
+        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+
     let title = 'Your Action Required';
     let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
 
@@ -1123,41 +1190,52 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
         description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
     }
     
-    if (role === 'HR Head' && feedback.status === 'Pending HR Action') {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-t mt-4 bg-background rounded-b-lg">
-                <div className="space-y-3">
-                    <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
-                    <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
-                    <Textarea 
-                        id={`interim-update-${feedback.trackingId}`}
-                        value={interimUpdate}
-                        onChange={(e) => setInterimUpdate(e.target.value)}
-                        rows={3}
-                        placeholder="Add your notes..."
-                        disabled={isSubmitting}
-                    />
-                    <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Add Update
-                    </Button>
-                </div>
+    if (role === 'HR Head' && (feedback.status === 'Pending HR Action' || feedback.criticality === 'Retaliation Claim')) {
+        title = feedback.criticality === 'Retaliation Claim' ? 'Retaliation Claim Review' : 'Final HR Review';
+        description = feedback.criticality === 'Retaliation Claim' 
+            ? 'This is a high-priority retaliation claim requiring your direct investigation and resolution.'
+            : 'This concern has been escalated through all tiers and now requires your final resolution.';
 
-                <div className="space-y-3">
-                    <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
-                    <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
-                    <Textarea 
-                        id={`final-resolution-${feedback.trackingId}`}
-                        value={resolutionSummary}
-                        onChange={(e) => setResolutionSummary(e.target.value)}
-                        rows={4}
-                        placeholder="Add your final resolution notes..."
-                        disabled={isSubmitting}
-                    />
-                    <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Submit
-                    </Button>
+        return (
+            <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
+                <div className="space-y-2">
+                    <Label className="text-base font-semibold">{title}</Label>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+                        <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
+                        <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
+                        <Textarea 
+                            id={`interim-update-${feedback.trackingId}`}
+                            value={interimUpdate}
+                            onChange={(e) => setInterimUpdate(e.target.value)}
+                            rows={3}
+                            placeholder="Add your notes..."
+                            disabled={isSubmitting}
+                        />
+                        <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Add Update
+                        </Button>
+                    </div>
+
+                    <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+                        <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
+                        <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
+                        <Textarea 
+                            id={`final-resolution-${feedback.trackingId}`}
+                            value={resolutionSummary}
+                            onChange={(e) => setResolutionSummary(e.target.value)}
+                            rows={4}
+                            placeholder="Add your final resolution notes..."
+                            disabled={isSubmitting}
+                        />
+                        <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
@@ -1270,11 +1348,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     </div>
                 )
              }
-            return (
-                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">You have no {concernType === 'retaliation' ? 'retaliation reports' : 'concerns'} in this view.</p>
-                </div>
-            )
+            return null;
         }
         return (
              <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
@@ -1315,6 +1389,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                             case 'Pending Identity Reveal': return <Badge variant="destructive" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Action Required</Badge>;
                             case 'Pending Anonymous Reply': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
                             case 'Pending HR Action': return <Badge className="bg-black/80 text-white flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" />HR Review</Badge>;
+                            case 'Final Disposition Required': return <Badge className="bg-black/80 text-white flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Final Action</Badge>;
                             case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Action Required</Badge>;
                             case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Closed</Badge>;
                             default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
@@ -1336,11 +1411,9 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                         
                         if (item.isAnonymous) {
                             return <AnonymousConcernActionPanel feedback={item} onUpdate={onUpdate} />;
-                        } else if (item.criticality !== 'Retaliation Claim') {
+                        } else {
                             return <IdentifiedConcernActionPanel feedback={item} onUpdate={onUpdate} />;
                         }
-                        
-                        return null; // No action panel for retaliation reports here
                     };
 
                     return (
@@ -1484,7 +1557,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
 
     if (concernType === 'anonymous' && !isReceivedView) {
         return (
-            <div className="mt-6">
+            <>
                  <div className="space-y-4 mt-4">
                     <p className="text-sm text-muted-foreground">Enter the tracking ID you saved after submission to see the status of your case.</p>
                     <div className="flex items-center gap-2">
@@ -1500,14 +1573,14 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     </div>
                      {renderCaseList(itemsToDisplay)}
                 </div>
-            </div>
+            </>
         )
     }
 
     return (
-        <div className="mt-6">
+        <>
             {renderCaseList(itemsToDisplay)}
-        </div>
+        </>
     )
 }
 
@@ -1578,34 +1651,64 @@ function MyConcernsContent() {
     
     let concernsToShow;
     let concernType: 'other' | 'anonymous' | 'retaliation' = 'other';
-
+    let noItemsMessage = "You have no concerns in this view.";
+    
     switch (activeTab) {
         case 'identity-revealed':
             concernsToShow = isReceivedView ? identifiedReceived : identifiedRaised;
             concernType = 'other';
+            noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} identified concerns.`;
             break;
         case 'anonymous':
             concernsToShow = isReceivedView ? anonymousReceived : anonymousRaised;
             concernType = 'anonymous';
+            noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} anonymous concerns.`;
             break;
         case 'retaliation':
             concernsToShow = isReceivedView ? retaliationReceived : retaliationRaised;
             concernType = 'retaliation';
+            noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} retaliation reports.`;
             break;
         default:
             concernsToShow = [];
     }
+
+    if (isLoading) {
+        return <Skeleton className="h-40 w-full mt-4" />;
+    }
     
     return (
-        <MySubmissions 
-            onUpdate={handleCaseSubmitted} 
-            items={concernsToShow}
-            allCases={allCases} 
-            concernType={concernType}
-            accordionRef={accordionRef}
-            isReceivedView={isReceivedView}
-        />
+        <>
+            <MySubmissions 
+                onUpdate={handleCaseSubmitted} 
+                items={concernsToShow}
+                allCases={allCases} 
+                concernType={concernType}
+                accordionRef={accordionRef}
+                isReceivedView={isReceivedView}
+            />
+            {concernsToShow.length === 0 && activeTab !== 'anonymous' && (
+                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">{noItemsMessage}</p>
+                </div>
+            )}
+             {concernsToShow.length === 0 && activeTab === 'anonymous' && !isReceivedView && (
+                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">You have not raised any anonymous concerns from this dashboard.</p>
+                </div>
+            )}
+        </>
     );
+  };
+
+  const getSectionTitle = () => {
+    if (viewMode === 'received') return 'Received Concerns';
+    switch (activeTab) {
+        case 'identity-revealed': return 'My Raised Concerns';
+        case 'anonymous': return 'My Anonymous Submissions';
+        case 'retaliation': return 'My Retaliation Reports';
+        default: return 'My Submissions';
+    }
   };
 
   return (
@@ -1671,31 +1774,31 @@ function MyConcernsContent() {
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-            <div className="flex justify-between items-center">
-                <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                    <List className="h-5 w-5" />
-                    {isSupervisor && viewMode === 'received' ? 'Received Concerns' : 'My Submissions'}
-                </CardTitle>
-                {isSupervisor && (
-                    <div className="flex items-center space-x-2">
-                        <Label htmlFor="view-mode-toggle" className="text-sm text-muted-foreground">
-                            {viewMode === 'raised' ? 'Showing Raised' : 'Showing Received'}
-                        </Label>
-                        <Switch
-                            id="view-mode-toggle"
-                            checked={viewMode === 'received'}
-                            onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
-                        />
-                    </div>
-                )}
-            </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-            {renderSubmissions()}
-        </CardContent>
-      </Card>
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                        <List className="h-5 w-5" />
+                        {getSectionTitle()}
+                    </CardTitle>
+                    {isSupervisor && (
+                        <div className="flex items-center space-x-2">
+                            <Label htmlFor="view-mode-toggle" className="text-sm text-muted-foreground">
+                                {viewMode === 'raised' ? 'Showing Raised' : 'Showing Received'}
+                            </Label>
+                            <Switch
+                                id="view-mode-toggle"
+                                checked={viewMode === 'received'}
+                                onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
+                            />
+                        </div>
+                    )}
+                </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+                {renderSubmissions()}
+            </CardContent>
+        </Card>
     </div>
   );
 }
@@ -1717,3 +1820,4 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+

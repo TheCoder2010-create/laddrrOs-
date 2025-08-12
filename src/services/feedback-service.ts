@@ -1164,7 +1164,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     const item = allFeedback[feedbackIndex];
     const actor = item.submittedBy || 'Anonymous';
     
-    const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim'];
+    const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
     const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
     const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
@@ -1191,7 +1191,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
 
         const lastResponderRole = Object.values(roleUserMapping).find(u => u.name === lastResponder)?.role || lastResponder;
         
-        if (item.criticality === 'Retaliation Claim' || lastResponderEvent?.event === 'HR Resolution Submitted') {
+        if (item.criticality === 'Retaliation Claim' || lastResponderEvent?.event === 'HR Resolution Submitted' || lastResponderRole === 'HR Head') {
              item.status = 'Final Disposition Required';
              item.assignedTo = ['HR Head'];
              item.auditTrail?.push({
@@ -1520,3 +1520,4 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
