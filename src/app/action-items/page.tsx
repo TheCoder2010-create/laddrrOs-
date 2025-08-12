@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -486,600 +487,6 @@ function HrReviewWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdat
     );
 }
 
-function RetaliationActionPanel({ feedback, onUpdate, handleViewCaseDetails }: { feedback: Feedback, onUpdate: () => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
-    const { role } = useRole();
-    const { toast } = useToast();
-    const [response, setResponse] = useState('');
-    const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
-    const [update, setUpdate] = useState('');
-    const [isSubmittingUpdate, setIsSubmittingUpdate] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
-
-    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-        }
-    };
-
-    const handleAddUpdate = async () => {
-        if (!update || !role) return;
-        setIsSubmittingUpdate(true);
-        try {
-            await addFeedbackUpdate(feedback.trackingId, role, update, file);
-            setUpdate('');
-            if (document.getElementById('hr-update-file')) {
-                (document.getElementById('hr-update-file') as HTMLInputElement).value = '';
-            }
-            setFile(null);
-            toast({ title: "Update Added", description: "Your confidential notes have been added to the case history." });
-            onUpdate();
-        } catch (error) {
-            console.error(error);
-            toast({ variant: "destructive", title: "Update Failed" });
-        } finally {
-            setIsSubmittingUpdate(false);
-        }
-    };
-    
-    const handleSubmitResponse = async () => {
-        if (!response || !role) return;
-        setIsSubmittingResponse(true);
-        try {
-            await submitHrRetaliationResponse(feedback.trackingId, role, response);
-            setResponse('');
-            toast({ title: "Response Submitted", description: "The employee has been notified to acknowledge your response." });
-            onUpdate();
-        } catch (error) {
-            console.error(error);
-            toast({ variant: "destructive", title: "Submission Failed" });
-        } finally {
-            setIsSubmittingResponse(false);
-        }
-    };
-
-    return (
-        <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
-            <Label className="text-base font-semibold text-destructive">Action Required: Retaliation Claim</Label>
-            {feedback.parentCaseId && (
-                <div className="text-sm">
-                    This claim is linked to parent case: 
-                    <a href="#" onClick={(e) => handleViewCaseDetails(e, feedback.parentCaseId!)} className="font-mono text-primary hover:underline ml-2">{feedback.parentCaseId}</a>
-                </div>
-            )}
-            <p className="text-sm text-muted-foreground">
-                A retaliation claim has been filed. Please investigate thoroughly. You can add confidential interim updates that are only visible to you. Once your investigation is complete, submit a final resolution summary to the employee for acknowledgment.
-            </p>
-
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="hr-update" className="font-medium">Add Interim Update (Confidential)</Label>
-                <Textarea
-                    id="hr-update"
-                    value={update}
-                    onChange={(e) => setUpdate(e.target.value)}
-                    rows={4}
-                    placeholder="Log your confidential investigation notes here..."
-                />
-                 <div className="space-y-2">
-                    <Label htmlFor="hr-update-file" className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Paperclip className="h-4 w-4" /> Attach supporting documents (optional)
-                    </Label>
-                    <Input id="hr-update-file" type="file" onChange={handleFileChange} />
-                </div>
-                <Button onClick={handleAddUpdate} disabled={!update || isSubmittingUpdate}>
-                    {isSubmittingUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Update
-                </Button>
-            </div>
-            
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="hr-response" className="font-medium">Submit Final Resolution to Employee</Label>
-                <Textarea
-                    id="hr-response"
-                    value={response}
-                    onChange={(e) => setResponse(e.target.value)}
-                    rows={4}
-                    placeholder="Provide your final resolution summary to the employee..."
-                />
-                <Button variant="destructive" onClick={handleSubmitResponse} disabled={!response || isSubmittingResponse}>
-                    {isSubmittingResponse && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit for Employee Acknowledgment
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-
-function CollaborativeActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
-    const { role } = useRole();
-    const { toast } = useToast();
-    const [update, setUpdate] = useState('');
-    const [resolution, setResolution] = useState('');
-    const [isSubmittingUpdate, setIsSubmittingUpdate] = useState(false);
-    const [isSubmittingResolution, setIsSubmittingResolution] = useState(false);
-
-    const handleAddUpdate = async () => {
-        if (!update || !role) return;
-        setIsSubmittingUpdate(true);
-        try {
-            await addFeedbackUpdate(feedback.trackingId, role, update);
-            setUpdate('');
-            toast({ title: "Update Added", description: "Your notes have been added to the case history." });
-            onUpdate();
-        } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: "Update Failed" });
-        } finally {
-            setIsSubmittingUpdate(false);
-        }
-    }
-
-    const handleResolve = async () => {
-        if (!resolution || !role) return;
-        setIsSubmittingResolution(true);
-        try {
-            await submitCollaborativeResolution(feedback.trackingId, role, resolution);
-            toast({ title: "Resolution Statement Submitted", description: "The case will be resolved once all parties submit their statements." });
-            onUpdate();
-        } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: "Resolution Failed" });
-        } finally {
-            setIsSubmittingResolution(false);
-        }
-    }
-    
-    const managerHasResolved = !!feedback.managerResolution;
-    const hrHasResolved = !!feedback.hrHeadResolution;
-    const isManager = role === 'Manager';
-    const isHrHead = role === 'HR Head';
-    const canManagerAct = isManager && !managerHasResolved;
-    const canHrAct = isHrHead && !hrHasResolved;
-
-    return (
-        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-            <Label className="text-base font-semibold">Collaborative Action Required</Label>
-            <p className="text-sm text-muted-foreground">
-                This anonymous case has been escalated for joint review. Both Manager and HR Head must add a resolution summary to close the case. Regular updates can be added at any time.
-            </p>
-             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="add-update" className="font-medium">Add Interim Update</Label>
-                <p className="text-xs text-muted-foreground">
-                    Add notes, observations, or actions taken. This will be visible in the case history.
-                </p>
-                <Textarea 
-                    id="add-update"
-                    value={update}
-                    onChange={(e) => setUpdate(e.target.value)}
-                    rows={4}
-                    placeholder="Enter your update..."
-                    disabled={isSubmittingUpdate}
-                />
-                <Button onClick={handleAddUpdate} disabled={!update || isSubmittingUpdate}>
-                    {isSubmittingUpdate && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                    Add Update
-                </Button>
-            </div>
-            
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor="resolve-case" className="font-medium">Submit Final Resolution</Label>
-                 <p className="text-xs text-muted-foreground">
-                    Provide your final resolution summary. The case will be closed once both Manager and HR Head have submitted their statements.
-                </p>
-
-                {(isManager && managerHasResolved) && <p className="text-sm font-semibold text-green-600">Your resolution has been submitted. Waiting for HR Head.</p>}
-                {(isHrHead && hrHasResolved) && <p className="text-sm font-semibold text-green-600">Your resolution has been submitted. Waiting for Manager.</p>}
-
-                {(canManagerAct || canHrAct) && (
-                    <Textarea 
-                        id="resolve-case"
-                        value={resolution}
-                        onChange={(e) => setResolution(e.target.value)}
-                        rows={4}
-                        placeholder="Enter your final resolution statement..."
-                        disabled={isSubmittingResolution}
-                    />
-                )}
-                
-                <Button 
-                    variant="success" 
-                    onClick={handleResolve} 
-                    disabled={!resolution || (isManager && managerHasResolved) || (isHrHead && hrHasResolved) || isSubmittingResolution}
-                >
-                    {isSubmittingResolution && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                    Submit Resolution
-                </Button>
-            </div>
-        </div>
-    )
-}
-
-function AnonymousConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
-    const { role } = useRole();
-    const { toast } = useToast();
-    const [revealReason, setRevealReason] = useState('');
-    const [resolution, setResolution] = useState('');
-    const [update, setUpdate] = useState('');
-    const [question, setQuestion] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleRequestIdentity = async () => {
-        if (!revealReason || !role) return;
-        setIsSubmitting(true);
-        try {
-            await requestIdentityReveal(feedback.trackingId, role, revealReason);
-            setRevealReason('');
-            toast({ title: "Request Submitted", description: "The user has been notified of your request."});
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-    
-    const handleAddUpdate = async () => {
-        if (!update || !role) return;
-        setIsSubmitting(true);
-        try {
-            await submitSupervisorUpdate(feedback.trackingId, role, update, false);
-            setUpdate('');
-            toast({ title: "Update Added" });
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
-    const handleRequestInformation = async () => {
-        if (!question || !role) return;
-        setIsSubmitting(true);
-        try {
-            await requestAnonymousInformation(feedback.trackingId, role, question);
-            setQuestion('');
-            toast({ title: "Question Submitted", description: "The user has been notified to provide more information." });
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleResolveDirectly = async () => {
-        if (!resolution || !role) return;
-        setIsSubmitting(true);
-        try {
-            await submitSupervisorUpdate(feedback.trackingId, role, resolution, true);
-            setResolution('');
-            toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-    
-    return (
-        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-            <Label className="text-base font-semibold">Your Action Required</Label>
-            
-            {feedback.status === 'Pending Anonymous Reply' ? (
-                 <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                    <p className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Awaiting User Response</p>
-                    <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                             <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="font-medium flex items-center gap-2 cursor-help">
-                                            Add Update <Info className="h-4 w-4 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Log your investigation steps or notes.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <Textarea 
-                                id="interim-update"
-                                value={update}
-                                onChange={(e) => setUpdate(e.target.value)}
-                                rows={3}
-                                className="flex-grow"
-                                placeholder="Log your private notes..."
-                            />
-                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Update
-                            </Button>
-                        </div>
-                        
-                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="font-medium flex items-center gap-2 cursor-help">
-                                            Additional Information <Info className="h-4 w-4 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Ask a clarifying question. The user will see this and can respond anonymously.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <Textarea 
-                                id="ask-question"
-                                value={question}
-                                onChange={(e) => setQuestion(e.target.value)}
-                                rows={3}
-                                className="flex-grow"
-                                placeholder="Ask a clarifying question..."
-                            />
-                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-auto w-full">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Send Question
-                            </Button>
-                        </div>
-
-                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                             <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="font-medium flex items-center gap-2 cursor-help">
-                                            Request Identity <Info className="h-4 w-4 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>If you cannot proceed, explain why you need their identity.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <Textarea 
-                                id="revealReason"
-                                value={revealReason}
-                                onChange={(e) => setRevealReason(e.target.value)}
-                                rows={3}
-                                className="flex-grow"
-                                placeholder="Explain why identity is needed..."
-                            />
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button disabled={!revealReason || isSubmitting} className="mt-auto w-full">
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Request Identity Reveal
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
-                                            Acknowledge & Continue
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                             </AlertDialog>
-                        </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                         <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Label className="font-medium flex items-center gap-2 cursor-help">
-                                        Resolution <Info className="h-4 w-4 text-muted-foreground" />
-                                    </Label>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                        <Textarea 
-                            id="resolve-directly"
-                            value={resolution}
-                            onChange={(e) => setResolution(e.target.value)}
-                            rows={4}
-                            placeholder="Propose a resolution..."
-                        />
-                        <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit
-                        </Button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
-    const { role } = useRole();
-    const { toast } = useToast();
-    const [disposition, setDisposition] = useState<string | null>(null);
-    const [notes, setNotes] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleSubmit = async () => {
-        if (!disposition || !notes || !role) return;
-        setIsSubmitting(true);
-        try {
-            await submitFinalDisposition(feedback.trackingId, role, disposition, notes);
-            toast({ title: "Final Action Logged", description: "The case has been closed." });
-            onUpdate();
-        } catch (error) {
-            console.error("Failed to submit final disposition", error);
-            toast({ variant: 'destructive', title: "Submission Failed" });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    return (
-        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-            <Label className="text-base font-semibold text-destructive">Final Disposition Required</Label>
-            <p className="text-sm text-muted-foreground">
-                The employee rejected the previous resolution. This is the final step. Please select a formal disposition to close this case. This action is irreversible.
-            </p>
-            {!disposition ? (
-                <div className="flex flex-wrap gap-2">
-                    <Button variant="secondary" onClick={() => setDisposition('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
-                    <Button variant="secondary" onClick={() => setDisposition('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
-                    <Button variant="destructive" onClick={() => setDisposition('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
-                </div>
-            ) : (
-                <div className="w-full space-y-3 p-3 bg-muted/50 rounded-lg">
-                    <p className="font-medium">Action: <span className="text-primary">{disposition}</span></p>
-                    <Label htmlFor="final-notes">Reasoning / Final Notes</Label>
-                    <Textarea
-                        id="final-notes"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        rows={4}
-                        className="bg-background"
-                        placeholder="Provide reasoning for this final action..."
-                    />
-                    <div className="flex gap-2">
-                        <Button className="bg-black hover:bg-black/80 text-white" onClick={handleSubmit} disabled={isSubmitting || !notes}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit Final Action
-                        </Button>
-                        <Button variant="ghost" onClick={() => setDisposition(null)}>Cancel</Button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function IdentifiedConcernPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
-    const { role } = useRole();
-    const { toast } = useToast();
-    const [resolutionSummary, setResolutionSummary] = useState('');
-    const [interimUpdate, setInterimUpdate] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleSupervisorUpdate = async (isFinal: boolean) => {
-        const comment = isFinal ? resolutionSummary : interimUpdate;
-        if (!comment || !role) return;
-        
-        setIsSubmitting(true);
-        try {
-            await submitSupervisorUpdate(feedback.trackingId, role, comment, isFinal);
-            if (isFinal) {
-                setResolutionSummary('');
-                toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
-            } else {
-                setInterimUpdate('');
-                toast({ title: "Update Added" });
-            }
-            onUpdate();
-        } catch(e) {
-            console.error(e);
-            toast({ variant: 'destructive', title: "Update Failed"});
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
-    let title = 'Your Action Required';
-    let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
-
-    if (feedback.status === 'Pending Manager Action') {
-        title = 'Escalation: Review Required';
-        description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
-    }
-    
-    if (role === 'HR Head' && feedback.status === 'Pending HR Action') {
-        return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-t mt-4 bg-background rounded-b-lg">
-                <div className="space-y-3">
-                    <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
-                    <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
-                    <Textarea 
-                        id={`interim-update-${feedback.trackingId}`}
-                        value={interimUpdate}
-                        onChange={(e) => setInterimUpdate(e.target.value)}
-                        rows={3}
-                        placeholder="Add your notes..."
-                        disabled={isSubmitting}
-                    />
-                    <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Add Update
-                    </Button>
-                </div>
-
-                <div className="space-y-3">
-                    <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
-                    <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
-                    <Textarea 
-                        id={`final-resolution-${feedback.trackingId}`}
-                        value={resolutionSummary}
-                        onChange={(e) => setResolutionSummary(e.target.value)}
-                        rows={4}
-                        placeholder="Add your final resolution notes..."
-                        disabled={isSubmitting}
-                    />
-                    <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Submit
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
-
-    return (
-        <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
-            <div className="space-y-2">
-                <Label className="text-base font-semibold">{title}</Label>
-                <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
-            
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
-                <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
-                <Textarea 
-                    id={`interim-update-${feedback.trackingId}`}
-                    value={interimUpdate}
-                    onChange={(e) => setInterimUpdate(e.target.value)}
-                    rows={3}
-                    placeholder="Add your notes..."
-                    disabled={isSubmitting}
-                />
-                <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Update
-                </Button>
-            </div>
-
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
-                <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
-                <Textarea 
-                    id={`final-resolution-${feedback.trackingId}`}
-                    value={resolutionSummary}
-                    onChange={(e) => setResolutionSummary(e.target.value)}
-                    rows={4}
-                    placeholder="Add your final resolution notes..."
-                    disabled={isSubmitting}
-                />
-                <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit
-                </Button>
-            </div>
-        </div>
-    );
-}
-
 
 function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback | OneOnOneHistoryItem, onUpdate: () => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
     const { role } = useRole();
@@ -1114,32 +521,6 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
     
     if (feedback.status === 'To-Do') {
         return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />;
-    }
-    
-    if (role === 'HR Head' && feedback.status === 'Retaliation Claim') {
-        return <RetaliationActionPanel feedback={feedback} onUpdate={onUpdate} handleViewCaseDetails={handleViewCaseDetails} />;
-    }
-
-    if (feedback.isAnonymous && feedback.status === 'Pending HR Action' && (role === 'Manager' || role === 'HR Head')) {
-        return <CollaborativeActionPanel feedback={feedback} onUpdate={onUpdate} />;
-    }
-
-    if (role === 'HR Head' && feedback.status === 'Final Disposition Required') {
-        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
-    }
-    
-    if (feedback.isAnonymous && (feedback.status === 'Pending Manager Action' || feedback.status === 'Pending Anonymous Reply')) {
-        return <AnonymousConcernPanel feedback={feedback} onUpdate={onUpdate} />;
-    }
-    
-    const isIdentifiedConcern = 
-        !feedback.isAnonymous &&
-        (feedback.status === 'Pending Supervisor Action' ||
-         feedback.status === 'Pending Manager Action' ||
-         feedback.status === 'Pending HR Action');
-
-    if (isIdentifiedConcern) {
-        return <IdentifiedConcernPanel feedback={feedback} onUpdate={onUpdate} />;
     }
     
     return null; // No action panel for other statuses
@@ -1202,12 +583,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
 function ActionItemsContent() {
   const [toDoItems, setToDoItems] = useState<Feedback[]>([]);
   const [oneOnOneEscalations, setOneOnOneEscalations] = useState<OneOnOneHistoryItem[]>([]);
-  const [identifiedConcerns, setIdentifiedConcerns] = useState<Feedback[]>([]);
-  const [anonymousConcerns, setAnonymousConcerns] = useState<Feedback[]>([]);
-  const [retaliationClaims, setRetaliationClaims] = useState<Feedback[]>([]);
-  
   const [allClosedItems, setAllClosedItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
-
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
   const accordionRef = useRef<HTMLDivElement>(null);
@@ -1223,9 +599,6 @@ function ActionItemsContent() {
 
         const activeToDoItems: Feedback[] = [];
         const activeOneOnOneEscalations: OneOnOneHistoryItem[] = [];
-        const activeIdentifiedConcerns: Feedback[] = [];
-        const activeAnonymousConcerns: Feedback[] = [];
-        const activeRetaliationClaims: Feedback[] = [];
         
         const localAllClosed: (Feedback | OneOnOneHistoryItem)[] = [];
 
@@ -1260,7 +633,6 @@ function ActionItemsContent() {
                 }
 
             } else { // It's a Feedback item
-                // Exclude cases from "Voice – in Silence" as they are handled on a separate page
                 if (item.source === 'Voice – In Silence') return;
 
                 const finalDispositionEvent = item.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
@@ -1276,9 +648,6 @@ function ActionItemsContent() {
 
                 if (isActionableForRole) {
                     if (item.status === 'To-Do') activeToDoItems.push(item);
-                    else if (item.criticality === 'Retaliation Claim') activeRetaliationClaims.push(item);
-                    else if (item.isAnonymous) activeAnonymousConcerns.push(item);
-                    else activeIdentifiedConcerns.push(item);
                 } else if (isItemClosed && (wasEverInvolved || item.submittedBy === role)) {
                     localAllClosed.push(item);
                 }
@@ -1293,9 +662,6 @@ function ActionItemsContent() {
         
         setToDoItems(activeToDoItems.sort(sortFn));
         setOneOnOneEscalations(activeOneOnOneEscalations.sort(sortFn));
-        setIdentifiedConcerns(activeIdentifiedConcerns.sort(sortFn));
-        setAnonymousConcerns(activeAnonymousConcerns.sort(sortFn));
-        setRetaliationClaims(activeRetaliationClaims.sort(sortFn));
         setAllClosedItems(localAllClosed.sort(sortFn));
 
     } catch (error) {
@@ -1326,9 +692,6 @@ function ActionItemsContent() {
       const allItems: (Feedback | OneOnOneHistoryItem)[] = [
           ...toDoItems, 
           ...oneOnOneEscalations, 
-          ...identifiedConcerns, 
-          ...anonymousConcerns, 
-          ...retaliationClaims, 
           ...allClosedItems
       ];
       
@@ -1449,34 +812,20 @@ function ActionItemsContent() {
               switch (feedbackStatus) {
                   case 'Resolved': return <Badge variant="success">Resolved</Badge>;
                   case 'To-Do': return <Badge variant="default">To-Do</Badge>;
-                  case 'Pending Supervisor Action': return <Badge variant="destructive">Supervisor Action</Badge>;
-                  case 'Pending Manager Action': return <Badge variant="destructive">Manager Action</Badge>;
-                  case 'Pending Employee Acknowledgment': return <Badge variant="destructive">Employee Ack.</Badge>;
-                  case 'Pending HR Action': return <Badge variant="secondary">HR Review</Badge>;
-                  case 'Final Disposition Required': return <Badge variant="destructive">Final Disposition</Badge>;
-                  case 'Pending Identity Reveal': return <Badge variant="secondary">Reveal Requested</Badge>;
-                  case 'Pending Anonymous Reply': return <Badge className="bg-blue-500/20 text-blue-500">Awaiting Reply</Badge>;
-                  case 'Retaliation Claim': return <Badge variant="destructive">Retaliation Claim</Badge>;
                   case 'Closed': return <Badge variant="secondary">Closed</Badge>;
                   default: return <Badge variant="secondary">{feedbackStatus || 'N/A'}</Badge>;
               }
             }
             
             const getTypeBadge = () => {
-                let type: "1-on-1" | "Anonymous" | "Identified" | "To-Do" | "Retaliation" = "Identified";
-                let variant: "default" | "secondary" | "destructive" = "secondary";
+                let type: "1-on-1" | "To-Do" = "1-on-1";
+                let variant: "default" | "secondary" = "secondary";
                 
                 if (isOneOnOne) {
                     type = "1-on-1";
                 } else {
-                    if (item.status === 'To-Do') type = "To-Do";
-                    else if (item.criticality === 'Retaliation Claim' || item.parentCaseId) {
-                        type = "Retaliation";
-                        variant = "destructive";
-                    } else if (item.isAnonymous) {
-                        type = "Anonymous";
-                        variant = "default";
-                    }
+                    type = "To-Do";
+                    variant = "default";
                 }
                 
                 return <Badge variant={variant}>{type}</Badge>;
@@ -1530,9 +879,10 @@ function ActionItemsContent() {
     );
   }
 
-  const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length + identifiedConcerns.length + anonymousConcerns.length + retaliationClaims.length;
+  const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length;
   
   const ClosedItemsSection = () => {
+    if (allClosedItems.length === 0) return null;
     return (
         <div className="mt-8">
             <div className="border rounded-t-lg">
@@ -1580,9 +930,6 @@ function ActionItemsContent() {
             <div className="space-y-6">
                 {renderCategorySection("To-Do Lists", ListTodo, toDoItems)}
                 {renderCategorySection("1-on-1 Escalations", UserCog, oneOnOneEscalations)}
-                {renderCategorySection("Identified Concerns", Users, identifiedConcerns)}
-                {renderCategorySection("Anonymous Concerns", UserX, anonymousConcerns)}
-                {renderCategorySection("Retaliation Claims", Flag, retaliationClaims, true)}
             </div>
           )}
         </CardContent>

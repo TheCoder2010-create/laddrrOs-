@@ -4,10 +4,10 @@
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles } from 'lucide-react';
-import { useRole } from '@/hooks/use-role';
+import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { rewriteText } from '@/ai/flows/rewrite-text-flow';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
@@ -880,8 +881,335 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
     );
 }
 
+function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [revealReason, setRevealReason] = useState('');
+    const [resolution, setResolution] = useState('');
+    const [update, setUpdate] = useState('');
+    const [question, setQuestion] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType }: { items: Feedback[], onUpdate: () => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous' }) {
+    const handleRequestIdentity = async () => {
+        if (!revealReason || !role) return;
+        setIsSubmitting(true);
+        try {
+            await requestIdentityReveal(feedback.trackingId, role, revealReason);
+            setRevealReason('');
+            toast({ title: "Request Submitted", description: "The user has been notified of your request."});
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    const handleAddUpdate = async () => {
+        if (!update || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, update, false);
+            setUpdate('');
+            toast({ title: "Update Added" });
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const handleRequestInformation = async () => {
+        if (!question || !role) return;
+        setIsSubmitting(true);
+        try {
+            await requestAnonymousInformation(feedback.trackingId, role, question);
+            setQuestion('');
+            toast({ title: "Question Submitted", description: "The user has been notified to provide more information." });
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleResolveDirectly = async () => {
+        if (!resolution || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, resolution, true);
+            setResolution('');
+            toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    return (
+        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+            <Label className="text-base font-semibold">Your Action Required</Label>
+            
+            {feedback.status === 'Pending Anonymous Reply' ? (
+                 <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                    <p className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Awaiting User Response</p>
+                    <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Add Update <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Log your investigation steps or notes.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Textarea 
+                                id="interim-update"
+                                value={update}
+                                onChange={(e) => setUpdate(e.target.value)}
+                                rows={3}
+                                className="flex-grow"
+                                placeholder="Log your private notes..."
+                            />
+                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Add Update
+                            </Button>
+                        </div>
+                        
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Additional Information <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Ask a clarifying question. The user will see this and can respond anonymously.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Textarea 
+                                id="ask-question"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                                rows={3}
+                                className="flex-grow"
+                                placeholder="Ask a clarifying question..."
+                            />
+                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-auto w-full">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Send Question
+                            </Button>
+                        </div>
+
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Request Identity <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>If you cannot proceed, explain why you need their identity.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Textarea 
+                                id="revealReason"
+                                value={revealReason}
+                                onChange={(e) => setRevealReason(e.target.value)}
+                                rows={3}
+                                className="flex-grow"
+                                placeholder="Explain why identity is needed..."
+                            />
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button disabled={!revealReason || isSubmitting} className="mt-auto w-full">
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Request Identity Reveal
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
+                                            Acknowledge & Continue
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                             </AlertDialog>
+                        </div>
+                    </div>
+                    
+                    <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Label className="font-medium flex items-center gap-2 cursor-help">
+                                        Resolution <Info className="h-4 w-4 text-muted-foreground" />
+                                    </Label>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <Textarea 
+                            id="resolve-directly"
+                            value={resolution}
+                            onChange={(e) => setResolution(e.target.value)}
+                            rows={4}
+                            placeholder="Propose a resolution..."
+                        />
+                        <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [resolutionSummary, setResolutionSummary] = useState('');
+    const [interimUpdate, setInterimUpdate] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSupervisorUpdate = async (isFinal: boolean) => {
+        const comment = isFinal ? resolutionSummary : interimUpdate;
+        if (!comment || !role) return;
+        
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, comment, isFinal);
+            if (isFinal) {
+                setResolutionSummary('');
+                toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
+            } else {
+                setInterimUpdate('');
+                toast({ title: "Update Added" });
+            }
+            onUpdate();
+        } catch(e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: "Update Failed"});
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    let title = 'Your Action Required';
+    let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
+
+    if (feedback.status === 'Pending Manager Action') {
+        title = 'Escalation: Review Required';
+        description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
+    }
+    
+    if (role === 'HR Head' && feedback.status === 'Pending HR Action') {
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-t mt-4 bg-background rounded-b-lg">
+                <div className="space-y-3">
+                    <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
+                    <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
+                    <Textarea 
+                        id={`interim-update-${feedback.trackingId}`}
+                        value={interimUpdate}
+                        onChange={(e) => setInterimUpdate(e.target.value)}
+                        rows={3}
+                        placeholder="Add your notes..."
+                        disabled={isSubmitting}
+                    />
+                    <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add Update
+                    </Button>
+                </div>
+
+                <div className="space-y-3">
+                    <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
+                    <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
+                    <Textarea 
+                        id={`final-resolution-${feedback.trackingId}`}
+                        value={resolutionSummary}
+                        onChange={(e) => setResolutionSummary(e.target.value)}
+                        rows={4}
+                        placeholder="Add your final resolution notes..."
+                        disabled={isSubmitting}
+                    />
+                    <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+
+    return (
+        <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
+            <div className="space-y-2">
+                <Label className="text-base font-semibold">{title}</Label>
+                <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+            
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
+                <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
+                <Textarea 
+                    id={`interim-update-${feedback.trackingId}`}
+                    value={interimUpdate}
+                    onChange={(e) => setInterimUpdate(e.target.value)}
+                    rows={3}
+                    placeholder="Add your notes..."
+                    disabled={isSubmitting}
+                />
+                <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Add Update
+                </Button>
+            </div>
+
+            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
+                <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
+                <Textarea 
+                    id={`final-resolution-${feedback.trackingId}`}
+                    value={resolutionSummary}
+                    onChange={(e) => setResolutionSummary(e.target.value)}
+                    rows={4}
+                    placeholder="Add your final resolution notes..."
+                    disabled={isSubmitting}
+                />
+                <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+
+function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, isReceivedView }: { items: Feedback[], onUpdate: () => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean }) {
     const { role } = useRole();
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
@@ -935,7 +1263,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType }:
     
     const renderCaseList = (itemsToRender: Feedback[]) => {
         if (itemsToRender.length === 0) {
-             if (concernType === 'anonymous') {
+             if (concernType === 'anonymous' && !isReceivedView) {
                 return (
                     <div className="mt-4 text-center py-8">
                         {notFound && <p className="text-destructive">No submission found with that ID.</p>}
@@ -1003,6 +1331,18 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType }:
                         }
                     }
 
+                    const renderActionPanel = () => {
+                        if (!isReceivedView) return null;
+                        
+                        if (item.isAnonymous) {
+                            return <AnonymousConcernActionPanel feedback={item} onUpdate={onUpdate} />;
+                        } else if (item.criticality !== 'Retaliation Claim') {
+                            return <IdentifiedConcernActionPanel feedback={item} onUpdate={onUpdate} />;
+                        }
+                        
+                        return null; // No action panel for retaliation reports here
+                    };
+
                     return (
                         <AccordionItem value={item.trackingId} key={item.trackingId} id={`accordion-item-${item.trackingId}`}>
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
@@ -1017,16 +1357,16 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType }:
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2 px-4">
-                               {item.status === 'Pending Anonymous Reply' && item.isAnonymous && (
+                               {item.status === 'Pending Anonymous Reply' && !isReceivedView && (
                                    <AnonymousReplyWidget item={item} onUpdate={onUpdate} />
                                )}
-                               {item.status === 'Pending Anonymous Reply' && !item.isAnonymous && (
+                               {item.status === 'Pending Anonymous Reply' && !isReceivedView && !item.isAnonymous && (
                                    <IdentifiedReplyWidget item={item} onUpdate={onUpdate} />
                                )}
-                               {item.status === 'Pending Identity Reveal' && concernType === 'anonymous' && (
+                               {item.status === 'Pending Identity Reveal' && concernType === 'anonymous' && !isReceivedView && (
                                    <RevealIdentityWidget item={item} onUpdate={onUpdate} />
                                )}
-                               {item.status === 'Pending Employee Acknowledgment' && (
+                               {item.status === 'Pending Employee Acknowledgment' && !isReceivedView &&(
                                     <AcknowledgementWidget 
                                         item={item} 
                                         onUpdate={onUpdate}
@@ -1131,6 +1471,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType }:
                                         </div>
                                     </div>
                                 )}
+                                {renderActionPanel()}
                             </AccordionContent>
                         </AccordionItem>
                     );
@@ -1139,9 +1480,9 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType }:
         );
     }
 
-    const itemsToDisplay = concernType === 'anonymous' && trackedCase ? [trackedCase] : items;
+    const itemsToDisplay = concernType === 'anonymous' && trackedCase && !isReceivedView ? [trackedCase] : items;
 
-    if (concernType === 'anonymous') {
+    if (concernType === 'anonymous' && !isReceivedView) {
         return (
             <div className="mt-6">
                  <div className="space-y-4 mt-4">
@@ -1223,9 +1564,11 @@ function MyConcernsContent() {
     const anonymousRaised = allCases.filter(c => c.submittedBy === role && c.isAnonymous);
     const retaliationRaised = allCases.filter(c => c.submittedBy === role && c.criticality === 'Retaliation Claim');
     
-    const identifiedReceived = allCases.filter(c => c.assignedTo?.includes(role) && !c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const anonymousReceived = allCases.filter(c => c.assignedTo?.includes(role) && c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const retaliationReceived = allCases.filter(c => c.assignedTo?.includes(role) && c.criticality === 'Retaliation Claim');
+    const isActionable = (f: Feedback) => f.status !== 'Resolved' && f.status !== 'Closed';
+
+    const identifiedReceived = allCases.filter(c => c.assignedTo?.includes(role!) && !c.isAnonymous && c.criticality !== 'Retaliation Claim' && isActionable(c));
+    const anonymousReceived = allCases.filter(c => c.assignedTo?.includes(role!) && c.isAnonymous && c.criticality !== 'Retaliation Claim' && isActionable(c));
+    const retaliationReceived = allCases.filter(c => c.assignedTo?.includes(role!) && c.criticality === 'Retaliation Claim' && isActionable(c));
 
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
@@ -1259,7 +1602,8 @@ function MyConcernsContent() {
             items={concernsToShow}
             allCases={allCases} 
             concernType={concernType}
-            accordionRef={accordionRef} 
+            accordionRef={accordionRef}
+            isReceivedView={isReceivedView}
         />
     );
   };
