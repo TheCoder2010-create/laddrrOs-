@@ -581,9 +581,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
 
 
 function ActionItemsContent() {
-  const [toDoItems, setToDoItems] = useState<Feedback[]>([]);
-  const [oneOnOneEscalations, setOneOnOneEscalations] = useState<OneOnOneHistoryItem[]>([]);
-  const [allClosedItems, setAllClosedItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
+  const [activeItems, setActiveItems] = useState<(Feedback | OneOnOneHistoryItem)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { role } = useRole();
   const accordionRef = useRef<HTMLDivElement>(null);
@@ -597,59 +595,37 @@ function ActionItemsContent() {
         const fetchedFeedback = await getAllFeedback();
         const history = await getOneOnOneHistory();
 
-        const activeToDoItems: Feedback[] = [];
-        const activeOneOnOneEscalations: OneOnOneHistoryItem[] = [];
-        
-        const localAllClosed: (Feedback | OneOnOneHistoryItem)[] = [];
-
+        const localActiveItems: (Feedback | OneOnOneHistoryItem)[] = [];
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
         
-        const closedStatuses: (FeedbackStatus | CriticalCoachingInsight['status'])[] = ['Resolved', 'Closed', 'resolved'];
-        const finalDispositionEvents = ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"];
-        
-        const retaliationClaimParentIds = new Set(fetchedFeedback.filter(f => f.parentCaseId).map(f => f.parentCaseId));
+        const isActionable = (item: Feedback | OneOnOneHistoryItem) => {
+            if ('analysis' in item) {
+                const insight = item.analysis.criticalCoachingInsight;
+                if (!insight) return false;
+                const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
+                return insight.status !== 'resolved' && !finalDispositionEvent;
+            } else {
+                 const finalDispositionEvent = item.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
+                 return item.status !== 'Resolved' && item.status !== 'Closed' && !finalDispositionEvent;
+            }
+        };
 
         allItems.forEach(item => {
-            let isItemClosed = false;
-            
-            if ('analysis' in item) { // It's a OneOnOneHistoryItem
-                const insight = item.analysis.criticalCoachingInsight;
-                if (!insight) return;
-
-                const finalDispositionEvent = insight.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
-                isItemClosed = closedStatuses.includes(insight.status) || !!finalDispositionEvent;
-                
-                const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
-                const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
-                const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-                
-                const isActionable = isAmMatch || isManagerMatch || isHrMatch;
-                const wasEverInvolved = insight.auditTrail?.some(e => e.actor === role) ?? false;
-
-                if (isActionable) {
-                    activeOneOnOneEscalations.push(item);
-                } else if (isItemClosed && wasEverInvolved) {
-                    localAllClosed.push(item);
-                }
-
-            } else { // It's a Feedback item
-                if (item.source === 'Voice – In Silence') return;
-
-                const finalDispositionEvent = item.auditTrail?.find(e => finalDispositionEvents.includes(e.event));
-                isItemClosed = closedStatuses.includes(item.status as any) || !!finalDispositionEvent;
-
-                const isActionableForRole = !isItemClosed && (item.assignedTo?.includes(role as Role) ?? false);
-                let wasEverInvolved = item.auditTrail?.some(e => e.actor === role) ?? false;
-
-                // For HR Head, if they are reviewing a child retaliation claim, they are "involved" in the parent.
-                if (role === 'HR Head' && retaliationClaimParentIds.has(item.trackingId)) {
-                    wasEverInvolved = true;
-                }
-
-                if (isActionableForRole) {
-                    if (item.status === 'To-Do') activeToDoItems.push(item);
-                } else if (isItemClosed && (wasEverInvolved || item.submittedBy === role)) {
-                    localAllClosed.push(item);
+            if (isActionable(item)) {
+                if ('analysis' in item) {
+                     const insight = item.analysis.criticalCoachingInsight;
+                     if (!insight) return;
+                     const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
+                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
+                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+                     if(isAmMatch || isManagerMatch || isHrMatch) {
+                        localActiveItems.push(item);
+                     }
+                } else {
+                    // Only show To-Do items on this page now. Other concerns are on My Concerns page.
+                    if (item.status === 'To-Do' && item.assignedTo?.includes(role as Role)) {
+                        localActiveItems.push(item);
+                    }
                 }
             }
         });
@@ -660,9 +636,7 @@ function ActionItemsContent() {
             return dateB.getTime() - dateA.getTime();
         };
         
-        setToDoItems(activeToDoItems.sort(sortFn));
-        setOneOnOneEscalations(activeOneOnOneEscalations.sort(sortFn));
-        setAllClosedItems(localAllClosed.sort(sortFn));
+        setActiveItems(localActiveItems.sort(sortFn));
 
     } catch (error) {
       console.error("Failed to fetch feedback", error);
@@ -689,11 +663,7 @@ function ActionItemsContent() {
       e.preventDefault();
       e.stopPropagation();
       
-      const allItems: (Feedback | OneOnOneHistoryItem)[] = [
-          ...toDoItems, 
-          ...oneOnOneEscalations, 
-          ...allClosedItems
-      ];
+      const allItems: (Feedback | OneOnOneHistoryItem)[] = [...activeItems];
       
       let caseItem = allItems.find(item => ('analysis' in item ? item.id : item.trackingId) === caseId);
 
@@ -731,6 +701,9 @@ function ActionItemsContent() {
     );
   }
   
+  const toDoItems = activeItems.filter(item => 'actionItems' in item && item.status === 'To-Do');
+  const oneOnOneEscalations = activeItems.filter(item => 'analysis' in item);
+
   const renderCategorySection = (
     title: string,
     icon: React.ElementType,
@@ -879,27 +852,7 @@ function ActionItemsContent() {
     );
   }
 
-  const allActiveItemsCount = toDoItems.length + oneOnOneEscalations.length;
-  
-  const ClosedItemsSection = () => {
-    if (allClosedItems.length === 0) return null;
-    return (
-        <div className="mt-8">
-            <div className="border rounded-t-lg">
-                <div className="flex w-full items-center justify-between px-4 py-3 text-lg font-semibold text-muted-foreground border-b bg-muted/30">
-                    <div className="flex items-center gap-3">
-                        <FolderClosed />
-                        Closed Items
-                    </div>
-                </div>
-            </div>
-            <div className="border border-t-0 rounded-b-lg p-2 md:p-4 space-y-4">
-               {renderFeedbackList(allClosedItems)}
-            </div>
-        </div>
-    );
-  };
-
+  const allActiveItemsCount = activeItems.length;
 
   return (
     <div className="p-4 md:p-8" ref={accordionRef}>
@@ -915,7 +868,7 @@ function ActionItemsContent() {
             <ListTodo className="inline-block mr-3 h-8 w-8" /> Action Items
           </CardTitle>
            <CardDescription className="text-lg text-muted-foreground">
-            Cases and to-do lists assigned to you for review and action.
+            Actionable escalations and to-do lists assigned to you.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -929,13 +882,12 @@ function ActionItemsContent() {
           ) : (
             <div className="space-y-6">
                 {renderCategorySection("To-Do Lists", ListTodo, toDoItems)}
-                {renderCategorySection("1-on-1 Escalations", UserCog, oneOnOneEscalations)}
+                {renderCategorySection("1-on-1 Escalations", UserCog, oneOnOneEscalations, true)}
             </div>
           )}
         </CardContent>
       </Card>
       
-      {allClosedItems.length > 0 && <ClosedItemsSection />}
     </div>
   );
 }

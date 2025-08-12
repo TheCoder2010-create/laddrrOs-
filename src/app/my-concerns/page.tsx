@@ -1463,7 +1463,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     </div>
                                 )}
 
-                                {canReportRetaliation && (
+                                {canReportRetaliation && !isCaseClosed && (
                                     <div className="pt-4 border-t border-dashed">
                                         <Dialog open={retaliationDialogOpen && activeCaseId === item.trackingId} onOpenChange={(open) => {
                                             if (!open) setRetaliationDialogOpen(false);
@@ -1637,12 +1637,18 @@ function MyConcernsContent() {
     const anonymousRaised = allCases.filter(c => c.submittedBy === role && c.isAnonymous);
     const retaliationRaised = allCases.filter(c => c.submittedBy === role && c.criticality === 'Retaliation Claim');
     
-    const isActionable = (f: Feedback) => f.status !== 'Resolved' && f.status !== 'Closed';
+    const wasInvolved = (f: Feedback) => f.auditTrail?.some(e => e.actor === role) ?? false;
+    
+    const received = allCases.filter(f => {
+        const isAssigned = f.assignedTo?.includes(role!);
+        // A supervisor was "involved" if they were ever assigned, even if the case is now closed.
+        return isAssigned || (wasInvolved(f) && !f.assignedTo?.includes(role!));
+    });
 
-    const identifiedReceived = allCases.filter(c => c.assignedTo?.includes(role!) && !c.isAnonymous && c.criticality !== 'Retaliation Claim' && isActionable(c));
-    const anonymousReceived = allCases.filter(c => c.assignedTo?.includes(role!) && c.isAnonymous && c.criticality !== 'Retaliation Claim' && isActionable(c));
-    const retaliationReceived = allCases.filter(c => c.assignedTo?.includes(role!) && c.criticality === 'Retaliation Claim' && isActionable(c));
-
+    const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
+    
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
   
@@ -1703,12 +1709,7 @@ function MyConcernsContent() {
 
   const getSectionTitle = () => {
     if (viewMode === 'received') return 'Received Concerns';
-    switch (activeTab) {
-        case 'identity-revealed': return 'My Raised Concerns';
-        case 'anonymous': return 'My Anonymous Submissions';
-        case 'retaliation': return 'My Retaliation Reports';
-        default: return 'My Submissions';
-    }
+    return 'My Submissions';
   };
 
   return (
@@ -1784,7 +1785,7 @@ function MyConcernsContent() {
                     {isSupervisor && (
                         <div className="flex items-center space-x-2">
                             <Label htmlFor="view-mode-toggle" className="text-sm text-muted-foreground">
-                                {viewMode === 'raised' ? 'Showing Raised' : 'Showing Received'}
+                                {viewMode === 'raised' ? 'Showing My Raised' : 'Showing Received by Me'}
                             </Label>
                             <Switch
                                 id="view-mode-toggle"
@@ -1820,7 +1821,4 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
-
-
 

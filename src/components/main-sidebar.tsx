@@ -61,13 +61,12 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
       // Action items count
       let totalActionItems = 0;
-      // Regular feedback items (excluding Voice-in-Silence)
+      
+      // Active To-Do lists
       totalActionItems += feedback.filter(f => {
          const isAssigned = f.assignedTo?.includes(currentRole as any);
-         const isActionable = f.status !== 'Resolved' && f.status !== 'Closed';
-         const isNotToDo = f.status !== 'To-Do';
-         const isNotVoiceInSilence = f.source !== 'Voice – In Silence';
-         return isAssigned && isActionable && isNotToDo && isNotVoiceInSilence;
+         const isToDo = f.status === 'To-Do';
+         return isAssigned && isToDo;
       }).length;
 
       // Escalated 1-on-1 insights
@@ -99,7 +98,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       totalMessages += feedback.filter(f => {
         const isPendingAck = f.status === 'Pending Acknowledgement';
         const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
-        return (isPendingAck || isIdentifiedAck) && f.assignedTo?.includes(currentRole as any);
+        const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
+        return (isPendingAck || isIdentifiedAck) && isAssignedToMe;
       }).length;
       
       setMessageCount(totalMessages);
