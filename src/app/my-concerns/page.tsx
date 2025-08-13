@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
@@ -1377,7 +1378,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
         setNotFound(false);
         try {
             const [foundCase] = await getFeedbackByIds([trackingIdInput]);
-            if (foundCase && foundCase.isAnonymous) {
+            if (foundCase) {
                 setTrackedCase(foundCase);
             } else {
                 setNotFound(true);
@@ -1554,13 +1555,13 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     </div>
                                 )}
                                  
-                                {retaliationCase && (role === 'HR Head' || isComplainant) && (
+                                {retaliationCase && (isComplainant || role === 'HR Head') && (
                                     <div className="mt-4 pt-4 border-t-2 border-destructive/50 space-y-4">
                                         <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
                                             <GitMerge /> Linked Retaliation Claim 
                                         </h4>
                                         
-                                        {retaliationCase.status === 'Pending Employee Acknowledgment' && (
+                                        {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
                                             <AcknowledgementWidget 
                                                 item={retaliationCase} 
                                                 onUpdate={onUpdate}
@@ -1642,16 +1643,16 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
 
     return (
         <>
-            {viewingCaseDetails && (
-                <Dialog open={!!viewingCaseDetails} onOpenChange={() => setViewingCaseDetails(null)}>
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Case Details: {viewingCaseDetails.subject}</DialogTitle>
-                            <DialogDescription>
-                                Tracking ID: {viewingCaseDetails.trackingId}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4 max-h-[70vh] overflow-y-auto pr-4">
+            <Dialog open={!!viewingCaseDetails} onOpenChange={setViewingCaseDetails}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Case Details: {viewingCaseDetails?.subject}</DialogTitle>
+                        <DialogDescription>
+                            Tracking ID: {viewingCaseDetails?.trackingId}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 max-h-[70vh] overflow-y-auto pr-4">
+                        {viewingCaseDetails && (
                            <CaseHistory 
                                 trail={viewingCaseDetails.auditTrail} 
                                 handleScrollToCase={handleScrollToCase}
@@ -1664,10 +1665,10 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     isCaseClosed: viewingCaseDetails.status === 'Resolved' || viewingCaseDetails.status === 'Closed'
                                 })}
                             />
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            )}
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
             {renderCaseList(itemsToDisplay)}
         </>
     )
