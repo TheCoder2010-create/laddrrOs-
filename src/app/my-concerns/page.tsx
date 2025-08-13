@@ -2,11 +2,11 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText, ChevronsRight } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -801,17 +801,23 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
 }
 
 const auditEventIcons = {
-    'Submitted': FileCheck,
-    'Retaliation Claim Submitted': Flag,
-    'Retaliation Claim Filed': Flag,
-    'Identity Revealed': User,
-    'Identity Reveal Requested': UserX,
-    'Information Requested': MessageCircleQuestion,
-    'Anonymous User Responded': MessageSquare,
-    'Resolved': CheckCircle,
-    'Update Added': MessageSquare,
-    'default': Info,
-}
+    'Submitted': { icon: FileCheck, color: 'text-muted-foreground' },
+    'Retaliation Claim Submitted': { icon: Flag, color: 'text-destructive' },
+    'Retaliation Claim Filed': { icon: Flag, color: 'text-destructive' },
+    'Identity Revealed': { icon: User, color: 'text-blue-500' },
+    'Identity Reveal Requested': { icon: UserX, color: 'text-yellow-500' },
+    'Information Requested': { icon: MessageCircleQuestion, color: 'text-blue-500' },
+    'Anonymous User Responded': { icon: MessageSquare, color: 'text-blue-500' },
+    'Resolved': { icon: CheckCircle, color: 'text-green-500' },
+    'Resolution Submitted': { icon: ChevronsRight, color: 'text-green-500' },
+    'HR Resolution Submitted': { icon: ShieldCheck, color: 'text-green-500' },
+    'HR Responded to Retaliation Claim': { icon: ShieldCheck, color: 'text-green-500' },
+    'Update Added': { icon: MessageSquare, color: 'text-muted-foreground' },
+    'Employee Escalated Concern': { icon: AlertTriangle, color: 'text-orange-500' },
+    'Employee Accepted Resolution': { icon: CheckCircle, color: 'text-green-500' },
+    'Final Disposition': { icon: FolderClosed, color: 'text-destructive' },
+    'default': { icon: Info, color: 'text-muted-foreground' },
+};
 
 const formatEventTitle = (event: string) => {
   const prefixesToRemove = ['Supervisor ', 'Employee ', 'Manager ', 'HR ', 'AM '];
@@ -840,7 +846,8 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
                  <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
                     {trail.map((event, index) => {
-                        const Icon = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
+                        const eventConfig = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
+                        const Icon = eventConfig.icon;
                         
                         const renderDetails = () => {
                             if (!event.details) return null;
@@ -863,7 +870,7 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
                         return (
                             <div key={index} className="flex items-start gap-4 relative">
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
-                                    <Icon className="h-5 w-5 text-muted-foreground" />
+                                    <Icon className={cn("h-5 w-5", eventConfig.color)} />
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
@@ -1354,12 +1361,12 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
              <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
                  {itemsToRender.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
-                    const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
-                    const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
+                    const relevantResponderEvents = ['Resolution Submitted', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim'];
+                    const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantResponderEvents.includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
                     
                     const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
-                    const canReportRetaliation = !item.isAnonymous && !isReceivedView && item.submittedBy === role;
+                    const canReportRetaliation = !item.isAnonymous && item.submittedBy === role && !isReceivedView;
 
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
@@ -1630,7 +1637,7 @@ function MyConcernsContent() {
     });
   };
 
-  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived } = useMemo(() => {
+  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived } = (() => {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
 
     const identifiedRaised = allCases.filter(c => c.submittedBy === role && !c.isAnonymous && c.criticality !== 'Retaliation Claim');
@@ -1650,7 +1657,7 @@ function MyConcernsContent() {
     const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
     
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
-  }, [allCases, role]);
+  })();
   
   const renderSubmissions = () => {
     const isReceivedView = isSupervisor && viewMode === 'received';
@@ -1821,4 +1828,5 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 

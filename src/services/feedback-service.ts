@@ -1132,7 +1132,7 @@ export async function submitSupervisorUpdate(trackingId: string, actor: Role, co
         item.status = 'Pending Employee Acknowledgment';
         item.assignedTo = []; // Unset assignee so it leaves the manager's queue
         
-        const eventName = actor === 'HR Head' ? 'HR Resolution Submitted' : 'Supervisor Responded';
+        const eventName = actor === 'HR Head' ? 'HR Resolution Submitted' : 'Resolution Submitted';
         item.auditTrail?.push({
             event: eventName,
             timestamp: new Date(),
@@ -1164,7 +1164,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     const item = allFeedback[feedbackIndex];
     const actor = item.submittedBy || 'Anonymous';
     
-    const relevantEvents = ['Supervisor Responded', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
+    const relevantEvents = ['Resolution Submitted', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
     const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
     const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
@@ -1520,4 +1520,5 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
