@@ -1139,9 +1139,21 @@ export async function submitSupervisorUpdate(trackingId: string, actor: Role, co
     if (isFinal) {
         item.supervisorUpdate = comment;
         item.status = 'Pending Employee Acknowledgment';
-        item.assignedTo = []; // Unset assignee so it leaves the manager's queue
         
-        const eventName = actor === 'HR Head' ? 'HR Resolution Submitted' : 'Resolution Submitted';
+        // Correctly assign the case back to the complainant for retaliation claims
+        if (item.criticality === 'Retaliation Claim' && item.submittedBy) {
+            item.assignedTo = [item.submittedBy];
+        } else {
+             item.assignedTo = []; // Unset assignee so it leaves the manager's queue
+        }
+        
+        let eventName = 'Resolution Submitted';
+        if (actor === 'HR Head') {
+            eventName = item.criticality === 'Retaliation Claim' 
+                ? 'HR Responded to Retaliation Claim' 
+                : 'HR Resolution Submitted';
+        }
+
         item.auditTrail?.push({
             event: eventName,
             timestamp: new Date(),
@@ -1529,6 +1541,7 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
 
