@@ -904,9 +904,11 @@ const formatEventTitle = (event: string) => {
   return formattedEvent;
 };
 
-function CaseHistory({ trail, handleViewCaseDetails, onDownload }: { trail: Feedback['auditTrail'], handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
-    if (!trail || trail.length === 0) return null;
+function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedback, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
     const { role } = useRole();
+    const trail = item.auditTrail;
+
+    if (!trail || trail.length === 0) return null;
 
     return (
         <div className="space-y-2">
@@ -927,16 +929,21 @@ function CaseHistory({ trail, handleViewCaseDetails, onDownload }: { trail: Feed
                         const renderDetails = () => {
                             if (!event.details) return null;
 
+                            // For HR Head, make the parent case ID a clickable link.
+                            if (role === 'HR Head' && item.parentCaseId) {
+                                const parentRegex = new RegExp(item.parentCaseId);
+                                if (parentRegex.test(event.details)) {
+                                    return (
+                                        <div className="text-sm text-muted-foreground mt-1">
+                                            Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, item.parentCaseId!)} className="font-mono text-primary hover:underline">{item.parentCaseId}</a>.
+                                        </div>
+                                    );
+                                }
+                            }
+                            
+                            // For regular users, render the child case link if present.
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
                             const childMatch = event.details.match(childRegex);
-
-                            const parentRegex = /(Claim submitted for case )([a-f0-9-]+)/;
-                            const parentMatch = event.details.match(parentRegex);
-
-                            if (parentMatch && role === 'HR Head') {
-                                const parentId = parentMatch[2];
-                                return <div className="text-sm text-muted-foreground mt-1">Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
-                            }
                             if (childMatch) {
                                 const childId = childMatch[2];
                                 return (
@@ -1336,7 +1343,7 @@ function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedbac
     );
 }
 
-function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, isReceivedView }: { items: Feedback[], onUpdate: () => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean }) {
+function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, isReceivedView }: { items: Feedback[], onUpdate: (trackingId?: string) => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean }) {
     const { role } = useRole();
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
@@ -1459,9 +1466,9 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                         if (!isReceivedView) return null;
                         
                         if (item.isAnonymous) {
-                            return <AnonymousConcernActionPanel feedback={item} onUpdate={onUpdate} />;
+                            return <AnonymousConcernActionPanel feedback={item} onUpdate={() => onUpdate()} />;
                         } else {
-                            return <IdentifiedConcernActionPanel feedback={item} onUpdate={onUpdate} />;
+                            return <IdentifiedConcernActionPanel feedback={item} onUpdate={() => onUpdate()} />;
                         }
                     };
 
@@ -1480,18 +1487,18 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2 px-4">
                                {item.status === 'Pending Anonymous Reply' && !isReceivedView && (
-                                   <AnonymousReplyWidget item={item} onUpdate={onUpdate} />
+                                   <AnonymousReplyWidget item={item} onUpdate={() => onUpdate()} />
                                )}
                                {item.status === 'Pending Anonymous Reply' && !isReceivedView && !item.isAnonymous && (
-                                   <IdentifiedReplyWidget item={item} onUpdate={onUpdate} />
+                                   <IdentifiedReplyWidget item={item} onUpdate={() => onUpdate()} />
                                )}
                                {item.status === 'Pending Identity Reveal' && concernType === 'anonymous' && !isReceivedView && (
-                                   <RevealIdentityWidget item={item} onUpdate={onUpdate} />
+                                   <RevealIdentityWidget item={item} onUpdate={() => onUpdate()} />
                                )}
                                {item.status === 'Pending Employee Acknowledgment' && !isReceivedView &&(
                                     <AcknowledgementWidget 
                                         item={item} 
-                                        onUpdate={onUpdate}
+                                        onUpdate={() => onUpdate()}
                                         title="Action Required: Acknowledge Response"
                                         description="A response has been provided for your concern. Please review and provide your feedback."
                                         responderEventActor={responderEvent?.actor}
@@ -1503,7 +1510,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.message}</p>
                                 </div>
                                
-                                <CaseHistory trail={item.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(item)} />
+                                <CaseHistory item={item} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(item)} />
                                 
                                  {item.resolution && (
                                     <div className="space-y-2">
@@ -1551,7 +1558,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                         {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
                                             <AcknowledgementWidget 
                                                 item={retaliationCase} 
-                                                onUpdate={onUpdate}
+                                                onUpdate={() => onUpdate()}
                                                 title="Action Required: Acknowledge HR Response"
                                                 description="HR has responded to your retaliation claim. Please review their resolution."
                                                 responderEventActor={retaliationResponderEvent?.actor}
@@ -1590,7 +1597,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                 </div>
                                             )}
 
-                                           <CaseHistory trail={retaliationCase.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
+                                           <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
 
                                         </div>
                                     </div>
@@ -1641,7 +1648,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     <div className="py-4 max-h-[70vh] overflow-y-auto pr-4">
                         {viewingCaseDetails && (
                            <CaseHistory 
-                                trail={viewingCaseDetails.auditTrail} 
+                                item={viewingCaseDetails} 
                                 handleViewCaseDetails={handleViewCaseDetails}
                                 onDownload={() => downloadAuditTrailPDF({
                                     title: viewingCaseDetails.subject,
@@ -1727,20 +1734,28 @@ function MyConcernsContent() {
     const anonymousRaised = raised.filter(c => c.isAnonymous);
     const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId); // Only show top-level reports here
     
-    const visibleReceivedCases = allCases.filter(f => {
-        if (f.criticality === 'Retaliation Claim') {
-            return role === 'HR Head';
-        }
-        
+    // Received concerns
+    const received: Feedback[] = [];
+    allCases.forEach(f => {
         const isAssigned = f.assignedTo?.includes(role!);
         const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
+
+        // Special rule for Retaliation Claims: only HR Head sees them in the "received" view.
+        if (f.criticality === 'Retaliation Claim') {
+            if (role === 'HR Head') {
+                received.push(f);
+            }
+            return; // Skip for other roles
+        }
         
-        return isAssigned || isInvolvedInClosedCase;
+        if (isAssigned || isInvolvedInClosedCase) {
+            received.push(f);
+        }
     });
 
-    const identifiedReceived = visibleReceivedCases.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const anonymousReceived = visibleReceivedCases.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const retaliationReceived = visibleReceivedCases.filter(c => c.criticality === 'Retaliation Claim');
+    const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim'); // This will only have items if role is HR Head
     
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
@@ -1926,3 +1941,4 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
