@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, ChangeEvent, useRef } from 'react';
+import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1203,55 +1203,11 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
             ? 'This is a high-priority retaliation claim requiring your direct investigation and resolution.'
             : 'This concern has been escalated through all tiers and now requires your final resolution.';
 
-        return (
-            <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
-                <div className="space-y-2">
-                    <Label className="text-base font-semibold">{title}</Label>
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-                        <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
-                        <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
-                        <Textarea 
-                            id={`interim-update-${feedback.trackingId}`}
-                            value={interimUpdate}
-                            onChange={(e) => setInterimUpdate(e.target.value)}
-                            rows={3}
-                            placeholder="Add your notes..."
-                            disabled={isSubmitting}
-                        />
-                        <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Add Update
-                        </Button>
-                    </div>
-
-                    <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-                        <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
-                        <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
-                        <Textarea 
-                            id={`final-resolution-${feedback.trackingId}`}
-                            value={resolutionSummary}
-                            onChange={(e) => setResolutionSummary(e.target.value)}
-                            rows={4}
-                            placeholder="Add your final resolution notes..."
-                            disabled={isSubmitting}
-                        />
-                        <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
     }
-
 
     return (
         <div className="mt-4 space-y-4">
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
                 <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
                 <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
                 <Textarea 
@@ -1301,6 +1257,8 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     
     const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
         e.preventDefault();
+        e.stopPropagation();
+        
         const caseElement = accordionRef.current?.querySelector(`#accordion-item-${caseId}`);
         caseElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         
@@ -1360,19 +1318,20 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantResponderEvents.includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
                     
-                    const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
-                    const canReportRetaliation = !item.isAnonymous && item.submittedBy === role && !isReceivedView && !isCaseClosed;
+                    const canReportRetaliation = !item.isAnonymous && item.submittedBy === role && !isReceivedView;
 
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
                     
                     const handleDownload = (itemToDownload: Feedback) => {
+                        const isCaseClosed = itemToDownload.status === 'Resolved' || itemToDownload.status === 'Closed';
                         downloadAuditTrailPDF({
                             title: itemToDownload.subject,
                             trackingId: itemToDownload.trackingId,
                             initialMessage: itemToDownload.message,
                             trail: itemToDownload.auditTrail || [],
-                            finalResolution: itemToDownload.resolution
+                            finalResolution: itemToDownload.resolution,
+                            isCaseClosed: isCaseClosed,
                         });
                     };
 
@@ -1632,10 +1591,11 @@ function MyConcernsContent() {
     });
   };
 
-  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived } = (() => {
+  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived } = useMemo(() => {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
     
     const wasInvolved = (f: Feedback) => f.auditTrail?.some(e => e.actor === role) ?? false;
+    const currentUserName = roleUserMapping[role]?.name;
 
     // Raised concerns
     const raised = allCases.filter(c => c.submittedBy === role);
@@ -1655,7 +1615,7 @@ function MyConcernsContent() {
     const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
     
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
-  })();
+  }, [allCases, role]);
   
   const renderSubmissions = () => {
     const isReceivedView = isSupervisor && viewMode === 'received';
@@ -1802,7 +1762,9 @@ function MyConcernsContent() {
                 </div>
             </CardHeader>
             <CardContent className="pt-0">
-                {renderSubmissions()}
+                 <div className="mt-4">
+                    {renderSubmissions()}
+                </div>
             </CardContent>
         </Card>
     </div>
@@ -1826,6 +1788,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
