@@ -734,6 +734,7 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
     const [description, setDescription] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -769,23 +770,38 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="retaliation-description">Description of Incident</Label>
-                <Textarea
-                    id="retaliation-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe the incident in detail..."
-                    rows={8}
-                    required
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="retaliation-file">Attach Evidence (Optional)</Label>
-                <Input
-                    id="retaliation-file"
-                    type="file"
-                    onChange={handleFileChange}
-                />
-                <p className="text-xs text-muted-foreground">You can attach screenshots, documents, or audio recordings.</p>
+                <div className="relative">
+                    <Textarea
+                        id="retaliation-description"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Describe the incident in detail..."
+                        rows={8}
+                        required
+                        className="pr-10"
+                    />
+                    <Input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        onChange={handleFileChange} 
+                    />
+                    <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
+                        onClick={() => fileInputRef.current?.click()}
+                        aria-label="Attach file"
+                    >
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
+                </div>
+                {file && (
+                    <p className="text-sm text-muted-foreground">
+                        Attached: <span className="font-medium text-primary">{file.name}</span>
+                    </p>
+                )}
             </div>
             <DialogFooter>
                 <DialogClose asChild>
@@ -1156,26 +1172,36 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
 }
 
 function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    if (feedback.status === 'Final Disposition Required') {
+        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+
+    return (
+        <div className="mt-4 space-y-4">
+             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                 <AddUpdatePanel feedback={feedback} onUpdate={onUpdate} />
+             </div>
+             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                <SubmitResolutionPanel feedback={feedback} onUpdate={onUpdate} />
+             </div>
+        </div>
+    );
+}
+
+function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
-    const [resolutionSummary, setResolutionSummary] = useState('');
     const [interimUpdate, setInterimUpdate] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSupervisorUpdate = async (isFinal: boolean) => {
-        const comment = isFinal ? resolutionSummary : interimUpdate;
-        if (!comment || !role) return;
+    const handleSupervisorUpdate = async () => {
+        if (!interimUpdate || !role) return;
         
         setIsSubmitting(true);
         try {
-            await submitSupervisorUpdate(feedback.trackingId, role, comment, isFinal);
-            if (isFinal) {
-                setResolutionSummary('');
-                toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
-            } else {
-                setInterimUpdate('');
-                toast({ title: "Update Added" });
-            }
+            await submitSupervisorUpdate(feedback.trackingId, role, interimUpdate, false);
+            setInterimUpdate('');
+            toast({ title: "Update Added" });
             onUpdate();
         } catch(e) {
             console.error(e);
@@ -1185,64 +1211,69 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
         }
     }
 
-    if (feedback.status === 'Final Disposition Required' && role === 'HR Head') {
-        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
-    }
-
-    let title = 'Your Action Required';
-    let description = "A concern requires your attention. You can add interim updates or submit a final resolution for the employee's acknowledgment.";
-
-    if (feedback.status === 'Pending Manager Action') {
-        title = 'Escalation: Review Required';
-        description = `This concern has been escalated to you as the ${role}. Please review the case history, add updates as needed, and provide your final resolution summary.`;
-    }
-    
-    if (role === 'HR Head' && (feedback.status === 'Pending HR Action' || feedback.criticality === 'Retaliation Claim')) {
-        title = feedback.criticality === 'Retaliation Claim' ? 'Retaliation Claim Review' : 'Final HR Review';
-        description = feedback.criticality === 'Retaliation Claim' 
-            ? 'This is a high-priority retaliation claim requiring your direct investigation and resolution.'
-            : 'This concern has been escalated through all tiers and now requires your final resolution.';
-
-    }
-
     return (
-        <div className="mt-4 space-y-4">
-             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
-                <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
-                <Textarea 
-                    id={`interim-update-${feedback.trackingId}`}
-                    value={interimUpdate}
-                    onChange={(e) => setInterimUpdate(e.target.value)}
-                    rows={3}
-                    placeholder="Add your notes..."
-                    disabled={isSubmitting}
-                />
-                <Button onClick={() => handleSupervisorUpdate(false)} disabled={!interimUpdate || isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Update
-                </Button>
-            </div>
-
-            <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
-                <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
-                <Textarea 
-                    id={`final-resolution-${feedback.trackingId}`}
-                    value={resolutionSummary}
-                    onChange={(e) => setResolutionSummary(e.target.value)}
-                    rows={4}
-                    placeholder="Add your final resolution notes..."
-                    disabled={isSubmitting}
-                />
-                <Button onClick={() => handleSupervisorUpdate(true)} disabled={!resolutionSummary || isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit
-                </Button>
-            </div>
-        </div>
+        <>
+            <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
+            <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
+            <Textarea 
+                id={`interim-update-${feedback.trackingId}`}
+                value={interimUpdate}
+                onChange={(e) => setInterimUpdate(e.target.value)}
+                rows={3}
+                placeholder="Add your notes..."
+                disabled={isSubmitting}
+            />
+            <Button onClick={handleSupervisorUpdate} disabled={!interimUpdate || isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add Update
+            </Button>
+        </>
     );
 }
+
+function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [resolutionSummary, setResolutionSummary] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const handleSupervisorUpdate = async () => {
+        if (!resolutionSummary || !role) return;
+        
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, resolutionSummary, true);
+            setResolutionSummary('');
+            toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
+            onUpdate();
+        } catch(e) {
+            console.error(e);
+            toast({ variant: 'destructive', title: "Update Failed"});
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+     return (
+        <>
+            <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
+            <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
+            <Textarea 
+                id={`final-resolution-${feedback.trackingId}`}
+                value={resolutionSummary}
+                onChange={(e) => setResolutionSummary(e.target.value)}
+                rows={4}
+                placeholder="Add your final resolution notes..."
+                disabled={isSubmitting}
+            />
+            <Button onClick={handleSupervisorUpdate} disabled={!resolutionSummary || isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit
+            </Button>
+        </>
+    );
+}
+
 
 
 function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, isReceivedView }: { items: Feedback[], onUpdate: () => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean }) {
@@ -1314,17 +1345,18 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
              <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
                  {itemsToRender.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
-                    const relevantResponderEvents = ['Resolution Submitted', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim'];
+                    const relevantResponderEvents = ['Resolution Submitted', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantResponderEvents.includes(e.event));
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
                     
-                    const canReportRetaliation = !item.isAnonymous && item.submittedBy === role && !isReceivedView;
+                    const isComplainant = item.submittedBy === role;
+                    const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
+                    const canReportRetaliation = !item.isAnonymous && isComplainant && !isReceivedView;
 
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
                     
                     const handleDownload = (itemToDownload: Feedback) => {
-                        const isCaseClosed = itemToDownload.status === 'Resolved' || itemToDownload.status === 'Closed';
                         downloadAuditTrailPDF({
                             title: itemToDownload.subject,
                             trackingId: itemToDownload.trackingId,
@@ -1550,7 +1582,6 @@ function MyConcernsContent() {
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const accordionRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState("identity-revealed");
   const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
 
   const [showIdDialog, setShowIdDialog] = useState(false);
@@ -1595,7 +1626,6 @@ function MyConcernsContent() {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
     
     const wasInvolved = (f: Feedback) => f.auditTrail?.some(e => e.actor === role) ?? false;
-    const currentUserName = roleUserMapping[role]?.name;
 
     // Raised concerns
     const raised = allCases.filter(c => c.submittedBy === role);
@@ -1617,28 +1647,30 @@ function MyConcernsContent() {
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
   
-  const renderSubmissions = () => {
+  const getSectionTitle = () => {
+    if (viewMode === 'received') return 'Received Concerns';
+    return 'My Submissions';
+  };
+
+  const renderSubmissions = (concernType: 'identity-revealed' | 'anonymous' | 'retaliation') => {
     const isReceivedView = isSupervisor && viewMode === 'received';
     
     let concernsToShow;
-    let concernType: 'other' | 'anonymous' | 'retaliation' = 'other';
-    let noItemsMessage = "You have no concerns in this view.";
+    let submissionType: 'other' | 'anonymous' | 'retaliation' = 'other';
+    let noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} concerns in this category.`;
     
-    switch (activeTab) {
+    switch (concernType) {
         case 'identity-revealed':
             concernsToShow = isReceivedView ? identifiedReceived : identifiedRaised;
-            concernType = 'other';
-            noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} identified concerns.`;
+            submissionType = 'other';
             break;
         case 'anonymous':
             concernsToShow = isReceivedView ? anonymousReceived : anonymousRaised;
-            concernType = 'anonymous';
-            noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} anonymous concerns.`;
+            submissionType = 'anonymous';
             break;
         case 'retaliation':
             concernsToShow = isReceivedView ? retaliationReceived : retaliationRaised;
-            concernType = 'retaliation';
-            noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} retaliation reports.`;
+            submissionType = 'retaliation';
             break;
         default:
             concernsToShow = [];
@@ -1654,16 +1686,16 @@ function MyConcernsContent() {
                 onUpdate={handleCaseSubmitted} 
                 items={concernsToShow}
                 allCases={allCases} 
-                concernType={concernType}
+                concernType={submissionType}
                 accordionRef={accordionRef}
                 isReceivedView={isReceivedView}
             />
-            {concernsToShow.length === 0 && activeTab !== 'anonymous' && (
+            {concernsToShow.length === 0 && (concernType !== 'anonymous' || isReceivedView) && (
                  <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground">{noItemsMessage}</p>
                 </div>
             )}
-             {concernsToShow.length === 0 && activeTab === 'anonymous' && !isReceivedView && (
+            {concernsToShow.length === 0 && concernType === 'anonymous' && !isReceivedView && (
                  <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground">You have not raised any anonymous concerns from this dashboard.</p>
                 </div>
@@ -1672,10 +1704,6 @@ function MyConcernsContent() {
     );
   };
 
-  const getSectionTitle = () => {
-    if (viewMode === 'received') return 'Received Concerns';
-    return 'My Submissions';
-  };
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -1712,7 +1740,7 @@ function MyConcernsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs defaultValue="identity-revealed">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="identity-revealed">
                         <User className="mr-2" />
@@ -1740,33 +1768,46 @@ function MyConcernsContent() {
         </CardContent>
       </Card>
       
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                        <List className="h-5 w-5" />
-                        {getSectionTitle()}
-                    </CardTitle>
-                    {isSupervisor && (
-                        <div className="flex items-center space-x-2">
-                            <Label htmlFor="view-mode-toggle" className="text-sm text-muted-foreground">
-                                {viewMode === 'raised' ? 'Showing My Raised' : 'Showing Received by Me'}
-                            </Label>
-                            <Switch
-                                id="view-mode-toggle"
-                                checked={viewMode === 'received'}
-                                onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
-                            />
-                        </div>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-                 <div className="mt-4">
-                    {renderSubmissions()}
-                </div>
-            </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+            <div className="flex justify-between items-center">
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    <List className="h-5 w-5" />
+                    {getSectionTitle()}
+                </CardTitle>
+                {isSupervisor && (
+                    <div className="flex items-center space-x-2">
+                        <Label htmlFor="view-mode-toggle" className="text-sm text-muted-foreground">
+                            {viewMode === 'raised' ? 'Showing My Raised' : 'Showing Received by Me'}
+                        </Label>
+                        <Switch
+                            id="view-mode-toggle"
+                            checked={viewMode === 'received'}
+                            onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
+                        />
+                    </div>
+                )}
+            </div>
+        </CardHeader>
+        <CardContent>
+            <Tabs defaultValue="identity-revealed" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="identity-revealed">Identity Revealed</TabsTrigger>
+                    <TabsTrigger value="anonymous">Anonymous</TabsTrigger>
+                    <TabsTrigger value="retaliation">Retaliation Reports</TabsTrigger>
+                </TabsList>
+                <TabsContent value="identity-revealed">
+                    {renderSubmissions('identity-revealed')}
+                </TabsContent>
+                <TabsContent value="anonymous">
+                    {renderSubmissions('anonymous')}
+                </TabsContent>
+                <TabsContent value="retaliation">
+                    {renderSubmissions('retaliation')}
+                </TabsContent>
+            </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1788,6 +1829,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
