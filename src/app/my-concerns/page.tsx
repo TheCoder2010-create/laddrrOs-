@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from '
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText, ChevronsRight } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText, ChevronsRight, X as XIcon } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -58,21 +58,23 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
 const getRetaliationCaseKey = (role: string | null) => role ? `direct_retaliation_cases_${role.replace(/\s/g, '_')}` : null;
 
-function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingId: string) => void }) {
+function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubmitted: (trackingId: string) => void, files: File[], setFiles: (files: File[]) => void }) {
     const { toast } = useToast();
     const { role } = useRole();
     const [subject, setSubject] = useState('');
     const [concern, setConcern] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRewriting, setIsRewriting] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-            toast({ title: "File Attached", description: e.target.files[0].name });
+        if (e.target.files) {
+            setFiles([...files, ...Array.from(e.target.files)]);
         }
+    };
+
+    const removeFile = (fileToRemove: File) => {
+        setFiles(files.filter(file => file !== fileToRemove));
     };
 
     const handleRewrite = async () => {
@@ -103,7 +105,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
 
         setIsSubmitting(true);
         try {
-            const result = await submitAnonymousConcernFromDashboard({ subject, message: concern, file });
+            const result = await submitAnonymousConcernFromDashboard({ subject, message: concern, files });
             onCaseSubmitted(result.trackingId);
         } catch (error) {
             toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
@@ -112,7 +114,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
             setIsSubmitting(false);
             setSubject('');
             setConcern('');
-            setFile(null);
+            setFiles([]);
         }
     };
 
@@ -149,7 +151,8 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
                         type="file" 
                         ref={fileInputRef} 
                         className="hidden" 
-                        onChange={handleFileChange} 
+                        onChange={handleFileChange}
+                        multiple
                     />
                     <Button 
                         type="button"
@@ -162,10 +165,20 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
                         <Paperclip className="h-5 w-5" />
                     </Button>
                 </div>
-                 {file && (
-                    <p className="text-sm text-muted-foreground">
-                        Attached: <span className="font-medium text-primary">{file.name}</span>
-                    </p>
+                 {files.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                        <Label>Attachments</Label>
+                        <div className="space-y-1">
+                        {files.map((file, i) => (
+                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
+                               <span>{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
+                                  <XIcon className="h-4 w-4" />
+                               </Button>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
                 )}
             </div>
             <div className="flex justify-between items-center">
@@ -183,7 +196,7 @@ function AnonymousConcernForm({ onCaseSubmitted }: { onCaseSubmitted: (trackingI
 }
 
 
-function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
+function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubmitted: () => void, files: File[], setFiles: (files: File[]) => void }) {
     const { toast } = useToast();
     const { role } = useRole();
     const [recipient, setRecipient] = useState('');
@@ -191,14 +204,16 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
     const [concern, setConcern] = useState('');
     const [criticality, setCriticality] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-            toast({ title: "File Attached", description: e.target.files[0].name });
+        if (e.target.files) {
+            setFiles([...files, ...Array.from(e.target.files)]);
         }
+    };
+
+    const removeFile = (fileToRemove: File) => {
+        setFiles(files.filter(file => file !== fileToRemove));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -219,7 +234,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                 message: concern,
                 criticality,
                 isAnonymous: false,
-                file,
+                files,
             });
 
             const key = getIdentifiedCaseKey(role);
@@ -233,7 +248,7 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
             setSubject('');
             setConcern('');
             setRecipient('');
-            setFile(null);
+            setFiles([]);
             onCaseSubmitted();
         } catch (error) {
             toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your concern."});
@@ -291,7 +306,8 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                         type="file" 
                         ref={fileInputRef} 
                         className="hidden" 
-                        onChange={handleFileChange} 
+                        onChange={handleFileChange}
+                        multiple
                     />
                     <Button 
                         type="button"
@@ -304,10 +320,20 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                         <Paperclip className="h-5 w-5" />
                     </Button>
                 </div>
-                 {file && (
-                    <p className="text-sm text-muted-foreground">
-                        Attached: <span className="font-medium text-primary">{file.name}</span>
-                    </p>
+                 {files.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                        <Label>Attachments</Label>
+                        <div className="space-y-1">
+                        {files.map((file, i) => (
+                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
+                               <span>{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
+                                  <XIcon className="h-4 w-4" />
+                               </Button>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
                 )}
             </div>
             <div className="space-y-2">
@@ -334,20 +360,22 @@ function IdentifiedConcernForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
     )
 }
 
-function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => void }) {
+function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSubmitted: () => void, files: File[], setFiles: (files: File[]) => void }) {
     const { toast } = useToast();
     const { role } = useRole();
     const [subject, setSubject] = useState('');
     const [description, setDescription] = useState('');
-    const [file, setFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-             toast({ title: "File Attached", description: e.target.files[0].name });
+        if (e.target.files) {
+            setFiles([...files, ...Array.from(e.target.files)]);
         }
+    };
+
+    const removeFile = (fileToRemove: File) => {
+        setFiles(files.filter(file => file !== fileToRemove));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -362,7 +390,7 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                 submittedBy: role,
                 subject,
                 description,
-                file,
+                files,
             });
 
             const key = getRetaliationCaseKey(role);
@@ -375,7 +403,7 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
             toast({ title: "Retaliation Report Submitted", description: "Your report has been sent directly to the HR Head for immediate review." });
             setSubject('');
             setDescription('');
-            setFile(null);
+            setFiles([]);
             onCaseSubmitted();
         } catch (error) {
             toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your report." });
@@ -416,7 +444,8 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                         type="file" 
                         ref={fileInputRef} 
                         className="hidden" 
-                        onChange={handleFileChange} 
+                        onChange={handleFileChange}
+                        multiple
                     />
                     <Button 
                         type="button"
@@ -429,10 +458,20 @@ function DirectRetaliationForm({ onCaseSubmitted }: { onCaseSubmitted: () => voi
                         <Paperclip className="h-5 w-5" />
                     </Button>
                 </div>
-                 {file && (
-                    <p className="text-sm text-muted-foreground">
-                        Attached: <span className="font-medium text-primary">{file.name}</span>
-                    </p>
+                 {files.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                        <Label>Attachments</Label>
+                        <div className="space-y-1">
+                        {files.map((file, i) => (
+                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
+                               <span>{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
+                                  <XIcon className="h-4 w-4" />
+                               </Button>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
                 )}
             </div>
             <div className="flex justify-end">
@@ -732,15 +771,20 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
     const { toast } = useToast();
     const { role } = useRole();
     const [description, setDescription] = useState('');
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
+        if (e.target.files) {
+            setFiles([...files, ...Array.from(e.target.files)]);
         }
     };
+
+     const removeFile = (fileToRemove: File) => {
+        setFiles(files.filter(file => file !== fileToRemove));
+    };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -754,7 +798,7 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                 parentCaseId,
                 submittedBy: role,
                 description,
-                file,
+                files,
             });
             toast({ title: "Retaliation Report Submitted", description: "Your report has been sent directly to the HR Head for immediate review." });
             onSubmitted();
@@ -784,7 +828,8 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                         type="file" 
                         ref={fileInputRef} 
                         className="hidden" 
-                        onChange={handleFileChange} 
+                        onChange={handleFileChange}
+                        multiple
                     />
                     <Button 
                         type="button"
@@ -797,10 +842,20 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                         <Paperclip className="h-5 w-5" />
                     </Button>
                 </div>
-                {file && (
-                    <p className="text-sm text-muted-foreground">
-                        Attached: <span className="font-medium text-primary">{file.name}</span>
-                    </p>
+                 {files.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                        <Label>Attachments</Label>
+                        <div className="space-y-1">
+                        {files.map((file, i) => (
+                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
+                               <span>{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
+                                  <XIcon className="h-4 w-4" />
+                               </Button>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
                 )}
             </div>
             <DialogFooter>
@@ -1519,15 +1574,17 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
                                             </div>
 
-                                            {retaliationCase.attachment && (
+                                            {retaliationCase.attachmentNames && retaliationCase.attachmentNames.length > 0 && (
                                                 <div className="space-y-2">
-                                                    <Label>Your Attachment</Label>
+                                                    <Label>Your Attachments</Label>
                                                     <div>
-                                                        <Button variant="outline" size="sm" asChild>
-                                                            <a href="#" onClick={(e) => { e.preventDefault(); alert('In a real app, this would securely download the attachment.'); }}>
-                                                                <LinkIcon className="mr-2 h-4 w-4" /> View Attachment ({retaliationCase.attachment.name})
-                                                            </a>
-                                                        </Button>
+                                                        {retaliationCase.attachmentNames.map((name, i) => (
+                                                            <Button key={i} variant="outline" size="sm" asChild className="mr-2 mb-2">
+                                                                <a href="#" onClick={(e) => { e.preventDefault(); alert('In a real app, this would securely download the attachment.'); }}>
+                                                                    <LinkIcon className="mr-2 h-4 w-4" /> View Attachment
+                                                                </a>
+                                                            </Button>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
@@ -1583,9 +1640,18 @@ function MyConcernsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const accordionRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
+  
+  // State for file attachments, lifted up
+  const [attachmentState, setAttachmentState] = useState<{
+    identified: File[],
+    anonymous: File[],
+    retaliation: File[]
+  }>({ identified: [], anonymous: [], retaliation: [] });
+
 
   const [showIdDialog, setShowIdDialog] = useState(false);
   const [newCaseId, setNewCaseId] = useState('');
+  const [activeTab, setActiveTab] = useState('identity-revealed');
 
   const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
 
@@ -1626,9 +1692,10 @@ function MyConcernsContent() {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
     
     const wasInvolved = (f: Feedback) => f.auditTrail?.some(e => e.actor === role) ?? false;
+    const currentUserName = roleUserMapping[role]?.name;
 
     // Raised concerns
-    const raised = allCases.filter(c => c.submittedBy === role);
+    const raised = allCases.filter(c => c.submittedBy === role || c.submittedBy === currentUserName);
     const identifiedRaised = raised.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
     const anonymousRaised = raised.filter(c => c.isAnonymous);
     const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim');
@@ -1636,8 +1703,7 @@ function MyConcernsContent() {
     // Received concerns
     const received = allCases.filter(f => {
         const isAssigned = f.assignedTo?.includes(role!);
-        // A supervisor was "involved" if they were ever assigned, even if the case is now closed and unassigned.
-        return isAssigned || (wasInvolved(f) && !f.assignedTo?.includes(role!));
+        return isAssigned || (wasInvolved(f) && !f.assignedTo?.includes(role!) && (f.status === 'Resolved' || f.status === 'Closed'));
     });
 
     const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
@@ -1740,7 +1806,7 @@ function MyConcernsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="identity-revealed">
+            <Tabs defaultValue="identity-revealed" onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="identity-revealed">
                         <User className="mr-2" />
@@ -1756,13 +1822,25 @@ function MyConcernsContent() {
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="identity-revealed">
-                    <IdentifiedConcernForm onCaseSubmitted={() => handleCaseSubmitted()} />
+                    <IdentifiedConcernForm 
+                        onCaseSubmitted={() => handleCaseSubmitted()} 
+                        files={attachmentState.identified}
+                        setFiles={(files) => setAttachmentState(s => ({...s, identified: files}))}
+                    />
                 </TabsContent>
                 <TabsContent value="anonymous">
-                    <AnonymousConcernForm onCaseSubmitted={handleCaseSubmitted} />
+                    <AnonymousConcernForm 
+                        onCaseSubmitted={handleCaseSubmitted}
+                        files={attachmentState.anonymous}
+                        setFiles={(files) => setAttachmentState(s => ({...s, anonymous: files}))}
+                    />
                 </TabsContent>
                  <TabsContent value="retaliation">
-                    <DirectRetaliationForm onCaseSubmitted={() => handleCaseSubmitted()} />
+                    <DirectRetaliationForm 
+                        onCaseSubmitted={() => handleCaseSubmitted()} 
+                        files={attachmentState.retaliation}
+                        setFiles={(files) => setAttachmentState(s => ({...s, retaliation: files}))}
+                    />
                 </TabsContent>
             </Tabs>
         </CardContent>
@@ -1790,22 +1868,9 @@ function MyConcernsContent() {
             </div>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="identity-revealed" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="identity-revealed">Identity Revealed</TabsTrigger>
-                    <TabsTrigger value="anonymous">Anonymous</TabsTrigger>
-                    <TabsTrigger value="retaliation">Retaliation Reports</TabsTrigger>
-                </TabsList>
-                <TabsContent value="identity-revealed">
-                    {renderSubmissions('identity-revealed')}
-                </TabsContent>
-                <TabsContent value="anonymous">
-                    {renderSubmissions('anonymous')}
-                </TabsContent>
-                <TabsContent value="retaliation">
-                    {renderSubmissions('retaliation')}
-                </TabsContent>
-            </Tabs>
+            <div className="mt-4">
+                {renderSubmissions(activeTab as any)}
+            </div>
         </CardContent>
       </Card>
     </div>
@@ -1829,6 +1894,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 

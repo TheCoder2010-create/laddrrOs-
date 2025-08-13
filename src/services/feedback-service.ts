@@ -70,11 +70,7 @@ export interface Feedback {
   managerResolution?: string; // For collaborative resolution
   hrHeadResolution?: string;  // For collaborative resolution
   parentCaseId?: string; // For retaliation claims
-  attachment?: {
-    name: string;
-    type: string;
-    size: number;
-  };
+  attachmentNames?: string[];
   source?: 'Voice – In Silence';
 }
 
@@ -92,7 +88,7 @@ export interface OneOnOneHistoryItem {
 export interface AnonymousFeedbackInput {
   subject: string;
   message: string;
-  file?: File | null;
+  files: File[];
 }
 export interface AnonymousFeedbackOutput {
   trackingId: string;
@@ -106,21 +102,21 @@ export interface IdentifiedConcernInput {
     message: string;
     criticality: 'Low' | 'Medium' | 'High' | 'Critical';
     isAnonymous: false;
-    file?: File | null;
+    files: File[];
 }
 
 export interface RetaliationReportInput {
     parentCaseId: string;
     submittedBy: Role;
     description: string;
-    file?: File | null;
+    files: File[];
 }
 
 export interface DirectRetaliationReportInput {
     submittedBy: Role;
     subject: string;
     description: string;
-    file?: File | null;
+    files: File[];
 }
 
 // Client-side tracking types
@@ -709,7 +705,9 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const allFeedback = getFeedbackFromStorage();
   const trackingId = generateTrackingId();
   const submittedAt = new Date();
-  const { file, ...rest } = input;
+  const { files, ...rest } = input;
+  const attachmentNames = files.map(f => f.name);
+  const details = `Feedback was received by the system.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
 
   const newFeedback: Feedback = {
     ...rest,
@@ -724,10 +722,10 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
         event: 'Submitted',
         timestamp: submittedAt,
         actor: 'Anonymous',
-        details: `Feedback was received by the system.${file ? ` An attachment named "${file.name}" was included.` : ''}`,
+        details: details,
       },
     ],
-    attachment: file ? { name: file.name, type: file.type, size: file.size } : undefined,
+    attachmentNames: attachmentNames,
   };
 
   allFeedback.unshift(newFeedback);
@@ -775,7 +773,9 @@ export async function summarizeFeedback(trackingId: string): Promise<void> {
 export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
     const trackingId = generateTrackingId();
-    const { file, ...rest } = input;
+    const { files, ...rest } = input;
+    const attachmentNames = files.map(f => f.name);
+    const details = `A concern was submitted anonymously from a user dashboard.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
     
     const newFeedback: Feedback = {
         ...rest,
@@ -789,9 +789,9 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
             event: 'Submitted',
             timestamp: new Date(),
             actor: 'Anonymous',
-            details: `A concern was submitted anonymously from a user dashboard.${file ? ` An attachment named "${file.name}" was included.` : ''}`
+            details: details,
         }],
-        attachment: file ? { name: file.name, type: file.type, size: file.size } : undefined,
+        attachmentNames: attachmentNames,
     };
     allFeedback.unshift(newFeedback);
     saveFeedbackToStorage(allFeedback);
@@ -801,7 +801,9 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
 export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
     const trackingId = generateTrackingId();
-    const { file, ...rest } = input;
+    const { files, ...rest } = input;
+    const attachmentNames = files.map(f => f.name);
+    const details = `Concern submitted by ${rest.submittedBy} (${rest.submittedByRole}) to ${rest.recipient}.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
     
     const newFeedback: Feedback = {
         trackingId: trackingId,
@@ -819,10 +821,10 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
                 event: 'Identified Concern Submitted',
                 timestamp: new Date(),
                 actor: rest.submittedByRole,
-                details: `Concern submitted by ${rest.submittedBy} (${rest.submittedByRole}) to ${rest.recipient}.${file ? ` An attachment named "${file.name}" was included.` : ''}`
+                details: details
             }
         ],
-        attachment: file ? { name: file.name, type: file.type, size: file.size } : undefined,
+        attachmentNames: attachmentNames,
     };
     allFeedback.unshift(newFeedback);
     saveFeedbackToStorage(allFeedback);
@@ -832,6 +834,9 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
 export async function submitDirectRetaliationReport(input: DirectRetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
     const trackingId = generateTrackingId();
+    const attachmentNames = input.files.map(f => f.name);
+    const details = `A direct retaliation claim was submitted.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
+
     const newRetaliationCase: Feedback = {
         trackingId,
         subject: input.subject,
@@ -847,9 +852,9 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `A direct retaliation claim was submitted.${input.file ? ` An attachment named "${input.file.name}" was securely uploaded.` : ''}`
+            details: details
         }],
-        attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
+        attachmentNames: attachmentNames,
     };
     allFeedback.unshift(newRetaliationCase);
     saveFeedbackToStorage(allFeedback);
@@ -860,6 +865,9 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
 export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
     const allFeedback = getFeedbackFromStorage();
     const childCaseId = generateTrackingId();
+    const attachmentNames = input.files.map(f => f.name);
+    const details = `Claim submitted for case ${input.parentCaseId}.\nNew Case ID: ${childCaseId}${attachmentNames.length > 0 ? `\nAttachments: ${attachmentNames.join(', ')}` : ''}`;
+
 
     // Create the new child retaliation case
     const newRetaliationCase: Feedback = {
@@ -878,9 +886,9 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
             event: 'Retaliation Claim Submitted',
             timestamp: new Date(),
             actor: input.submittedBy,
-            details: `Claim submitted for case ${input.parentCaseId}.\nNew Case ID: ${childCaseId}${input.file ? `\nAn attachment named "${input.file.name}" was securely uploaded.` : ''}`
+            details: details,
         }],
-        attachment: input.file ? { name: input.file.name, type: input.file.type, size: input.file.size } : undefined,
+        attachmentNames: attachmentNames,
     };
     allFeedback.unshift(newRetaliationCase);
     
@@ -1061,7 +1069,7 @@ export async function assignFeedback(
 /**
  * Adds a general update to a feedback item's audit trail.
  */
-export async function addFeedbackUpdate(trackingId: string, actor: Role, comment: string, file?: File | null): Promise<void> {
+export async function addFeedbackUpdate(trackingId: string, actor: Role, comment: string, files?: File[]): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
     if (feedbackIndex === -1) return;
@@ -1069,9 +1077,10 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
     const item = allFeedback[feedbackIndex];
     
     let details = comment;
-    if (file) {
-        details += `\n\n[System]: An attachment named "${file.name}" was securely uploaded.`;
-        item.attachment = { name: file.name, type: file.type, size: file.size };
+    if (files && files.length > 0) {
+        const attachmentNames = files.map(f => f.name);
+        details += `\n\n[System]: Attachments added: ${attachmentNames.join(', ')}.`;
+        item.attachmentNames = [...(item.attachmentNames || []), ...attachmentNames];
     }
 
     item.auditTrail?.push({
@@ -1520,5 +1529,6 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
