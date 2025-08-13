@@ -930,15 +930,12 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                             if (!event.details) return null;
 
                             // For HR Head, make the parent case ID a clickable link.
-                            if (role === 'HR Head' && item.parentCaseId) {
-                                const parentRegex = new RegExp(item.parentCaseId);
-                                if (parentRegex.test(event.details)) {
-                                    return (
-                                        <div className="text-sm text-muted-foreground mt-1">
-                                            Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, item.parentCaseId!)} className="font-mono text-primary hover:underline">{item.parentCaseId}</a>.
-                                        </div>
-                                    );
-                                }
+                            if (role === 'HR Head' && item.parentCaseId && event.event === 'Retaliation Claim Submitted') {
+                                return (
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                        Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, item.parentCaseId!)} className="font-mono text-primary hover:underline">{item.parentCaseId}</a>.
+                                    </div>
+                                );
                             }
                             
                             // For regular users, render the child case link if present.
@@ -1130,6 +1127,10 @@ function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
 function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     if (feedback.status === 'Final Disposition Required') {
         return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+
+    if (feedback.status === 'Resolved' || feedback.status === 'Closed' || feedback.status === 'Pending Employee Acknowledgment') {
+        return null;
     }
 
     return (
@@ -1372,7 +1373,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
         setNotFound(false);
         try {
             const [foundCase] = await getFeedbackByIds([trackingIdInput]);
-            if (foundCase && (foundCase.source === 'Voice – In Silence' || foundCase.isAnonymous)) {
+            if (foundCase && foundCase.isAnonymous) {
                 setTrackedCase(foundCase);
             } else {
                 setNotFound(true);
@@ -1567,7 +1568,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                         )}
                                         
                                         <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
-                                            <div className="flex flex-wrap justify-between items-center gap-2">
+                                             <div className="flex justify-between items-center">
                                                 <Label>Claim Status</Label>
                                                 <div className="flex items-center gap-4">
                                                     <span className="text-xs text-muted-foreground font-mono cursor-text">
@@ -1576,7 +1577,6 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                     {getRetaliationStatusBadge(retaliationCase.status)}
                                                 </div>
                                             </div>
-
                                             <div className="space-y-2">
                                                 <Label>Your Claim Description</Label>
                                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
@@ -1596,9 +1596,8 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                     </div>
                                                 </div>
                                             )}
-
-                                           <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
-
+                                            
+                                            <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                         </div>
                                     </div>
                                 )}
@@ -1737,25 +1736,25 @@ function MyConcernsContent() {
     // Received concerns
     const received: Feedback[] = [];
     allCases.forEach(f => {
-        const isAssigned = f.assignedTo?.includes(role!);
-        const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
-
-        // Special rule for Retaliation Claims: only HR Head sees them in the "received" view.
+        // Retaliation claims are only visible to HR head in the received view.
         if (f.criticality === 'Retaliation Claim') {
             if (role === 'HR Head') {
                 received.push(f);
             }
-            return; // Skip for other roles
+            return;
         }
-        
+
+        const isAssigned = f.assignedTo?.includes(role!);
+        const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
+
         if (isAssigned || isInvolvedInClosedCase) {
-            received.push(f);
+             received.push(f);
         }
     });
 
     const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
     const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim'); // This will only have items if role is HR Head
+    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
     
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
@@ -1941,4 +1940,3 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
