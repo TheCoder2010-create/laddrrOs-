@@ -1405,7 +1405,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     
                     const isComplainant = item.submittedBy === role;
                     const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
-                    const canReportRetaliation = !item.isAnonymous && isComplainant && !isReceivedView;
+                    const canReportRetaliation = !item.isAnonymous && isComplainant;
 
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
@@ -1707,7 +1707,8 @@ function MyConcernsContent() {
 
     const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
     const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
+    // Only HR Head can see received retaliation claims.
+    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim' && role === 'HR Head');
     
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
@@ -1893,10 +1894,3 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
-
-
-
-
-
-
