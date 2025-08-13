@@ -904,8 +904,10 @@ const formatEventTitle = (event: string) => {
   return formattedEvent;
 };
 
-function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedback['auditTrail'], handleScrollToCase: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
+function CaseHistory({ trail, handleViewCaseDetails, onDownload }: { trail: Feedback['auditTrail'], handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
     if (!trail || trail.length === 0) return null;
+    const { role } = useRole();
+
     return (
         <div className="space-y-2">
             <div className="flex justify-between items-center">
@@ -931,15 +933,15 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
                             const parentRegex = /(Claim submitted for case )([a-f0-9-]+)/;
                             const parentMatch = event.details.match(parentRegex);
 
-                            if (parentMatch) {
+                            if (parentMatch && role === 'HR Head') {
                                 const parentId = parentMatch[2];
-                                return <div className="text-sm text-muted-foreground mt-1">Claim submitted for case <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
+                                return <div className="text-sm text-muted-foreground mt-1">Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
                             }
                             if (childMatch) {
                                 const childId = childMatch[2];
                                 return (
                                     <div className="text-sm text-muted-foreground mt-1">
-                                        New Case ID: <a href="#" onClick={(e) => handleScrollToCase(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>
+                                        New Case ID: <a href="#" onClick={(e) => handleViewCaseDetails(e, childId)} className="font-mono text-primary hover:underline">{childId}</a>
                                     </div>
                                 );
                             }
@@ -1345,20 +1347,6 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     const [notFound, setNotFound] = useState(false);
     
     const [viewingCaseDetails, setViewingCaseDetails] = useState<Feedback | null>(null);
-    const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const caseElement = accordionRef.current?.querySelector(`#accordion-item-${caseId}`);
-        caseElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        
-        setTimeout(() => {
-            const trigger = caseElement?.querySelector('[data-radix-collection-item]');
-            if (trigger instanceof HTMLElement) {
-                trigger.click();
-            }
-        }, 300);
-    };
     
     const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
@@ -1370,7 +1358,6 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
       }
     };
 
-
     const handleTrackAnonymous = async () => {
         if (!trackingIdInput) return;
         setIsTracking(true);
@@ -1378,7 +1365,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
         setNotFound(false);
         try {
             const [foundCase] = await getFeedbackByIds([trackingIdInput]);
-            if (foundCase) {
+            if (foundCase && (foundCase.source === 'Voice – In Silence' || foundCase.isAnonymous)) {
                 setTrackedCase(foundCase);
             } else {
                 setNotFound(true);
@@ -1516,7 +1503,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.message}</p>
                                 </div>
                                
-                                <CaseHistory trail={item.auditTrail} handleScrollToCase={handleScrollToCase} onDownload={() => handleDownload(item)} />
+                                <CaseHistory trail={item.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(item)} />
                                 
                                  {item.resolution && (
                                     <div className="space-y-2">
@@ -1603,7 +1590,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                 </div>
                                             )}
 
-                                           <CaseHistory trail={retaliationCase.auditTrail} handleScrollToCase={handleScrollToCase} onDownload={() => handleDownload(retaliationCase)} />
+                                           <CaseHistory trail={retaliationCase.auditTrail} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
 
                                         </div>
                                     </div>
@@ -1655,7 +1642,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                         {viewingCaseDetails && (
                            <CaseHistory 
                                 trail={viewingCaseDetails.auditTrail} 
-                                handleScrollToCase={handleScrollToCase}
+                                handleViewCaseDetails={handleViewCaseDetails}
                                 onDownload={() => downloadAuditTrailPDF({
                                     title: viewingCaseDetails.subject,
                                     trackingId: viewingCaseDetails.trackingId,
@@ -1740,14 +1727,11 @@ function MyConcernsContent() {
     const anonymousRaised = raised.filter(c => c.isAnonymous);
     const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId); // Only show top-level reports here
     
-    // Determine which cases are visible in the "Received" view for the current role
     const visibleReceivedCases = allCases.filter(f => {
-        // Retaliation claims are ONLY visible to HR Head in the received view.
         if (f.criticality === 'Retaliation Claim') {
             return role === 'HR Head';
         }
-
-        // For all other cases, show if the user is assigned or was involved in a now-closed case.
+        
         const isAssigned = f.assignedTo?.includes(role!);
         const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
         
