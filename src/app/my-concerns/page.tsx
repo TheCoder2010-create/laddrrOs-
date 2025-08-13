@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
@@ -873,6 +872,7 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
 
 const auditEventIcons = {
     'Submitted': { icon: FileCheck, color: 'text-muted-foreground' },
+    'Identified Concern Submitted': { icon: FileCheck, color: 'text-muted-foreground' },
     'Resolution Submitted': { icon: ChevronsRight, color: 'text-green-500' },
     'HR Resolution Submitted': { icon: ShieldCheck, color: 'text-green-500' },
     'Retaliation Claim Submitted': { icon: Flag, color: 'text-destructive' },
@@ -882,8 +882,9 @@ const auditEventIcons = {
     'Identity Reveal Requested': { icon: UserX, color: 'text-yellow-500' },
     'Information Requested': { icon: MessageCircleQuestion, color: 'text-blue-500' },
     'Anonymous User Responded': { icon: MessageSquare, color: 'text-blue-500' },
+    'User Responded to Information Request': { icon: MessageSquare, color: 'text-blue-500' },
     'Resolved': { icon: CheckCircle, color: 'text-green-500' },
-    'Update Added': { icon: MessageSquare, color: 'text-muted-foreground' },
+    'Update Added': { icon: MessageSquare, color: 'text-blue-500' },
     'Employee Escalated Concern': { icon: AlertTriangle, color: 'text-orange-500' },
     'Employee Accepted Resolution': { icon: CheckCircle, color: 'text-green-500' },
     'Final Disposition': { icon: FolderClosed, color: 'text-destructive' },
@@ -1702,7 +1703,8 @@ function MyConcernsContent() {
     // Received concerns
     const received = allCases.filter(f => {
         const isAssigned = f.assignedTo?.includes(role!);
-        return isAssigned || (wasInvolved(f) && !f.assignedTo?.includes(role!) && (f.status === 'Resolved' || f.status === 'Closed'));
+        // Include resolved/closed cases the user was involved in
+        return isAssigned || (wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed'));
     });
 
     const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
@@ -1718,14 +1720,14 @@ function MyConcernsContent() {
     return 'My Submissions';
   };
 
-  const renderSubmissions = (concernType: 'identity-revealed' | 'anonymous' | 'retaliation') => {
+  const renderSubmissions = () => {
     const isReceivedView = isSupervisor && viewMode === 'received';
     
     let concernsToShow;
     let submissionType: 'other' | 'anonymous' | 'retaliation' = 'other';
     let noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} concerns in this category.`;
     
-    switch (concernType) {
+    switch (activeTab) {
         case 'identity-revealed':
             concernsToShow = isReceivedView ? identifiedReceived : identifiedRaised;
             submissionType = 'other';
@@ -1756,12 +1758,12 @@ function MyConcernsContent() {
                 accordionRef={accordionRef}
                 isReceivedView={isReceivedView}
             />
-            {concernsToShow.length === 0 && (concernType !== 'anonymous' || isReceivedView) && (
+            {concernsToShow.length === 0 && (submissionType !== 'anonymous' || isReceivedView) && (
                  <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground">{noItemsMessage}</p>
                 </div>
             )}
-            {concernsToShow.length === 0 && concernType === 'anonymous' && !isReceivedView && (
+            {concernsToShow.length === 0 && submissionType === 'anonymous' && !isReceivedView && (
                  <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground">You have not raised any anonymous concerns from this dashboard.</p>
                 </div>
@@ -1869,7 +1871,7 @@ function MyConcernsContent() {
         </CardHeader>
         <CardContent>
             <div className="mt-4">
-                {renderSubmissions(activeTab as any)}
+                {renderSubmissions()}
             </div>
         </CardContent>
       </Card>
