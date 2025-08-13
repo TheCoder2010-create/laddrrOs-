@@ -802,16 +802,16 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
 
 const auditEventIcons = {
     'Submitted': { icon: FileCheck, color: 'text-muted-foreground' },
+    'Resolution Submitted': { icon: ChevronsRight, color: 'text-green-500' },
+    'HR Resolution Submitted': { icon: ShieldCheck, color: 'text-green-500' },
     'Retaliation Claim Submitted': { icon: Flag, color: 'text-destructive' },
     'Retaliation Claim Filed': { icon: Flag, color: 'text-destructive' },
+    'HR Responded to Retaliation Claim': { icon: ShieldCheck, color: 'text-green-500' },
     'Identity Revealed': { icon: User, color: 'text-blue-500' },
     'Identity Reveal Requested': { icon: UserX, color: 'text-yellow-500' },
     'Information Requested': { icon: MessageCircleQuestion, color: 'text-blue-500' },
     'Anonymous User Responded': { icon: MessageSquare, color: 'text-blue-500' },
     'Resolved': { icon: CheckCircle, color: 'text-green-500' },
-    'Resolution Submitted': { icon: ChevronsRight, color: 'text-green-500' },
-    'HR Resolution Submitted': { icon: ShieldCheck, color: 'text-green-500' },
-    'HR Responded to Retaliation Claim': { icon: ShieldCheck, color: 'text-green-500' },
     'Update Added': { icon: MessageSquare, color: 'text-muted-foreground' },
     'Employee Escalated Concern': { icon: AlertTriangle, color: 'text-orange-500' },
     'Employee Accepted Resolution': { icon: CheckCircle, color: 'text-green-500' },
@@ -1250,12 +1250,7 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
 
 
     return (
-        <div className="p-4 border-t mt-4 space-y-6 bg-background rounded-b-lg">
-            <div className="space-y-2">
-                <Label className="text-base font-semibold">{title}</Label>
-                <p className="text-sm text-muted-foreground">{description}</p>
-            </div>
-            
+        <div className="mt-4 space-y-4">
             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
                 <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
                 <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
@@ -1366,7 +1361,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
                     
                     const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
-                    const canReportRetaliation = !item.isAnonymous && item.submittedBy === role && !isReceivedView;
+                    const canReportRetaliation = !item.isAnonymous && item.submittedBy === role && !isReceivedView && !isCaseClosed;
 
                     const isLinkedClaim = !!item.parentCaseId;
                     const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
@@ -1470,7 +1465,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     </div>
                                 )}
 
-                                {canReportRetaliation && !isCaseClosed && (
+                                {canReportRetaliation && (
                                     <div className="pt-4 border-t border-dashed">
                                         <Dialog open={retaliationDialogOpen && activeCaseId === item.trackingId} onOpenChange={(open) => {
                                             if (!open) setRetaliationDialogOpen(false);
@@ -1639,16 +1634,19 @@ function MyConcernsContent() {
 
   const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived } = (() => {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
-
-    const identifiedRaised = allCases.filter(c => c.submittedBy === role && !c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const anonymousRaised = allCases.filter(c => c.submittedBy === role && c.isAnonymous);
-    const retaliationRaised = allCases.filter(c => c.submittedBy === role && c.criticality === 'Retaliation Claim');
     
     const wasInvolved = (f: Feedback) => f.auditTrail?.some(e => e.actor === role) ?? false;
+
+    // Raised concerns
+    const raised = allCases.filter(c => c.submittedBy === role);
+    const identifiedRaised = raised.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const anonymousRaised = raised.filter(c => c.isAnonymous);
+    const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim');
     
+    // Received concerns
     const received = allCases.filter(f => {
         const isAssigned = f.assignedTo?.includes(role!);
-        // A supervisor was "involved" if they were ever assigned, even if the case is now closed.
+        // A supervisor was "involved" if they were ever assigned, even if the case is now closed and unassigned.
         return isAssigned || (wasInvolved(f) && !f.assignedTo?.includes(role!));
     });
 
@@ -1828,5 +1826,6 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
