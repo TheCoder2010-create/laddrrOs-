@@ -1227,23 +1227,6 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     );
 }
 
-function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
-    if (feedback.status === 'Final Disposition Required') {
-        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
-    }
-
-    return (
-        <div className="mt-4 space-y-4">
-             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                 <AddUpdatePanel feedback={feedback} onUpdate={onUpdate} />
-             </div>
-             <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                <SubmitResolutionPanel feedback={feedback} onUpdate={onUpdate} />
-             </div>
-        </div>
-    );
-}
-
 function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -1268,7 +1251,7 @@ function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: 
     }
 
     return (
-        <>
+        <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
             <Label htmlFor={`interim-update-${feedback.trackingId}`} className="font-medium">Add Interim Update (Private)</Label>
             <p className="text-xs text-muted-foreground">Log actions taken or conversation notes. This will be added to the audit trail but NOT sent to the employee yet.</p>
             <Textarea 
@@ -1283,7 +1266,7 @@ function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: 
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Add Update
             </Button>
-        </>
+        </div>
     );
 }
 
@@ -1311,7 +1294,7 @@ function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     }
 
      return (
-        <>
+        <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
             <Label htmlFor={`final-resolution-${feedback.trackingId}`} className="font-medium">Submit Final Resolution</Label>
             <p className="text-xs text-muted-foreground">Provide the final summary of actions taken. This WILL be sent to the employee for their acknowledgement.</p>
             <Textarea 
@@ -1326,10 +1309,23 @@ function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit
             </Button>
-        </>
+        </div>
     );
 }
 
+
+function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    if (feedback.status === 'Final Disposition Required') {
+        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+
+    return (
+        <div className="mt-4 space-y-4">
+             <AddUpdatePanel feedback={feedback} onUpdate={onUpdate} />
+             <SubmitResolutionPanel feedback={feedback} onUpdate={onUpdate} />
+        </div>
+    );
+}
 
 
 function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, isReceivedView }: { items: Feedback[], onUpdate: () => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean }) {
@@ -1700,17 +1696,23 @@ function MyConcernsContent() {
     const anonymousRaised = raised.filter(c => c.isAnonymous);
     const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim');
     
-    // Received concerns
-    const received = allCases.filter(f => {
+    // Determine which cases are visible in the "Received" view for the current role
+    const visibleReceivedCases = allCases.filter(f => {
+        // Retaliation claims are ONLY visible to HR Head in the received view.
+        if (f.criticality === 'Retaliation Claim') {
+            return role === 'HR Head';
+        }
+
+        // For all other cases, show if the user is assigned or was involved in a now-closed case.
         const isAssigned = f.assignedTo?.includes(role!);
-        // Include resolved/closed cases the user was involved in
-        return isAssigned || (wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed'));
+        const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
+        
+        return isAssigned || isInvolvedInClosedCase;
     });
 
-    const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    // Only HR Head can see received retaliation claims.
-    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim' && role === 'HR Head');
+    const identifiedReceived = visibleReceivedCases.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const anonymousReceived = visibleReceivedCases.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
+    const retaliationReceived = visibleReceivedCases.filter(c => c.criticality === 'Retaliation Claim'); // This will only contain items if role is HR Head
     
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
