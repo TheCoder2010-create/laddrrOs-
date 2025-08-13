@@ -1365,7 +1365,6 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
             const [foundCase] = await getFeedbackByIds([trackingIdInput]);
             if (foundCase && foundCase.isAnonymous) {
                 setTrackedCase(foundCase);
-                onUpdate();
             } else {
                 setNotFound(true);
             }
@@ -1894,6 +1893,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
