@@ -927,6 +927,13 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
                             const childMatch = event.details.match(childRegex);
 
+                            const parentRegex = /(Claim submitted for case )([a-f0-9-]+)/;
+                            const parentMatch = event.details.match(parentRegex);
+
+                            if (parentMatch) {
+                                const parentId = parentMatch[2];
+                                return <div className="text-sm text-muted-foreground mt-1">Claim submitted for case <a href="#" onClick={(e) => handleScrollToCase(e, parentId)} className="font-mono text-primary hover:underline">{parentId}</a>.</div>
+                            }
                             if (childMatch) {
                                 const childId = childMatch[2];
                                 return (
@@ -956,210 +963,6 @@ function CaseHistory({ trail, handleScrollToCase, onDownload }: { trail: Feedbac
                     })}
                 </div>
             </div>
-        </div>
-    );
-}
-
-function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
-    const { role } = useRole();
-    const { toast } = useToast();
-    const [revealReason, setRevealReason] = useState('');
-    const [resolution, setResolution] = useState('');
-    const [update, setUpdate] = useState('');
-    const [question, setQuestion] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleRequestIdentity = async () => {
-        if (!revealReason || !role) return;
-        setIsSubmitting(true);
-        try {
-            await requestIdentityReveal(feedback.trackingId, role, revealReason);
-            setRevealReason('');
-            toast({ title: "Request Submitted", description: "The user has been notified of your request."});
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-    
-    const handleAddUpdate = async () => {
-        if (!update || !role) return;
-        setIsSubmitting(true);
-        try {
-            await submitSupervisorUpdate(feedback.trackingId, role, update, false);
-            setUpdate('');
-            toast({ title: "Update Added" });
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
-    const handleRequestInformation = async () => {
-        if (!question || !role) return;
-        setIsSubmitting(true);
-        try {
-            await requestAnonymousInformation(feedback.trackingId, role, question);
-            setQuestion('');
-            toast({ title: "Question Submitted", description: "The user has been notified to provide more information." });
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleResolveDirectly = async () => {
-        if (!resolution || !role) return;
-        setIsSubmitting(true);
-        try {
-            await submitSupervisorUpdate(feedback.trackingId, role, resolution, true);
-            setResolution('');
-            toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
-            onUpdate();
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-    
-    return (
-        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
-            <Label className="text-base font-semibold">Your Action Required</Label>
-            
-            {feedback.status === 'Pending Anonymous Reply' ? (
-                 <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                    <p className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Awaiting User Response</p>
-                    <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                             <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="font-medium flex items-center gap-2 cursor-help">
-                                            Add Update <Info className="h-4 w-4 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Log your investigation steps or notes.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <Textarea 
-                                id="interim-update"
-                                value={update}
-                                onChange={(e) => setUpdate(e.target.value)}
-                                rows={3}
-                                className="flex-grow"
-                                placeholder="Log your private notes..."
-                            />
-                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Update
-                            </Button>
-                        </div>
-                        
-                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="font-medium flex items-center gap-2 cursor-help">
-                                            Additional Information <Info className="h-4 w-4 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Ask a clarifying question. The user will see this and can respond anonymously.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <Textarea 
-                                id="ask-question"
-                                value={question}
-                                onChange={(e) => setQuestion(e.target.value)}
-                                rows={3}
-                                className="flex-grow"
-                                placeholder="Ask a clarifying question..."
-                            />
-                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-auto w-full">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Send Question
-                            </Button>
-                        </div>
-
-                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
-                             <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Label className="font-medium flex items-center gap-2 cursor-help">
-                                            Request Identity <Info className="h-4 w-4 text-muted-foreground" />
-                                        </Label>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>If you cannot proceed, explain why you need their identity.</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <Textarea 
-                                id="revealReason"
-                                value={revealReason}
-                                onChange={(e) => setRevealReason(e.target.value)}
-                                rows={3}
-                                className="flex-grow"
-                                placeholder="Explain why identity is needed..."
-                            />
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button disabled={!revealReason || isSubmitting} className="mt-auto w-full">
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Request Identity Reveal
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
-                                            Acknowledge & Continue
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                             </AlertDialog>
-                        </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
-                         <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Label className="font-medium flex items-center gap-2 cursor-help">
-                                        Resolution <Info className="h-4 w-4 text-muted-foreground" />
-                                    </Label>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                        <Textarea 
-                            id="resolve-directly"
-                            value={resolution}
-                            onChange={(e) => setResolution(e.target.value)}
-                            rows={4}
-                            placeholder="Propose a resolution..."
-                        />
-                        <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit
-                        </Button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
@@ -1327,6 +1130,208 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
     );
 }
 
+function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [revealReason, setRevealReason] = useState('');
+    const [resolution, setResolution] = useState('');
+    const [update, setUpdate] = useState('');
+    const [question, setQuestion] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleRequestIdentity = async () => {
+        if (!revealReason || !role) return;
+        setIsSubmitting(true);
+        try {
+            await requestIdentityReveal(feedback.trackingId, role, revealReason);
+            setRevealReason('');
+            toast({ title: "Request Submitted", description: "The user has been notified of your request."});
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    const handleAddUpdate = async () => {
+        if (!update || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, update, false);
+            setUpdate('');
+            toast({ title: "Update Added" });
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const handleRequestInformation = async () => {
+        if (!question || !role) return;
+        setIsSubmitting(true);
+        try {
+            await requestAnonymousInformation(feedback.trackingId, role, question);
+            setQuestion('');
+            toast({ title: "Question Submitted", description: "The user has been notified to provide more information." });
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleResolveDirectly = async () => {
+        if (!resolution || !role) return;
+        setIsSubmitting(true);
+        try {
+            await submitSupervisorUpdate(feedback.trackingId, role, resolution, true);
+            setResolution('');
+            toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
+            onUpdate();
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+    
+    return (
+        <div className="p-4 border-t mt-4 space-y-4 bg-background rounded-b-lg">
+            
+            {feedback.status === 'Pending Anonymous Reply' ? (
+                 <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                    <p className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Awaiting User Response</p>
+                    <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Add Update <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Log your investigation steps or notes.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Textarea 
+                                id="interim-update"
+                                value={update}
+                                onChange={(e) => setUpdate(e.target.value)}
+                                rows={3}
+                                className="flex-grow"
+                                placeholder="Log your private notes..."
+                            />
+                            <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Add Update
+                            </Button>
+                        </div>
+                        
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Additional Information <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Ask a clarifying question. The user will see this and can respond anonymously.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Textarea 
+                                id="ask-question"
+                                value={question}
+                                onChange={(e) => setQuestion(e.target.value)}
+                                rows={3}
+                                className="flex-grow"
+                                placeholder="Ask a clarifying question..."
+                            />
+                            <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-auto w-full">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Send Question
+                            </Button>
+                        </div>
+
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Label className="font-medium flex items-center gap-2 cursor-help">
+                                            Request Identity <Info className="h-4 w-4 text-muted-foreground" />
+                                        </Label>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>If you cannot proceed, explain why you need their identity.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <Textarea 
+                                id="revealReason"
+                                value={revealReason}
+                                onChange={(e) => setRevealReason(e.target.value)}
+                                rows={3}
+                                className="flex-grow"
+                                placeholder="Explain why identity is needed..."
+                            />
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button disabled={!revealReason || isSubmitting} className="mt-auto w-full">
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Request Identity Reveal
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
+                                            Acknowledge & Continue
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                             </AlertDialog>
+                        </div>
+                    </div>
+                    
+                    <div className="p-4 border rounded-lg bg-muted/20 space-y-3">
+                         <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Label className="font-medium flex items-center gap-2 cursor-help">
+                                        Resolution <Info className="h-4 w-4 text-muted-foreground" />
+                                    </Label>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Propose a resolution for this case. This will be sent to the anonymous user for their final acknowledgement or escalation.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <Textarea 
+                            id="resolve-directly"
+                            value={resolution}
+                            onChange={(e) => setResolution(e.target.value)}
+                            rows={4}
+                            placeholder="Propose a resolution..."
+                        />
+                        <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, isReceivedView }: { items: Feedback[], onUpdate: () => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean }) {
     const { role } = useRole();
@@ -1338,6 +1343,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     const [isTracking, setIsTracking] = useState(false);
     const [notFound, setNotFound] = useState(false);
     
+    const [viewingCaseDetails, setViewingCaseDetails] = useState<Feedback | null>(null);
     const handleScrollToCase = (e: React.MouseEvent, caseId: string) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1352,6 +1358,17 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
             }
         }, 300);
     };
+    
+    const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const [foundCase] = await getFeedbackByIds([caseId]);
+      if (foundCase) {
+          setViewingCaseDetails(foundCase);
+      }
+    };
+
 
     const handleTrackAnonymous = async () => {
         if (!trackingIdInput) return;
@@ -1625,6 +1642,32 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
 
     return (
         <>
+            {viewingCaseDetails && (
+                <Dialog open={!!viewingCaseDetails} onOpenChange={() => setViewingCaseDetails(null)}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Case Details: {viewingCaseDetails.subject}</DialogTitle>
+                            <DialogDescription>
+                                Tracking ID: {viewingCaseDetails.trackingId}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 max-h-[70vh] overflow-y-auto pr-4">
+                           <CaseHistory 
+                                trail={viewingCaseDetails.auditTrail} 
+                                handleScrollToCase={handleScrollToCase}
+                                onDownload={() => downloadAuditTrailPDF({
+                                    title: viewingCaseDetails.subject,
+                                    trackingId: viewingCaseDetails.trackingId,
+                                    initialMessage: viewingCaseDetails.message,
+                                    trail: viewingCaseDetails.auditTrail || [],
+                                    finalResolution: viewingCaseDetails.resolution,
+                                    isCaseClosed: viewingCaseDetails.status === 'Resolved' || viewingCaseDetails.status === 'Closed'
+                                })}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
             {renderCaseList(itemsToDisplay)}
         </>
     )
@@ -1694,7 +1737,7 @@ function MyConcernsContent() {
     const raised = allCases.filter(c => c.submittedBy === role || c.submittedBy === currentUserName);
     const identifiedRaised = raised.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
     const anonymousRaised = raised.filter(c => c.isAnonymous);
-    const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim');
+    const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId); // Only show top-level reports here
     
     // Determine which cases are visible in the "Received" view for the current role
     const visibleReceivedCases = allCases.filter(f => {
@@ -1712,7 +1755,7 @@ function MyConcernsContent() {
 
     const identifiedReceived = visibleReceivedCases.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
     const anonymousReceived = visibleReceivedCases.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const retaliationReceived = visibleReceivedCases.filter(c => c.criticality === 'Retaliation Claim'); // This will only contain items if role is HR Head
+    const retaliationReceived = visibleReceivedCases.filter(c => c.criticality === 'Retaliation Claim');
     
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
   }, [allCases, role]);
