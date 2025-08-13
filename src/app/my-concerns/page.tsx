@@ -1537,7 +1537,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     </div>
                                 )}
                                  
-                                {retaliationCase && (
+                                {retaliationCase && (role === 'HR Head' || isComplainant) && (
                                     <div className="mt-4 pt-4 border-t-2 border-destructive/50 space-y-4">
                                         <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
                                             <GitMerge /> Linked Retaliation Claim 
