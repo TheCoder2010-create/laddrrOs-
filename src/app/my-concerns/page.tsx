@@ -906,9 +906,17 @@ const formatEventTitle = (event: string) => {
 
 function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedback, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void, onDownload: () => void }) {
     const { role } = useRole();
-    const trail = item.auditTrail;
 
-    if (!trail || trail.length === 0) return null;
+    const filteredTrail = useMemo(() => {
+        if (!item.auditTrail) return [];
+        // The Manager should not see the "Retaliation Claim Filed" event on the parent case.
+        if (role === 'Manager') {
+            return item.auditTrail.filter(event => event.event !== 'Retaliation Claim Filed');
+        }
+        return item.auditTrail;
+    }, [item.auditTrail, role]);
+
+    if (!filteredTrail || filteredTrail.length === 0) return null;
 
     return (
         <div className="space-y-2">
@@ -922,27 +930,23 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
             <div className="relative p-4 border rounded-md bg-muted/50">
                  <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
-                    {trail.map((event, index) => {
+                    {filteredTrail.map((event, index) => {
                         const eventConfig = auditEventIcons[event.event as keyof typeof auditEventIcons] || auditEventIcons.default;
                         const Icon = eventConfig.icon;
                         
                         const renderDetails = () => {
                             if (!event.details) return null;
 
-                            // For HR Head, make the parent case ID a clickable link.
-                            if (role === 'HR Head' && item.parentCaseId && event.event.includes('Retaliation')) {
+                            // For HR Head, make the parent case ID a clickable link if it exists on the item.
+                            if (role === 'HR Head' && item.parentCaseId && event.event.includes('Retaliation Claim Submitted')) {
                                 return (
                                     <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                                         Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, item.parentCaseId!)} className="font-mono text-primary hover:underline">{item.parentCaseId}</a>.
-                                        {event.details.split('\n').map((line, i) => {
-                                            if (line.includes('New Case ID:')) return null; // Don't show the new case ID here
-                                            return <div key={`${index}-line-${i}`}>{line}</div>
-                                        })}
                                     </div>
                                 );
                             }
                             
-                            // For regular users, render the child case link if present.
+                            // For regular users (complainant), render the child case link if present.
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
                             const childMatch = event.details.match(childRegex);
                             if (childMatch) {
@@ -1559,20 +1563,19 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                         <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
                                             <GitMerge /> Linked Retaliation Claim 
                                         </h4>
-                                        
-                                        {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
-                                            <AcknowledgementWidget 
-                                                item={retaliationCase} 
-                                                onUpdate={() => onUpdate()}
-                                                title="Action Required: Acknowledge HR Response"
-                                                description="HR has responded to your retaliation claim. Please review their resolution."
-                                                responderEventActor={retaliationResponderEvent?.actor}
-                                                responderEventDetails={retaliationResponderEvent?.details}
-                                            />
-                                        )}
-                                        
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center p-3 border rounded-lg bg-muted/50">
+                                        <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                                            {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
+                                                <AcknowledgementWidget 
+                                                    item={retaliationCase} 
+                                                    onUpdate={() => onUpdate()}
+                                                    title="Action Required: Acknowledge HR Response"
+                                                    description="HR has responded to your retaliation claim. Please review their resolution."
+                                                    responderEventActor={retaliationResponderEvent?.actor}
+                                                    responderEventDetails={retaliationResponderEvent?.details}
+                                                />
+                                            )}
+                                            
+                                            <div className="flex justify-between items-center">
                                                 <div>
                                                     <Label>Claim Status</Label>
                                                     <div className="mt-1">{getRetaliationStatusBadge(retaliationCase.status)}</div>
@@ -1602,9 +1605,8 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                     </div>
                                                 </div>
                                             )}
+                                            <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                         </div>
-                                        
-                                        <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                     </div>
                                 )}
                                 {renderActionPanel()}
@@ -1730,7 +1732,6 @@ function MyConcernsContent() {
   const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived } = useMemo(() => {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
     
-    const wasInvolved = (f: Feedback) => f.auditTrail?.some(e => e.actor === role) ?? false;
     const currentUserName = roleUserMapping[role]?.name;
 
     // Raised concerns
@@ -1742,17 +1743,19 @@ function MyConcernsContent() {
     // Received concerns
     const received: Feedback[] = [];
     allCases.forEach(f => {
-        const isAssigned = f.assignedTo?.includes(role!);
-        const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
-
+        // Retaliation claims are only for HR Head
         if (f.criticality === 'Retaliation Claim') {
             if (role === 'HR Head') {
                 received.push(f);
             }
-            return;
+            return; // Skip further checks for this item
         }
-
-        if (isAssigned || isInvolvedInClosedCase) {
+        
+        // Regular concerns are for assignees or past involved parties
+        const isAssigned = f.assignedTo?.includes(role!);
+        const wasInvolvedInClosedCase = f.auditTrail?.some(e => e.actor === role) && (f.status === 'Resolved' || f.status === 'Closed');
+        
+        if (isAssigned || wasInvolvedInClosedCase) {
              received.push(f);
         }
     });
