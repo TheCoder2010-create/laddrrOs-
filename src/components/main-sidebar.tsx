@@ -108,12 +108,22 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setMessageCount(totalMessages);
 
        // My Concerns Count
-      const concernActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-      const myRaisedConcernsWithActions = feedback.filter(f => {
+      let concernsActionCount = 0;
+      const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
+      const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
+      
+      feedback.forEach(f => {
           const isMyConcern = f.submittedBy === currentRole || f.submittedBy === currentUserName;
-          return isMyConcern && concernActionStatuses.includes(f.status || '');
-      }).length;
-      setMyConcernsCount(myRaisedConcernsWithActions);
+          const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
+
+          if (isMyConcern && complainantActionStatuses.includes(f.status || '')) {
+              concernsActionCount++;
+          }
+          if (isAssignedToMe && respondentActionStatuses.includes(f.status || '')) {
+              concernsActionCount++;
+          }
+      });
+      setMyConcernsCount(concernsActionCount);
       
       // Coaching & Development Count
       let devCount = 0;

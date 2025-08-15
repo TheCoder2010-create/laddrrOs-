@@ -1729,8 +1729,8 @@ function MyConcernsContent() {
     });
   };
 
-  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, raisedActionCounts } = useMemo(() => {
-    if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [], raisedActionCounts: { identified: 0, anonymous: 0, retaliation: 0 } };
+  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, actionCounts } = useMemo(() => {
+    if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [], actionCounts: { raised: {}, received: {} } };
     
     const currentUserName = roleUserMapping[role]?.name;
 
@@ -1740,13 +1740,12 @@ function MyConcernsContent() {
     const anonymousRaised = raised.filter(c => c.isAnonymous);
     const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId); // Only show top-level reports here
     
-    const concernActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
+    const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
     const raisedActionCounts = {
-        identified: identifiedRaised.filter(c => concernActionStatuses.includes(c.status || '')).length,
-        anonymous: anonymousRaised.filter(c => concernActionStatuses.includes(c.status || '')).length,
-        retaliation: retaliationRaised.filter(c => concernActionStatuses.includes(c.status || '')).length,
+        identified: identifiedRaised.filter(c => complainantActionStatuses.includes(c.status || '')).length,
+        anonymous: anonymousRaised.filter(c => complainantActionStatuses.includes(c.status || '')).length,
+        retaliation: retaliationRaised.filter(c => complainantActionStatuses.includes(c.status || '')).length,
     };
-
 
     // Received concerns
     const received: Feedback[] = [];
@@ -1771,7 +1770,14 @@ function MyConcernsContent() {
     const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
     const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
     
-    return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, raisedActionCounts };
+    const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
+    const receivedActionCounts = {
+        identified: identifiedReceived.filter(c => respondentActionStatuses.includes(c.status || '')).length,
+        anonymous: anonymousReceived.filter(c => respondentActionStatuses.includes(c.status || '')).length,
+        retaliation: retaliationReceived.filter(c => respondentActionStatuses.includes(c.status || '')).length,
+    };
+
+    return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, actionCounts: { raised: raisedActionCounts, received: receivedActionCounts } };
   }, [allCases, role]);
   
   const getSectionTitle = () => {
@@ -1783,7 +1789,7 @@ function MyConcernsContent() {
     <TabsTrigger value={value} className={cn("relative", value === 'retaliation' && "text-destructive/80 data-[state=active]:text-destructive")}>
         {icon}
         {label}
-        {viewMode === 'raised' && count > 0 && (
+        {count > 0 && (
             <span className="absolute top-1 right-1 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -1844,6 +1850,7 @@ function MyConcernsContent() {
     );
   };
 
+  const countsForView = viewMode === 'raised' ? actionCounts.raised : actionCounts.received;
 
   return (
     <div className="p-4 md:p-8 space-y-8">
@@ -1882,9 +1889,9 @@ function MyConcernsContent() {
         <CardContent>
             <Tabs defaultValue="identity-revealed" onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
-                    {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, raisedActionCounts.identified)}
-                    {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, raisedActionCounts.anonymous)}
-                    {renderTabTrigger("retaliation", "Report Retaliation", <Flag className="mr-2" />, raisedActionCounts.retaliation)}
+                    {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, countsForView.identified)}
+                    {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, countsForView.anonymous)}
+                    {renderTabTrigger("retaliation", "Report Retaliation", <Flag className="mr-2" />, countsForView.retaliation)}
                 </TabsList>
                 <TabsContent value="identity-revealed">
                     <IdentifiedConcernForm 
