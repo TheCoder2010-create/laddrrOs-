@@ -909,7 +909,6 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
 
     const filteredTrail = useMemo(() => {
         if (!item.auditTrail) return [];
-        // The Manager should not see the "Retaliation Claim Filed" event on the parent case.
         if (role === 'Manager') {
             return item.auditTrail.filter(event => event.event !== 'Retaliation Claim Filed');
         }
@@ -937,7 +936,6 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                         const renderDetails = () => {
                             if (!event.details) return null;
 
-                            // For HR Head, make the parent case ID a clickable link if it exists on the item.
                             if (role === 'HR Head' && item.parentCaseId && event.event.includes('Retaliation Claim Submitted')) {
                                 return (
                                     <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
@@ -946,7 +944,6 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                                 );
                             }
                             
-                            // For regular users (complainant), render the child case link if present.
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
                             const childMatch = event.details.match(childRegex);
                             if (childMatch) {
@@ -1484,14 +1481,16 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     return (
                         <AccordionItem value={item.trackingId} key={item.trackingId} id={`accordion-item-${item.trackingId}`}>
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
-                                <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <p className="font-medium truncate">{accordionTitle}</p>
-                                </div>
-                                <div className="flex items-center gap-4 pl-4 mr-2">
-                                    <span className="text-xs text-muted-foreground font-mono cursor-text">
-                                        ID: {item.trackingId}
-                                    </span>
-                                    {getStatusBadge(item)}
+                                <div className="flex justify-between items-center w-full">
+                                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        <p className="font-medium truncate">{accordionTitle}</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 pl-4 mr-2">
+                                        <span className="text-xs text-muted-foreground font-mono cursor-text">
+                                            {item.isAnonymous && !isCaseClosed && isReceivedView ? 'ID Hidden Until Closure' : `ID: ${item.trackingId}`}
+                                        </span>
+                                        {getStatusBadge(item)}
+                                    </div>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2 px-4">
@@ -1552,6 +1551,8 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                         setRetaliationDialogOpen(false);
                                                         onUpdate();
                                                     }} 
+                                                    files={[]}
+                                                    setFiles={() => {}}
                                                 />
                                             </DialogContent>
                                         </Dialog>
@@ -1734,48 +1735,53 @@ function MyConcernsContent() {
     
     const currentUserName = roleUserMapping[role]?.name;
 
-    // Raised concerns
-    const raised = allCases.filter(c => c.submittedBy === role || c.submittedBy === currentUserName);
-    const identifiedRaised = raised.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const anonymousRaised = raised.filter(c => c.isAnonymous);
-    const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId); // Only show top-level reports here
-    
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-    const raisedActionCounts = {
-        identified: identifiedRaised.filter(c => complainantActionStatuses.includes(c.status || '')).length,
-        anonymous: anonymousRaised.filter(c => complainantActionStatuses.includes(c.status || '')).length,
-        retaliation: retaliationRaised.filter(c => complainantActionStatuses.includes(c.status || '')).length,
-    };
-
-    // Received concerns
-    const received: Feedback[] = [];
-    allCases.forEach(f => {
-        const isAssigned = f.assignedTo?.includes(role!);
-        const wasInvolvedInClosedCase = f.auditTrail?.some(e => e.actor === role) && (f.status === 'Resolved' || f.status === 'Closed');
-
-        // Retaliation claims are only for HR Head in this view
-        if (f.criticality === 'Retaliation Claim') {
-            if (role === 'HR Head' && (isAssigned || wasInvolvedInClosedCase)) {
-                 received.push(f);
-            }
-            return;
-        }
-
-        if (isAssigned || wasInvolvedInClosedCase) {
-             received.push(f);
-        }
-    });
-
-    const identifiedReceived = received.filter(c => !c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
-    const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
-    
     const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
-    const receivedActionCounts = {
-        identified: identifiedReceived.filter(c => respondentActionStatuses.includes(c.status || '')).length,
-        anonymous: anonymousReceived.filter(c => respondentActionStatuses.includes(c.status || '')).length,
-        retaliation: retaliationReceived.filter(c => respondentActionStatuses.includes(c.status || '')).length,
-    };
+    
+    const raisedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
+    const receivedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
+
+    // Separate lists
+    const identifiedRaised: Feedback[] = [];
+    const anonymousRaised: Feedback[] = [];
+    const retaliationRaised: Feedback[] = [];
+    const identifiedReceived: Feedback[] = [];
+    const anonymousReceived: Feedback[] = [];
+    const retaliationReceived: Feedback[] = [];
+
+    allCases.forEach(c => {
+      const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
+      const isAssignedToMe = c.assignedTo?.includes(role as any);
+      
+      const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
+      const isReceivedActionable = respondentActionStatuses.includes(c.status || '');
+
+      if (isRaisedByMe) {
+          if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
+              identifiedRaised.push(c);
+              if (isRaisedActionable) raisedActionCounts.identified++;
+          } else if (c.isAnonymous) {
+              anonymousRaised.push(c);
+              if (isRaisedActionable) raisedActionCounts.anonymous++;
+          } else if (c.criticality === 'Retaliation Claim' && !c.parentCaseId) {
+              retaliationRaised.push(c);
+              if (isRaisedActionable) raisedActionCounts.retaliation++;
+          }
+      }
+
+      if (isAssignedToMe) {
+          if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
+              identifiedReceived.push(c);
+              if (isReceivedActionable) receivedActionCounts.identified++;
+          } else if (c.isAnonymous) {
+              anonymousReceived.push(c);
+              if (isReceivedActionable) receivedActionCounts.anonymous++;
+          } else if (c.criticality === 'Retaliation Claim') {
+              retaliationReceived.push(c);
+              if (isReceivedActionable) receivedActionCounts.retaliation++;
+          }
+      }
+    });
 
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, actionCounts: { raised: raisedActionCounts, received: receivedActionCounts } };
   }, [allCases, role]);
