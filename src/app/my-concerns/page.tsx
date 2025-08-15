@@ -936,7 +936,7 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                         const renderDetails = () => {
                             if (!event.details) return null;
 
-                            if (role === 'HR Head' && item.parentCaseId) {
+                            if (role === 'HR Head' && item.parentCaseId && event.event === 'Retaliation Claim Submitted') {
                                 return (
                                     <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                                         Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, item.parentCaseId!)} className="font-mono text-primary hover:underline">{item.parentCaseId}</a>.
@@ -1549,8 +1549,6 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                         setRetaliationDialogOpen(false);
                                                         onUpdate();
                                                     }} 
-                                                    files={[]}
-                                                    setFiles={() => {}}
                                                 />
                                             </DialogContent>
                                         </Dialog>
@@ -1636,11 +1634,14 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                         </Button>
                     </div>
                      {renderCaseList(itemsToDisplay)}
-                     {itemsToDisplay.length === 0 && (
-                        <div className="mt-4 text-center py-8">
-                            {notFound && <p className="text-destructive">No submission found with that ID.</p>}
+                     {itemsToDisplay.length === 0 && !trackedCase && (
+                        <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
                         </div>
-                    )}
+                     )}
+                     {notFound && (
+                        <p className="text-destructive text-center mt-4">No submission found with that ID.</p>
+                     )}
                 </div>
             </>
         )
@@ -1737,7 +1738,6 @@ function MyConcernsContent() {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [], actionCounts: { raised: { identified: 0, anonymous: 0, retaliation: 0 }, received: { identified: 0, anonymous: 0, retaliation: 0 } } };
     
     const currentUserName = roleUserMapping[role]?.name;
-    const currentRole = roleUserMapping[role]?.role;
 
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
     const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
@@ -1755,9 +1755,7 @@ function MyConcernsContent() {
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
         const wasInvolved = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
-        const isCaseOpen = c.status !== 'Resolved' && c.status !== 'Closed';
-
-        const isVisibleAsRespondent = c.assignedTo?.includes(role as any) || (wasInvolved && isCaseOpen);
+        const isVisibleAsRespondent = c.assignedTo?.includes(role as any) || wasInvolved;
 
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
         const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && c.assignedTo?.includes(role as any);
@@ -1850,7 +1848,7 @@ function MyConcernsContent() {
                 accordionRef={accordionRef}
                 isReceivedView={isReceivedView}
             />
-            {itemsToDisplay.length === 0 && (
+            {itemsToDisplay.length === 0 && !isLoading && (
                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground">{noItemsMessage}</p>
                 </div>
@@ -1947,7 +1945,16 @@ function MyConcernsContent() {
         </CardHeader>
         <CardContent>
             <div className="mt-4">
-                {renderSubmissions()}
+                <Tabs defaultValue="identity-revealed" onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-3">
+                        {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, countsForView.identified)}
+                        {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, countsForView.anonymous)}
+                        {renderTabTrigger("retaliation", "Retaliation", <Flag className="mr-2" />, countsForView.retaliation)}
+                    </TabsList>
+                    <TabsContent value="identity-revealed">{renderSubmissions()}</TabsContent>
+                    <TabsContent value="anonymous">{renderSubmissions()}</TabsContent>
+                    <TabsContent value="retaliation">{renderSubmissions()}</TabsContent>
+                </Tabs>
             </div>
         </CardContent>
       </Card>
