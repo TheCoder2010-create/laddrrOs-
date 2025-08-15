@@ -1400,7 +1400,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     
     const renderCaseList = (itemsToRender: Feedback[]) => {
         if (itemsToRender.length === 0) {
-             if (concernType === 'anonymous' && !isReceivedView) {
+             if (concernType === 'anonymous' && !isReceivedView && !trackedCase) {
                 return (
                     <div className="mt-4 text-center py-8">
                         {notFound && <p className="text-destructive">No submission found with that ID.</p>}
@@ -1637,6 +1637,11 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                         </Button>
                     </div>
                      {renderCaseList(itemsToDisplay)}
+                     {itemsToDisplay.length === 0 && (
+                        <div className="mt-4 text-center py-8">
+                            {notFound && <p className="text-destructive">No submission found with that ID.</p>}
+                        </div>
+                    )}
                 </div>
             </>
         )
@@ -1928,9 +1933,6 @@ function MyConcernsContent() {
                 </CardTitle>
                 {isSupervisor && (
                     <div className="flex items-center space-x-2">
-                        <Label htmlFor="view-mode-toggle" className="text-sm text-muted-foreground">
-                            {viewMode === 'raised' ? 'Showing My Raised' : 'Showing Received by Me'}
-                        </Label>
                         <Switch
                             id="view-mode-toggle"
                             checked={viewMode === 'received'}
