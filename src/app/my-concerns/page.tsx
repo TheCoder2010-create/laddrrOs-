@@ -53,6 +53,7 @@ import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { rewriteText } from '@/ai/flows/rewrite-text-flow';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 
 
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
@@ -1147,6 +1148,23 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
 }
 
 function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+    if (feedback.status === 'Pending Anonymous Reply') {
+        return (
+             <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 mt-4">
+                <p className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Awaiting User Response</p>
+                <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="mt-4 space-y-4 pt-4 border-t">
+            <AnonymousConcernActionCards feedback={feedback} onUpdate={onUpdate} />
+        </div>
+    );
+}
+
+function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [revealReason, setRevealReason] = useState('');
@@ -1207,17 +1225,8 @@ function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedbac
         }
     }
     
-    if (feedback.status === 'Pending Anonymous Reply') {
-        return (
-             <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 mt-4">
-                <p className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Awaiting User Response</p>
-                <p className="text-sm mt-1">You have requested more information. This case will reappear in your queue once the user has responded.</p>
-            </div>
-        );
-    }
-    
     return (
-        <div className="space-y-4 pt-4 mt-4 border-t">
+        <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
                      <TooltipProvider>
@@ -1344,7 +1353,7 @@ function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedbac
                     Submit
                 </Button>
             </div>
-        </div>
+        </>
     );
 }
 
@@ -1400,13 +1409,21 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     
     const renderCaseList = (itemsToRender: Feedback[]) => {
         if (itemsToRender.length === 0) {
-             if (concernType === 'anonymous' && !isReceivedView && !trackedCase) {
-                return null;
-             }
-             if (itemsToRender.length === 0 && trackedCase) {
-                 return null;
-             }
-            return null;
+            if (concernType === 'anonymous' && !isReceivedView) {
+                if (trackedCase) {
+                    return null;
+                }
+                return (
+                     <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
+                    </div>
+                );
+            }
+            return (
+                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">You have no {isReceivedView ? 'received' : 'raised'} concerns in this category.</p>
+                </div>
+            );
         }
         return (
              <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
@@ -1561,7 +1578,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                             <GitMerge /> Linked Retaliation Claim 
                                         </h4>
                                         <div className="border rounded-lg bg-muted/50">
-                                             <div className="p-4 space-y-4">
+                                            <div className="p-4 space-y-4">
                                                 {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
                                                     <AcknowledgementWidget 
                                                         item={retaliationCase} 
@@ -1603,9 +1620,10 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                         </div>
                                                     </div>
                                                 )}
-                                            </div>
-                                            <div className="p-4 border-t">
-                                                <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
+                                                
+                                                <div className="pt-4 border-t">
+                                                    <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1691,7 +1709,6 @@ function MyConcernsContent() {
   const accordionRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
   
-  // State for file attachments, lifted up
   const [attachmentState, setAttachmentState] = useState<{
     identified: File[],
     anonymous: File[],
@@ -1757,7 +1774,7 @@ function MyConcernsContent() {
 
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
-        const isVisibleAsRespondent = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName) || c.assignedTo?.includes(role as any);
+        const isVisibleAsRespondent = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
 
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
         const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && c.assignedTo?.includes(role as any);
@@ -1797,11 +1814,6 @@ function MyConcernsContent() {
 
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, actionCounts: { raised: raisedActionCounts, received: receivedActionCounts } };
   }, [allCases, role]);
-  
-  const getSectionTitle = () => {
-    if (viewMode === 'received') return 'Received Concerns';
-    return 'My Submissions';
-  };
 
   const renderTabTrigger = (value: string, label: string, icon: React.ReactNode, count: number) => (
     <TabsTrigger value={value} className={cn("relative", value === 'retaliation' && "text-destructive/80 data-[state=active]:text-destructive")}>
@@ -1816,55 +1828,21 @@ function MyConcernsContent() {
     </TabsTrigger>
   );
 
-  const renderSubmissions = () => {
+  const getConcernList = () => {
     const isReceivedView = isSupervisor && viewMode === 'received';
-    
-    let concernsToShow;
-    let submissionType: 'other' | 'anonymous' | 'retaliation' = 'other';
-    let noItemsMessage = `You have no ${isReceivedView ? 'received' : 'raised'} concerns in this category.`;
-    
     switch (activeTab) {
-        case 'identity-revealed':
-            concernsToShow = isReceivedView ? identifiedReceived : identifiedRaised;
-            submissionType = 'other';
-            break;
-        case 'anonymous':
-            concernsToShow = isReceivedView ? anonymousReceived : anonymousRaised;
-            submissionType = 'anonymous';
-            break;
-        case 'retaliation':
-            concernsToShow = isReceivedView ? retaliationReceived : retaliationRaised;
-            submissionType = 'retaliation';
-            break;
-        default:
-            concernsToShow = [];
+        case 'identity-revealed': return isReceivedView ? identifiedReceived : identifiedRaised;
+        case 'anonymous': return isReceivedView ? anonymousReceived : anonymousRaised;
+        case 'retaliation': return isReceivedView ? retaliationReceived : retaliationRaised;
+        default: return [];
     }
-
-    if (isLoading) {
-        return <Skeleton className="h-40 w-full mt-4" />;
-    }
-    
-    const itemsToDisplay = submissionType === 'anonymous' && !isReceivedView ? [] : concernsToShow;
-
-    return (
-        <>
-            <MySubmissions 
-                onUpdate={handleCaseSubmitted} 
-                items={itemsToDisplay}
-                allCases={allCases} 
-                concernType={submissionType}
-                accordionRef={accordionRef}
-                isReceivedView={isReceivedView}
-            />
-            {itemsToDisplay.length === 0 && !isLoading && (
-                concernType !== 'anonymous' || isReceivedView) && (
-                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">{noItemsMessage}</p>
-                </div>
-            )}
-        </>
-    );
   };
+
+  const getConcernType = (): 'other' | 'anonymous' | 'retaliation' => {
+      if (activeTab === 'anonymous') return 'anonymous';
+      if (activeTab === 'retaliation') return 'retaliation';
+      return 'other';
+  }
 
   const countsForView = viewMode === 'raised' ? actionCounts.raised : actionCounts.received;
 
@@ -1894,76 +1872,79 @@ function MyConcernsContent() {
         </DialogContent>
       </Dialog>
       
-      <Tabs defaultValue="identity-revealed" onValueChange={setActiveTab}>
-        <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
-                <ShieldQuestion className="h-8 w-8" /> Raise a Concern
-              </CardTitle>
-               <CardDescription className="text-lg text-muted-foreground">
-                Choose how you would like to submit a concern for review.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <TabsList className="grid w-full grid-cols-3">
-                    {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, actionCounts.raised.identified)}
-                    {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, actionCounts.raised.anonymous)}
-                    {renderTabTrigger("retaliation", "Report Retaliation", <Flag className="mr-2" />, actionCounts.raised.retaliation)}
-                </TabsList>
-                <TabsContent value="identity-revealed">
-                    <IdentifiedConcernForm 
-                        onCaseSubmitted={() => handleCaseSubmitted()} 
-                        files={attachmentState.identified}
-                        setFiles={(files) => setAttachmentState(s => ({...s, identified: files}))}
-                    />
-                </TabsContent>
-                <TabsContent value="anonymous">
-                    <AnonymousConcernForm 
-                        onCaseSubmitted={handleCaseSubmitted}
-                        files={attachmentState.anonymous}
-                        setFiles={(files) => setAttachmentState(s => ({...s, anonymous: files}))}
-                    />
-                </TabsContent>
-                 <TabsContent value="retaliation">
-                    <DirectRetaliationForm 
-                        onCaseSubmitted={() => handleCaseSubmitted()} 
-                        files={attachmentState.retaliation}
-                        setFiles={(files) => setAttachmentState(s => ({...s, retaliation: files}))}
-                    />
-                </TabsContent>
-            </CardContent>
-        </Card>
+      <Card>
+          <Tabs defaultValue="identity-revealed" onValueChange={setActiveTab}>
+              <CardHeader>
+                <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
+                  <ShieldQuestion className="h-8 w-8" /> Raise a Concern
+                </CardTitle>
+                 <CardDescription className="text-lg text-muted-foreground">
+                  Choose how you would like to submit a concern for review.
+                </CardDescription>
+                 <TabsList className="grid w-full grid-cols-3 mt-4">
+                      {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, actionCounts.raised.identified)}
+                      {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, actionCounts.raised.anonymous)}
+                      {renderTabTrigger("retaliation", "Report Retaliation", <Flag className="mr-2" />, actionCounts.raised.retaliation)}
+                  </TabsList>
+              </CardHeader>
+              <CardContent>
+                  <TabsContent value="identity-revealed">
+                      <IdentifiedConcernForm 
+                          onCaseSubmitted={() => handleCaseSubmitted()} 
+                          files={attachmentState.identified}
+                          setFiles={(files) => setAttachmentState(s => ({...s, identified: files}))}
+                      />
+                  </TabsContent>
+                  <TabsContent value="anonymous">
+                      <AnonymousConcernForm 
+                          onCaseSubmitted={handleCaseSubmitted}
+                          files={attachmentState.anonymous}
+                          setFiles={(files) => setAttachmentState(s => ({...s, anonymous: files}))}
+                      />
+                  </TabsContent>
+                   <TabsContent value="retaliation">
+                      <DirectRetaliationForm 
+                          onCaseSubmitted={() => handleCaseSubmitted()} 
+                          files={attachmentState.retaliation}
+                          setFiles={(files) => setAttachmentState(s => ({...s, retaliation: files}))}
+                      />
+                  </TabsContent>
 
-        <Card className="mt-8">
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                        <List className="h-5 w-5" />
-                        {getSectionTitle()}
-                    </CardTitle>
-                    {isSupervisor && (
-                        <div className="flex items-center space-x-2">
-                            <Switch
-                                id="view-mode-toggle"
-                                checked={viewMode === 'received'}
-                                onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
-                            />
-                        </div>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent>
-              <TabsList className="grid w-full grid-cols-3">
-                  {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, countsForView.identified)}
-                  {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, countsForView.anonymous)}
-                  {renderTabTrigger("retaliation", "Retaliation", <Flag className="mr-2" />, countsForView.retaliation)}
-              </TabsList>
-              <TabsContent value="identity-revealed">{renderSubmissions()}</TabsContent>
-              <TabsContent value="anonymous">{renderSubmissions()}</TabsContent>
-              <TabsContent value="retaliation">{renderSubmissions()}</TabsContent>
-            </CardContent>
-        </Card>
-      </Tabs>
+                  <Separator className="my-8" />
+                  
+                  <div className="space-y-4">
+                       <div className="flex justify-between items-center">
+                          <h2 className="text-xl font-semibold flex items-center gap-2">
+                              <List className="h-5 w-5" />
+                              {viewMode === 'received' ? 'Received Concerns' : 'My Submissions'}
+                          </h2>
+                           {isSupervisor && (
+                              <div className="flex items-center space-x-2">
+                                  <Switch
+                                      id="view-mode-toggle"
+                                      checked={viewMode === 'received'}
+                                      onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
+                                  />
+                              </div>
+                          )}
+                      </div>
+                      
+                      {isLoading ? (
+                          <Skeleton className="h-40 w-full mt-4" />
+                      ) : (
+                          <MySubmissions 
+                              onUpdate={handleCaseSubmitted} 
+                              items={getConcernList()}
+                              allCases={allCases} 
+                              concernType={getConcernType()}
+                              accordionRef={accordionRef}
+                              isReceivedView={isSupervisor && viewMode === 'received'}
+                          />
+                      )}
+                  </div>
+              </CardContent>
+          </Tabs>
+      </Card>
     </div>
   );
 }
@@ -1985,7 +1966,3 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
-
-
-    
