@@ -1830,24 +1830,21 @@ function MyConcernsContent() {
         return <Skeleton className="h-40 w-full mt-4" />;
     }
     
+    const itemsToDisplay = submissionType === 'anonymous' && !isReceivedView ? [] : concernsToShow;
+
     return (
         <>
             <MySubmissions 
                 onUpdate={handleCaseSubmitted} 
-                items={concernsToShow}
+                items={itemsToDisplay}
                 allCases={allCases} 
                 concernType={submissionType}
                 accordionRef={accordionRef}
                 isReceivedView={isReceivedView}
             />
-            {concernsToShow.length === 0 && (submissionType !== 'anonymous' || isReceivedView) && (
-                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+            {itemsToDisplay.length === 0 && (
+                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground">{noItemsMessage}</p>
-                </div>
-            )}
-            {concernsToShow.length === 0 && submissionType === 'anonymous' && !isReceivedView && (
-                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">You have not raised any anonymous concerns from this dashboard.</p>
                 </div>
             )}
         </>
@@ -1971,3 +1968,6 @@ export default function MyConcernsPage() {
     );
 }
 
+
+
+    
