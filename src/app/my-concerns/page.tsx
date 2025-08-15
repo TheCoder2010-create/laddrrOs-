@@ -1401,11 +1401,10 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     const renderCaseList = (itemsToRender: Feedback[]) => {
         if (itemsToRender.length === 0) {
              if (concernType === 'anonymous' && !isReceivedView && !trackedCase) {
-                return (
-                    <div className="mt-4 text-center py-8">
-                        {notFound && <p className="text-destructive">No submission found with that ID.</p>}
-                    </div>
-                )
+                return null;
+             }
+             if (itemsToRender.length === 0 && trackedCase) {
+                 return null;
              }
             return null;
         }
@@ -1738,6 +1737,7 @@ function MyConcernsContent() {
     if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [], actionCounts: { raised: { identified: 0, anonymous: 0, retaliation: 0 }, received: { identified: 0, anonymous: 0, retaliation: 0 } } };
     
     const currentUserName = roleUserMapping[role]?.name;
+    const currentRole = roleUserMapping[role]?.role;
 
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
     const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
@@ -1753,37 +1753,40 @@ function MyConcernsContent() {
     const retaliationReceived: Feedback[] = [];
 
     allCases.forEach(c => {
-      const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
-      const isAssignedToMe = c.assignedTo?.includes(role as any);
-      
-      const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
-      const isReceivedActionable = respondentActionStatuses.includes(c.status || '');
+        const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
+        const wasInvolved = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
+        const isCaseOpen = c.status !== 'Resolved' && c.status !== 'Closed';
 
-      if (isRaisedByMe) {
-          if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
-              identifiedRaised.push(c);
-              if (isRaisedActionable) raisedActionCounts.identified++;
-          } else if (c.isAnonymous) {
-              anonymousRaised.push(c);
-              if (isRaisedActionable) raisedActionCounts.anonymous++;
-          } else if (c.criticality === 'Retaliation Claim' && !c.parentCaseId) {
-              retaliationRaised.push(c);
-              if (isRaisedActionable) raisedActionCounts.retaliation++;
-          }
-      }
+        const isVisibleAsRespondent = c.assignedTo?.includes(role as any) || (wasInvolved && isCaseOpen);
 
-      if (isAssignedToMe) {
-          if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
-              identifiedReceived.push(c);
-              if (isReceivedActionable) receivedActionCounts.identified++;
-          } else if (c.isAnonymous) {
-              anonymousReceived.push(c);
-              if (isReceivedActionable) receivedActionCounts.anonymous++;
-          } else if (c.criticality === 'Retaliation Claim') {
-              retaliationReceived.push(c);
-              if (isReceivedActionable) receivedActionCounts.retaliation++;
-          }
-      }
+        const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
+        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && c.assignedTo?.includes(role as any);
+
+        if (isRaisedByMe) {
+            if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
+                identifiedRaised.push(c);
+                if (isRaisedActionable) raisedActionCounts.identified++;
+            } else if (c.isAnonymous) {
+                anonymousRaised.push(c);
+                if (isRaisedActionable) raisedActionCounts.anonymous++;
+            } else if (c.criticality === 'Retaliation Claim' && !c.parentCaseId) {
+                retaliationRaised.push(c);
+                if (isRaisedActionable) raisedActionCounts.retaliation++;
+            }
+        }
+
+        if (isVisibleAsRespondent) {
+            if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
+                identifiedReceived.push(c);
+                if (isReceivedActionable) receivedActionCounts.identified++;
+            } else if (c.isAnonymous) {
+                anonymousReceived.push(c);
+                if (isReceivedActionable) receivedActionCounts.anonymous++;
+            } else if (c.criticality === 'Retaliation Claim') {
+                retaliationReceived.push(c);
+                if (isReceivedActionable) receivedActionCounts.retaliation++;
+            }
+        }
     });
 
     return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, actionCounts: { raised: raisedActionCounts, received: receivedActionCounts } };
