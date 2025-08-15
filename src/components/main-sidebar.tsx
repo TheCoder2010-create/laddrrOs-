@@ -37,6 +37,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
   const [voiceInSilenceCount, setVoiceInSilenceCount] = useState(0);
+  const [myConcernsCount, setMyConcernsCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
@@ -96,13 +97,23 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       
       // General Notifications (e.g. from coaching plans) and identified concern acknowledgements
       totalMessages += feedback.filter(f => {
+        const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
+        if (!isAssignedToMe) return false;
+
         const isPendingAck = f.status === 'Pending Acknowledgement';
         const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
-        const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
-        return (isPendingAck || isIdentifiedAck) && isAssignedToMe;
+        return isPendingAck || isIdentifiedAck;
       }).length;
       
       setMessageCount(totalMessages);
+
+       // My Concerns Count
+      const concernActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
+      const myRaisedConcernsWithActions = feedback.filter(f => {
+          const isMyConcern = f.submittedBy === currentRole || f.submittedBy === currentUserName;
+          return isMyConcern && concernActionStatuses.includes(f.status || '');
+      }).length;
+      setMyConcernsCount(myRaisedConcernsWithActions);
       
       // Coaching & Development Count
       let devCount = 0;
@@ -133,6 +144,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setMessageCount(0);
       setCoachingCount(0);
       setVoiceInSilenceCount(0);
+      setMyConcernsCount(0);
     }
   }, [currentRole, currentUserName]);
 
@@ -159,7 +171,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns' },
+    { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns', badge: myConcernsCount > 0 ? myConcernsCount : null, badgeVariant: 'destructive' as const },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence', badge: voiceInSilenceCount > 0 ? voiceInSilenceCount : null, badgeVariant: 'destructive' as const },
   ];

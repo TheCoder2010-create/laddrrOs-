@@ -1729,8 +1729,8 @@ function MyConcernsContent() {
     });
   };
 
-  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived } = useMemo(() => {
-    if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [] };
+  const { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, raisedActionCounts } = useMemo(() => {
+    if (!role) return { identifiedRaised: [], anonymousRaised: [], retaliationRaised: [], identifiedReceived: [], anonymousReceived: [], retaliationReceived: [], raisedActionCounts: { identified: 0, anonymous: 0, retaliation: 0 } };
     
     const currentUserName = roleUserMapping[role]?.name;
 
@@ -1740,21 +1740,28 @@ function MyConcernsContent() {
     const anonymousRaised = raised.filter(c => c.isAnonymous);
     const retaliationRaised = raised.filter(c => c.criticality === 'Retaliation Claim' && !c.parentCaseId); // Only show top-level reports here
     
+    const concernActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
+    const raisedActionCounts = {
+        identified: identifiedRaised.filter(c => concernActionStatuses.includes(c.status || '')).length,
+        anonymous: anonymousRaised.filter(c => concernActionStatuses.includes(c.status || '')).length,
+        retaliation: retaliationRaised.filter(c => concernActionStatuses.includes(c.status || '')).length,
+    };
+
+
     // Received concerns
     const received: Feedback[] = [];
     allCases.forEach(f => {
-        // Retaliation claims are only for HR Head
-        if (f.criticality === 'Retaliation Claim') {
-            if (role === 'HR Head') {
-                received.push(f);
-            }
-            return; // Skip further checks for this item
-        }
-        
-        // Regular concerns are for assignees or past involved parties
         const isAssigned = f.assignedTo?.includes(role!);
         const wasInvolvedInClosedCase = f.auditTrail?.some(e => e.actor === role) && (f.status === 'Resolved' || f.status === 'Closed');
-        
+
+        // Retaliation claims are only for HR Head in this view
+        if (f.criticality === 'Retaliation Claim') {
+            if (role === 'HR Head' && (isAssigned || wasInvolvedInClosedCase)) {
+                 received.push(f);
+            }
+            return;
+        }
+
         if (isAssigned || wasInvolvedInClosedCase) {
              received.push(f);
         }
@@ -1764,13 +1771,26 @@ function MyConcernsContent() {
     const anonymousReceived = received.filter(c => c.isAnonymous && c.criticality !== 'Retaliation Claim');
     const retaliationReceived = received.filter(c => c.criticality === 'Retaliation Claim');
     
-    return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived };
+    return { identifiedRaised, anonymousRaised, retaliationRaised, identifiedReceived, anonymousReceived, retaliationReceived, raisedActionCounts };
   }, [allCases, role]);
   
   const getSectionTitle = () => {
     if (viewMode === 'received') return 'Received Concerns';
     return 'My Submissions';
   };
+
+  const renderTabTrigger = (value: string, label: string, icon: React.ReactNode, count: number) => (
+    <TabsTrigger value={value} className={cn("relative", value === 'retaliation' && "text-destructive/80 data-[state=active]:text-destructive")}>
+        {icon}
+        {label}
+        {viewMode === 'raised' && count > 0 && (
+            <span className="absolute top-1 right-1 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+        )}
+    </TabsTrigger>
+  );
 
   const renderSubmissions = () => {
     const isReceivedView = isSupervisor && viewMode === 'received';
@@ -1862,18 +1882,9 @@ function MyConcernsContent() {
         <CardContent>
             <Tabs defaultValue="identity-revealed" onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="identity-revealed">
-                        <User className="mr-2" />
-                        Identity Revealed
-                    </TabsTrigger>
-                    <TabsTrigger value="anonymous">
-                        <UserX className="mr-2" />
-                        Anonymous
-                    </TabsTrigger>
-                    <TabsTrigger value="retaliation" className="text-destructive/80 data-[state=active]:text-destructive">
-                        <Flag className="mr-2" />
-                        Report Retaliation
-                    </TabsTrigger>
+                    {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, raisedActionCounts.identified)}
+                    {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, raisedActionCounts.anonymous)}
+                    {renderTabTrigger("retaliation", "Report Retaliation", <Flag className="mr-2" />, raisedActionCounts.retaliation)}
                 </TabsList>
                 <TabsContent value="identity-revealed">
                     <IdentifiedConcernForm 
