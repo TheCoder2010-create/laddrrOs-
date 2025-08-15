@@ -930,10 +930,14 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                             if (!event.details) return null;
 
                             // For HR Head, make the parent case ID a clickable link.
-                            if (role === 'HR Head' && item.parentCaseId && event.event === 'Retaliation Claim Submitted') {
+                            if (role === 'HR Head' && item.parentCaseId && event.event.includes('Retaliation')) {
                                 return (
-                                    <div className="text-sm text-muted-foreground mt-1">
+                                    <div className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                                         Claim submitted for case <a href="#" onClick={(e) => handleViewCaseDetails(e, item.parentCaseId!)} className="font-mono text-primary hover:underline">{item.parentCaseId}</a>.
+                                        {event.details.split('\n').map((line, i) => {
+                                            if (line.includes('New Case ID:')) return null; // Don't show the new case ID here
+                                            return <div key={`${index}-line-${i}`}>{line}</div>
+                                        })}
                                     </div>
                                 );
                             }
@@ -1567,21 +1571,23 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                             />
                                         )}
                                         
-                                        <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
-                                             <div className="flex justify-between items-center">
-                                                <Label>Claim Status</Label>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-xs text-muted-foreground font-mono cursor-text">
-                                                       ID: {retaliationCase.trackingId}
-                                                    </span>
-                                                    {getRetaliationStatusBadge(retaliationCase.status)}
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center p-3 border rounded-lg bg-muted/50">
+                                                <div>
+                                                    <Label>Claim Status</Label>
+                                                    <div className="mt-1">{getRetaliationStatusBadge(retaliationCase.status)}</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <Label>Case ID</Label>
+                                                    <p className="text-xs text-muted-foreground font-mono cursor-text">{retaliationCase.trackingId}</p>
                                                 </div>
                                             </div>
+
                                             <div className="space-y-2">
                                                 <Label>Your Claim Description</Label>
                                                 <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
                                             </div>
-
+                                            
                                             {retaliationCase.attachmentNames && retaliationCase.attachmentNames.length > 0 && (
                                                 <div className="space-y-2">
                                                     <Label>Your Attachments</Label>
@@ -1596,9 +1602,9 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                     </div>
                                                 </div>
                                             )}
-                                            
-                                            <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                         </div>
+                                        
+                                        <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                     </div>
                                 )}
                                 {renderActionPanel()}
@@ -1736,16 +1742,15 @@ function MyConcernsContent() {
     // Received concerns
     const received: Feedback[] = [];
     allCases.forEach(f => {
-        // Retaliation claims are only visible to HR head in the received view.
+        const isAssigned = f.assignedTo?.includes(role!);
+        const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
+
         if (f.criticality === 'Retaliation Claim') {
             if (role === 'HR Head') {
                 received.push(f);
             }
             return;
         }
-
-        const isAssigned = f.assignedTo?.includes(role!);
-        const isInvolvedInClosedCase = wasInvolved(f) && (f.status === 'Resolved' || f.status === 'Closed');
 
         if (isAssigned || isInvolvedInClosedCase) {
              received.push(f);
