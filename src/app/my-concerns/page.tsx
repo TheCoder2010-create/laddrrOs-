@@ -266,30 +266,46 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
             <p className="text-sm text-muted-foreground">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
-             <div className="space-y-2">
-                <Label htmlFor="recipient">Raise Concern To</Label>
-                 <Select onValueChange={setRecipient} value={recipient} required>
-                    <SelectTrigger id="recipient">
-                        <SelectValue placeholder="Select a person to direct your concern to..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableRecipients.map(user => (
-                             <SelectItem key={user.name} value={user.name}>
-                                {user.name} ({user.role})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Input 
-                    id="subject" 
-                    value={subject} 
-                    onChange={e => setSubject(e.target.value)} 
-                    placeholder="Enter a subject for your concern..." 
-                    required 
-                />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="recipient">Raise Concern To</Label>
+                    <Select onValueChange={setRecipient} value={recipient} required>
+                        <SelectTrigger id="recipient">
+                            <SelectValue placeholder="Select a recipient..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableRecipients.map(user => (
+                                <SelectItem key={user.name} value={user.name}>
+                                    {user.name} ({user.role})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input 
+                        id="subject" 
+                        value={subject} 
+                        onChange={e => setSubject(e.target.value)} 
+                        placeholder="Enter a subject..." 
+                        required 
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="criticality">Perceived Criticality</Label>
+                    <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
+                        <SelectTrigger id="criticality">
+                            <SelectValue placeholder="Select a criticality level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Critical">Critical</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             <div className="space-y-2">
                 <Label htmlFor="concern">Details of Concern</Label>
@@ -336,20 +352,6 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         </div>
                     </div>
                 )}
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="criticality">Perceived Criticality</Label>
-                 <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
-                    <SelectTrigger id="criticality">
-                        <SelectValue placeholder="Select a criticality level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Low">Low - Needs attention but not urgent</SelectItem>
-                        <SelectItem value="Medium">Medium - Affecting work or morale</SelectItem>
-                        <SelectItem value="High">High - Significant impact, needs prompt review</SelectItem>
-                        <SelectItem value="Critical">Critical - Urgent issue, potential policy violation</SelectItem>
-                    </SelectContent>
-                </Select>
             </div>
             <div className="flex justify-end">
                 <Button type="submit" disabled={isSubmitting || !recipient}>
@@ -1157,6 +1159,10 @@ function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedbac
         );
     }
     
+    if (feedback.status === 'Resolved' || feedback.status === 'Closed') {
+        return null;
+    }
+
     return (
         <div className="mt-4 space-y-4 pt-4 border-t">
             <AnonymousConcernActionCards feedback={feedback} onUpdate={onUpdate} />
@@ -1408,11 +1414,8 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     }, [allCases, trackedCase]);
     
     const renderCaseList = (itemsToRender: Feedback[]) => {
-        if (itemsToRender.length === 0) {
+        if (itemsToRender.length === 0 && trackedCase === null) {
             if (concernType === 'anonymous' && !isReceivedView) {
-                if (trackedCase) {
-                    return null;
-                }
                 return (
                      <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                         <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
@@ -1425,9 +1428,12 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                 </div>
             );
         }
+        
+        const displayItems = trackedCase && !isReceivedView && concernType === 'anonymous' ? [trackedCase] : itemsToRender;
+
         return (
              <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
-                 {itemsToRender.map(item => {
+                 {displayItems.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
                     const relevantResponderEvents = ['Resolution Submitted', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantResponderEvents.includes(e.event));
@@ -1573,59 +1579,56 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                 )}
                                  
                                 {retaliationCase && (isComplainant || role === 'HR Head') && (
-                                    <div className="mt-4 pt-4 border-t-2 border-destructive/50 space-y-4">
-                                        <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
-                                            <GitMerge /> Linked Retaliation Claim 
-                                        </h4>
-                                        <div className="border rounded-lg bg-muted/50">
-                                            <div className="p-4 space-y-4">
-                                                {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
-                                                    <AcknowledgementWidget 
-                                                        item={retaliationCase} 
-                                                        onUpdate={() => onUpdate()}
-                                                        title="Action Required: Acknowledge HR Response"
-                                                        description="HR has responded to your retaliation claim. Please review their resolution."
-                                                        responderEventActor={retaliationResponderEvent?.actor}
-                                                        responderEventDetails={retaliationResponderEvent?.details}
-                                                    />
-                                                )}
-                                                
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <Label>Claim Status</Label>
-                                                        <div className="mt-1">{getRetaliationStatusBadge(retaliationCase.status)}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <Label>Case ID</Label>
-                                                        <p className="text-xs text-muted-foreground font-mono cursor-text">{retaliationCase.trackingId}</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <Label>Your Claim Description</Label>
-                                                    <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
-                                                </div>
-                                                
-                                                {retaliationCase.attachmentNames && retaliationCase.attachmentNames.length > 0 && (
-                                                    <div className="space-y-2">
-                                                        <Label>Your Attachments</Label>
-                                                        <div>
-                                                            {retaliationCase.attachmentNames.map((name, i) => (
-                                                                <Button key={i} variant="outline" size="sm" asChild className="mr-2 mb-2">
-                                                                    <a href="#" onClick={(e) => { e.preventDefault(); alert('In a real app, this would securely download the attachment.'); }}>
-                                                                        <LinkIcon className="mr-2 h-4 w-4" /> View Attachment
-                                                                    </a>
-                                                                </Button>
-                                                            ))}
+                                    <div className="mt-4 pt-4 border-t-2 border-destructive/50">
+                                        <Accordion type="single" collapsible className="w-full">
+                                            <AccordionItem value={`retaliation-${retaliationCase.trackingId}`} className="border-none">
+                                                <AccordionTrigger className="w-full px-0 py-2 text-left hover:no-underline [&_svg]:ml-auto bg-destructive/10 rounded-md px-4">
+                                                     <div className="flex justify-between items-center w-full">
+                                                        <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
+                                                            <GitMerge /> Linked Retaliation Claim 
+                                                        </h4>
+                                                        <div className="flex items-center gap-4 pl-4 mr-2">
+                                                            {getRetaliationStatusBadge(retaliationCase.status)}
+                                                        </div>
+                                                     </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="space-y-4 pt-4">
+                                                    <div className="border rounded-lg bg-muted/50 p-4 space-y-4">
+                                                         {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
+                                                            <AcknowledgementWidget 
+                                                                item={retaliationCase} 
+                                                                onUpdate={() => onUpdate()}
+                                                                title="Action Required: Acknowledge HR Response"
+                                                                description="HR has responded to your retaliation claim. Please review their resolution."
+                                                                responderEventActor={retaliationResponderEvent?.actor}
+                                                                responderEventDetails={retaliationResponderEvent?.details}
+                                                            />
+                                                        )}
+                                                        <div className="space-y-2">
+                                                            <Label>Your Claim Description</Label>
+                                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
+                                                        </div>
+                                                        {retaliationCase.attachmentNames && retaliationCase.attachmentNames.length > 0 && (
+                                                            <div className="space-y-2">
+                                                                <Label>Your Attachments</Label>
+                                                                <div>
+                                                                    {retaliationCase.attachmentNames.map((name, i) => (
+                                                                        <Button key={i} variant="outline" size="sm" asChild className="mr-2 mb-2">
+                                                                            <a href="#" onClick={(e) => { e.preventDefault(); alert('In a real app, this would securely download the attachment.'); }}>
+                                                                                <LinkIcon className="mr-2 h-4 w-4" /> View Attachment
+                                                                            </a>
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        <div className="pt-4 border-t">
+                                                            <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                                         </div>
                                                     </div>
-                                                )}
-                                                
-                                                <div className="pt-4 border-t">
-                                                    <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
-                                                </div>
-                                            </div>
-                                        </div>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
                                     </div>
                                 )}
                                 {renderActionPanel()}
@@ -1636,8 +1639,6 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
             </Accordion>
         );
     }
-
-    const itemsToDisplay = concernType === 'anonymous' && trackedCase && !isReceivedView ? [trackedCase] : items;
 
     if (concernType === 'anonymous' && !isReceivedView) {
         return (
@@ -1655,8 +1656,8 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                             Track
                         </Button>
                     </div>
-                     {renderCaseList(itemsToDisplay)}
-                     {itemsToDisplay.length === 0 && !trackedCase && (
+                     {renderCaseList(items)}
+                     {items.length === 0 && !trackedCase && (
                         <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                             <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
                         </div>
@@ -1697,7 +1698,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     </div>
                 </DialogContent>
             </Dialog>
-            {renderCaseList(itemsToDisplay)}
+            {renderCaseList(items)}
         </>
     )
 }
@@ -1794,20 +1795,14 @@ function MyConcernsContent() {
 
         if (isVisibleAsRespondent) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
-                if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) {
-                    identifiedReceived.push(c);
-                }
+                if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
             } else if (c.isAnonymous) {
-                if (!anonymousReceived.some(i => i.trackingId === c.trackingId)) {
-                    anonymousReceived.push(c);
-                }
+                if (!anonymousReceived.some(i => i.trackingId === c.trackingId)) anonymousReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.anonymous++;
             } else if (c.criticality === 'Retaliation Claim') {
-                 if (!retaliationReceived.some(i => i.trackingId === c.trackingId)) {
-                    retaliationReceived.push(c);
-                }
-                if (isReceivedActionable) receivedActionCounts.retaliation++;
+                 if (!retaliationReceived.some(i => i.trackingId === c.trackingId)) retaliationReceived.push(c);
+                 if (isReceivedActionable) receivedActionCounts.retaliation++;
             }
         }
     });
@@ -1875,16 +1870,29 @@ function MyConcernsContent() {
       <Card>
           <Tabs defaultValue="identity-revealed" onValueChange={setActiveTab}>
               <CardHeader>
-                <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
-                  <ShieldQuestion className="h-8 w-8" /> Raise a Concern
-                </CardTitle>
-                 <CardDescription className="text-lg text-muted-foreground">
-                  Choose how you would like to submit a concern for review.
-                </CardDescription>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
+                          <ShieldQuestion className="h-8 w-8" /> Raise a Concern
+                        </CardTitle>
+                         <CardDescription className="text-lg text-muted-foreground">
+                          Choose how you would like to submit a concern for review.
+                        </CardDescription>
+                    </div>
+                     {isSupervisor && (
+                      <div className="flex items-center space-x-2">
+                          <Switch
+                              id="view-mode-toggle"
+                              checked={viewMode === 'received'}
+                              onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
+                          />
+                      </div>
+                    )}
+                </div>
                  <TabsList className="grid w-full grid-cols-3 mt-4">
-                      {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, actionCounts.raised.identified)}
-                      {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, actionCounts.raised.anonymous)}
-                      {renderTabTrigger("retaliation", "Report Retaliation", <Flag className="mr-2" />, actionCounts.raised.retaliation)}
+                      {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, countsForView.identified)}
+                      {renderTabTrigger("anonymous", "Anonymous", <UserX className="mr-2" />, countsForView.anonymous)}
+                      {renderTabTrigger("retaliation", "Report Retaliation", <Flag className="mr-2" />, countsForView.retaliation)}
                   </TabsList>
               </CardHeader>
               <CardContent>
@@ -1918,15 +1926,6 @@ function MyConcernsContent() {
                               <List className="h-5 w-5" />
                               {viewMode === 'received' ? 'Received Concerns' : 'My Submissions'}
                           </h2>
-                           {isSupervisor && (
-                              <div className="flex items-center space-x-2">
-                                  <Switch
-                                      id="view-mode-toggle"
-                                      checked={viewMode === 'received'}
-                                      onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
-                                  />
-                              </div>
-                          )}
                       </div>
                       
                       {isLoading ? (
@@ -1966,3 +1965,4 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
