@@ -120,7 +120,7 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
     };
 
     return (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <p className="text-sm text-muted-foreground">
                 Your name and role will NOT be attached to this submission. It will be routed anonymously to management for review. After submitting, you will be given a unique Tracking ID to check the status of your case on this page.
             </p>
@@ -262,13 +262,13 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence' && user.role !== role);
 
     return (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <p className="text-sm text-muted-foreground">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="recipient">Raise Concern To</Label>
+                    <Label htmlFor="recipient">To</Label>
                     <Select onValueChange={setRecipient} value={recipient} required>
                         <SelectTrigger id="recipient">
                             <SelectValue placeholder="Select a recipient..." />
@@ -293,7 +293,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="criticality">Perceived Criticality</Label>
+                    <Label htmlFor="criticality">Criticality</Label>
                     <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
                         <SelectTrigger id="criticality">
                             <SelectValue placeholder="Select a criticality level" />
@@ -417,7 +417,7 @@ function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     };
 
     return (
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <p className="text-sm text-muted-foreground">
                 This form is for reporting instances of retaliation or bias. Your identity will be attached, and the report will be sent directly to the HR Head for immediate and confidential review.
             </p>
@@ -1232,7 +1232,7 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
     }
     
     return (
-        <>
+        <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
                      <TooltipProvider>
@@ -1359,7 +1359,7 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                     Submit
                 </Button>
             </div>
-        </>
+        </div>
     );
 }
 
@@ -1416,11 +1416,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     const renderCaseList = (itemsToRender: Feedback[]) => {
         if (itemsToRender.length === 0 && trackedCase === null) {
             if (concernType === 'anonymous' && !isReceivedView) {
-                return (
-                     <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
-                    </div>
-                );
+                return null; // Don't show the "no concerns" message if they might track one
             }
             return (
                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
@@ -1430,6 +1426,14 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
         }
         
         const displayItems = trackedCase && !isReceivedView && concernType === 'anonymous' ? [trackedCase] : itemsToRender;
+
+        if (displayItems.length === 0) {
+            return (
+                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">You have no {isReceivedView ? 'received' : 'raised'} concerns in this category.</p>
+                </div>
+            );
+        }
 
         return (
              <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
