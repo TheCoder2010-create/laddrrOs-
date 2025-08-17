@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
@@ -262,13 +261,13 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     const [concern, setConcern] = useState('');
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 mt-0">
-            <p className="text-sm text-muted-foreground mt-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <p className="text-sm text-muted-foreground">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="flex items-center gap-2">
-                    <Label htmlFor="recipient" className="w-[30px]">To</Label>
+                    <Label htmlFor="recipient" className="whitespace-nowrap">To</Label>
                     <Select onValueChange={setRecipient} value={recipient} required>
                         <SelectTrigger id="recipient" className="flex-1">
                             <SelectValue placeholder="Select..." />
@@ -282,8 +281,8 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Label htmlFor="subject" className="w-[60px]">Subject</Label>
+                <div className="flex items-center gap-2 md:col-span-2">
+                    <Label htmlFor="subject" className="whitespace-nowrap">Subject</Label>
                     <Input 
                         id="subject" 
                         value={subject} 
@@ -294,7 +293,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <Label htmlFor="criticality" className="w-[70px]">Criticality</Label>
+                    <Label htmlFor="criticality" className="whitespace-nowrap">Criticality</Label>
                     <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
                         <SelectTrigger id="criticality" className="flex-1">
                             <SelectValue placeholder="Select..." />
@@ -1165,7 +1164,7 @@ function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedbac
     }
 
     return (
-        <div className="mt-4 space-y-4 pt-4 border-t">
+        <div className="mt-4 pt-4 border-t">
             <AnonymousConcernActionCards feedback={feedback} onUpdate={onUpdate} />
         </div>
     );
@@ -1418,21 +1417,21 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
         const displayItems = trackedCase && !isReceivedView && concernType === 'anonymous' ? [trackedCase] : itemsToRender;
 
         if (displayItems.length === 0) {
-            if (concernType === 'anonymous' && !isReceivedView) {
-                if (!trackedCase) {
-                    return (
-                        <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
-                        </div>
-                    );
-                }
-                return null;
+            if (concernType === 'anonymous' && !isReceivedView && !trackedCase) {
+                return (
+                    <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
+                    </div>
+                );
             }
-            return (
-                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">You have no {isReceivedView ? 'received' : 'raised'} concerns in this category.</p>
-                </div>
-            );
+            if (itemsToRender.length === 0 && (concernType !== 'anonymous' || isReceivedView)) {
+                 return (
+                    <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">You have no {isReceivedView ? 'received' : 'raised'} concerns in this category.</p>
+                    </div>
+                );
+            }
+            return null;
         }
 
         return (
@@ -1775,9 +1774,10 @@ function MyConcernsContent() {
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
         const wasEverAssigned = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
+        const isCurrentlyAssigned = c.assignedTo?.includes(role as Role);
         
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && c.assignedTo?.includes(role);
+        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && isCurrentlyAssigned;
 
         if (isRaisedByMe) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
@@ -1792,7 +1792,7 @@ function MyConcernsContent() {
             }
         }
         
-        if (wasEverAssigned) {
+        if (wasEverAssigned || isCurrentlyAssigned) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
                 if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
@@ -1964,3 +1964,5 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
+    
