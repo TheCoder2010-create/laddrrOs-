@@ -1802,10 +1802,12 @@ function MyConcernsContent() {
 
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
-        const wasEverAssigned = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
+        const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
+        const wasEverInvolved = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
+        const isReceivedViewable = isCurrentlyAssigned || wasEverInvolved;
         
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && (c.assignedTo?.includes(role as Role) || false);
+        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && isCurrentlyAssigned;
 
         if (isRaisedByMe) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
@@ -1820,7 +1822,7 @@ function MyConcernsContent() {
             }
         }
         
-        if (wasEverAssigned) {
+        if (isReceivedViewable) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
                 if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
