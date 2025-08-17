@@ -202,7 +202,6 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     const { role } = useRole();
     const [recipient, setRecipient] = useState('');
     const [subject, setSubject] = useState('');
-    const [concern, setConcern] = useState('');
     const [criticality, setCriticality] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -260,18 +259,19 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     }
 
     const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence' && user.role !== role);
+    const [concern, setConcern] = useState('');
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-0">
             <p className="text-sm text-muted-foreground">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="recipient">To</Label>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="recipient" className="w-[100px]">To</Label>
                     <Select onValueChange={setRecipient} value={recipient} required>
-                        <SelectTrigger id="recipient">
-                            <SelectValue placeholder="Select a recipient..." />
+                        <SelectTrigger id="recipient" className="flex-1">
+                            <SelectValue placeholder="Select..." />
                         </SelectTrigger>
                         <SelectContent>
                             {availableRecipients.map(user => (
@@ -282,21 +282,22 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="subject" className="w-[100px]">Subject</Label>
                     <Input 
                         id="subject" 
                         value={subject} 
                         onChange={e => setSubject(e.target.value)} 
-                        placeholder="Enter a subject..." 
+                        placeholder="Enter subject..." 
                         required 
+                        className="flex-1"
                     />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="criticality">Criticality</Label>
+                <div className="flex items-center gap-2">
+                    <Label htmlFor="criticality" className="w-[100px]">Criticality</Label>
                     <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
-                        <SelectTrigger id="criticality">
-                            <SelectValue placeholder="Select a criticality level" />
+                        <SelectTrigger id="criticality" className="flex-1">
+                            <SelectValue placeholder="Select..." />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Low">Low</SelectItem>
@@ -1414,20 +1415,12 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
     }, [allCases, trackedCase]);
     
     const renderCaseList = (itemsToRender: Feedback[]) => {
-        if (itemsToRender.length === 0 && trackedCase === null) {
-            if (concernType === 'anonymous' && !isReceivedView) {
-                return null; // Don't show the "no concerns" message if they might track one
-            }
-            return (
-                <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">You have no {isReceivedView ? 'received' : 'raised'} concerns in this category.</p>
-                </div>
-            );
-        }
-        
         const displayItems = trackedCase && !isReceivedView && concernType === 'anonymous' ? [trackedCase] : itemsToRender;
 
         if (displayItems.length === 0) {
+            if (concernType === 'anonymous' && !isReceivedView) {
+                return null;
+            }
             return (
                 <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
                     <p className="text-muted-foreground">You have no {isReceivedView ? 'received' : 'raised'} concerns in this category.</p>
@@ -1780,9 +1773,10 @@ function MyConcernsContent() {
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
         const isVisibleAsRespondent = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
+        const isAssignedToMe = c.assignedTo?.includes(role as any);
 
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && c.assignedTo?.includes(role as any);
+        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && isAssignedToMe;
 
         if (isRaisedByMe) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
@@ -1795,6 +1789,10 @@ function MyConcernsContent() {
                 retaliationRaised.push(c);
                 if (isRaisedActionable) raisedActionCounts.retaliation++;
             }
+        }
+        
+        if (isAssignedToMe) {
+            receivedActionCounts.retaliation++;
         }
 
         if (isVisibleAsRespondent) {
@@ -1969,4 +1967,3 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
