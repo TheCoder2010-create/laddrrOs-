@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
@@ -145,7 +146,7 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                         rows={8} 
                         required 
                         disabled={isSubmitting || isRewriting}
-                        className="pr-10"
+                        className="pr-12 pb-12"
                     />
                      <Input 
                         type="file" 
@@ -164,6 +165,9 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                     >
                         <Paperclip className="h-5 w-5" />
                     </Button>
+                    <Button type="submit" disabled={isSubmitting || isRewriting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-2 pt-2">
@@ -181,14 +185,10 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                     </div>
                 )}
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-start">
                  <Button variant="outline" type="button" onClick={handleRewrite} disabled={isRewriting || isSubmitting || !concern}>
                     {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     Rewrite with AI
-                </Button>
-                <Button type="submit" disabled={isSubmitting || isRewriting}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Submit Anonymously
                 </Button>
             </div>
         </form>
@@ -261,12 +261,12 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     const [concern, setConcern] = useState('');
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-6">
             <p className="text-sm text-muted-foreground">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="flex items-center gap-2">
+            <div className="grid grid-cols-4 gap-4">
+                <div className="flex items-center gap-2 col-span-2 md:col-span-1">
                     <Label htmlFor="recipient" className="whitespace-nowrap">To</Label>
                     <Select onValueChange={setRecipient} value={recipient} required>
                         <SelectTrigger id="recipient" className="flex-1">
@@ -281,7 +281,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-center gap-2 md:col-span-2">
+                <div className="flex items-center gap-2 col-span-4 md:col-span-2">
                     <Label htmlFor="subject" className="whitespace-nowrap">Subject</Label>
                     <Input 
                         id="subject" 
@@ -292,7 +292,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         className="flex-1"
                     />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 col-span-2 md:col-span-1">
                     <Label htmlFor="criticality" className="whitespace-nowrap">Criticality</Label>
                     <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
                         <SelectTrigger id="criticality" className="flex-1">
@@ -317,7 +317,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         placeholder="Describe the situation in detail..." 
                         rows={8} 
                         required
-                        className="pr-10"
+                        className="pr-12 pb-12"
                     />
                      <Input 
                         type="file" 
@@ -336,6 +336,9 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     >
                         <Paperclip className="h-5 w-5" />
                     </Button>
+                    <Button type="submit" disabled={isSubmitting || !recipient} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-2 pt-2">
@@ -352,12 +355,6 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         </div>
                     </div>
                 )}
-            </div>
-            <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting || !recipient}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Submit Concern
-                </Button>
             </div>
         </form>
     )
@@ -441,7 +438,7 @@ function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         placeholder="Describe the incident in detail..."
                         rows={8}
                         required
-                        className="pr-10"
+                        className="pr-12 pb-12"
                     />
                     <Input 
                         type="file" 
@@ -460,6 +457,9 @@ function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     >
                         <Paperclip className="h-5 w-5" />
                     </Button>
+                    <Button type="submit" variant="destructive" disabled={isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-2 pt-2">
@@ -476,12 +476,6 @@ function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         </div>
                     </div>
                 )}
-            </div>
-            <div className="flex justify-end">
-                <Button type="submit" variant="destructive" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Submit to HR Head
-                </Button>
             </div>
         </form>
     );
@@ -1417,17 +1411,17 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
         const displayItems = trackedCase && !isReceivedView && concernType === 'anonymous' ? [trackedCase] : itemsToRender;
 
         if (displayItems.length === 0) {
-            if (concernType === 'anonymous' && !isReceivedView && !trackedCase) {
-                return (
+            if (isReceivedView) {
+                 return (
                     <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
+                        <p className="text-muted-foreground">You have no received concerns in this category.</p>
                     </div>
                 );
             }
-            if (itemsToRender.length === 0 && (concernType !== 'anonymous' || isReceivedView)) {
-                 return (
+            if (concernType === 'anonymous' && !trackedCase) {
+                return (
                     <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">You have no {isReceivedView ? 'received' : 'raised'} concerns in this category.</p>
+                        <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
                     </div>
                 );
             }
@@ -1511,7 +1505,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     </div>
                                     <div className="flex items-center gap-4 pl-4 mr-2">
                                         <span className="text-xs text-muted-foreground font-mono cursor-text">
-                                            {(item.isAnonymous && !isCaseClosed && isReceivedView) ? 'ID Hidden Until Closure' : `ID: ${item.trackingId}`}
+                                            {(item.isAnonymous && !isCaseClosed) ? 'ID Hidden Until Closure' : `ID: ${item.trackingId}`}
                                         </span>
                                         {getStatusBadge(item)}
                                     </div>
@@ -1774,10 +1768,9 @@ function MyConcernsContent() {
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
         const wasEverAssigned = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
-        const isCurrentlyAssigned = c.assignedTo?.includes(role as Role);
         
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && isCurrentlyAssigned;
+        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && (c.assignedTo?.includes(role as Role) || false);
 
         if (isRaisedByMe) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
@@ -1792,7 +1785,8 @@ function MyConcernsContent() {
             }
         }
         
-        if (wasEverAssigned || isCurrentlyAssigned) {
+        // A case should appear in "received" if the user was *ever* assigned or involved, regardless of current status.
+        if (wasEverAssigned) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
                 if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
