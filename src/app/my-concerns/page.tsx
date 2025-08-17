@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from '
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText, ChevronsRight, X as XIcon } from 'lucide-react';
+import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText, ChevronsRight, X as XIcon, Undo2 } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Label } from '@/components/ui/label';
@@ -65,8 +65,12 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
     const [subject, setSubject] = useState('');
     const [concern, setConcern] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isRewriting, setIsRewriting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // AI Rewrite State
+    const [isRewriting, setIsRewriting] = useState(false);
+    const [originalConcern, setOriginalConcern] = useState('');
+    const [isRewritten, setIsRewritten] = useState(false);
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -78,21 +82,32 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
         setFiles(files.filter(file => file !== fileToRemove));
     };
 
-    const handleRewrite = async () => {
-        if (!concern) {
-            toast({ variant: 'destructive', title: "Nothing to rewrite", description: "Please enter a message first." });
-            return;
-        }
-        setIsRewriting(true);
-        try {
-            const result = await rewriteText({ textToRewrite: concern });
-            setConcern(result.rewrittenText);
-            toast({ title: "Text Rewritten", description: "Your message has been updated by the AI." });
-        } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: "Rewrite Failed", description: "Could not rewrite the text." });
-        } finally {
-            setIsRewriting(false);
+    const handleAiAction = async () => {
+        if (isRewritten) {
+            // Undo the rewrite
+            setConcern(originalConcern);
+            setOriginalConcern('');
+            setIsRewritten(false);
+            toast({ title: "Original Text Restored" });
+        } else {
+            // Perform the rewrite
+            if (!concern) {
+                toast({ variant: 'destructive', title: "Nothing to rewrite", description: "Please enter a message first." });
+                return;
+            }
+            setIsRewriting(true);
+            try {
+                setOriginalConcern(concern); // Save original text
+                const result = await rewriteText({ textToRewrite: concern });
+                setConcern(result.rewrittenText);
+                setIsRewritten(true);
+                toast({ title: "Text Rewritten", description: "Your message has been updated by the AI." });
+            } catch (error) {
+                console.error(error);
+                toast({ variant: 'destructive', title: "Rewrite Failed", description: "Could not rewrite the text." });
+            } finally {
+                setIsRewriting(false);
+            }
         }
     };
 
@@ -155,16 +170,42 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                         onChange={handleFileChange}
                         multiple
                     />
-                    <Button 
-                        type="button"
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
-                        onClick={() => fileInputRef.current?.click()}
-                        aria-label="Attach file"
-                    >
-                        <Paperclip className="h-5 w-5" />
-                    </Button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                    type="button"
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    aria-label="Attach file"
+                                >
+                                    <Paperclip className="h-5 w-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Attach Files</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+
+                    <TooltipProvider>
+                        <Tooltip>
+                             <TooltipTrigger asChild>
+                                <Button 
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute bottom-2 left-2 text-muted-foreground hover:bg-transparent hover:text-primary"
+                                    onClick={handleAiAction}
+                                    disabled={isRewriting || isSubmitting || (!isRewritten && !concern)}
+                                >
+                                    {isRewriting ? <Loader2 className="h-5 w-5 animate-spin" /> : (isRewritten ? <Undo2 className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />)}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{isRewritten ? "Undo Rewrite" : "Rewrite with AI"}</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+
                     <Button type="submit" disabled={isSubmitting || isRewriting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
                         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
@@ -184,12 +225,6 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                         </div>
                     </div>
                 )}
-            </div>
-            <div className="flex justify-start">
-                 <Button variant="outline" type="button" onClick={handleRewrite} disabled={isRewriting || isSubmitting || !concern}>
-                    {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Rewrite with AI
-                </Button>
             </div>
         </form>
     );
@@ -261,12 +296,12 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     const [concern, setConcern] = useState('');
 
     return (
-        <form onSubmit={handleSubmit} className="mt-4 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <p className="text-sm text-muted-foreground">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
             <div className="grid grid-cols-4 gap-4">
-                <div className="flex items-center gap-2 col-span-2 md:col-span-1">
+                <div className="flex items-center gap-2 col-span-4 md:col-span-1">
                     <Label htmlFor="recipient" className="whitespace-nowrap">To</Label>
                     <Select onValueChange={setRecipient} value={recipient} required>
                         <SelectTrigger id="recipient" className="flex-1">
@@ -292,7 +327,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         className="flex-1"
                     />
                 </div>
-                <div className="flex items-center gap-2 col-span-2 md:col-span-1">
+                <div className="flex items-center gap-2 col-span-4 md:col-span-1">
                     <Label htmlFor="criticality" className="whitespace-nowrap">Criticality</Label>
                     <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
                         <SelectTrigger id="criticality" className="flex-1">
@@ -1785,7 +1820,6 @@ function MyConcernsContent() {
             }
         }
         
-        // A case should appear in "received" if the user was *ever* assigned or involved, regardless of current status.
         if (wasEverAssigned) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
                 if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) identifiedReceived.push(c);
