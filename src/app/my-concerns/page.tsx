@@ -263,12 +263,12 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 mt-0">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-4">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center gap-2">
-                    <Label htmlFor="recipient" className="w-[100px]">To</Label>
+                    <Label htmlFor="recipient" className="w-[30px]">To</Label>
                     <Select onValueChange={setRecipient} value={recipient} required>
                         <SelectTrigger id="recipient" className="flex-1">
                             <SelectValue placeholder="Select..." />
@@ -283,7 +283,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Label htmlFor="subject" className="w-[100px]">Subject</Label>
+                    <Label htmlFor="subject" className="w-[60px]">Subject</Label>
                     <Input 
                         id="subject" 
                         value={subject} 
@@ -294,7 +294,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <Label htmlFor="criticality" className="w-[100px]">Criticality</Label>
+                    <Label htmlFor="criticality" className="w-[70px]">Criticality</Label>
                     <Select onValueChange={(value) => setCriticality(value as any)} defaultValue={criticality}>
                         <SelectTrigger id="criticality" className="flex-1">
                             <SelectValue placeholder="Select..." />
@@ -1419,6 +1419,13 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
 
         if (displayItems.length === 0) {
             if (concernType === 'anonymous' && !isReceivedView) {
+                if (!trackedCase) {
+                    return (
+                        <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
+                        </div>
+                    );
+                }
                 return null;
             }
             return (
@@ -1654,11 +1661,6 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                         </Button>
                     </div>
                      {renderCaseList(items)}
-                     {items.length === 0 && !trackedCase && (
-                        <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">You have no raised anonymous concerns from this dashboard.</p>
-                        </div>
-                     )}
                      {notFound && (
                         <p className="text-destructive text-center mt-4">No submission found with that ID.</p>
                      )}
@@ -1772,11 +1774,10 @@ function MyConcernsContent() {
 
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
-        const isVisibleAsRespondent = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
-        const isAssignedToMe = c.assignedTo?.includes(role as any);
-
+        const wasEverAssigned = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
+        
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && isAssignedToMe;
+        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && c.assignedTo?.includes(role);
 
         if (isRaisedByMe) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
@@ -1791,11 +1792,7 @@ function MyConcernsContent() {
             }
         }
         
-        if (isAssignedToMe) {
-            receivedActionCounts.retaliation++;
-        }
-
-        if (isVisibleAsRespondent) {
+        if (wasEverAssigned) {
             if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
                 if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
@@ -1881,15 +1878,6 @@ function MyConcernsContent() {
                           Choose how you would like to submit a concern for review.
                         </CardDescription>
                     </div>
-                     {isSupervisor && (
-                      <div className="flex items-center space-x-2">
-                          <Switch
-                              id="view-mode-toggle"
-                              checked={viewMode === 'received'}
-                              onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
-                          />
-                      </div>
-                    )}
                 </div>
                  <TabsList className="grid w-full grid-cols-3 mt-4">
                       {renderTabTrigger("identity-revealed", "Identity Revealed", <User className="mr-2" />, countsForView.identified)}
@@ -1928,6 +1916,15 @@ function MyConcernsContent() {
                               <List className="h-5 w-5" />
                               {viewMode === 'received' ? 'Received Concerns' : 'My Submissions'}
                           </h2>
+                            {isSupervisor && (
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="view-mode-toggle"
+                                    checked={viewMode === 'received'}
+                                    onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
+                                />
+                            </div>
+                            )}
                       </div>
                       
                       {isLoading ? (
