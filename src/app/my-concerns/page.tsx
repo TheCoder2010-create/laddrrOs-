@@ -54,6 +54,7 @@ import { rewriteText } from '@/ai/flows/rewrite-text-flow';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 
 
 const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
@@ -188,27 +189,29 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                         </Tooltip>
                     </TooltipProvider>
 
-                    <TooltipProvider>
-                        <Tooltip>
-                             <TooltipTrigger asChild>
-                                <Button 
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute bottom-2 left-2 text-muted-foreground hover:bg-transparent hover:text-primary"
-                                    onClick={handleAiAction}
-                                    disabled={isRewriting || isSubmitting || (!isRewritten && !concern)}
-                                >
-                                    {isRewriting ? <Loader2 className="h-5 w-5 animate-spin" /> : (isRewritten ? <Undo2 className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />)}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{isRewritten ? "Undo Rewrite" : "Rewrite with AI"}</p></TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                        <TooltipProvider>
+                            <Tooltip>
+                                 <TooltipTrigger asChild>
+                                    <Button 
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-full text-muted-foreground hover:bg-transparent hover:text-primary"
+                                        onClick={handleAiAction}
+                                        disabled={isRewriting || isSubmitting || (!isRewritten && !concern)}
+                                    >
+                                        {isRewriting ? <Loader2 className="h-5 w-5 animate-spin" /> : (isRewritten ? <Undo2 className="h-5 w-5" /> : <MagicWandIcon className="h-5 w-5" />)}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{isRewritten ? "Undo Rewrite" : "Rewrite with AI"}</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
 
-                    <Button type="submit" disabled={isSubmitting || isRewriting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
-                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    </Button>
+                        <Button type="submit" disabled={isSubmitting || isRewriting} size="icon" className="h-8 w-8 rounded-full">
+                            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                    </div>
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-2 pt-2">
@@ -2005,4 +2008,5 @@ export default function MyConcernsPage() {
 }
 
     
+
 
