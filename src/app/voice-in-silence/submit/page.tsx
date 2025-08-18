@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion, UserX, UserPlus, FileText, Paperclip, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion, UserX, UserPlus, FileText, Paperclip, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
 import { trackFeedback, TrackedFeedback, submitAnonymousReply, submitAnonymousAcknowledgement } from '@/services/feedback-service';
@@ -25,6 +25,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatActorName } from '@/lib/role-mapping';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 
 
 function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
@@ -32,9 +34,13 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
   const [message, setMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRewriting, setIsRewriting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // AI Rewrite State
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [originalConcern, setOriginalConcern] = useState('');
+  const [isRewritten, setIsRewritten] = useState(false);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -43,21 +49,32 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
     }
   };
 
-  const handleRewrite = async () => {
-    if (!message) {
+  const handleAiAction = async () => {
+    if (isRewritten) {
+      // Undo the rewrite
+      setMessage(originalConcern);
+      setOriginalConcern('');
+      setIsRewritten(false);
+      toast({ title: "Original Text Restored" });
+    } else {
+      // Perform the rewrite
+      if (!message) {
         toast({ variant: 'destructive', title: "Nothing to rewrite", description: "Please enter a message first." });
         return;
-    }
-    setIsRewriting(true);
-    try {
+      }
+      setIsRewriting(true);
+      try {
+        setOriginalConcern(message); // Save original text
         const result = await rewriteText({ textToRewrite: message });
         setMessage(result.rewrittenText);
+        setIsRewritten(true);
         toast({ title: "Text Rewritten", description: "Your message has been updated by the AI." });
-    } catch (error) {
+      } catch (error) {
         console.error(error);
         toast({ variant: 'destructive', title: "Rewrite Failed", description: "Could not rewrite the text." });
-    } finally {
+      } finally {
         setIsRewriting(false);
+      }
     }
   };
 
@@ -98,52 +115,73 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
           placeholder="Enter a subject for your feedback..."
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isRewriting}
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="message">Your Message</Label>
         <div className="relative">
-            <Textarea
-              id="message"
-              placeholder="Describe the situation in detail..."
-              rows={10}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              disabled={isSubmitting || isRewriting}
-              className="pr-10"
-            />
-            <Input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                onChange={handleFileChange} 
-            />
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Attach file"
-            >
-                <Paperclip className="h-5 w-5" />
+          <Textarea
+            id="message"
+            placeholder="Describe the situation in detail..."
+            rows={10}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            disabled={isSubmitting || isRewriting}
+            className="pr-12 pb-12"
+          />
+          <Input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              onChange={handleFileChange} 
+          />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-2 right-2 text-muted-foreground hover:bg-transparent hover:text-primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Attach file"
+                >
+                    <Paperclip className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent><p>Attach File</p></TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:bg-transparent hover:text-primary"
+                      onClick={handleAiAction}
+                      disabled={isRewriting || isSubmitting || (!isRewritten && !message)}
+                  >
+                      {isRewriting ? <Loader2 className="h-5 w-5 animate-spin" /> : (isRewritten ? <Undo2 className="h-5 w-5" /> : <MagicWandIcon className="h-5 w-5" />)}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent><p>{isRewritten ? "Undo Rewrite" : "Rewrite with AI"}</p></TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <Button onClick={handleSubmit} disabled={isSubmitting || isRewriting} size="icon" className="h-8 w-8 rounded-full">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
+          </div>
         </div>
         {file && (
             <p className="text-sm text-muted-foreground">
                 Attached: <span className="font-medium text-primary">{file.name}</span>
             </p>
         )}
-      </div>
-      <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={handleRewrite} disabled={isRewriting || isSubmitting || !message}>
-            {isRewriting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Rewrite with AI
-        </Button>
-        <Button onClick={handleSubmit} disabled={isSubmitting || isRewriting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-          Submit Anonymously
-        </Button>
       </div>
     </CardContent>
   );
