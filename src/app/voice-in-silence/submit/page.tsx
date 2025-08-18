@@ -108,8 +108,8 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
       <p className="text-muted-foreground text-center">
         This is a protected space for anonymous feedback. Your submission is confidential. Please provide as much detail as possible.
       </p>
-      <div className="space-y-2">
-        <Label htmlFor="title">Subject</Label>
+      <div className="flex items-center gap-2">
+        <Label htmlFor="title" className="whitespace-nowrap">Subject</Label>
         <Input
           id="title"
           placeholder="Enter a subject for your feedback..."
