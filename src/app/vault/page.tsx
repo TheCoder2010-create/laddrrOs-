@@ -404,15 +404,6 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
     }
   }, []);
 
-  const handleUpdate = useCallback(() => {
-    const currentOpenItem = openAccordionItem;
-    fetchFeedback().then(() => {
-        if (currentOpenItem) {
-            setOpenAccordionItem(currentOpenItem);
-        }
-    });
-  }, [fetchFeedback, openAccordionItem]);
-  
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -430,11 +421,20 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
     }
   }, []);
 
+  const handleUpdate = useCallback(() => {
+    const currentOpenItem = openAccordionItem;
+    fetchFeedback().then(() => {
+        if (currentOpenItem) {
+            setOpenAccordionItem(currentOpenItem);
+        }
+    });
+  }, [fetchFeedback, openAccordionItem]);
+
   useEffect(() => {
     fetchFeedback();
 
     const handleStorageChange = () => {
-        fetchFeedback();
+        handleUpdate();
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -444,7 +444,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
         window.removeEventListener('storage', handleStorageChange);
         window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
-  }, [fetchFeedback]);
+  }, [fetchFeedback, handleUpdate]);
   
   const handleSummarize = async (trackingId: string) => {
     setIsSummarizing(trackingId);
