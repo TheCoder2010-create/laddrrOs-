@@ -1774,6 +1774,8 @@ function MyConcernsContent() {
   const [showIdDialog, setShowIdDialog] = useState(false);
   const [newCaseId, setNewCaseId] = useState('');
   const [activeTab, setActiveTab] = useState('identity-revealed');
+  const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
+
 
   const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
 
@@ -1784,14 +1786,22 @@ function MyConcernsContent() {
         setIsLoading(false);
     });
   }, []);
+  
+  const handleUpdate = useCallback(() => {
+    const currentOpenItem = openAccordionItem;
+    fetchAllCases();
+    if (currentOpenItem) {
+        setOpenAccordionItem(currentOpenItem);
+    }
+  }, [fetchAllCases, openAccordionItem]);
 
   useEffect(() => {
     fetchAllCases();
-    window.addEventListener('feedbackUpdated', fetchAllCases);
+    window.addEventListener('feedbackUpdated', handleUpdate);
     return () => {
-      window.removeEventListener('feedbackUpdated', fetchAllCases);
+      window.removeEventListener('feedbackUpdated', handleUpdate);
     };
-  }, [fetchAllCases]);
+  }, [fetchAllCases, handleUpdate]);
 
 
   const handleCaseSubmitted = useCallback((trackingId?: string) => {
@@ -1829,8 +1839,6 @@ function MyConcernsContent() {
 
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
-
-        // A case is "received" if the current user is assigned OR was ever involved, AND they are NOT the original submitter.
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
         const wasEverInvolved = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
         const isReceivedViewable = !isRaisedByMe && (isCurrentlyAssigned || wasEverInvolved);
@@ -1990,7 +1998,7 @@ function MyConcernsContent() {
                           <Skeleton className="h-40 w-full mt-4" />
                       ) : (
                           <MySubmissions 
-                              onUpdate={handleCaseSubmitted} 
+                              onUpdate={handleUpdate} 
                               items={getConcernList()}
                               allCases={allCases} 
                               concernType={getConcernType()}
@@ -2025,11 +2033,3 @@ export default function MyConcernsPage() {
 }
 
     
-
-
-
-
-
-
-
-

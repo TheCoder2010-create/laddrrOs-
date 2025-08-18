@@ -404,6 +404,15 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
     }
   }, []);
 
+  const handleUpdate = useCallback(() => {
+    const currentOpenItem = openAccordionItem;
+    fetchFeedback().then(() => {
+        if (currentOpenItem) {
+            setOpenAccordionItem(currentOpenItem);
+        }
+    });
+  }, [fetchFeedback, openAccordionItem]);
+  
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -445,7 +454,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
             title: "Analysis Complete",
             description: "AI summary and criticality have been added to the case.",
         });
-        fetchFeedback();
+        handleUpdate();
         // Ensure the newly generated summary is visible
         toggleSummaryVisibility(trackingId, false);
     } catch (error) {
@@ -652,7 +661,7 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
 
                             {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} onDownload={handleDownload} />}
 
-                            <ActionPanel feedback={feedback} onUpdate={fetchFeedback} />
+                            <ActionPanel feedback={feedback} onUpdate={handleUpdate} />
                         </AccordionContent>
                     </AccordionItem>
                     )

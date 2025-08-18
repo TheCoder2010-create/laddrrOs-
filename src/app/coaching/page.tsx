@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -38,6 +39,8 @@ function MyDevelopmentWidget() {
     const [recommendations, setRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
+    const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
+
 
     // State for Decline Dialog
     const [decliningRec, setDecliningRec] = useState<{ historyId: string; recommendation: CoachingRecommendation } | null>(null);
@@ -51,6 +54,15 @@ function MyDevelopmentWidget() {
     const [isSubmittingAccept, setIsSubmittingAccept] = useState(false);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+
+    const handleUpdate = useCallback(() => {
+        const currentOpenItem = openAccordionItem;
+        fetchRecommendations().then(() => {
+            if (currentOpenItem) {
+                setOpenAccordionItem(currentOpenItem);
+            }
+        });
+    }, [fetchRecommendations, openAccordionItem]);
 
     const fetchRecommendations = useCallback(async () => {
         if (!role) return;
@@ -102,7 +114,7 @@ function MyDevelopmentWidget() {
                 title: `Recommendation ${status}`,
                 description: `The coaching recommendation has been updated.`,
             });
-            fetchRecommendations();
+            handleUpdate();
         } catch (error) {
             console.error(`Failed to ${status} recommendation`, error);
             toast({ variant: 'destructive', title: 'Update Failed' });
@@ -263,7 +275,13 @@ function MyDevelopmentWidget() {
                             <p className="text-muted-foreground mt-1">There are no new coaching recommendations for you.</p>
                         </div>
                     ) : (
-                        <Accordion type="single" collapsible className="w-full">
+                        <Accordion 
+                          type="single" 
+                          collapsible 
+                          className="w-full"
+                          value={openAccordionItem}
+                          onValueChange={setOpenAccordionItem}
+                        >
                             {recommendations.map(({ historyItem, recommendation: rec }) => {
                                 const isActionable = rec.status === 'pending';
                                 return (
@@ -470,6 +488,16 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
 function TeamDevelopmentWidget({ role }: { role: Role }) {
     const [teamActions, setTeamActions] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
+
+    const handleUpdate = useCallback(() => {
+        const currentOpenItem = openAccordionItem;
+        fetchTeamActions().then(() => {
+            if (currentOpenItem) {
+                setOpenAccordionItem(currentOpenItem);
+            }
+        });
+    }, [fetchTeamActions, openAccordionItem]);
 
     const fetchTeamActions = useCallback(async () => {
         setIsLoading(true);
@@ -524,16 +552,16 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
 
     const renderWidgetContent = (item: OneOnOneHistoryItem, rec: CoachingRecommendation) => {
         if (rec.status === 'pending_am_review' && role === 'AM') {
-            return <AmReviewWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
+            return <AmReviewWidget item={item} rec={rec} onUpdate={handleUpdate} />;
         }
         
         const amWasInvolved = rec.auditTrail?.some(e => e.actor === roleUserMapping['AM'].name);
         if (role === 'Manager' && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined')) {
-            return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
+            return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={handleUpdate} />;
         }
         if (role === 'AM' && amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined' || rec.status === 'accepted')) {
             // Re-use manager widget for read-only history view for AMs.
-            return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={fetchTeamActions} />;
+            return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={handleUpdate} />;
         }
         return null;
     };
@@ -592,7 +620,13 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                         <p className="text-muted-foreground mt-1">Actions requiring your review will appear here.</p>
                     </div>
                 ) : (
-                    <Accordion type="single" collapsible className="w-full space-y-2">
+                    <Accordion 
+                      type="single" 
+                      collapsible 
+                      className="w-full space-y-2"
+                      value={openAccordionItem}
+                      onValueChange={setOpenAccordionItem}
+                    >
                         {teamActions.map(({ historyItem, recommendation: rec }) => {
                             const { icon, title, subtitle, statusBadge, isActionable } = getTriggerInfo(historyItem, rec);
                             const widgetContent = renderWidgetContent(historyItem, rec);
