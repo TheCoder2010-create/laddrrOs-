@@ -140,8 +140,8 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
             <p className="text-sm text-muted-foreground">
                 Your name and role will NOT be attached to this submission. It will be routed anonymously to management for review. After submitting, you will be given a unique Tracking ID to check the status of your case on this page.
             </p>
-            <div className="space-y-2">
-                <Label htmlFor="anon-subject">Subject</Label>
+            <div className="flex items-center gap-2">
+                <Label htmlFor="anon-subject" className="whitespace-nowrap">Subject</Label>
                 <Input 
                     id="anon-subject" 
                     value={subject} 
@@ -456,8 +456,8 @@ function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
             <p className="text-sm text-muted-foreground">
                 This form is for reporting instances of retaliation or bias. Your identity will be attached, and the report will be sent directly to the HR Head for immediate and confidential review.
             </p>
-             <div className="space-y-2">
-                <Label htmlFor="retaliation-subject">Subject</Label>
+             <div className="flex items-center gap-2">
+                <Label htmlFor="retaliation-subject" className='whitespace-nowrap'>Subject</Label>
                 <Input
                     id="retaliation-subject"
                     value={subject}
@@ -2008,6 +2008,7 @@ export default function MyConcernsPage() {
 }
 
     
+
 
 
 
