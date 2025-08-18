@@ -296,8 +296,8 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     const [concern, setConcern] = useState('');
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <p className="text-sm text-muted-foreground">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-0 pt-0">
+            <p className="text-sm text-muted-foreground -mt-4">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
             <div className="grid grid-cols-4 gap-4">
@@ -1460,6 +1460,13 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                     </div>
                 );
             }
+            if (concernType !== 'anonymous' && displayItems.length === 0) {
+                 return (
+                    <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">You have no concerns in this category.</p>
+                    </div>
+                );
+            }
             return null;
         }
 
@@ -1802,9 +1809,11 @@ function MyConcernsContent() {
 
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
+
+        // A case is "received" if the current user is assigned OR was ever involved, AND they are NOT the original submitter.
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
         const wasEverInvolved = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
-        const isReceivedViewable = isCurrentlyAssigned || wasEverInvolved;
+        const isReceivedViewable = !isRaisedByMe && (isCurrentlyAssigned || wasEverInvolved);
         
         const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
         const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && isCurrentlyAssigned;
@@ -1996,3 +2005,4 @@ export default function MyConcernsPage() {
 }
 
     
+
