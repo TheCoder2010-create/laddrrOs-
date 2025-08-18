@@ -5,16 +5,14 @@ import { cn } from "@/lib/utils";
 
 export const MagicWandIcon = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
   <svg
-    fill="#d400ff"
-    height="20"
-    width="20"
+    fill="currentColor"
     version="1.1"
     id="Layer_1"
     xmlns="http://www.w3.org/2000/svg"
     xmlnsXlink="http://www.w3.org/1999/xlink"
     viewBox="0 0 488 488"
     xmlSpace="preserve"
-    stroke="#d400ff"
+    stroke="currentColor"
     className={cn(className)}
     {...props}
   >
