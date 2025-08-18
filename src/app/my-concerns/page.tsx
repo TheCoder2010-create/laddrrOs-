@@ -295,7 +295,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
         }
     }
 
-    const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence' && user.role !== role);
+    const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence' && user.role !== role && user.role !== 'Anonymous');
     const [concern, setConcern] = useState('');
 
     return (
@@ -303,8 +303,8 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
             <p className="text-sm text-muted-foreground -mt-4">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
-            <div className="grid grid-cols-4 gap-4">
-                <div className="flex items-center gap-2 col-span-4 md:col-span-1">
+            <div className="grid grid-cols-4 gap-4 items-center">
+                 <div className="flex items-center gap-2 col-span-4 md:col-span-1">
                     <Label htmlFor="recipient" className="whitespace-nowrap">To</Label>
                     <Select onValueChange={setRecipient} value={recipient} required>
                         <SelectTrigger id="recipient" className="flex-1">
@@ -319,7 +319,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-center gap-2 col-span-4 md:col-span-2">
+                 <div className="flex items-center gap-2 col-span-4 md:col-span-2">
                     <Label htmlFor="subject" className="whitespace-nowrap">Subject</Label>
                     <Input 
                         id="subject" 
@@ -2016,6 +2016,7 @@ export default function MyConcernsPage() {
 }
 
     
+
 
 
 
