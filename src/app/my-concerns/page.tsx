@@ -956,10 +956,18 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
         <div className="space-y-2">
             <div className="flex justify-between items-center">
                 <Label>Case History</Label>
-                <Button variant="ghost" size="sm" onClick={onDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                </Button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={onDownload}>
+                                <Download className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Download PDF</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </div>
             <div className="relative p-4 border rounded-md bg-muted/50">
                  <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
@@ -2008,6 +2016,7 @@ export default function MyConcernsPage() {
 }
 
     
+
 
 
 

@@ -114,10 +114,18 @@ function AuditTrail({ item, handleViewCaseDetails, onDownload }: { item: Feedbac
         <div className="space-y-2">
             <div className="flex justify-between items-center">
                 <Label className="text-base">Case History</Label>
-                <Button variant="ghost" size="sm" onClick={onDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                </Button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={onDownload}>
+                                <Download className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Download PDF</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </div>
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
@@ -530,7 +538,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : (caseItem.subject || 'No Subject');
+    const subject = isOneOnOne ? `${caseItem.employeeName} & ${caseItem.supervisorName}` : (caseItem.subject || 'No Subject');
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail || [] : caseItem.auditTrail || [];

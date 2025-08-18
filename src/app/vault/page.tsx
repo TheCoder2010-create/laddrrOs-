@@ -37,6 +37,7 @@ import {
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { CustomSwitch } from '@/components/ui/custom-switch';
 import { formatActorName } from '@/lib/role-mapping';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function VaultLoginPage({ onUnlock }: { onUnlock: () => void; }) {
     const [username, setUsername] = useState('');
@@ -122,10 +123,18 @@ function AuditTrail({ trail, onDownload }: { trail: AuditEvent[], onDownload: ()
         <div className="space-y-2">
             <div className="flex justify-between items-center">
                 <Label className="text-base">Case History</Label>
-                <Button variant="ghost" size="sm" onClick={onDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                </Button>
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={onDownload}>
+                                <Download className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Download PDF</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </div>
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
