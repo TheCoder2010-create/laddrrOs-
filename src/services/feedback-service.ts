@@ -89,6 +89,7 @@ export interface AnonymousFeedbackInput {
   subject: string;
   message: string;
   files: File[];
+  file?: File | null;
 }
 export interface AnonymousFeedbackOutput {
   trackingId: string;
@@ -705,12 +706,13 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const allFeedback = getFeedbackFromStorage();
   const trackingId = generateTrackingId();
   const submittedAt = new Date();
-  const { files, ...rest } = input;
-  const attachmentNames = files.map(f => f.name);
+  const { subject, message, file } = input;
+  const attachmentNames = file ? [file.name] : [];
   const details = `Feedback was received by the system.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
 
   const newFeedback: Feedback = {
-    ...rest,
+    subject,
+    message,
     trackingId,
     submittedAt,
     viewed: false,
@@ -1541,6 +1543,7 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
 
