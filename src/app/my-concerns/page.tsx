@@ -299,8 +299,8 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
     const [concern, setConcern] = useState('');
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 mt-0 pt-0">
-            <p className="text-sm text-muted-foreground -mt-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <p className="text-sm text-muted-foreground">
                 Use this form to confidentially report a concern directly to a specific person. Your identity will be attached to this submission.
             </p>
             <div className="grid grid-cols-4 gap-4 items-center">
@@ -1287,18 +1287,20 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                    <Textarea 
-                        id="interim-update"
-                        value={update}
-                        onChange={(e) => setUpdate(e.target.value)}
-                        rows={3}
-                        className="flex-grow"
-                        placeholder="Log your private notes..."
-                    />
-                    <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} variant="secondary" className="mt-auto w-full">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Add Update
-                    </Button>
+                    <div className="relative flex-grow">
+                        <Textarea 
+                            id="interim-update"
+                            value={update}
+                            onChange={(e) => setUpdate(e.target.value)}
+                            rows={3}
+                            className="h-full pr-12 pb-12"
+                            placeholder="Log your private notes..."
+                        />
+                        <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
                 
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
@@ -1314,18 +1316,20 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                    <Textarea 
-                        id="ask-question"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        rows={3}
-                        className="flex-grow"
-                        placeholder="Ask a clarifying question..."
-                    />
-                    <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} className="mt-auto w-full">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Send Question
-                    </Button>
+                    <div className="relative flex-grow">
+                        <Textarea 
+                            id="ask-question"
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            rows={3}
+                            className="h-full pr-12 pb-12"
+                            placeholder="Ask a clarifying question..."
+                        />
+                        <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="p-4 border rounded-lg bg-muted/20 space-y-3 flex flex-col">
@@ -1341,36 +1345,38 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
-                    <Textarea 
-                        id="revealReason"
-                        value={revealReason}
-                        onChange={(e) => setRevealReason(e.target.value)}
-                        rows={3}
-                        className="flex-grow"
-                        placeholder="Explain why identity is needed..."
-                    />
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button disabled={!revealReason || isSubmitting} className="mt-auto w-full">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Request Identity Reveal
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
-                                    Acknowledge & Continue
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                     </AlertDialog>
+                    <div className="relative flex-grow">
+                        <Textarea 
+                            id="revealReason"
+                            value={revealReason}
+                            onChange={(e) => setRevealReason(e.target.value)}
+                            rows={3}
+                            className="h-full pr-12 pb-12"
+                            placeholder="Explain why identity is needed..."
+                        />
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button disabled={!revealReason || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    <Send className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Acknowledge Your Responsibility</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        By requesting to reveal the user's identity, you acknowledge your responsibility to ensure their safety from any form of bias, retaliation, or adverse consequences. This request must be treated with the highest standards of confidentiality, sensitivity, and fairness. Your acknowledgment and intent will be logged for accountability
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleRequestIdentity} className={cn(buttonVariants({variant: 'default'}))}>
+                                        Acknowledge & Continue
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                         </AlertDialog>
+                    </div>
                 </div>
             </div>
             
@@ -1387,17 +1393,20 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
-                <Textarea 
-                    id="resolve-directly"
-                    value={resolution}
-                    onChange={(e) => setResolution(e.target.value)}
-                    rows={4}
-                    placeholder="Propose a resolution..."
-                />
-                <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} className="mt-2">
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Submit
-                </Button>
+                 <div className="relative">
+                    <Textarea 
+                        id="resolve-directly"
+                        value={resolution}
+                        onChange={(e) => setResolution(e.target.value)}
+                        rows={4}
+                        placeholder="Propose a resolution..."
+                        className="pr-12 pb-12"
+                    />
+                    <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Send className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
         </div>
     );
@@ -2016,6 +2025,7 @@ export default function MyConcernsPage() {
 }
 
     
+
 
 
 
