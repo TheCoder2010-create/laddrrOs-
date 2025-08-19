@@ -706,8 +706,8 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const allFeedback = getFeedbackFromStorage();
   const trackingId = generateTrackingId();
   const submittedAt = new Date();
-  const { subject, message, file } = input;
-  const attachmentNames = file ? [file.name] : [];
+  const { subject, message, files } = input;
+  const attachmentNames = files ? files.map(f => f.name) : [];
   const details = `Feedback was received by the system.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
 
   const newFeedback: Feedback = {
@@ -1543,6 +1543,7 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
 

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion, UserX, UserPlus, FileText, Paperclip, Undo2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Copy, CheckCircle, Clock, Send, FileCheck, ChevronsRight, MessageSquare, Info, MessageCircleQuestion, UserX, UserPlus, FileText, Paperclip, Undo2, XIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitAnonymousFeedback, AnonymousFeedbackOutput } from '@/services/feedback-service';
 import { trackFeedback, TrackedFeedback, submitAnonymousReply, submitAnonymousAcknowledgement } from '@/services/feedback-service';
@@ -32,7 +32,7 @@ import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedbackOutput) => void }) {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -43,11 +43,15 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
   const [isRewritten, setIsRewritten] = useState(false);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-        setFile(e.target.files[0]);
-        toast({ title: "File Attached", description: e.target.files[0].name });
+    if (e.target.files) {
+      setFiles(prev => [...prev, ...Array.from(e.target.files)]);
+      toast({ title: "File(s) Attached" });
     }
   };
+
+  const removeFile = (fileToRemove: File) => {
+    setFiles(prev => prev.filter(f => f !== fileToRemove));
+  }
 
   const handleAiAction = async () => {
     if (isRewritten) {
@@ -89,7 +93,7 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
     }
     setIsSubmitting(true);
     try {
-      const result = await submitAnonymousFeedback({ subject, message, file });
+      const result = await submitAnonymousFeedback({ subject, message, files });
       onSubmitted(result);
     } catch (error) {
       console.error(error);
@@ -135,6 +139,7 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
               ref={fileInputRef} 
               className="hidden" 
               onChange={handleFileChange} 
+              multiple
           />
           <TooltipProvider>
             <Tooltip>
@@ -177,10 +182,17 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
             </Button>
           </div>
         </div>
-        {file && (
-            <p className="text-sm text-muted-foreground">
-                Attached: <span className="font-medium text-primary">{file.name}</span>
-            </p>
+        {files.length > 0 && (
+            <div className="space-y-1 pt-2">
+                 {files.map((file, i) => (
+                    <div key={i} className="text-sm flex items-center justify-between">
+                        <span className="font-medium text-primary truncate">{file.name}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                            <XIcon className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+            </div>
         )}
       </div>
     </CardContent>
@@ -617,3 +629,4 @@ export default function VoiceInSilenceSubmitPage() {
     </div>
   );
 }
+
