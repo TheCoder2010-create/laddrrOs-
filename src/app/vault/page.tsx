@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX, LogOut, X } from 'lucide-react';
+import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX, LogOut, X, Link as LinkIcon } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -393,17 +393,6 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
   const { toast } = useToast();
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
-  useEffect(() => {
-    try {
-        const storedHidden = localStorage.getItem(HIDDEN_SUMMARIES_KEY);
-        if (storedHidden) {
-            setHiddenSummaries(new Set(JSON.parse(storedHidden)));
-        }
-    } catch (error) {
-        console.error("Failed to load hidden summaries from localStorage", error);
-    }
-  }, []);
-
   const fetchFeedback = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -429,6 +418,18 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
         }
     });
   }, [fetchFeedback, openAccordionItem]);
+
+  useEffect(() => {
+    try {
+        const storedHidden = localStorage.getItem(HIDDEN_SUMMARIES_KEY);
+        if (storedHidden) {
+            setHiddenSummaries(new Set(JSON.parse(storedHidden)));
+        }
+    } catch (error) {
+        console.error("Failed to load hidden summaries from localStorage", error);
+    }
+  }, []);
+
 
   useEffect(() => {
     fetchFeedback();
@@ -658,6 +659,22 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
                                 </div>
                                 <p className="whitespace-pre-wrap text-base border rounded-md p-4">{feedback.message}</p>
                             </div>
+                            
+                            {feedback.attachments && feedback.attachments.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label className="text-base">Attachments</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {feedback.attachments.map((att, i) => (
+                                            <Button key={i} variant="outline" size="sm" asChild>
+                                                <a href={att.dataUri} download={att.name}>
+                                                    <LinkIcon className="mr-2 h-4 w-4" />
+                                                    {att.name}
+                                                </a>
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {feedback.auditTrail && <AuditTrail trail={feedback.auditTrail} onDownload={handleDownload} />}
 

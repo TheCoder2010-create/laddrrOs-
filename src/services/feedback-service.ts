@@ -47,6 +47,11 @@ export interface ActionItem {
     owner: Role | string;
 }
 
+export interface Attachment {
+    name: string;
+    dataUri: string;
+}
+
 export interface Feedback {
   trackingId: string;
   subject: string;
@@ -71,6 +76,7 @@ export interface Feedback {
   hrHeadResolution?: string;  // For collaborative resolution
   parentCaseId?: string; // For retaliation claims
   attachmentNames?: string[];
+  attachments?: Attachment[];
   source?: 'Voice – In Silence';
 }
 
@@ -500,7 +506,7 @@ export async function updateCoachingRecommendationStatus(
     historyId: string, 
     recommendationId: string, 
     status: 'accepted' | 'declined', 
-    data?: { reason?: string, startDate?: string, endDate?: string }
+    data?: { reason?: string; startDate?: string; endDate?: string; }
 ): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const historyIndex = allHistory.findIndex(h => h.id === historyId);
@@ -689,6 +695,17 @@ export async function acknowledgeDeclinedRecommendation(
 // Feedback Service
 // ==========================================
 
+// Helper to read a file as a data URI
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
+};
+
+
 export const getFeedbackFromStorage = (): Feedback[] => {
   const feedback = getFromStorage<Feedback>(FEEDBACK_KEY);
   return feedback.map(c => ({
@@ -710,6 +727,13 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const attachmentNames = files ? files.map(f => f.name) : [];
   const details = `Feedback was received by the system.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
 
+  const attachments = await Promise.all(
+    files.map(async (file) => ({
+      name: file.name,
+      dataUri: await fileToDataUri(file),
+    }))
+  );
+
   const newFeedback: Feedback = {
     subject,
     message,
@@ -728,6 +752,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
       },
     ],
     attachmentNames: attachmentNames,
+    attachments: attachments,
   };
 
   allFeedback.unshift(newFeedback);
@@ -1543,6 +1568,7 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
 
