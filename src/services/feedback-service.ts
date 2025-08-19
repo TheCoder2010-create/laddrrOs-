@@ -723,8 +723,8 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
   const allFeedback = getFeedbackFromStorage();
   const trackingId = generateTrackingId();
   const submittedAt = new Date();
-  const { subject, message, files } = input;
-  const attachmentNames = files ? files.map(f => f.name) : [];
+  const { subject, message, files = [] } = input;
+  const attachmentNames = files.map(f => f.name);
   const details = `Feedback was received by the system.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
 
   const attachments = await Promise.all(
@@ -751,8 +751,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
         details: details,
       },
     ],
-    attachmentNames: attachmentNames,
-    attachments: attachments,
+    attachments,
   };
 
   allFeedback.unshift(newFeedback);
@@ -804,6 +803,13 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
     const attachmentNames = files.map(f => f.name);
     const details = `A concern was submitted anonymously from a user dashboard.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
     
+    const attachments = await Promise.all(
+        (files || []).map(async (file) => ({
+            name: file.name,
+            dataUri: await fileToDataUri(file),
+        }))
+    );
+
     const newFeedback: Feedback = {
         ...rest,
         trackingId,
@@ -818,7 +824,7 @@ export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedba
             actor: 'Anonymous',
             details: details,
         }],
-        attachmentNames: attachmentNames,
+        attachments,
     };
     allFeedback.unshift(newFeedback);
     saveFeedbackToStorage(allFeedback);
@@ -832,6 +838,13 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
     const attachmentNames = files.map(f => f.name);
     const details = `Concern submitted by ${rest.submittedBy} (${rest.submittedByRole}) to ${rest.recipient}.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
     
+    const attachments = await Promise.all(
+        (files || []).map(async (file) => ({
+            name: file.name,
+            dataUri: await fileToDataUri(file),
+        }))
+    );
+
     const newFeedback: Feedback = {
         trackingId: trackingId,
         subject: rest.subject,
@@ -851,7 +864,7 @@ export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Pr
                 details: details
             }
         ],
-        attachmentNames: attachmentNames,
+        attachments,
     };
     allFeedback.unshift(newFeedback);
     saveFeedbackToStorage(allFeedback);
@@ -863,6 +876,13 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
     const trackingId = generateTrackingId();
     const attachmentNames = input.files.map(f => f.name);
     const details = `A direct retaliation claim was submitted.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
+
+    const attachments = await Promise.all(
+        (input.files || []).map(async (file) => ({
+            name: file.name,
+            dataUri: await fileToDataUri(file),
+        }))
+    );
 
     const newRetaliationCase: Feedback = {
         trackingId,
@@ -881,7 +901,7 @@ export async function submitDirectRetaliationReport(input: DirectRetaliationRepo
             actor: input.submittedBy,
             details: details
         }],
-        attachmentNames: attachmentNames,
+        attachments,
     };
     allFeedback.unshift(newRetaliationCase);
     saveFeedbackToStorage(allFeedback);
@@ -895,6 +915,12 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
     const attachmentNames = input.files.map(f => f.name);
     const details = `Claim submitted for case ${input.parentCaseId}.\nNew Case ID: ${childCaseId}${attachmentNames.length > 0 ? `\nAttachments: ${attachmentNames.join(', ')}` : ''}`;
 
+    const attachments = await Promise.all(
+        (input.files || []).map(async (file) => ({
+            name: file.name,
+            dataUri: await fileToDataUri(file),
+        }))
+    );
 
     // Create the new child retaliation case
     const newRetaliationCase: Feedback = {
@@ -915,7 +941,7 @@ export async function submitRetaliationReport(input: RetaliationReportInput): Pr
             actor: input.submittedBy,
             details: details,
         }],
-        attachmentNames: attachmentNames,
+        attachments,
     };
     allFeedback.unshift(newRetaliationCase);
     
@@ -1568,6 +1594,7 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
 

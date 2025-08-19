@@ -1598,6 +1598,22 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                     <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.message}</p>
                                 </div>
                                
+                                {item.attachments && item.attachments.length > 0 && (
+                                    <div className="space-y-2">
+                                        <Label>Attachments</Label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {item.attachments.map((att, i) => (
+                                                <Button key={i} variant="outline" size="sm" asChild>
+                                                    <a href={att.dataUri} download={att.name}>
+                                                        <LinkIcon className="mr-2 h-4 w-4" />
+                                                        {att.name}
+                                                    </a>
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                               
                                 <CaseHistory item={item} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(item)} />
                                 
                                  {item.resolution && (
@@ -1610,7 +1626,10 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                 {canReportRetaliation && (
                                     <div className="pt-4 border-t border-dashed">
                                         <Dialog open={retaliationDialogOpen && activeCaseId === item.trackingId} onOpenChange={(open) => {
-                                            if (!open) setRetaliationDialogOpen(false);
+                                            if (!open) {
+                                                setRetaliationDialogOpen(false);
+                                                setActiveCaseId(null);
+                                            }
                                         }}>
                                             <DialogTrigger asChild>
                                                 <Button variant="destructive" onClick={() => { setActiveCaseId(item.trackingId); setRetaliationDialogOpen(true); }}>
@@ -1667,14 +1686,15 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                             <Label>Your Claim Description</Label>
                                                             <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
                                                         </div>
-                                                        {retaliationCase.attachmentNames && retaliationCase.attachmentNames.length > 0 && (
+                                                        {retaliationCase.attachments && retaliationCase.attachments.length > 0 && (
                                                             <div className="space-y-2">
                                                                 <Label>Your Attachments</Label>
-                                                                <div>
-                                                                    {retaliationCase.attachmentNames.map((name, i) => (
-                                                                        <Button key={i} variant="outline" size="sm" asChild className="mr-2 mb-2">
-                                                                            <a href="#" onClick={(e) => { e.preventDefault(); alert('In a real app, this would securely download the attachment.'); }}>
-                                                                                <LinkIcon className="mr-2 h-4 w-4" /> View Attachment
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {retaliationCase.attachments.map((att, i) => (
+                                                                        <Button key={i} variant="outline" size="sm" asChild>
+                                                                            <a href={att.dataUri} download={att.name}>
+                                                                                <LinkIcon className="mr-2 h-4 w-4" />
+                                                                                {att.name}
                                                                             </a>
                                                                         </Button>
                                                                     ))}
@@ -1761,6 +1781,7 @@ function MyConcernsContent() {
   const { role, toast } = useRole();
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
   const accordionRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
   
@@ -1774,7 +1795,6 @@ function MyConcernsContent() {
   const [showIdDialog, setShowIdDialog] = useState(false);
   const [newCaseId, setNewCaseId] = useState('');
   const [activeTab, setActiveTab] = useState('identity-revealed');
-  const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
 
   const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
@@ -1787,7 +1807,7 @@ function MyConcernsContent() {
     });
   }, []);
   
-  const handleUpdate = useCallback(() => {
+  const handleUpdate = useCallback((trackingId?: string) => {
     const currentOpenItem = openAccordionItem;
     fetchAllCases();
     if (currentOpenItem) {
