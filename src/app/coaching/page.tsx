@@ -55,15 +55,6 @@ function MyDevelopmentWidget() {
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
 
-    const handleUpdate = useCallback(() => {
-        const currentOpenItem = openAccordionItem;
-        fetchRecommendations().then(() => {
-            if (currentOpenItem) {
-                setOpenAccordionItem(currentOpenItem);
-            }
-        });
-    }, [fetchRecommendations, openAccordionItem]);
-
     const fetchRecommendations = useCallback(async () => {
         if (!role) return;
         setIsLoading(true);
@@ -95,6 +86,15 @@ function MyDevelopmentWidget() {
         }));
         setIsLoading(false);
     }, [role]);
+
+    const handleUpdate = useCallback(() => {
+        const currentOpenItem = openAccordionItem;
+        fetchRecommendations().then(() => {
+            if (currentOpenItem) {
+                setOpenAccordionItem(currentOpenItem);
+            }
+        });
+    }, [fetchRecommendations, openAccordionItem]);
 
     useEffect(() => {
         fetchRecommendations();
@@ -490,15 +490,6 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
     const [isLoading, setIsLoading] = useState(true);
     const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
-    const handleUpdate = useCallback(() => {
-        const currentOpenItem = openAccordionItem;
-        fetchTeamActions().then(() => {
-            if (currentOpenItem) {
-                setOpenAccordionItem(currentOpenItem);
-            }
-        });
-    }, [fetchTeamActions, openAccordionItem]);
-
     const fetchTeamActions = useCallback(async () => {
         setIsLoading(true);
         const history = await getOneOnOneHistory();
@@ -530,6 +521,15 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         }));
         setIsLoading(false);
     }, [role]);
+
+    const handleUpdate = useCallback(() => {
+        const currentOpenItem = openAccordionItem;
+        fetchTeamActions().then(() => {
+            if (currentOpenItem) {
+                setOpenAccordionItem(currentOpenItem);
+            }
+        });
+    }, [fetchTeamActions, openAccordionItem]);
 
     useEffect(() => {
         fetchTeamActions();
