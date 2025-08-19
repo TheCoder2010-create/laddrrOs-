@@ -527,11 +527,9 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         return null;
     }
 
-    // Render widgets for standard Feedback items
-    const feedback = item;
-    
-    if (feedback.status === 'To-Do') {
-        return <ToDoPanel feedback={feedback} onUpdate={onUpdate} />;
+    // Render widgets for standard Feedback items (To-Do)
+    if (item.status === 'To-Do') {
+        return <ToDoPanel feedback={item} onUpdate={onUpdate} />;
     }
     
     return null; // No action panel for other statuses
@@ -607,46 +605,42 @@ function ActionItemsContent() {
         const history = await getOneOnOneHistory();
 
         const localActiveItems: (Feedback | OneOnOneHistoryItem)[] = [];
-        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
         
-        const isEverAssigned = (item: Feedback | OneOnOneHistoryItem) => {
-            if ('analysis' in item) {
+        const wasEverAssigned = (item: OneOnOneHistoryItem) => {
+            const insight = item.analysis.criticalCoachingInsight;
+            if (!insight || !insight.auditTrail) return false;
+            // Check if there was ever an assignment event to the current role
+            return insight.auditTrail.some(e => 
+                (e.event === 'Assigned' || e.event.includes('Review') || e.event.includes('Action')) 
+                && e.details?.includes(role as string)
+            );
+        };
+        
+        const isCurrentlyAssigned = (item: Feedback | OneOnOneHistoryItem): boolean => {
+            if ('analysis' in item) { // It's a OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
-                if (!insight || !insight.auditTrail) return false;
-                // An insight is considered "assigned" if the top-level assignedTo field was ever set to the current role
-                // or if an audit trail event shows an assignment to this role.
-                const wasAssignedInTrail = insight.auditTrail.some(e => e.event === 'Assigned' && e.details?.includes(role as string));
-                return wasAssignedInTrail;
-            } else {
-                 if (!item.auditTrail) return false;
-                 return item.auditTrail.some(e => e.event === 'Assigned' && e.details?.includes(role as string));
+                if (!insight) return false;
+                
+                const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
+                const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
+                const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+
+                return isAmMatch || isManagerMatch || isHrMatch || wasEverAssigned(item);
+
+            } else { // It's a Feedback item (To-Do list)
+                return item.status === 'To-Do' && (item.assignedTo?.includes(role as Role) ?? false);
             }
         };
 
+        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
+
         allItems.forEach(item => {
-            const wasEverAssignedToMe = isEverAssigned(item);
-
-            if (wasEverAssignedToMe) {
-                 localActiveItems.push(item);
-                 return; // Add it and stop checking
-            }
-
-            // Also include To-Do items currently assigned
-            if (!('analysis' in item) && item.status === 'To-Do' && item.assignedTo?.includes(role as Role)) {
-                localActiveItems.push(item);
-            }
-
-            // And include 1-on-1 insights currently assigned
-            if ('analysis' in item && item.analysis.criticalCoachingInsight) {
-                 const insight = item.analysis.criticalCoachingInsight;
-                 const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
-                 const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
-                 const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-                 if(isAmMatch || isManagerMatch || isHrMatch) {
-                    if (!localActiveItems.some(li => ('analysis' in li) && li.id === item.id)) {
-                       localActiveItems.push(item);
-                    }
-                 }
+            if (isCurrentlyAssigned(item)) {
+                // Prevent duplicates
+                const id = 'analysis' in item ? item.id : item.trackingId;
+                if (!localActiveItems.some(li => ('analysis' in li ? li.id : li.trackingId) === id)) {
+                   localActiveItems.push(item);
+                }
             }
         });
         
@@ -686,7 +680,7 @@ function ActionItemsContent() {
         window.removeEventListener('storage', handleStorageChange);
         window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
-  }, [fetchFeedback, handleUpdate]);
+  }, [handleUpdate]);
 
   const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
