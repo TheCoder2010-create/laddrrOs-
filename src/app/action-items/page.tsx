@@ -231,7 +231,7 @@ function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () =>
                     </div>
                 ))}
              </div>
-             {allItemsCompleted && (
+             {allItemsCompleted && feedback.status !== 'Resolved' && (
                 <div className="pt-4 border-t">
                     <Button variant="success" onClick={handleResolve}>Mark as Completed</Button>
                 </div>
@@ -505,9 +505,13 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         
         const isActionableForRole = () => {
             if (!role) return false;
-            if (role === 'AM' && insight.status === 'pending_am_review') return true;
-            if (role === 'Manager' && insight.status === 'pending_manager_review') return true;
-            if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action')) return true;
+            // A case is actionable for a manager if they are assigned, regardless of status, unless a final disposition has been made.
+            const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
+            if (finalDispositionEvent) return false;
+
+            if (role === 'AM' && (insight.status === 'pending_am_review' || item.assignedTo === 'AM')) return true;
+            if (role === 'Manager' && (insight.status === 'pending_manager_review' || item.assignedTo === 'Manager')) return true;
+            if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || item.assignedTo === 'HR Head')) return true;
             return false;
         };
 
@@ -605,35 +609,44 @@ function ActionItemsContent() {
         const localActiveItems: (Feedback | OneOnOneHistoryItem)[] = [];
         const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
         
-        const isActionable = (item: Feedback | OneOnOneHistoryItem) => {
+        const isEverAssigned = (item: Feedback | OneOnOneHistoryItem) => {
             if ('analysis' in item) {
                 const insight = item.analysis.criticalCoachingInsight;
-                if (!insight) return false;
-                const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
-                return insight.status !== 'resolved' && !finalDispositionEvent;
+                if (!insight || !insight.auditTrail) return false;
+                // An insight is considered "assigned" if the top-level assignedTo field was ever set to the current role
+                // or if an audit trail event shows an assignment to this role.
+                const wasAssignedInTrail = insight.auditTrail.some(e => e.event === 'Assigned' && e.details?.includes(role as string));
+                return wasAssignedInTrail;
             } else {
-                 const finalDispositionEvent = item.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
-                 return item.status !== 'Resolved' && item.status !== 'Closed' && !finalDispositionEvent;
+                 if (!item.auditTrail) return false;
+                 return item.auditTrail.some(e => e.event === 'Assigned' && e.details?.includes(role as string));
             }
         };
 
         allItems.forEach(item => {
-            if (isActionable(item)) {
-                if ('analysis' in item) {
-                     const insight = item.analysis.criticalCoachingInsight;
-                     if (!insight) return;
-                     const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
-                     const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
-                     const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-                     if(isAmMatch || isManagerMatch || isHrMatch) {
-                        localActiveItems.push(item);
-                     }
-                } else {
-                    // Only show To-Do items on this page now. Other concerns are on My Concerns page.
-                    if (item.status === 'To-Do' && item.assignedTo?.includes(role as Role)) {
-                        localActiveItems.push(item);
+            const wasEverAssignedToMe = isEverAssigned(item);
+
+            if (wasEverAssignedToMe) {
+                 localActiveItems.push(item);
+                 return; // Add it and stop checking
+            }
+
+            // Also include To-Do items currently assigned
+            if (!('analysis' in item) && item.status === 'To-Do' && item.assignedTo?.includes(role as Role)) {
+                localActiveItems.push(item);
+            }
+
+            // And include 1-on-1 insights currently assigned
+            if ('analysis' in item && item.analysis.criticalCoachingInsight) {
+                 const insight = item.analysis.criticalCoachingInsight;
+                 const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
+                 const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
+                 const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+                 if(isAmMatch || isManagerMatch || isHrMatch) {
+                    if (!localActiveItems.some(li => ('analysis' in li) && li.id === item.id)) {
+                       localActiveItems.push(item);
                     }
-                }
+                 }
             }
         });
         
@@ -651,7 +664,7 @@ function ActionItemsContent() {
       setIsLoading(false);
     }
   }, [role]);
-
+  
   const handleUpdate = useCallback(() => {
     const currentOpenItem = openAccordionItem;
     fetchFeedback().then(() => {
@@ -664,7 +677,7 @@ function ActionItemsContent() {
   useEffect(() => {
     fetchFeedback();
 
-    const handleStorageChange = () => fetchFeedback();
+    const handleStorageChange = () => handleUpdate();
 
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('feedbackUpdated', handleStorageChange);
@@ -673,7 +686,7 @@ function ActionItemsContent() {
         window.removeEventListener('storage', handleStorageChange);
         window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
-  }, [fetchFeedback]);
+  }, [fetchFeedback, handleUpdate]);
 
   const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
@@ -717,7 +730,7 @@ function ActionItemsContent() {
     );
   }
   
-  const toDoItems = activeItems.filter(item => 'actionItems' in item && item.status === 'To-Do');
+  const toDoItems = activeItems.filter(item => !('analysis' in item) && item.status === 'To-Do');
   const oneOnOneEscalations = activeItems.filter(item => 'analysis' in item);
 
   const renderCategorySection = (
@@ -755,7 +768,7 @@ function ActionItemsContent() {
             const isOneOnOne = 'analysis' in item;
             
             const id = isOneOnOne ? item.id : item.trackingId;
-            const subject = isOneOnOne ? `${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
+            const subject = isOneOnOne ? `1-on-1: ${item.employeeName} & ${item.supervisorName}` : (item.subject || 'No Subject');
             
             const handleDownload = () => {
                 const trail = isOneOnOne ? item.analysis.criticalCoachingInsight?.auditTrail || [] : item.auditTrail || [];
@@ -791,8 +804,8 @@ function ActionItemsContent() {
                   switch (insightStatus) {
                       case 'pending_am_review': return <Badge variant="secondary">AM Review</Badge>;
                       case 'pending_manager_review': return <Badge variant="secondary">Manager Review</Badge>;
-                      case 'pending_hr_review':
-                      case 'pending_final_hr_action': return <Badge variant="secondary">HR Review</Badge>;
+                      case 'pending_hr_review': return <Badge variant="secondary">HR Review</Badge>;
+                      case 'pending_final_hr_action': return <Badge variant="secondary" className="bg-black/80 text-white">Final HR Action</Badge>;
                       case 'resolved': return <Badge variant="success">Resolved</Badge>;
                       default: return <Badge variant="secondary">{insightStatus?.replace(/_/g, ' ')}</Badge>;
                   }
@@ -946,5 +959,3 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
-
-    
