@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -596,17 +595,6 @@ function ActionItemsContent() {
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
   const [viewingCaseDetails, setViewingCaseDetails] = useState<Feedback | OneOnOneHistoryItem | null>(null);
   
-  const handleUpdate = useCallback(() => {
-    // Save the currently open accordion item
-    const currentOpenItem = openAccordionItem;
-    fetchFeedback().then(() => {
-        // Restore the open accordion item after the data has been refreshed
-        if (currentOpenItem) {
-            setOpenAccordionItem(currentOpenItem);
-        }
-    });
-  }, [fetchFeedback, openAccordionItem]);
-
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
     setIsLoading(true);
@@ -663,6 +651,15 @@ function ActionItemsContent() {
       setIsLoading(false);
     }
   }, [role]);
+
+  const handleUpdate = useCallback(() => {
+    const currentOpenItem = openAccordionItem;
+    fetchFeedback().then(() => {
+        if (currentOpenItem) {
+            setOpenAccordionItem(currentOpenItem);
+        }
+    });
+  }, [fetchFeedback, openAccordionItem]);
 
   useEffect(() => {
     fetchFeedback();
@@ -949,3 +946,5 @@ export default function ActionItemsPage() {
         </DashboardLayout>
     );
 }
+
+    
