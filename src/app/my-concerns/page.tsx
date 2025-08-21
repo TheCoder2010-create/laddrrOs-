@@ -200,7 +200,7 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                                         disabled={isRewriting || isSubmitting || (!isRewritten && !concern)}
                                         aria-label={isRewritten ? "Undo Rewrite" : "Rewrite with AI"}
                                     >
-                                        {isRewriting ? <Loader2 className="h-5 w-5 animate-spin" /> : (isRewritten ? <Undo2 className="h-5 w-5" /> : <MagicWandIcon className="h-5 w-5" />)}
+                                        {isRewriting ? <Loader2 className="h-10 w-10 animate-spin" /> : (isRewritten ? <Undo2 className="h-10 w-10" /> : <MagicWandIcon className="h-10 w-10" />)}
                                     </button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>{isRewritten ? "Undo Rewrite" : "Rewrite with AI"}</p></TooltipContent>
@@ -1977,5 +1977,6 @@ export default function MyConcernsPage() {
 
 
     
+
 
 
