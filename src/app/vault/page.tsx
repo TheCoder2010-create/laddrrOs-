@@ -15,17 +15,28 @@ import { getAllFeedback, Feedback, AuditEvent, assignFeedback, addFeedbackUpdate
 import { format, formatDistanceToNow } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Lock, ArrowLeft, ShieldAlert, AlertTriangle, Info, CheckCircle, Clock, User, MessageSquare, Send, ChevronsRight, FileCheck, Users, Bot, Loader2, ChevronDown, Download, MessageCircleQuestion, UserX, LogOut, X, Link as LinkIcon } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
-import { Badge, badgeVariants } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { availableRolesForAssignment } from '@/hooks/use-role';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -224,10 +235,6 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
         setIsResolving(true);
         try {
             await resolveFeedback(feedback.trackingId, role!, resolutionComment);
-            toast({ 
-                title: "Resolution Submitted", 
-                description: "The resolution has been sent to the user for acknowledgement. If the complainant is not satisfied, they will have the option to escalate the case." 
-            });
             setResolutionComment('');
             onUpdate();
         } catch (error) {
@@ -357,9 +364,27 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                                 rows={3}
                                 className="pr-12 pb-12"
                             />
-                            <Button variant="success" size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" onClick={handleResolve} disabled={!resolutionComment || isResolving}>
-                                {isResolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4"/>}
-                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="success" size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full" disabled={!resolutionComment || isResolving}>
+                                        {isResolving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4"/>}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirm Resolution Submission</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            The resolution will be sent to the user for acknowledgement. If the complainant is not satisfied, they will have the option to escalate the case.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleResolve} className={cn(buttonVariants({variant: 'success'}))}>
+                                            Submit Resolution
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                 </>

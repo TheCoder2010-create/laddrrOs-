@@ -1359,6 +1359,7 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
     if (feedback.source === 'Voice – In Silence' && actor === 'HR Head') {
         feedback.status = 'Pending Anonymous Acknowledgement';
         feedback.resolution = resolution;
+        const notificationText = 'The resolution has been sent to the user for acknowledgement. If the complainant is not satisfied, they will have the option to escalate the case.';
         feedback.auditTrail?.push({
             event: 'Resolution Provided by HR',
             timestamp: new Date(),
@@ -1369,7 +1370,7 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
             event: 'Notification to HR',
             timestamp: new Date(),
             actor: 'System',
-            details: 'The resolution has been sent to the user for final acknowledgement. If the complainant is dissatisfied, they will have the option to escalate the case to the Ombudsman or Grievance Office.'
+            details: notificationText
         });
     } else {
         feedback.status = 'Resolved';
@@ -1594,6 +1595,7 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
 
