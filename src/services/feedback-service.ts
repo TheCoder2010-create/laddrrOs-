@@ -87,7 +87,7 @@ export interface OneOnOneHistoryItem {
     date: string;
     analysis: AnalyzeOneOnOneOutput;
     // We add a top-level assignedTo for escalation routing outside the insight
-    assignedTo?: Role | null; 
+    assignedTo?: Role[]; 
 }
 
 // Client-side submission types
@@ -231,7 +231,7 @@ export async function getActiveCoachingPlansForSupervisor(supervisorName: string
 
 export async function saveOneOnOneHistory(item: Omit<OneOnOneHistoryItem, 'id' | 'assignedTo'>): Promise<OneOnOneHistoryItem> {
     const history = await getOneOnOneHistory();
-    const newHistoryItem: OneOnOneHistoryItem = { ...item, id: generateTrackingId(), assignedTo: null };
+    const newHistoryItem: OneOnOneHistoryItem = { ...item, id: generateTrackingId(), assignedTo: [] };
     history.unshift(newHistoryItem);
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, history);
     return newHistoryItem;
@@ -302,16 +302,16 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
         insight.status = 'resolved';
     } else if (wasHrAction) {
         insight.status = 'pending_final_hr_action';
-        item.assignedTo = 'HR Head';
+        item.assignedTo = ['HR Head'];
     } else if (wasManagerAction) {
         insight.status = 'pending_hr_review';
-        item.assignedTo = 'HR Head';
+        item.assignedTo = ['HR Head'];
     } else if (wasRetry || wasAmResponse) {
         insight.status = 'pending_manager_review';
-        item.assignedTo = 'Manager';
+        item.assignedTo = ['Manager'];
     } else {
         insight.status = 'pending_am_review';
-        item.assignedTo = 'AM';
+        item.assignedTo = ['AM'];
     }
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
@@ -380,7 +380,7 @@ export async function escalateToManager(historyId: string, actor: Role, notes: s
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
 
     insight.status = 'pending_manager_review';
-    item.assignedTo = 'Manager';
+    item.assignedTo = ['Manager'];
     
     if (!insight.auditTrail) {
         insight.auditTrail = [];
@@ -433,7 +433,7 @@ export async function submitManagerResolution(historyId: string, actor: Role, no
 
     // Send back to employee for acknowledgement
     insight.status = 'pending_employee_acknowledgement';
-    item.assignedTo = null; // Unassign so it only appears in employee's inbox
+    item.assignedTo = []; // Unassign so it only appears in employee's inbox
     
     if (!insight.auditTrail) {
         insight.auditTrail = [];
@@ -487,7 +487,7 @@ export async function submitFinalHrDecision(historyId: string, actor: Role, deci
     
     // This is the end of the line. Mark as resolved.
     insight.status = 'resolved';
-    item.assignedTo = null; // No longer assigned to anyone
+    item.assignedTo = []; // No longer assigned to anyone
 
     if (!insight.auditTrail) {
         insight.auditTrail = [];
@@ -1595,6 +1595,7 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     
 
     
+
 
 
 

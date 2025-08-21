@@ -509,9 +509,9 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
             const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed", "Final Disposition"].includes(e.event));
             if (finalDispositionEvent) return false;
 
-            if (role === 'AM' && (insight.status === 'pending_am_review' || item.assignedTo === 'AM')) return true;
-            if (role === 'Manager' && (insight.status === 'pending_manager_review' || item.assignedTo === 'Manager')) return true;
-            if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || item.assignedTo === 'HR Head')) return true;
+            if (role === 'AM' && (insight.status === 'pending_am_review' || (Array.isArray(item.assignedTo) && item.assignedTo.includes('AM')))) return true;
+            if (role === 'Manager' && (insight.status === 'pending_manager_review' || (Array.isArray(item.assignedTo) && item.assignedTo.includes('Manager')))) return true;
+            if (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action' || (Array.isArray(item.assignedTo) && item.assignedTo.includes('HR Head')))) return true;
             return false;
         };
 
@@ -610,11 +610,13 @@ function ActionItemsContent() {
         const wasEverInvolved = (item: OneOnOneHistoryItem) => {
             const insight = item.analysis.criticalCoachingInsight;
             if (!insight || !insight.auditTrail) return false;
-            // Check if the current user was ever the actor in an event.
-            return insight.auditTrail.some(e => e.actor === role || e.actor === currentUserName);
+            // Check if the current user was ever the actor in an event OR is currently assigned.
+            const isAssigned = Array.isArray(item.assignedTo) && item.assignedTo.includes(role);
+            const wasActor = insight.auditTrail.some(e => e.actor === role || e.actor === currentUserName);
+            return isAssigned || wasActor;
         };
         
-        // Find all 1-on-1 escalations where the current user was ever involved.
+        // Find all 1-on-1 escalations where the current user was ever involved or is currently assigned.
         history.forEach(item => {
             if ('analysis' in item && item.analysis.criticalCoachingInsight) {
                  if (wasEverInvolved(item)) {
