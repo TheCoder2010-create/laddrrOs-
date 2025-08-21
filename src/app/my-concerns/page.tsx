@@ -655,6 +655,10 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
         
         onUpdate();
     }
+    
+    const cleanDetails = (details?: string) => {
+      return details?.replace(/\*\*/g, '') || '';
+    };
 
     return (
         <Card className="border-2 border-blue-500/50 bg-blue-500/5 rounded-lg">
@@ -668,7 +672,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                             <ShieldCheck className="h-5 w-5 mt-1 flex-shrink-0 text-blue-500" />
                             <div className="w-full">
                                 <h3 className="font-bold text-base text-foreground">Your Manager's Commitment & Request</h3>
-                                <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: revealRequest?.details?.replace(/\n/g, '<br />') || '' }} />
+                                <div className="text-sm mt-2 text-muted-foreground prose prose-sm prose-p:my-1 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: cleanDetails(revealRequest?.details).replace(/\n/g, '<br />') }} />
                                 <h3 className="font-bold mt-4 text-base text-foreground">Please Acknowledge This Message</h3>
                                 <p className="text-sm mt-1">
                                     Your identity has <strong>not</strong> been revealed. By clicking the button below, you are only confirming that you’ve read this message.<br/>You will decide whether or not to reveal your identity in the next step.
@@ -683,7 +687,7 @@ function RevealIdentityWidget({ item, onUpdate }: { item: Feedback, onUpdate: ()
                     <>
                         <div className="p-3 bg-background/50 rounded-md border">
                             <p className="font-semibold text-foreground">Manager's Message:</p>
-                            <div className="text-muted-foreground mt-1 whitespace-pre-wrap prose prose-sm prose-p:my-1" dangerouslySetInnerHTML={{ __html: revealRequest?.details?.replace(/\n/g, '<br />') || '' }} />
+                            <div className="text-muted-foreground mt-1 whitespace-pre-wrap prose prose-sm prose-p:my-1" dangerouslySetInnerHTML={{ __html: cleanDetails(revealRequest?.details).replace(/\n/g, '<br />') }} />
                         </div>
                         <p className="text-sm text-muted-foreground">
                             To proceed with this investigation, the manager needs to know who you are. Your case will be de-anonymized if you accept. If you decline, the case will be escalated to HR for a final review while your identity remains anonymous.
@@ -978,6 +982,8 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                         
                         const renderDetails = () => {
                             if (!event.details) return null;
+                            
+                            const cleanedDetails = event.details.replace(/\*\*/g, '');
 
                             if (role === 'HR Head' && item.parentCaseId && event.event === 'Retaliation Claim Submitted') {
                                 return (
@@ -988,7 +994,7 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                             }
                             
                             const childRegex = /(New Case ID: )([a-f0-9-]+)/;
-                            const childMatch = event.details.match(childRegex);
+                            const childMatch = cleanedDetails.match(childRegex);
                             if (childMatch) {
                                 const childId = childMatch[2];
                                 return (
@@ -998,7 +1004,7 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
                                 );
                             }
 
-                            return <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>;
+                            return <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{cleanedDetails}</p>;
                         };
                         
                         return (
@@ -1038,7 +1044,7 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
         try {
             await submitFinalDisposition(feedback.trackingId, role, finalAction, finalActionNotes);
             toast({ title: "Final Action Logged", description: `The case has been closed and routed to ${finalAction}.`});
-            onUpdate();
+            onUpdate(feedback.trackingId);
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: "Submission Failed" });
@@ -1085,7 +1091,7 @@ function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
     );
 }
 
-function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [interimUpdate, setInterimUpdate] = useState('');
@@ -1128,7 +1134,7 @@ function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: 
     );
 }
 
-function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [resolutionSummary, setResolutionSummary] = useState('');
@@ -1172,9 +1178,9 @@ function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
 }
 
 
-function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
     if (feedback.status === 'Final Disposition Required') {
-        return <FinalDispositionPanel feedback={feedback} onUpdate={() => onUpdate()} />;
+        return <FinalDispositionPanel feedback={feedback} onUpdate={() => onUpdate(feedback.trackingId)} />;
     }
 
     if (feedback.status === 'Resolved' || feedback.status === 'Closed' || feedback.status === 'Pending Employee Acknowledgment') {
