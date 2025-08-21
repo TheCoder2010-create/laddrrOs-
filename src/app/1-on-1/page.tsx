@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -46,7 +47,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus, AuditEvent } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -301,6 +302,55 @@ function SlaTimer({ expiryTimestamp }: { expiryTimestamp: number }) {
         </div>
     );
 }
+
+function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
+    const eventIcons = {
+        'default': Briefcase,
+        'Responded': MessageSquare,
+        'Acknowledged': CheckCircle,
+        'AM Coaching Notes': BrainCircuit,
+        'AM Responded to Employee': MessageSquare,
+        'Supervisor Retry Action': MessageSquare,
+        'Manager Resolution': Briefcase,
+        'HR Resolution': ShieldCheck,
+        'Assigned to Ombudsman': UserX,
+        'Assigned to Grievance Office': UserPlus,
+        'Logged Dissatisfaction & Closed': FileText,
+    };
+
+    return (
+        <div className="space-y-4 pt-4 border-t border-destructive/20">
+            {trail.slice(1).map((event, index) => { // Skip the first "Identified" event
+                if (!['Responded', 'Acknowledged', 'AM Coaching Notes', 'AM Responded to Employee', 'Supervisor Retry Action', 'Manager Resolution', 'HR Resolution', 'Assigned to Ombudsman', 'Assigned to Grievance Office', 'Logged Dissatisfaction & Closed'].includes(event.event)) {
+                    return null;
+                }
+                const Icon = eventIcons[event.event as keyof typeof eventIcons] || eventIcons.default;
+                return (
+                    <div key={index} className="space-y-2">
+                        <p className="font-semibold text-foreground text-sm flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            {formatEventTitle(event.event)} by {formatActorName(event.actor)}
+                        </p>
+                        {event.details && <p className="text-sm text-muted-foreground whitespace-pre-wrap ml-6 italic">"{event.details}"</p>}
+                    </div>
+                )
+            })}
+        </div>
+    );
+}
+
+const formatEventTitle = (event: string) => {
+    switch (event) {
+        case 'Responded': return "Supervisor's Response";
+        case 'Acknowledged': return "Employee's Acknowledgement";
+        case 'AM Coaching Notes': return "AM's Coaching Notes for Supervisor";
+        case 'AM Responded to Employee': return "AM's Direct Response";
+        case 'Supervisor Retry Action': return "Supervisor's Follow-up Action";
+        case 'Manager Resolution': return "Manager's Resolution";
+        case 'HR Resolution': return "HR's Final Resolution";
+        default: return event;
+    }
+};
 
 function HistorySection({ role }: { role: Role }) {
     const [history, setHistory] = useState<OneOnOneHistoryItem[]>([]);
@@ -640,20 +690,8 @@ function HistorySection({ role }: { role: Role }) {
                                                             )}
                                                         </div>
                                                     )}
-
-                                                    {insight.supervisorResponse && (
-                                                        <div className="pt-4 border-t border-destructive/20 space-y-2">
-                                                            <p className="font-semibold text-foreground text-sm">Your Response ({formatActorName(item.supervisorName)})</p>
-                                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{insight.supervisorResponse}</p>
-                                                        </div>
-                                                    )}
-
-                                                    {insight.employeeAcknowledgement && (
-                                                        <div className="pt-4 border-t border-destructive/20 space-y-2">
-                                                            <p className="font-semibold text-primary text-sm">Employee Acknowledgement ({formatActorName(item.employeeName)})</p>
-                                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap italic">"{insight.employeeAcknowledgement}"</p>
-                                                        </div>
-                                                    )}
+                                                    
+                                                    {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
 
                                                     {canSupervisorRetry && (
                                                          <div className="mt-4 p-4 border rounded-lg bg-purple-500/10 space-y-4">
@@ -751,25 +789,13 @@ function HistorySection({ role }: { role: Role }) {
                                                     <AlertTriangle className="h-4 w-4" />Critical Insight & Resolution
                                                 </h4>
                                                 
-                                                <div className="space-y-3 divide-y divide-destructive/10">
-                                                    <div className="pt-3 first:pt-0">
+                                                <div className="space-y-3">
+                                                    <div className="space-y-2">
                                                         <p className="font-semibold text-foreground text-sm">Initial Summary</p>
                                                         <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.summary}</p>
                                                     </div>
                                                     
-                                                    {insight.supervisorResponse && (
-                                                        <div className="pt-3">
-                                                            <p className="font-semibold text-foreground text-sm">{formatActorName(item.supervisorName)}'s (TL) Response</p>
-                                                            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.supervisorResponse}</p>
-                                                        </div>
-                                                    )}
-
-                                                    {insight.employeeAcknowledgement && (
-                                                        <div className="pt-3">
-                                                            <p className="font-semibold text-blue-700 dark:text-blue-500 text-sm">Your Acknowledgement ({formatActorName(item.employeeName)})</p>
-                                                            <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 whitespace-pre-wrap">{insight.employeeAcknowledgement}</p>
-                                                        </div>
-                                                    )}
+                                                    {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
                                                 </div>
                                                 
                                                 {insight.status === 'pending_employee_acknowledgement' && (
