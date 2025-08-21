@@ -50,7 +50,7 @@ import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapp
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
 import { rewriteText } from '@/ai/flows/rewrite-text-flow';
-import { Switch } from '@/components/ui/switch';
+import { CustomSwitch } from '@/components/ui/custom-switch';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
@@ -1590,6 +1590,12 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                                
                                 <CaseHistory item={item} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(item)} />
                                 
+                                {retaliationCase && (isComplainant || role === 'HR Head') && (
+                                    <div className="mt-4 pt-4 border-t-2 border-destructive/50">
+                                         <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
+                                    </div>
+                                )}
+                                
                                  {item.resolution && (
                                     <div className="space-y-2">
                                         <Label>Manager's Final Resolution</Label>
@@ -1630,11 +1636,6 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                                     </div>
                                 )}
                                  
-                                {retaliationCase && (isComplainant || role === 'HR Head') && (
-                                    <div className="mt-4 pt-4 border-t-2 border-destructive/50">
-                                         <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
-                                    </div>
-                                )}
                                 {renderActionPanel()}
                             </AccordionContent>
                         </AccordionItem>
@@ -1707,7 +1708,8 @@ function MyConcernsContent() {
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
-  const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
+  const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
+  const [viewMode, setViewMode] = useState<'raised' | 'received'>(isSupervisor ? 'received' : 'raised');
   const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
   
   const [attachmentState, setAttachmentState] = useState<{
@@ -1722,8 +1724,6 @@ function MyConcernsContent() {
   const [activeTab, setActiveTab] = useState('identity-revealed');
 
 
-  const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
-
   const fetchAllCases = useCallback(() => {
     setIsLoading(true);
     getAllFeedback().then(data => {
@@ -1733,11 +1733,12 @@ function MyConcernsContent() {
   }, []);
   
   const handleUpdate = useCallback((trackingId?: string) => {
+    const currentOpenItem = openAccordionItem;
     fetchAllCases();
-    if (trackingId) {
-        setOpenAccordionItem(trackingId);
+    if (currentOpenItem) {
+        setOpenAccordionItem(currentOpenItem);
     }
-  }, [fetchAllCases]);
+  }, [fetchAllCases, openAccordionItem]);
 
   useEffect(() => {
     fetchAllCases();
@@ -1928,13 +1929,11 @@ function MyConcernsContent() {
                               {viewMode === 'received' ? 'Received Concerns' : 'My Submissions'}
                           </h2>
                             {isSupervisor && (
-                            <div className="flex items-center space-x-2">
-                                <Switch
+                                <CustomSwitch
                                     id="view-mode-toggle"
                                     checked={viewMode === 'received'}
                                     onCheckedChange={(checked) => setViewMode(checked ? 'received' : 'raised')}
                                 />
-                            </div>
                             )}
                       </div>
                       
