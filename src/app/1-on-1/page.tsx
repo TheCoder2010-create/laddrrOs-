@@ -331,10 +331,13 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
             default: return event;
         }
     };
+    
+    // Do not show the initial "Critical Insight Identified" event as it's redundant with the card title
+    const eventsToDisplay = trail.filter(event => event.event !== 'Critical Insight Identified');
 
     return (
         <div className="space-y-4 pt-4 border-t border-muted">
-            {trail.slice(1).map((event, index) => { // Skip the first "Identified" event
+            {eventsToDisplay.map((event, index) => { 
                 const Icon = eventIcons[event.event as keyof typeof eventIcons] || eventIcons.default;
                 return (
                     <div key={index} className="space-y-2">
@@ -641,106 +644,109 @@ function HistorySection({ role }: { role: Role }) {
                                         </div>
 
                                         {insight && (
-                                            <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 space-y-4">
-                                                <h4 className="font-semibold text-destructive flex items-center gap-2">
-                                                    <AlertTriangle className="h-4 w-4" />Critical Coaching Insight
-                                                </h4>
-                                                
-                                                <div className="space-y-4">
-                                                    <p className="text-sm text-destructive/90">{insight.summary}</p>
-                                                    
-                                                    {canSupervisorAct && (
-                                                        <div className="mt-4">
-                                                            {addressingInsightId !== item.id ? (
-                                                                <div className="flex items-center gap-4">
-                                                                    <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
-                                                                        Address Insight
+                                            <Card className="mt-4">
+                                                <CardHeader>
+                                                    <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
+                                                        <AlertTriangle className="h-5 w-5 text-destructive" />Critical Coaching Insight
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="space-y-4">
+                                                    <div className="space-y-4">
+                                                        <p className="text-sm text-muted-foreground">{insight.summary}</p>
+                                                        
+                                                        {canSupervisorAct && (
+                                                            <div className="mt-4">
+                                                                {addressingInsightId !== item.id ? (
+                                                                    <div className="flex items-center gap-4">
+                                                                        <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
+                                                                            Address Insight
+                                                                        </Button>
+                                                                        {insight.auditTrail && insight.auditTrail.length > 0 && (
+                                                                            <SlaTimer expiryTimestamp={addHours(new Date(insight.auditTrail[0].timestamp), 48).getTime()} />
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                                        <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
+                                                                            How did you address this?
+                                                                        </Label>
+                                                                        <Textarea
+                                                                            id={`supervisor-response-${item.id}`}
+                                                                            value={supervisorResponse}
+                                                                            onChange={(e) => setSupervisorResponse(e.target.value)}
+                                                                            rows={4}
+                                                                            className="bg-background"
+                                                                        />
+                                                                        <div className="flex gap-2">
+                                                                            <Button
+                                                                                onClick={() => handleAddressInsightSubmit(item)}
+                                                                                disabled={isSubmittingResponse || !supervisorResponse}
+                                                                            >
+                                                                                {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
+                                                                                Submit
+                                                                            </Button>
+                                                                            <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
+                                                                                Cancel
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
+
+                                                        {canSupervisorRetry && (
+                                                             <div className="mt-4 p-4 border rounded-lg bg-purple-500/10 space-y-4">
+                                                                <h4 className="font-semibold text-lg text-purple-700 dark:text-purple-400">Action Required: Retry 1-on-1</h4>
+                                                                
+                                                                {amCoachingNotes && (
+                                                                     <div className="p-3 bg-muted/80 rounded-md border">
+                                                                        <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
+                                                                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                <p className="text-sm text-muted-foreground">
+                                                                  Your AM has reviewed this case and coached you. Please re-engage with the employee to address their remaining concerns.
+                                                                </p>
+
+                                                                {retryingInsightId !== item.id ? (
+                                                                    <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setRetryingInsightId(item.id)}>
+                                                                        <Repeat className="mr-2 h-4 w-4" /> Log Retry Actions
                                                                     </Button>
-                                                                    {insight.auditTrail && insight.auditTrail.length > 0 && (
-                                                                        <SlaTimer expiryTimestamp={addHours(new Date(insight.auditTrail[0].timestamp), 48).getTime()} />
-                                                                    )}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="space-y-2 bg-background/50 p-3 rounded-md">
-                                                                    <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
-                                                                        How did you address this?
-                                                                    </Label>
-                                                                    <Textarea
-                                                                        id={`supervisor-response-${item.id}`}
-                                                                        value={supervisorResponse}
-                                                                        onChange={(e) => setSupervisorResponse(e.target.value)}
-                                                                        rows={4}
-                                                                        className="bg-background"
-                                                                    />
-                                                                    <div className="flex gap-2">
-                                                                        <Button
-                                                                            onClick={() => handleAddressInsightSubmit(item)}
-                                                                            disabled={isSubmittingResponse || !supervisorResponse}
-                                                                        >
-                                                                            {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
-                                                                            Submit
-                                                                        </Button>
-                                                                        <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
-                                                                            Cancel
-                                                                        </Button>
+                                                                ) : (
+                                                                    <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                                        <Label htmlFor={`retry-response-${item.id}`} className="text-foreground font-semibold">
+                                                                            Describe your follow-up actions
+                                                                        </Label>
+                                                                        <Textarea
+                                                                            id={`retry-response-${item.id}`}
+                                                                            value={retryResponse}
+                                                                            onChange={(e) => setRetryResponse(e.target.value)}
+                                                                            rows={4}
+                                                                            className="bg-background"
+                                                                        />
+                                                                        <div className="flex gap-2">
+                                                                            <Button
+                                                                                onClick={() => handleRetrySubmit(item)}
+                                                                                disabled={isSubmittingRetry || !retryResponse}
+                                                                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                                                            >
+                                                                                {isSubmittingRetry && <Loader2 className="mr-2 animate-spin" />}
+                                                                                Submit Follow-up
+                                                                            </Button>
+                                                                            <Button variant="ghost" onClick={() => setRetryingInsightId(null)}>
+                                                                                Cancel
+                                                                            </Button>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
-
-                                                    {canSupervisorRetry && (
-                                                         <div className="mt-4 p-4 border rounded-lg bg-purple-500/10 space-y-4">
-                                                            <h4 className="font-semibold text-lg text-purple-700 dark:text-purple-400">Action Required: Retry 1-on-1</h4>
-                                                            
-                                                            {amCoachingNotes && (
-                                                                 <div className="p-3 bg-muted/80 rounded-md border">
-                                                                    <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
-                                                                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
-                                                                </div>
-                                                            )}
-                                                            
-                                                            <p className="text-sm text-muted-foreground">
-                                                              Your AM has reviewed this case and coached you. Please re-engage with the employee to address their remaining concerns.
-                                                            </p>
-
-                                                            {retryingInsightId !== item.id ? (
-                                                                <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setRetryingInsightId(item.id)}>
-                                                                    <Repeat className="mr-2 h-4 w-4" /> Log Retry Actions
-                                                                </Button>
-                                                            ) : (
-                                                                <div className="space-y-2 bg-background/50 p-3 rounded-md">
-                                                                    <Label htmlFor={`retry-response-${item.id}`} className="text-foreground font-semibold">
-                                                                        Describe your follow-up actions
-                                                                    </Label>
-                                                                    <Textarea
-                                                                        id={`retry-response-${item.id}`}
-                                                                        value={retryResponse}
-                                                                        onChange={(e) => setRetryResponse(e.target.value)}
-                                                                        rows={4}
-                                                                        className="bg-background"
-                                                                    />
-                                                                    <div className="flex gap-2">
-                                                                        <Button
-                                                                            onClick={() => handleRetrySubmit(item)}
-                                                                            disabled={isSubmittingRetry || !retryResponse}
-                                                                            className="bg-purple-600 hover:bg-purple-700 text-white"
-                                                                        >
-                                                                            {isSubmittingRetry && <Loader2 className="mr-2 animate-spin" />}
-                                                                            Submit Follow-up
-                                                                        </Button>
-                                                                        <Button variant="ghost" onClick={() => setRetryingInsightId(null)}>
-                                                                            Cancel
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                         </div>
-                                                    )}
-                                                </div>
-                                            </div>
+                                                                )}
+                                                             </div>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
                                         )}
                                     </div>
                                 )}
