@@ -319,12 +319,22 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
         'Logged Dissatisfaction & Closed': FileText,
     };
 
+    const formatEventTitle = (event: string) => {
+        switch (event) {
+            case 'Responded': return "Supervisor's Response";
+            case 'Acknowledged': return "Employee's Acknowledgement";
+            case 'AM Coaching Notes': return "AM's Coaching Notes for Supervisor";
+            case 'AM Responded to Employee': return "AM's Direct Response";
+            case 'Supervisor Retry Action': return "Supervisor's Follow-up Action";
+            case 'Manager Resolution': return "Manager's Resolution";
+            case 'HR Resolution': return "HR's Final Resolution";
+            default: return event;
+        }
+    };
+
     return (
         <div className="space-y-4 pt-4 border-t border-muted">
             {trail.slice(1).map((event, index) => { // Skip the first "Identified" event
-                if (!['Responded', 'Acknowledged', 'AM Coaching Notes', 'AM Responded to Employee', 'Supervisor Retry Action', 'Manager Resolution', 'HR Resolution', 'Assigned to Ombudsman', 'Assigned to Grievance Office', 'Logged Dissatisfaction & Closed'].includes(event.event)) {
-                    return null;
-                }
                 const Icon = eventIcons[event.event as keyof typeof eventIcons] || eventIcons.default;
                 return (
                     <div key={index} className="space-y-2">
@@ -339,19 +349,6 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
         </div>
     );
 }
-
-const formatEventTitle = (event: string) => {
-    switch (event) {
-        case 'Responded': return "Supervisor's Response";
-        case 'Acknowledged': return "Employee's Acknowledgement";
-        case 'AM Coaching Notes': return "AM's Coaching Notes for Supervisor";
-        case 'AM Responded to Employee': return "AM's Direct Response";
-        case 'Supervisor Retry Action': return "Supervisor's Follow-up Action";
-        case 'Manager Resolution': return "Manager's Resolution";
-        case 'HR Resolution': return "HR's Final Resolution";
-        default: return event;
-    }
-};
 
 function HistorySection({ role }: { role: Role }) {
     const [history, setHistory] = useState<OneOnOneHistoryItem[]>([]);
