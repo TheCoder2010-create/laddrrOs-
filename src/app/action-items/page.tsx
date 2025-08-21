@@ -605,43 +605,33 @@ function ActionItemsContent() {
         const history = await getOneOnOneHistory();
 
         const localActiveItems: (Feedback | OneOnOneHistoryItem)[] = [];
-        
-        const wasEverAssigned = (item: OneOnOneHistoryItem) => {
+        const currentUserName = roleUserMapping[role as Role].name;
+
+        const wasEverInvolved = (item: OneOnOneHistoryItem) => {
             const insight = item.analysis.criticalCoachingInsight;
             if (!insight || !insight.auditTrail) return false;
-            // Check if there was ever an assignment event to the current role
-            return insight.auditTrail.some(e => 
-                (e.event === 'Assigned' || e.event.includes('Review') || e.event.includes('Action')) 
-                && e.details?.includes(role as string)
-            );
+            // Check if the current user was ever the actor in an event.
+            return insight.auditTrail.some(e => e.actor === role || e.actor === currentUserName);
         };
         
-        const isCurrentlyAssigned = (item: Feedback | OneOnOneHistoryItem): boolean => {
-            if ('analysis' in item) { // It's a OneOnOneHistoryItem
-                const insight = item.analysis.criticalCoachingInsight;
-                if (!insight) return false;
-                
-                const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
-                const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
-                const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-
-                return isAmMatch || isManagerMatch || isHrMatch || wasEverAssigned(item);
-
-            } else { // It's a Feedback item (To-Do list)
-                return item.status === 'To-Do' && (item.assignedTo?.includes(role as Role) ?? false);
+        // Find all 1-on-1 escalations where the current user was ever involved.
+        history.forEach(item => {
+            if ('analysis' in item && item.analysis.criticalCoachingInsight) {
+                 if (wasEverInvolved(item)) {
+                    localActiveItems.push(item);
+                 }
             }
-        };
-
-        const allItems: (Feedback | OneOnOneHistoryItem)[] = [...fetchedFeedback, ...history];
-
-        allItems.forEach(item => {
-            if (isCurrentlyAssigned(item)) {
-                // Prevent duplicates
+        });
+        
+        // Find all "To-Do" items assigned to the current user.
+        fetchedFeedback.forEach(item => {
+             if (item.status === 'To-Do' && (item.assignedTo?.includes(role as Role) ?? false)) {
+                 // Prevent duplicates if it somehow already exists
                 const id = 'analysis' in item ? item.id : item.trackingId;
                 if (!localActiveItems.some(li => ('analysis' in li ? li.id : li.trackingId) === id)) {
                    localActiveItems.push(item);
                 }
-            }
+             }
         });
         
         const sortFn = (a: Feedback | OneOnOneHistoryItem, b: Feedback | OneOnOneHistoryItem) => {
@@ -659,7 +649,7 @@ function ActionItemsContent() {
     }
   }, [role]);
   
-  const handleUpdate = useCallback(() => {
+  const handleUpdate = useCallback((trackingId?: string) => {
     const currentOpenItem = openAccordionItem;
     fetchFeedback().then(() => {
         if (currentOpenItem) {
@@ -680,7 +670,7 @@ function ActionItemsContent() {
         window.removeEventListener('storage', handleStorageChange);
         window.removeEventListener('feedbackUpdated', handleStorageChange);
     };
-  }, [handleUpdate]);
+  }, [handleUpdate, fetchFeedback]);
 
   const handleViewCaseDetails = async (e: React.MouseEvent, caseId: string) => {
       e.preventDefault();
