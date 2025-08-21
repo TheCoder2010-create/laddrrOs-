@@ -54,6 +54,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];
@@ -319,7 +320,7 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
     };
 
     return (
-        <div className="space-y-4 pt-4 border-t border-destructive/20">
+        <div className="space-y-4 pt-4 border-t border-muted">
             {trail.slice(1).map((event, index) => { // Skip the first "Identified" event
                 if (!['Responded', 'Acknowledged', 'AM Coaching Notes', 'AM Responded to Employee', 'Supervisor Retry Action', 'Manager Resolution', 'HR Resolution', 'Assigned to Ombudsman', 'Assigned to Grievance Office', 'Logged Dissatisfaction & Closed'].includes(event.event)) {
                     return null;
@@ -784,28 +785,31 @@ function HistorySection({ role }: { role: Role }) {
                                         </div>
 
                                         {insight && (
-                                            <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 space-y-4">
-                                                <h4 className="font-semibold text-destructive flex items-center gap-2">
-                                                    <AlertTriangle className="h-4 w-4" />Critical Insight & Resolution
-                                                </h4>
-                                                
-                                                <div className="space-y-3">
-                                                    <div className="space-y-2">
-                                                        <p className="font-semibold text-foreground text-sm">Initial Summary</p>
-                                                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.summary}</p>
+                                            <Card>
+                                                <CardHeader>
+                                                    <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
+                                                        <AlertTriangle className="h-5 w-5" />Critical Insight & Resolution
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="space-y-4">
+                                                    <div className="space-y-3">
+                                                        <div className="space-y-2">
+                                                            <p className="font-semibold text-foreground text-sm">Initial Summary</p>
+                                                            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.summary}</p>
+                                                        </div>
+                                                        
+                                                        {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
                                                     </div>
                                                     
-                                                    {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
-                                                </div>
-                                                
-                                                {insight.status === 'pending_employee_acknowledgement' && (
-                                                    <div className="mt-4">
-                                                        <p className="text-sm text-destructive/90">
-                                                            You have a pending action for this item. Please go to your <Link href="/messages" className="font-bold underline">Messages</Link> to respond.
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
+                                                    {insight.status === 'pending_employee_acknowledgement' && (
+                                                        <div className="mt-4 pt-4 border-t">
+                                                            <p className="text-sm font-medium">
+                                                                You have a pending action for this item. Please go to your <Link href="/messages" className="font-bold underline text-primary">Messages</Link> to respond.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
                                         )}
                                      </div>
                                 )}
