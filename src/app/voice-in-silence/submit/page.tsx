@@ -164,13 +164,13 @@ function SubmissionForm({ onSubmitted }: { onSubmitted: (result: AnonymousFeedba
                 <TooltipTrigger asChild>
                   <Button 
                       type="button"
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:bg-transparent hover:text-primary"
+                      className="h-8 w-8 rounded-full"
                       onClick={handleAiAction}
                       disabled={isRewriting || isSubmitting || (!isRewritten && !message)}
                   >
-                      {isRewriting ? <Loader2 className="h-5 w-5 animate-spin" /> : (isRewritten ? <Undo2 className="h-5 w-5" /> : <MagicWandIcon className="h-5 w-5" />)}
+                      {isRewriting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isRewritten ? <Undo2 className="h-4 w-4" /> : <MagicWandIcon className="h-4 w-4" />)}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent><p>{isRewritten ? "Undo Rewrite" : "Rewrite with AI"}</p></TooltipContent>
@@ -629,4 +629,5 @@ export default function VoiceInSilenceSubmitPage() {
     </div>
   );
 }
+
 

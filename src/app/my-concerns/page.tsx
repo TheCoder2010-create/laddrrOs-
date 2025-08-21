@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
@@ -194,13 +195,13 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                                  <TooltipTrigger asChild>
                                     <Button 
                                         type="button"
-                                        variant="ghost"
+                                        variant="secondary"
                                         size="icon"
-                                        className="h-8 w-8 rounded-full text-muted-foreground hover:bg-transparent hover:text-primary"
+                                        className="h-8 w-8 rounded-full"
                                         onClick={handleAiAction}
                                         disabled={isRewriting || isSubmitting || (!isRewritten && !concern)}
                                     >
-                                        {isRewriting ? <Loader2 className="h-5 w-5 animate-spin" /> : (isRewritten ? <Undo2 className="h-5 w-5" /> : <MagicWandIcon className="h-5 w-5" />)}
+                                        {isRewriting ? <Loader2 className="h-4 w-4 animate-spin" /> : (isRewritten ? <Undo2 className="h-4 w-4" /> : <MagicWandIcon className="h-4 w-4" />)}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>{isRewritten ? "Undo Rewrite" : "Rewrite with AI"}</p></TooltipContent>
@@ -214,14 +215,14 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-1 pt-2">
-                         {files.map((file, i) => (
-                            <div key={i} className="text-sm flex items-center justify-between">
-                                <span className="font-medium text-primary truncate">{file.name}</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
-                                    <XIcon className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
+                        {files.map((file, i) => (
+                           <div key={i} className="text-sm flex items-center justify-between">
+                               <span className="font-medium text-primary truncate">{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                   <XIcon className="h-4 w-4" />
+                               </Button>
+                           </div>
+                       ))}
                     </div>
                 )}
             </div>
@@ -376,14 +377,14 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-1 pt-2">
-                         {files.map((file, i) => (
-                            <div key={i} className="text-sm flex items-center justify-between">
-                                <span className="font-medium text-primary truncate">{file.name}</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
-                                    <XIcon className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
+                        {files.map((file, i) => (
+                           <div key={i} className="text-sm flex items-center justify-between">
+                               <span className="font-medium text-primary truncate">{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                   <XIcon className="h-4 w-4" />
+                               </Button>
+                           </div>
+                       ))}
                     </div>
                 )}
             </div>
@@ -494,14 +495,14 @@ function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-1 pt-2">
-                         {files.map((file, i) => (
-                            <div key={i} className="text-sm flex items-center justify-between">
-                                <span className="font-medium text-primary truncate">{file.name}</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
-                                    <XIcon className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
+                        {files.map((file, i) => (
+                           <div key={i} className="text-sm flex items-center justify-between">
+                               <span className="font-medium text-primary truncate">{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                   <XIcon className="h-4 w-4" />
+                               </Button>
+                           </div>
+                       ))}
                     </div>
                 )}
             </div>
@@ -873,14 +874,14 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                 </div>
                  {files.length > 0 && (
                     <div className="space-y-1 pt-2">
-                         {files.map((file, i) => (
-                            <div key={i} className="text-sm flex items-center justify-between">
-                                <span className="font-medium text-primary truncate">{file.name}</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
-                                    <XIcon className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
+                        {files.map((file, i) => (
+                           <div key={i} className="text-sm flex items-center justify-between">
+                               <span className="font-medium text-primary truncate">{file.name}</span>
+                               <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                   <XIcon className="h-4 w-4" />
+                               </Button>
+                           </div>
+                       ))}
                     </div>
                 )}
             </div>
@@ -1401,10 +1402,12 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
     );
 }
 
-function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView, openAccordionItem, setOpenAccordionItem, trackedCase, setTrackedCase }: { items: Feedback[], onUpdate: (trackingId?: string) => void, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean, openAccordionItem: string | undefined, setOpenAccordionItem: (value: string | undefined) => void, trackedCase: Feedback | null, setTrackedCase: (caseItem: Feedback | null) => void }) {
+function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView, trackedCase, setTrackedCase }: { items: Feedback[], onUpdate: (trackingId?: string) => void, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean, trackedCase: Feedback | null, setTrackedCase: (caseItem: Feedback | null) => void }) {
     const { role } = useRole();
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
+
+    const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
     const [trackingIdInput, setTrackingIdInput] = useState('');
     const [isTracking, setIsTracking] = useState(false);
@@ -1595,8 +1598,8 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                                          <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                     </div>
                                 )}
-                                
-                                 {item.resolution && (
+                                 
+                                {item.resolution && (
                                     <div className="space-y-2">
                                         <Label>Manager's Final Resolution</Label>
                                         <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{item.resolution}</p>
@@ -1707,7 +1710,6 @@ function MyConcernsContent() {
   const { role, toast } = useRole();
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
   const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
   const [viewMode, setViewMode] = useState<'raised' | 'received'>(isSupervisor ? 'received' : 'raised');
   const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
@@ -1733,12 +1735,8 @@ function MyConcernsContent() {
   }, []);
   
   const handleUpdate = useCallback((trackingId?: string) => {
-    const currentOpenItem = openAccordionItem;
     fetchAllCases();
-    if (currentOpenItem) {
-        setOpenAccordionItem(currentOpenItem);
-    }
-  }, [fetchAllCases, openAccordionItem]);
+  }, [fetchAllCases]);
 
   useEffect(() => {
     fetchAllCases();
@@ -1945,8 +1943,6 @@ function MyConcernsContent() {
                               items={getConcernList()}
                               allCases={allCases} 
                               concernType={getConcernType()}
-                              openAccordionItem={openAccordionItem}
-                              setOpenAccordionItem={setOpenAccordionItem}
                               isReceivedView={isSupervisor && viewMode === 'received'}
                               trackedCase={trackedCase}
                               setTrackedCase={setTrackedCase}
@@ -1982,3 +1978,4 @@ export default function MyConcernsPage() {
 
 
     
+
