@@ -606,28 +606,34 @@ function ActionItemsContent() {
 
         const localActiveItems: (Feedback | OneOnOneHistoryItem)[] = [];
         const currentUserName = roleUserMapping[role as Role].name;
-
-        const wasEverInvolved = (item: OneOnOneHistoryItem) => {
-            const insight = item.analysis.criticalCoachingInsight;
-            if (!insight || !insight.auditTrail) return false;
-            // Check if the current user was ever the actor in an event OR is currently assigned.
-            const isAssigned = Array.isArray(item.assignedTo) && item.assignedTo.includes(role);
-            const wasActor = insight.auditTrail.some(e => e.actor === role || e.actor === currentUserName);
-            return isAssigned || wasActor;
-        };
         
+        const isCurrentlyAssigned = (item: Feedback | OneOnOneHistoryItem) => {
+            if ('analysis' in item) { // OneOnOneHistoryItem
+                const insight = item.analysis.criticalCoachingInsight;
+                if (!insight || insight.status === 'resolved') return false;
+
+                const isAmMatch = role === 'AM' && insight.status === 'pending_am_review';
+                const isManagerMatch = role === 'Manager' && insight.status === 'pending_manager_review';
+                const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+
+                return isAmMatch || isManagerMatch || isHrMatch;
+            } else { // Feedback item
+                return item.assignedTo?.includes(role as Role) ?? false;
+            }
+        };
+
         // Find all 1-on-1 escalations where the current user was ever involved or is currently assigned.
         history.forEach(item => {
             if ('analysis' in item && item.analysis.criticalCoachingInsight) {
-                 if (wasEverInvolved(item)) {
+                 if (isCurrentlyAssigned(item)) {
                     localActiveItems.push(item);
                  }
             }
         });
         
-        // Find all "To-Do" items assigned to the current user.
+        // Find all "To-Doo" lists or other actionable feedback items assigned to the current user.
         fetchedFeedback.forEach(item => {
-             if (item.status === 'To-Do' && (item.assignedTo?.includes(role as Role) ?? false)) {
+             if (isCurrentlyAssigned(item) && item.status === 'To-Do') {
                  // Prevent duplicates if it somehow already exists
                 const id = 'analysis' in item ? item.id : item.trackingId;
                 if (!localActiveItems.some(li => ('analysis' in li ? li.id : li.trackingId) === id)) {
