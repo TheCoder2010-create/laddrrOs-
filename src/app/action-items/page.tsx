@@ -31,7 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { downloadAuditTrailPDF } from '@/lib/pdf-generator';
-import { formatActorName } from '@/lib/role-mapping';
+import { formatActorName, roleUserMapping } from '@/lib/role-mapping';
 
 const criticalityConfig = {
     'Critical': { icon: ShieldAlert, color: 'bg-destructive/20 text-destructive', badge: 'destructive' as const },
@@ -596,7 +596,7 @@ function ActionItemsContent() {
   const accordionRef = useRef<HTMLDivElement>(null);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
   const [viewingCaseDetails, setViewingCaseDetails] = useState<Feedback | OneOnOneHistoryItem | null>(null);
-  
+
   const fetchFeedback = useCallback(async () => {
     if (!role) return;
     setIsLoading(true);
@@ -849,7 +849,7 @@ function ActionItemsContent() {
 
                     <AuditTrail item={item} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload} />
                     
-                    <ActionPanel item={item} onUpdate={handleUpdate} handleViewCaseDetails={handleViewCaseDetails} />
+                    <ActionPanel item={item} onUpdate={() => handleUpdate(id)} handleViewCaseDetails={handleViewCaseDetails} />
                     
                     {!isOneOnOne && item.resolution && (
                          <div className="space-y-2">
