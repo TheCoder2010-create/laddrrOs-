@@ -1028,7 +1028,7 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
     );
 }
 
-function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function FinalDispositionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [finalAction, setFinalAction] = useState<string | null>(null);
@@ -1414,13 +1414,12 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
     );
 }
 
-function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView, openAccordionItem, setOpenAccordionItem }: { items: Feedback[], onUpdate: (trackingId?: string) => void, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean, openAccordionItem: string | undefined, setOpenAccordionItem: (value: string | undefined) => void }) {
+function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView, openAccordionItem, setOpenAccordionItem, trackedCase, setTrackedCase }: { items: Feedback[], onUpdate: (trackingId?: string) => void, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean, openAccordionItem: string | undefined, setOpenAccordionItem: (value: string | undefined) => void, trackedCase: Feedback | null, setTrackedCase: (caseItem: Feedback | null) => void }) {
     const { role } = useRole();
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
 
     const [trackingIdInput, setTrackingIdInput] = useState('');
-    const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
     const [isTracking, setIsTracking] = useState(false);
     const [notFound, setNotFound] = useState(false);
     
@@ -1462,7 +1461,7 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                  setTrackedCase(updatedCase);
              }
         }
-    }, [allCases, trackedCase]);
+    }, [allCases, trackedCase, setTrackedCase]);
     
     const renderCaseList = (itemsToRender: Feedback[]) => {
         const displayItems = trackedCase && !isReceivedView && concernType === 'anonymous' ? [trackedCase] : itemsToRender;
@@ -1498,14 +1497,10 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
                     const relevantResponderEvents = ['Resolution Submitted', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
                     const responderEvent = item.auditTrail?.slice().reverse().find(e => relevantResponderEvents.includes(e.event));
-                    const retaliationResponderEvent = retaliationCase?.auditTrail?.slice().reverse().find(e => e.event === 'HR Responded to Retaliation Claim');
                     
                     const isComplainant = item.submittedBy === role;
                     const isCaseClosed = item.status === 'Resolved' || item.status === 'Closed';
                     const canReportRetaliation = !item.isAnonymous && isComplainant;
-
-                    const isLinkedClaim = !!item.parentCaseId;
-                    const accordionTitle = isLinkedClaim ? `Linked Retaliation Claim` : item.subject;
                     
                     const handleDownload = (itemToDownload: Feedback) => {
                         downloadAuditTrailPDF({
@@ -1539,16 +1534,6 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                             default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Submitted</Badge>;
                         }
                     }
-                    
-                    const getRetaliationStatusBadge = (status?: string) => {
-                        switch(status) {
-                            case 'Resolved': return <Badge variant="success" className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3" />Claim Resolved</Badge>;
-                            case 'Retaliation Claim': return <Badge variant="destructive" className="flex items-center gap-1.5"><AlertTriangle className="h-3 w-3"/>HR Reviewing Claim</Badge>;
-                            case 'Pending Employee Acknowledgment': return <Badge variant="destructive" className="flex items-center gap-1.5"><MessageCircleQuestion className="h-3 w-3" />Your Ack. Required</Badge>;
-                            case 'Closed': return <Badge variant="secondary" className="flex items-center gap-1.5"><UserX className="h-3 w-3" />Claim Closed</Badge>;
-                            default: return <Badge variant="secondary" className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Claim Submitted</Badge>;
-                        }
-                    }
 
                     const renderActionPanel = () => {
                         if (!isReceivedView) return null;
@@ -1565,7 +1550,7 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                                 <div className="flex justify-between items-center w-full">
                                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <p className="font-medium truncate">{accordionTitle}</p>
+                                        <p className="font-medium truncate">{item.subject}</p>
                                     </div>
                                     <div className="flex items-center gap-4 pl-4 mr-2">
                                         <span className="text-xs text-muted-foreground font-mono cursor-text">
@@ -1652,6 +1637,8 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                                                         setRetaliationDialogOpen(false);
                                                         onUpdate(item.trackingId);
                                                     }} 
+                                                    files={[]} // State for this would need to be managed here
+                                                    setFiles={() => {}}
                                                 />
                                             </DialogContent>
                                         </Dialog>
@@ -1659,49 +1646,8 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                                 )}
                                  
                                 {retaliationCase && (isComplainant || role === 'HR Head') && (
-                                     <div className="mt-4 pt-4 border-t-2 border-destructive/50">
-                                        <div className="flex justify-between items-center w-full px-4 py-3 text-left bg-destructive/10 rounded-md">
-                                            <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
-                                                <GitMerge /> Linked Retaliation Claim 
-                                            </h4>
-                                            <div className="flex items-center gap-4 pl-4 mr-2">
-                                                {getRetaliationStatusBadge(retaliationCase.status)}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4 pt-4 px-4 pb-2 border border-t-0 rounded-b-md">
-                                            {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
-                                                <AcknowledgementWidget 
-                                                    item={retaliationCase} 
-                                                    onUpdate={() => onUpdate(item.trackingId)}
-                                                    title="Action Required: Acknowledge HR Response"
-                                                    description="HR has responded to your retaliation claim. Please review their resolution."
-                                                    responderEventActor={retaliationResponderEvent?.actor}
-                                                    responderEventDetails={retaliationResponderEvent?.details}
-                                                />
-                                            )}
-                                            <div className="space-y-2">
-                                                <Label>Your Claim Description</Label>
-                                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
-                                            </div>
-                                            {retaliationCase.attachments && retaliationCase.attachments.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <Label>Your Attachments</Label>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {retaliationCase.attachments.map((att, i) => (
-                                                            <Button key={i} variant="outline" size="sm" asChild>
-                                                                <a href={att.dataUri} download={att.name}>
-                                                                    <LinkIcon className="mr-2 h-4 w-4" />
-                                                                    {att.name}
-                                                                </a>
-                                                            </Button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            <div className="pt-4 border-t">
-                                                <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
-                                            </div>
-                                        </div>
+                                    <div className="mt-4 pt-4 border-t-2 border-destructive/50">
+                                         <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
                                     </div>
                                 )}
                                 {renderActionPanel()}
@@ -1777,6 +1723,7 @@ function MyConcernsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
   const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
+  const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
   
   const [attachmentState, setAttachmentState] = useState<{
     identified: File[],
@@ -1801,14 +1748,11 @@ function MyConcernsContent() {
   }, []);
   
   const handleUpdate = useCallback((trackingId?: string) => {
-    const currentOpenItem = openAccordionItem;
     fetchAllCases();
     if (trackingId) {
         setOpenAccordionItem(trackingId);
-    } else if (currentOpenItem) {
-        setOpenAccordionItem(currentOpenItem);
     }
-  }, [fetchAllCases, openAccordionItem]);
+  }, [fetchAllCases]);
 
   useEffect(() => {
     fetchAllCases();
@@ -2020,6 +1964,8 @@ function MyConcernsContent() {
                               openAccordionItem={openAccordionItem}
                               setOpenAccordionItem={setOpenAccordionItem}
                               isReceivedView={isSupervisor && viewMode === 'received'}
+                              trackedCase={trackedCase}
+                              setTrackedCase={setTrackedCase}
                           />
                       )}
                   </div>
@@ -2049,3 +1995,4 @@ export default function MyConcernsPage() {
 }
 
     
+
