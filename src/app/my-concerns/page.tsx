@@ -1099,7 +1099,7 @@ function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: 
             await submitSupervisorUpdate(feedback.trackingId, role, interimUpdate, false);
             setInterimUpdate('');
             toast({ title: "Update Added" });
-            onUpdate();
+            onUpdate(feedback.trackingId);
         } catch(e) {
             console.error(e);
             toast({ variant: 'destructive', title: "Update Failed"});
@@ -1142,7 +1142,7 @@ function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
             await submitSupervisorUpdate(feedback.trackingId, role, resolutionSummary, true);
             setResolutionSummary('');
             toast({ title: "Resolution Submitted", description: "The employee has been notified to acknowledge your response." });
-            onUpdate();
+            onUpdate(feedback.trackingId);
         } catch(e) {
             console.error(e);
             toast({ variant: 'destructive', title: "Update Failed"});
@@ -1174,7 +1174,7 @@ function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
 
 function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
     if (feedback.status === 'Final Disposition Required') {
-        return <FinalDispositionPanel feedback={feedback} onUpdate={onUpdate} />;
+        return <FinalDispositionPanel feedback={feedback} onUpdate={() => onUpdate()} />;
     }
 
     if (feedback.status === 'Resolved' || feedback.status === 'Closed' || feedback.status === 'Pending Employee Acknowledgment') {
@@ -1189,7 +1189,7 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
     );
 }
 
-function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
     if (feedback.status === 'Pending Anonymous Reply') {
         return (
              <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 mt-4">
@@ -1210,64 +1210,64 @@ function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedbac
     );
 }
 
-function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
+function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [revealReason, setRevealReason] = useState('');
     const [resolution, setResolution] = useState('');
     const [update, setUpdate] = useState('');
     const [question, setQuestion] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(''); // Stores which button is submitting
 
     const handleRequestIdentity = async () => {
         if (!revealReason || !role) return;
-        setIsSubmitting(true);
+        setIsSubmitting('identity');
         try {
             await requestIdentityReveal(feedback.trackingId, role, revealReason);
             setRevealReason('');
             toast({ title: "Request Submitted", description: "The user has been notified of your request."});
-            onUpdate();
+            onUpdate(feedback.trackingId);
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting('');
         }
     }
     
     const handleAddUpdate = async () => {
         if (!update || !role) return;
-        setIsSubmitting(true);
+        setIsSubmitting('update');
         try {
             await submitSupervisorUpdate(feedback.trackingId, role, update, false);
             setUpdate('');
             toast({ title: "Update Added" });
-            onUpdate();
+            onUpdate(feedback.trackingId);
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting('');
         }
     };
     
     const handleRequestInformation = async () => {
         if (!question || !role) return;
-        setIsSubmitting(true);
+        setIsSubmitting('question');
         try {
             await requestAnonymousInformation(feedback.trackingId, role, question);
             setQuestion('');
             toast({ title: "Question Submitted", description: "The user has been notified to provide more information." });
-            onUpdate();
+            onUpdate(feedback.trackingId);
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting('');
         }
     };
 
     const handleResolveDirectly = async () => {
         if (!resolution || !role) return;
-        setIsSubmitting(true);
+        setIsSubmitting('resolution');
         try {
             await submitSupervisorUpdate(feedback.trackingId, role, resolution, true);
             setResolution('');
             toast({ title: "Resolution Submitted", description: "The anonymous user has been notified and must acknowledge your response."});
-            onUpdate();
+            onUpdate(feedback.trackingId);
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting('');
         }
     }
     
@@ -1296,9 +1296,8 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                             className="h-full pr-12 pb-12"
                             placeholder="Log your private notes..."
                         />
-                        <Button onClick={handleAddUpdate} disabled={!update || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            <Send className="h-4 w-4" />
+                        <Button onClick={handleAddUpdate} disabled={!update || !!isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                            {isSubmitting === 'update' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </div>
                 </div>
@@ -1325,9 +1324,8 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                             className="h-full pr-12 pb-12"
                             placeholder="Ask a clarifying question..."
                         />
-                        <Button onClick={handleRequestInformation} disabled={!question || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            <Send className="h-4 w-4" />
+                        <Button onClick={handleRequestInformation} disabled={!question || !!isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                            {isSubmitting === 'question' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </div>
                 </div>
@@ -1356,9 +1354,8 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                         />
                          <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button disabled={!revealReason || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
-                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    <Send className="h-4 w-4" />
+                                <Button disabled={!revealReason || !!isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                                    {isSubmitting === 'identity' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -1402,9 +1399,8 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                         placeholder="Propose a resolution..."
                         className="pr-12 pb-12"
                     />
-                    <Button onClick={handleResolveDirectly} disabled={!resolution || isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Send className="h-4 w-4" />
+                    <Button onClick={handleResolveDirectly} disabled={!resolution || !!isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
+                        {isSubmitting === 'resolution' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
                 </div>
             </div>
@@ -1412,7 +1408,7 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
     );
 }
 
-function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, isReceivedView }: { items: Feedback[], onUpdate: (trackingId?: string) => void, accordionRef: React.RefObject<HTMLDivElement>, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean }) {
+function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView, openAccordionItem, setOpenAccordionItem }: { items: Feedback[], onUpdate: (trackingId?: string) => void, allCases: Feedback[], concernType: 'retaliation' | 'other' | 'anonymous', isReceivedView: boolean, openAccordionItem: string | undefined, setOpenAccordionItem: (value: string | undefined) => void }) {
     const { role } = useRole();
     const [retaliationDialogOpen, setRetaliationDialogOpen] = useState(false);
     const [activeCaseId, setActiveCaseId] = useState<string | null>(null);
@@ -1491,7 +1487,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
         }
 
         return (
-             <Accordion type="single" collapsible className="w-full" ref={accordionRef}>
+             <Accordion type="single" collapsible className="w-full" value={openAccordionItem} onValueChange={setOpenAccordionItem}>
                  {displayItems.map(item => {
                     const retaliationCase = allCases.find(c => c.parentCaseId === item.trackingId);
                     const relevantResponderEvents = ['Resolution Submitted', 'HR Resolution Submitted', 'HR Responded to Retaliation Claim', 'Manager Resolution'];
@@ -1552,9 +1548,9 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                         if (!isReceivedView) return null;
                         
                         if (item.isAnonymous) {
-                            return <AnonymousConcernActionPanel feedback={item} onUpdate={() => onUpdate()} />;
+                            return <AnonymousConcernActionPanel feedback={item} onUpdate={() => onUpdate(item.trackingId)} />;
                         } else {
-                            return <IdentifiedConcernActionPanel feedback={item} onUpdate={() => onUpdate()} />;
+                            return <IdentifiedConcernActionPanel feedback={item} onUpdate={() => onUpdate(item.trackingId)} />;
                         }
                     };
 
@@ -1575,18 +1571,18 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                             </AccordionTrigger>
                             <AccordionContent className="space-y-4 pt-2 px-4">
                                {item.status === 'Pending Anonymous Reply' && !isReceivedView && (
-                                   <AnonymousReplyWidget item={item} onUpdate={() => onUpdate()} />
+                                   <AnonymousReplyWidget item={item} onUpdate={() => onUpdate(item.trackingId)} />
                                )}
                                {item.status === 'Pending Anonymous Reply' && !isReceivedView && !item.isAnonymous && (
-                                   <IdentifiedReplyWidget item={item} onUpdate={() => onUpdate()} />
+                                   <IdentifiedReplyWidget item={item} onUpdate={() => onUpdate(item.trackingId)} />
                                )}
                                {item.status === 'Pending Identity Reveal' && concernType === 'anonymous' && !isReceivedView && (
-                                   <RevealIdentityWidget item={item} onUpdate={() => onUpdate()} />
+                                   <RevealIdentityWidget item={item} onUpdate={() => onUpdate(item.trackingId)} />
                                )}
                                {item.status === 'Pending Employee Acknowledgment' && !isReceivedView &&(
                                     <AcknowledgementWidget 
                                         item={item} 
-                                        onUpdate={() => onUpdate()}
+                                        onUpdate={() => onUpdate(item.trackingId)}
                                         title="Action Required: Acknowledge Response"
                                         description="A response has been provided for your concern. Please review and provide your feedback."
                                         responderEventActor={responderEvent?.actor}
@@ -1648,7 +1644,7 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                                     parentCaseId={item.trackingId} 
                                                     onSubmitted={() => {
                                                         setRetaliationDialogOpen(false);
-                                                        onUpdate();
+                                                        onUpdate(item.trackingId);
                                                     }} 
                                                 />
                                             </DialogContent>
@@ -1657,57 +1653,49 @@ function MySubmissions({ items, onUpdate, accordionRef, allCases, concernType, i
                                 )}
                                  
                                 {retaliationCase && (isComplainant || role === 'HR Head') && (
-                                    <div className="mt-4 pt-4 border-t-2 border-destructive/50">
-                                        <Accordion type="single" collapsible className="w-full">
-                                            <AccordionItem value={`retaliation-${retaliationCase.trackingId}`} className="border-none">
-                                                <AccordionTrigger className="w-full px-0 py-2 text-left hover:no-underline [&_svg]:ml-auto bg-destructive/10 rounded-md px-4">
-                                                     <div className="flex justify-between items-center w-full">
-                                                        <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
-                                                            <GitMerge /> Linked Retaliation Claim 
-                                                        </h4>
-                                                        <div className="flex items-center gap-4 pl-4 mr-2">
-                                                            {getRetaliationStatusBadge(retaliationCase.status)}
-                                                        </div>
-                                                     </div>
-                                                </AccordionTrigger>
-                                                <AccordionContent className="space-y-4 pt-4">
-                                                    <div className="border rounded-lg bg-muted/50 p-4 space-y-4">
-                                                         {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
-                                                            <AcknowledgementWidget 
-                                                                item={retaliationCase} 
-                                                                onUpdate={() => onUpdate()}
-                                                                title="Action Required: Acknowledge HR Response"
-                                                                description="HR has responded to your retaliation claim. Please review their resolution."
-                                                                responderEventActor={retaliationResponderEvent?.actor}
-                                                                responderEventDetails={retaliationResponderEvent?.details}
-                                                            />
-                                                        )}
-                                                        <div className="space-y-2">
-                                                            <Label>Your Claim Description</Label>
-                                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
-                                                        </div>
-                                                        {retaliationCase.attachments && retaliationCase.attachments.length > 0 && (
-                                                            <div className="space-y-2">
-                                                                <Label>Your Attachments</Label>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {retaliationCase.attachments.map((att, i) => (
-                                                                        <Button key={i} variant="outline" size="sm" asChild>
-                                                                            <a href={att.dataUri} download={att.name}>
-                                                                                <LinkIcon className="mr-2 h-4 w-4" />
-                                                                                {att.name}
-                                                                            </a>
-                                                                        </Button>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        <div className="pt-4 border-t">
-                                                            <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
-                                                        </div>
+                                     <div className="mt-4 pt-4 border-t-2 border-destructive/50">
+                                        <div className="flex justify-between items-center w-full px-4 py-3 text-left bg-destructive/10 rounded-md">
+                                            <h4 className="text-lg font-semibold flex items-center gap-2 text-destructive">
+                                                <GitMerge /> Linked Retaliation Claim 
+                                            </h4>
+                                            <div className="flex items-center gap-4 pl-4 mr-2">
+                                                {getRetaliationStatusBadge(retaliationCase.status)}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4 pt-4 px-4 pb-2 border border-t-0 rounded-b-md">
+                                            {isComplainant && retaliationCase.status === 'Pending Employee Acknowledgment' && (
+                                                <AcknowledgementWidget 
+                                                    item={retaliationCase} 
+                                                    onUpdate={() => onUpdate(item.trackingId)}
+                                                    title="Action Required: Acknowledge HR Response"
+                                                    description="HR has responded to your retaliation claim. Please review their resolution."
+                                                    responderEventActor={retaliationResponderEvent?.actor}
+                                                    responderEventDetails={retaliationResponderEvent?.details}
+                                                />
+                                            )}
+                                            <div className="space-y-2">
+                                                <Label>Your Claim Description</Label>
+                                                <p className="whitespace-pre-wrap text-sm text-muted-foreground p-3 border rounded-md bg-background">{retaliationCase.message}</p>
+                                            </div>
+                                            {retaliationCase.attachments && retaliationCase.attachments.length > 0 && (
+                                                <div className="space-y-2">
+                                                    <Label>Your Attachments</Label>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {retaliationCase.attachments.map((att, i) => (
+                                                            <Button key={i} variant="outline" size="sm" asChild>
+                                                                <a href={att.dataUri} download={att.name}>
+                                                                    <LinkIcon className="mr-2 h-4 w-4" />
+                                                                    {att.name}
+                                                                </a>
+                                                            </Button>
+                                                        ))}
                                                     </div>
-                                                </AccordionContent>
-                                            </AccordionItem>
-                                        </Accordion>
+                                                </div>
+                                            )}
+                                            <div className="pt-4 border-t">
+                                                <CaseHistory item={retaliationCase} handleViewCaseDetails={handleViewCaseDetails} onDownload={() => handleDownload(retaliationCase)} />
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                                 {renderActionPanel()}
@@ -1782,7 +1770,6 @@ function MyConcernsContent() {
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
-  const accordionRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'raised' | 'received'>('raised');
   
   const [attachmentState, setAttachmentState] = useState<{
@@ -1810,7 +1797,9 @@ function MyConcernsContent() {
   const handleUpdate = useCallback((trackingId?: string) => {
     const currentOpenItem = openAccordionItem;
     fetchAllCases();
-    if (currentOpenItem) {
+    if (trackingId) {
+        setOpenAccordionItem(trackingId);
+    } else if (currentOpenItem) {
         setOpenAccordionItem(currentOpenItem);
     }
   }, [fetchAllCases, openAccordionItem]);
@@ -2022,7 +2011,8 @@ function MyConcernsContent() {
                               items={getConcernList()}
                               allCases={allCases} 
                               concernType={getConcernType()}
-                              accordionRef={accordionRef}
+                              openAccordionItem={openAccordionItem}
+                              setOpenAccordionItem={setOpenAccordionItem}
                               isReceivedView={isSupervisor && viewMode === 'received'}
                           />
                       )}
