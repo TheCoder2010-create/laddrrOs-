@@ -1,5 +1,3 @@
-
-
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -1592,17 +1590,3 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
 
     saveFeedbackToStorage(allFeedback);
 }
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
