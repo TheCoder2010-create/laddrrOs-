@@ -266,7 +266,7 @@ function ActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () 
                  <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2">
                         <div className="p-4 border rounded-lg bg-background flex flex-col space-y-3">
-                            <Label className="font-medium">Assign Case</Label>
+                            <Label className="font-medium">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
                              <div className="flex items-center justify-between">
                                 <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                                 <DropdownMenu>
@@ -747,3 +747,4 @@ export default function VaultPage() {
         </div>
     );
 }
+
