@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
@@ -214,18 +213,15 @@ function AnonymousConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSubm
                     </div>
                 </div>
                  {files.length > 0 && (
-                    <div className="space-y-2 pt-2">
-                        <Label>Attachments</Label>
-                        <div className="space-y-1">
-                        {files.map((file, i) => (
-                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
-                               <span>{file.name}</span>
-                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
-                                  <XIcon className="h-4 w-4" />
-                               </Button>
+                    <div className="space-y-1 pt-2">
+                         {files.map((file, i) => (
+                            <div key={i} className="text-sm flex items-center justify-between">
+                                <span className="font-medium text-primary truncate">{file.name}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                    <XIcon className="h-4 w-4" />
+                                </Button>
                             </div>
                         ))}
-                        </div>
                     </div>
                 )}
             </div>
@@ -379,18 +375,15 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     </Button>
                 </div>
                  {files.length > 0 && (
-                    <div className="space-y-2 pt-2">
-                        <Label>Attachments</Label>
-                        <div className="space-y-1">
-                        {files.map((file, i) => (
-                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
-                               <span>{file.name}</span>
-                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
-                                  <XIcon className="h-4 w-4" />
-                               </Button>
+                    <div className="space-y-1 pt-2">
+                         {files.map((file, i) => (
+                            <div key={i} className="text-sm flex items-center justify-between">
+                                <span className="font-medium text-primary truncate">{file.name}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                    <XIcon className="h-4 w-4" />
+                                </Button>
                             </div>
                         ))}
-                        </div>
                     </div>
                 )}
             </div>
@@ -500,18 +493,15 @@ function DirectRetaliationForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
                     </Button>
                 </div>
                  {files.length > 0 && (
-                    <div className="space-y-2 pt-2">
-                        <Label>Attachments</Label>
-                        <div className="space-y-1">
-                        {files.map((file, i) => (
-                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
-                               <span>{file.name}</span>
-                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
-                                  <XIcon className="h-4 w-4" />
-                               </Button>
+                    <div className="space-y-1 pt-2">
+                         {files.map((file, i) => (
+                            <div key={i} className="text-sm flex items-center justify-between">
+                                <span className="font-medium text-primary truncate">{file.name}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                    <XIcon className="h-4 w-4" />
+                                </Button>
                             </div>
                         ))}
-                        </div>
                     </div>
                 )}
             </div>
@@ -882,18 +872,15 @@ function RetaliationForm({ parentCaseId, onSubmitted }: { parentCaseId: string, 
                     </Button>
                 </div>
                  {files.length > 0 && (
-                    <div className="space-y-2 pt-2">
-                        <Label>Attachments</Label>
-                        <div className="space-y-1">
-                        {files.map((file, i) => (
-                            <div key={i} className="text-sm text-muted-foreground flex items-center justify-between p-1.5 bg-muted/50 rounded-md">
-                               <span>{file.name}</span>
-                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(file)}>
-                                  <XIcon className="h-4 w-4" />
-                               </Button>
+                    <div className="space-y-1 pt-2">
+                         {files.map((file, i) => (
+                            <div key={i} className="text-sm flex items-center justify-between">
+                                <span className="font-medium text-primary truncate">{file.name}</span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                    <XIcon className="h-4 w-4" />
+                                </Button>
                             </div>
                         ))}
-                        </div>
                     </div>
                 )}
             </div>
@@ -1637,8 +1624,6 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                                                         setRetaliationDialogOpen(false);
                                                         onUpdate(item.trackingId);
                                                     }} 
-                                                    files={[]} // State for this would need to be managed here
-                                                    setFiles={() => {}}
                                                 />
                                             </DialogContent>
                                         </Dialog>
@@ -1996,3 +1981,5 @@ export default function MyConcernsPage() {
 
     
 
+
+    
