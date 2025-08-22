@@ -68,7 +68,7 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
   }
   
   // If there are action items, create a "To-Do" feedback item for the supervisor.
-  if (result.actionItems && result.actionItems.length > 0) {
+  if (result.actionItems && result.actionItems.length > 0 && input.oneOnOneId) {
       const allFeedback = [];
       const newActionItemRecord = {
           trackingId: generateTrackingId(),
@@ -78,10 +78,10 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           submittedAt: submittedAt,
           criticality: 'Low' as const,
           status: 'To-Do' as const,
-          assignedTo: [supervisorRole], // Supervisor owns the To-Do list
-          supervisor: input.supervisorName,
+          assignedTo: [supervisorRole], // Assign to the role for general query
+          supervisor: input.supervisorName, // Explicitly set supervisor name for filtering
           employee: input.employeeName,
-          viewed: true,
+          viewed: true, // It's a To-Do, so it's implicitly viewed by its creator
           actionItems: result.actionItems.map(itemText => ({
               id: uuidv4(),
               text: itemText.task,
@@ -147,7 +147,7 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   For each active goal, review the user's check-in notes for context on what they are learning/practicing.
     *   Determine if a situation arose where this learning could be applied.
     *   If the learning was applied, set \`didApply\` to true and provide an \`applicationExample\` with a supporting quote. This is an appreciation of their effort.
-    *   If an opportunity existed but was missed, set \`didApply\` to false and provide a \`missedOpportunityExample\` with a quote and a brief explanation of how they could have applied their learning. This is a notification.
+    *   If an opportunity existed but was missed, set \`didApply\` to false and provide a \`missedOpportunityExample\` with a quote and a explanation of how they could have applied their learning. This is a notification.
     *   If the supervisor has clearly mastered the goal (e.g., applied it consistently and effectively), set \`completedGoalId\` to the ID of the goal and provide a \`masteryJustification\` explaining why they've mastered it.
 10. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
 11. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)

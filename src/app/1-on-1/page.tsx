@@ -245,7 +245,7 @@ function ToDoSection({ role }: { role: Role }) {
                                                 onCheckedChange={() => handleToggleActionItem(item.trackingId, action.id)}
                                             />
                                             <label htmlFor={`action-${action.id}`} className={cn("text-sm leading-none", action.status === 'completed' && "line-through text-muted-foreground")}>
-                                                ({action.owner}) {action.text}
+                                                ({formatActorName(action.owner)}) {action.text}
                                             </label>
                                         </div>
                                     ))}
