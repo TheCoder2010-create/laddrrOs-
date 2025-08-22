@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -180,11 +179,11 @@ function ToDoSection({ role }: { role: Role }) {
     const fetchToDos = useCallback(async () => {
         setIsLoading(true);
         const allFeedback = await getAllFeedback();
-        const supervisorRole = roleUserMapping[role];
+        const supervisorName = roleUserMapping[role].name;
 
         const userToDos = allFeedback.filter(item => 
             item.status === 'To-Do' &&
-            item.supervisor === supervisorRole.name
+            item.supervisor === supervisorName
         );
         
         setToDoItems(userToDos.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()));
@@ -332,7 +331,6 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
     };
     
     // The initial "Critical Insight Identified" event is now part of the card title, so we can skip it here.
-    // However, the first response from the supervisor should be shown.
     const eventsToDisplay = trail.filter(event => event.event !== 'Critical Insight Identified');
 
     return (

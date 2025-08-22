@@ -565,7 +565,7 @@ function ActionItemsContent() {
             }
         };
 
-        // Find all 1-on-1 escalations where the current user was ever involved or is currently assigned.
+        // Find all 1-on-1 escalations where the current user is currently assigned.
         history.forEach(item => {
             if ('analysis' in item && item.analysis.criticalCoachingInsight) {
                  if (isCurrentlyAssigned(item)) {
