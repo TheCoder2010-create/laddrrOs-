@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, toggleActionItemStatus, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById, requestAnonymousInformation, submitEmployeeFeedbackAcknowledgement, submitAnonymousReply } from '@/services/feedback-service';
+import { getAllFeedback, Feedback, AuditEvent, submitSupervisorUpdate, resolveFeedback, requestIdentityReveal, addFeedbackUpdate, submitCollaborativeResolution, submitFinalDisposition, submitHrRetaliationResponse, getFeedbackById, requestAnonymousInformation, submitEmployeeFeedbackAcknowledgement, submitAnonymousReply } from '@/services/feedback-service';
 import { OneOnOneHistoryItem, getOneOnOneHistory, submitAmCoachingNotes, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitAmDirectResponse } from '@/services/feedback-service';
 import type { CriticalCoachingInsight } from '@/ai/schemas/one-on-one-schemas';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -184,60 +184,6 @@ function AuditTrail({ item, handleViewCaseDetails, onDownload }: { item: Feedbac
             </div>
         </div>
     );
-}
-
-function ToDoPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: () => void }) {
-    const { toast } = useToast();
-    const allItemsCompleted = feedback.actionItems?.every(item => item.status === 'completed');
-
-    const handleToggle = async (actionItemId: string) => {
-        await toggleActionItemStatus(feedback.trackingId, actionItemId);
-        onUpdate();
-    }
-    
-    const handleResolve = async () => {
-        if (!feedback.assignedTo || feedback.assignedTo.length === 0) return;
-        await resolveFeedback(feedback.trackingId, feedback.assignedTo[0], "All action items completed.");
-        toast({ title: "To-Do List Completed", description: "You've completed all action items." });
-        onUpdate();
-    }
-
-    return (
-        <div className="space-y-4">
-             <div className="p-4 rounded-lg border bg-green-500/10 space-y-3">
-                 <div className="flex items-center gap-2 font-bold text-green-700 dark:text-green-400">
-                    <ListTodo className="h-5 w-5" />
-                    <span>To-Do from 1-on-1 with {feedback.employee}</span>
-                 </div>
-                 <p className="text-sm text-green-600 dark:text-green-300">
-                    The following action items were generated from your recent 1-on-1. Check them off as you complete them.
-                 </p>
-             </div>
-             <div className="space-y-3 pl-4">
-                {feedback.actionItems?.map(item => (
-                    <div key={item.id} className="flex items-center space-x-3">
-                        <Checkbox 
-                            id={`action-${item.id}`}
-                            checked={item.status === 'completed'}
-                            onCheckedChange={() => handleToggle(item.id)}
-                            aria-label={item.text}
-                        />
-                        <label
-                            htmlFor={`action-${item.id}`}
-                            className={cn("text-sm font-medium leading-none", item.status === 'completed' && "line-through text-muted-foreground")}
-                        >
-                           ({item.owner}) {item.text}
-                        </label>
-                    </div>
-                ))}
-             </div>
-             {allItemsCompleted && feedback.status !== 'Resolved' && (
-                <div className="pt-4 border-t">
-                    <Button variant="success" onClick={handleResolve}>Mark as Completed</Button>
-                </div>
-             )}
-        </div>
-    )
 }
 
 function EscalationWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
@@ -526,13 +472,9 @@ function ActionPanel({ item, onUpdate, handleViewCaseDetails }: { item: Feedback
         
         return null;
     }
-
-    // Render widgets for standard Feedback items (To-Do)
-    if (item.status === 'To-Do') {
-        return <ToDoPanel feedback={item} onUpdate={onUpdate} />;
-    }
     
-    return null; // No action panel for other statuses
+    // Default: No action panel for other feedback types on this page
+    return null;
 }
 
 function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails }: { caseItem: Feedback | OneOnOneHistoryItem | null, open: boolean, onOpenChange: (open: boolean) => void, handleViewCaseDetails: (e: React.MouseEvent, caseId: string) => void }) {
@@ -618,7 +560,8 @@ function ActionItemsContent() {
 
                 return isAmMatch || isManagerMatch || isHrMatch;
             } else { // Feedback item
-                return item.assignedTo?.includes(role as Role) ?? false;
+                // This page is for escalations, not To-Do lists.
+                return false;
             }
         };
 
@@ -629,17 +572,6 @@ function ActionItemsContent() {
                     localActiveItems.push(item);
                  }
             }
-        });
-        
-        // Find all "To-Doo" lists or other actionable feedback items assigned to the current user.
-        fetchedFeedback.forEach(item => {
-             if (isCurrentlyAssigned(item) && item.status === 'To-Do') {
-                 // Prevent duplicates if it somehow already exists
-                const id = 'analysis' in item ? item.id : item.trackingId;
-                if (!localActiveItems.some(li => ('analysis' in li ? li.id : li.trackingId) === id)) {
-                   localActiveItems.push(item);
-                }
-             }
         });
         
         const sortFn = (a: Feedback | OneOnOneHistoryItem, b: Feedback | OneOnOneHistoryItem) => {
@@ -722,7 +654,6 @@ function ActionItemsContent() {
     );
   }
   
-  const toDoItems = activeItems.filter(item => !('analysis' in item) && item.status === 'To-Do');
   const oneOnOneEscalations = activeItems.filter(item => 'analysis' in item);
 
   const renderCategorySection = (
@@ -805,26 +736,10 @@ function ActionItemsContent() {
               const feedbackStatus = item.status;
               switch (feedbackStatus) {
                   case 'Resolved': return <Badge variant="success">Resolved</Badge>;
-                  case 'To-Do': return <Badge variant="default">To-Do</Badge>;
                   case 'Closed': return <Badge variant="secondary">Closed</Badge>;
                   default: return <Badge variant="secondary">{feedbackStatus || 'N/A'}</Badge>;
               }
             }
-            
-            const getTypeBadge = () => {
-                let type: "1-on-1" | "To-Do" = "1-on-1";
-                let variant: "default" | "secondary" = "secondary";
-                
-                if (isOneOnOne) {
-                    type = "1-on-1";
-                } else {
-                    type = "To-Do";
-                    variant = "default";
-                }
-                
-                return <Badge variant={variant}>{type}</Badge>;
-            }
-
 
             return (
             <AccordionItem value={id} key={id} id={`accordion-item-${id}`}>
@@ -832,7 +747,6 @@ function ActionItemsContent() {
                     <div className="flex justify-between items-center w-full">
                          <div className="flex items-center gap-3 flex-1 min-w-0">
                             <span className="font-medium truncate">{subject}</span>
-                            {getTypeBadge()}
                         </div>
                         <div className="flex items-center gap-4 pl-4 mr-2">
                             <span 
@@ -846,25 +760,8 @@ function ActionItemsContent() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="space-y-6 pt-4 px-4">
-                    {!isOneOnOne && item.status !== 'To-Do' && (
-                        <>
-                            <div className="space-y-2">
-                                <Label className="text-base">Original Submission Context</Label>
-                                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{item.message}</p>
-                            </div>
-                        </>
-                     )}
-
                     <AuditTrail item={item} handleViewCaseDetails={handleViewCaseDetails} onDownload={handleDownload} />
-                    
                     <ActionPanel item={item} onUpdate={() => handleUpdate(id)} handleViewCaseDetails={handleViewCaseDetails} />
-                    
-                    {!isOneOnOne && item.resolution && (
-                         <div className="space-y-2">
-                            <Label className="text-base">Final Resolution</Label>
-                            <p className="whitespace-pre-wrap text-sm text-muted-foreground p-4 border rounded-md bg-green-500/10">{item.resolution}</p>
-                        </div>
-                    )}
                 </AccordionContent>
             </AccordionItem>
             )
@@ -889,7 +786,7 @@ function ActionItemsContent() {
             <ListTodo className="inline-block mr-3 h-8 w-8" /> Action Items
           </CardTitle>
            <CardDescription className="text-lg text-muted-foreground">
-            Actionable escalations and to-do lists assigned to you.
+            Actionable escalations assigned to you.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -902,7 +799,6 @@ function ActionItemsContent() {
             </div>
           ) : (
             <div className="space-y-6">
-                {renderCategorySection("To-Do Lists", ListTodo, toDoItems)}
                 {renderCategorySection("1-on-1 Escalations", UserCog, oneOnOneEscalations, true)}
             </div>
           )}

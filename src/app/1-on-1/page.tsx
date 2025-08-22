@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -330,7 +331,8 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
         }
     };
     
-    // Do not show the initial "Critical Insight Identified" event as it's redundant with the card title
+    // The initial "Critical Insight Identified" event is now part of the card title, so we can skip it here.
+    // However, the first response from the supervisor should be shown.
     const eventsToDisplay = trail.filter(event => event.event !== 'Critical Insight Identified');
 
     return (
@@ -750,10 +752,14 @@ function HistorySection({ role }: { role: Role }) {
                                 )}
                                 
                                 {isEmployee && (
-                                     <div className="space-y-4">
-                                        <div className="bg-muted/50 p-4 rounded-lg">
-                                            <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><EyeOff className="h-5 w-5 text-primary"/>Employee View</h4>
-                                            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{analysisResult.employeeSummary}</p>
+                                     <Card>
+                                        <CardHeader>
+                                            <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
+                                                <EyeOff className="h-5 w-5" /> Employee View
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                             <p className="whitespace-pre-wrap text-sm text-muted-foreground">{analysisResult.employeeSummary}</p>
                                         
                                             {analysisResult.employeeSwotAnalysis && (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-muted-foreground">
@@ -783,11 +789,11 @@ function HistorySection({ role }: { role: Role }) {
                                                     </div>
                                                 </div>
                                             )}
-                                        </div>
-
+                                        </CardContent>
+                                        
                                         {insight && (
-                                            <Card>
-                                                <CardHeader>
+                                            <>
+                                                <CardHeader className="pt-0">
                                                     <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
                                                         <AlertTriangle className="h-5 w-5" />Critical Insight & Resolution
                                                     </CardTitle>
@@ -810,9 +816,9 @@ function HistorySection({ role }: { role: Role }) {
                                                         </div>
                                                     )}
                                                 </CardContent>
-                                            </Card>
+                                            </>
                                         )}
-                                     </div>
+                                     </Card>
                                 )}
                             </AccordionContent>
                         </AccordionItem>
