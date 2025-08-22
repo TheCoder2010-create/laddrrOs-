@@ -7,7 +7,7 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
-import { roleUserMapping } from '@/lib/role-mapping';
+import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
 import { summarizeAnonymousFeedback } from '@/ai/flows/summarize-anonymous-feedback-flow';
 

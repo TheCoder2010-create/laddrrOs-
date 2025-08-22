@@ -481,7 +481,7 @@ function CaseDetailsModal({ caseItem, open, onOpenChange, handleViewCaseDetails 
     if (!caseItem) return null;
 
     const isOneOnOne = 'analysis' in caseItem;
-    const subject = isOneOnOne ? `${caseItem.employeeName} & ${caseItem.supervisorName}` : (caseItem.subject || 'No Subject');
+    const subject = isOneOnOne ? `1-on-1: ${caseItem.employeeName} & ${caseItem.supervisorName}` : (caseItem.subject || 'No Subject');
     const trackingId = isOneOnOne ? caseItem.id : caseItem.trackingId;
     const initialMessage = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.summary || 'N/A' : caseItem.message;
     const trail = isOneOnOne ? caseItem.analysis.criticalCoachingInsight?.auditTrail || [] : caseItem.auditTrail || [];
@@ -549,7 +549,7 @@ function ActionItemsContent() {
         const localActiveItems: (Feedback | OneOnOneHistoryItem)[] = [];
         const currentUserName = roleUserMapping[role as Role].name;
         
-        const isCurrentlyAssigned = (item: Feedback | OneOnOneHistoryItem) => {
+        const isCurrentlyAssigned = (item: OneOnOneHistoryItem) => {
             if ('analysis' in item) { // OneOnOneHistoryItem
                 const insight = item.analysis.criticalCoachingInsight;
                 if (!insight || insight.status === 'resolved') return false;
@@ -559,10 +559,8 @@ function ActionItemsContent() {
                 const isHrMatch = role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
 
                 return isAmMatch || isManagerMatch || isHrMatch;
-            } else { // Feedback item
-                // This page is for escalations, not To-Do lists.
-                return false;
             }
+            return false;
         };
 
         // Find all 1-on-1 escalations where the current user is currently assigned.
