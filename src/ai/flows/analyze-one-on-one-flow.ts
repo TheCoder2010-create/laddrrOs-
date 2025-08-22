@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow for analyzing 1-on-1 feedback sessions.
@@ -142,7 +143,7 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   Provide the name of a REAL, SPECIFIC \`resource\` (e.g., book title: "Crucial Conversations"; podcast: "HBR IdeaCast").
     *   Write a compelling \`justification\` explaining why this resource is a good fit.
     *   The \`status\` must be "pending".
-8.  **Action Items**: List all concrete tasks for both employee and supervisor, including deadlines if stated.
+8.  **Action Items**: List all concrete tasks for both employee and supervisor, including deadlines if stated. For each item, set the 'owner' field to either "Employee" or "Supervisor".
 9.  **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided). Analyze if the supervisor had an opportunity to apply their active learning goals in this session.
     *   For each active goal, review the user's check-in notes for context on what they are learning/practicing.
     *   Determine if a situation arose where this learning could be applied.
@@ -193,8 +194,14 @@ const analyzeOneOnOneFlow = ai.defineFlow(
     outputSchema: AnalyzeOneOnOneOutputSchema,
   },
   async (input) => {
+    // Explicitly ask the AI to determine ownership of action items
+    const promptWithActionItemOwnership = {
+        ...input,
+        promptAddition: "For each action item, clearly define who the 'owner' is: the 'Supervisor' or the 'Employee'."
+    };
+
     const analysisTime = new Date();
-    const { output } = await retryWithBackoff(() => prompt(input));
+    const { output } = await retryWithBackoff(() => prompt(promptWithActionItemOwnership));
     
     if (!output) {
       throw new Error("AI analysis failed to produce an output after multiple retries.");

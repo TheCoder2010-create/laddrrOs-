@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -951,8 +952,8 @@ function OneOnOnePage({ role }: { role: Role }) {
         )}
       </div>
       
-      <HistorySection role={role} />
       <ToDoSection role={role} />
+      <HistorySection role={role} />
     </div>
   );
 }
