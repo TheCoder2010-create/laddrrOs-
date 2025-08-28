@@ -271,7 +271,7 @@ function PoshDeskContent() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 border-t space-y-6">
-                               <div className="border-b pb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
+                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
                                     {renderDetail("Complainant", complaint.complainantInfo.name)}
                                     {renderDetail("Complainant Dept", complaint.complainantInfo.department)}
                                     {renderDetail("Respondent", complaint.respondentInfo.name)}
