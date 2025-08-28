@@ -306,9 +306,9 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                             value={assignmentComment} 
                             onChange={(e) => setAssignmentComment(e.target.value)} 
                             rows={2} 
-                            className="pr-12 pb-8"
+                            className="pr-12 pb-8 text-sm"
                         />
-                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
+                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute right-2 bottom-2 h-7 w-7 rounded-full">
                             {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
                         </Button>
                     </div>
@@ -324,7 +324,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                             className="h-full pr-12 pb-8"
                             rows={4}
                         />
-                        <Button onClick={handleProposeAction} disabled={!disciplinaryAction || isSubmittingDisciplinary} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
+                        <Button onClick={handleProposeAction} disabled={!disciplinaryAction || isSubmittingDisciplinary} size="icon" className="absolute right-2 bottom-2 h-7 w-7 rounded-full">
                             {isSubmittingDisciplinary ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </div>
@@ -340,10 +340,10 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                             className="h-full pr-12 pb-12"
                             rows={4}
                         />
-                        <div className="absolute bottom-2 right-2 flex items-center gap-2">
+                        <div className="absolute right-2 bottom-2 flex items-center gap-2">
                              <div className="flex items-center space-x-2">
                                <Checkbox id="tag-final" checked={tagAsFinal} onCheckedChange={(checked) => setTagAsFinal(!!checked)}/>
-                               <label htmlFor="tag-final" className="text-xs font-medium leading-none cursor-pointer">Tag Final</label>
+                               <label htmlFor="tag-final" className="cursor-pointer text-xs font-medium leading-none">Tag Final</label>
                             </div>
                             <Button onClick={handleSubmitFinalReport} disabled={!finalReport || isSubmittingFinal} size="icon" className="h-7 w-7 rounded-full">
                                {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -368,8 +368,8 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
     const [searchTerm, setSearchTerm] = useState('');
 
     const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
-    const [allUsers, setAllUsers] = useState<string[]>([]);
-    const [iccMembers, setIccMembers] = useState<string[]>([]);
+    const [allUsers, setAllUsers] = useState<Role[]>([]);
+    const [iccMembers, setIccMembers] = useState<Role[]>([]);
 
     const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
     const [selectedCaseId, setSelectedCaseId] = useState('');
@@ -390,9 +390,9 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
         setManageMembersDialogOpen(true);
     };
 
-    const handleManageMembership = async (user: string, action: 'add' | 'remove') => {
-        await manageIccMembership(user, action);
-        toast({ title: 'Membership Updated', description: `${user} has been ${action === 'add' ? 'added to' : 'removed from'} the ICC.`});
+    const handleManageMembership = async (userRole: Role, action: 'add' | 'remove') => {
+        await manageIccMembership(userRole, action);
+        toast({ title: 'Membership Updated', description: `${userRole} has been ${action === 'add' ? 'added to' : 'removed from'} the ICC.`});
         openManageMembers(); // Refresh the dialog content
     };
 
@@ -478,18 +478,18 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
                     <div className="py-4 space-y-4">
                         <div>
                             <Label>Current Members</Label>
-                            <div className="space-y-1 mt-2">
-                                {iccMembers.map(member => (
-                                    <div key={member} className="flex items-center justify-between rounded-md border p-2">
-                                        <span className="text-sm">{roleUserMapping[member as Role]?.name || member} ({member})</span>
-                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleManageMembership(member, 'remove')} disabled={member === 'ICC Head'}>Remove</Button>
+                            <div className="mt-2 space-y-1">
+                                {iccMembers.map(memberRole => (
+                                    <div key={memberRole} className="flex items-center justify-between rounded-md border p-2">
+                                        <span className="text-sm">{roleUserMapping[memberRole as Role]?.name || memberRole} ({memberRole})</span>
+                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleManageMembership(memberRole, 'remove')} disabled={memberRole === 'ICC Head'}>Remove</Button>
                                     </div>
                                 ))}
                             </div>
                         </div>
                         <div>
                             <Label>Add New Members</Label>
-                            <Select onValueChange={(userRole) => handleManageMembership(userRole, 'add')}>
+                            <Select onValueChange={(userRole) => handleManageMembership(userRole as Role, 'add')}>
                                 <SelectTrigger><SelectValue placeholder="Select an employee to add..." /></SelectTrigger>
                                 <SelectContent>
                                     {allUsers.filter(u => !iccMembers.includes(u)).map(userRole => (
@@ -679,13 +679,13 @@ function PoshDeskContent() {
                         >
                             {complaints.map((complaint) => (
                                 <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
-                                     <AccordionTrigger className="px-4 py-3 text-left hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                                        <div className="flex justify-between items-center w-full">
-                                            <div className="flex-1 min-w-0 text-left">
+                                     <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                                        <div className="flex w-full items-center justify-between">
+                                            <div className="flex-1 text-left">
                                                 <p className="font-semibold text-foreground truncate">{capitalizeFirstLetter(complaint.title)}</p>
                                             </div>
-                                            <div className="flex items-center gap-4 pl-2">
-                                                <span className="text-sm text-muted-foreground font-mono cursor-text hidden sm:inline-block">
+                                            <div className="ml-4 flex flex-shrink-0 items-center gap-4">
+                                                <span className="hidden font-mono text-sm text-muted-foreground sm:inline-block">
                                                     ID: {complaint.caseId}
                                                 </span>
                                                 <Badge variant={complaint.caseStatus === 'New' ? 'destructive' : 'secondary'}>
@@ -698,7 +698,7 @@ function PoshDeskContent() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                                             <div className="space-y-1">
                                                 <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
-                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="text-foreground font-mono text-sm">{complaint.caseId}</span></div>
+                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="font-mono text-sm text-foreground">{complaint.caseId}</span></div>
                                                 <div><strong className="text-muted-foreground">Title: </strong> <span className="text-foreground">{complaint.title}</span></div>
                                                 <div><strong className="text-muted-foreground">Date: </strong> <span className="text-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
                                                 <div><strong className="text-muted-foreground">Location: </strong> <span className="text-foreground">{complaint.location}</span></div>
@@ -716,7 +716,7 @@ function PoshDeskContent() {
                                         </div>
                                          <div className="space-y-2 pt-4">
                                             <h4 className="font-bold text-base">Narrative</h4>
-                                            <div className="text-sm text-foreground whitespace-pre-wrap break-words mt-1 border p-3 rounded-md bg-background">
+                                            <div className="mt-1 whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-sm text-foreground">
                                                 {complaint.incidentDetails}
                                             </div>
                                         </div>
@@ -724,7 +724,7 @@ function PoshDeskContent() {
                                             {complaint.priorHistory.hasPriorIncidents && complaint.priorHistory.priorIncidentsDetails && (
                                                  <div className="space-y-2">
                                                     <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Incidents Details</h4>
-                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
+                                                    <p className="mt-1 whitespace-pre-wrap rounded-md border bg-orange-500/10 p-3 text-sm text-muted-foreground">
                                                         {complaint.priorHistory.priorIncidentsDetails}
                                                     </p>
                                                 </div>
@@ -732,7 +732,7 @@ function PoshDeskContent() {
                                             {complaint.priorHistory.hasPriorComplaints && complaint.priorHistory.priorComplaintsDetails && (
                                                  <div className="space-y-2">
                                                     <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Complaints Details</h4>
-                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
+                                                    <p className="mt-1 whitespace-pre-wrap rounded-md border bg-orange-500/10 p-3 text-sm text-muted-foreground">
                                                         {complaint.priorHistory.priorComplaintsDetails}
                                                     </p>
                                                 </div>
@@ -756,7 +756,7 @@ function PoshDeskContent() {
 }
 
 export default function PoshDeskPage() {
-    const { role, setRole, isLoading } = useRole();
+    const { role, setRole, isLoading, isIccMember } = useRole();
 
     if (isLoading || !role) {
         return (
@@ -766,7 +766,7 @@ export default function PoshDeskPage() {
         )
     }
 
-    if (!['ICC Head', 'ICC Member'].includes(role)) {
+    if (!isIccMember) {
       return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
           <div className="p-4 md:p-8">

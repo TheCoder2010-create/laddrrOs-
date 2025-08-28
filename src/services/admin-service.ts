@@ -16,6 +16,7 @@ export interface AdminLogEntry {
 }
 
 const ADMIN_LOG_KEY = 'admin_audit_log';
+const ICC_MEMBERS_KEY = 'icc_members_list';
 
 const getAdminLogFromStorage = (): AdminLogEntry[] => {
     if (typeof window === 'undefined') return [];
@@ -27,6 +28,19 @@ const saveAdminLogToStorage = (log: AdminLogEntry[]): void => {
     if (typeof window === 'undefined') return;
     sessionStorage.setItem(ADMIN_LOG_KEY, JSON.stringify(log));
 };
+
+const getIccMembersFromStorage = (): Role[] => {
+    if (typeof window === 'undefined') return [];
+    const json = sessionStorage.getItem(ICC_MEMBERS_KEY);
+    // Initialize with ICC Head if not present
+    return json ? JSON.parse(json) : ['ICC Head'];
+};
+
+const saveIccMembersToStorage = (members: Role[]): void => {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(ICC_MEMBERS_KEY, JSON.stringify(members));
+};
+
 
 export const addAdminLogEntry = (actor: string, action: string, caseId?: string) => {
     const log = getAdminLogFromStorage();
@@ -45,41 +59,32 @@ export async function getAdminAuditLog(): Promise<AdminLogEntry[]> {
     return getAdminLogFromStorage().sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
-export async function getAllUsers(): Promise<{ all: string[], icc: string[] }> {
-    const allUserNamesWithDuplicates = Object.values(roleUserMapping).map(u => u.name);
-    const allUserNames = [...new Set(allUserNamesWithDuplicates)]; // Remove duplicates
-    
-    const poshCases = await getPoshFromStorage();
-    const iccMembers = new Set<string>();
-
-    // ICC Head is always a member
-    iccMembers.add('ICC Head');
-    
-    // Find anyone who has been assigned a case
-    poshCases.forEach(c => {
-        c.assignedTo.forEach(assignee => {
-            if (assignee === 'ICC Member') { // Find specific ICC members from audit trail if needed
-                 const assignEvent = c.auditTrail.find(e => e.event === 'Case Assigned' && e.details?.includes('ICC Member'));
-                 if (assignEvent) iccMembers.add(assignEvent.actor as string);
-            } else if (assignee === 'ICC Head') {
-                 iccMembers.add(roleUserMapping['ICC Head'].name);
-            }
-        });
-    });
-
-    // In a real app, this would query a user directory. Here we simulate.
-    const allHardcodedUsers = ['Frank Green', 'Gina Harris'];
-    allHardcodedUsers.forEach(u => iccMembers.add(u));
-
-
-    return { all: allUserNames, icc: Array.from(iccMembers) };
+export async function getAllUsers(): Promise<{ all: Role[], icc: Role[] }> {
+    const allUserRoles = Object.keys(roleUserMapping).filter(r => r !== 'Voice – In Silence' && r !== 'Anonymous') as Role[];
+    const iccMembers = getIccMembersFromStorage();
+    return { all: allUserRoles, icc: iccMembers };
 }
 
-export async function manageIccMembership(user: string, action: 'add' | 'remove'): Promise<void> {
-    // This is a placeholder for a real user management system.
-    // We will log the action.
-    const actionText = `${action === 'add' ? 'Added' : 'Removed'} ${user} ${action === 'add' ? 'to' : 'from'} the ICC.`;
+export async function manageIccMembership(userRole: Role, action: 'add' | 'remove'): Promise<void> {
+    const iccMembers = getIccMembersFromStorage();
+    const newMembers = new Set(iccMembers);
+
+    if (action === 'add') {
+        newMembers.add(userRole);
+    } else {
+        if (userRole !== 'ICC Head') { // Prevent removing the head
+            newMembers.delete(userRole);
+        }
+    }
+    
+    saveIccMembersToStorage(Array.from(newMembers));
+    
+    const actionText = `${action === 'add' ? 'Added' : 'Removed'} ${userRole} ${action === 'add' ? 'to' : 'from'} the ICC.`;
     addAdminLogEntry('ICC Head', actionText);
+}
+
+export async function getIccMembers(): Promise<Role[]> {
+    return getIccMembersFromStorage();
 }
 
 export async function overrideCaseStatus(caseId: string, newStatus: typeof poshCaseStatuses[number] | 'New' | 'Closed' | 'Resolved', reason: string): Promise<void> {
