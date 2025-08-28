@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon } from 'lucide-react';
 import { submitPoshComplaint, PoshComplaintInput } from '@/services/feedback-service';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters."),
