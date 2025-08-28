@@ -313,7 +313,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
               <CardContent className="space-y-8">
                 {/* Complaint Info */}
                 <div className="space-y-4 p-4 border rounded-lg">
-                    <h3 className="font-semibold text-lg">1. Complaint Information</h3>
+                    <h3 className="font-semibold text-lg">Complaint Information</h3>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                          <FormField control={form.control} name="title" render={({ field }) => (
                             <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl><FormMessage /></FormItem>
@@ -342,44 +342,52 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                 {/* Complainant & Respondent */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div className="space-y-4 p-4 border rounded-lg">
-                         <h3 className="font-semibold text-lg">2. Your Details (Complainant)</h3>
-                         <FormField control={form.control} name="complainantName" render={({ field }) => (
-                           <FormItem className="grid grid-cols-3 items-center gap-4">
-                             <FormLabel className="text-right">Full Name</FormLabel>
-                             <FormControl><Input {...field} className="col-span-2" /></FormControl>
-                             <FormMessage className="col-span-3" />
-                           </FormItem>
-                         )} />
-                         <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
-                           <FormItem className="grid grid-cols-3 items-center gap-4">
-                             <FormLabel className="text-right">Department</FormLabel>
-                             <FormControl><Input {...field} className="col-span-2" /></FormControl>
-                             <FormMessage className="col-span-3" />
-                           </FormItem>
-                         )} />
+                         <h3 className="font-semibold text-lg">Your Details (Complainant)</h3>
+                         <div className="grid grid-cols-3 items-center gap-4">
+                             <Label className="text-right">Full Name</Label>
+                             <FormField control={form.control} name="complainantName" render={({ field }) => (
+                               <FormItem className="col-span-2">
+                                 <FormControl><Input {...field} /></FormControl>
+                                 <FormMessage />
+                               </FormItem>
+                             )} />
+                         </div>
+                         <div className="grid grid-cols-3 items-center gap-4">
+                              <Label className="text-right">Department</Label>
+                             <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
+                               <FormItem className="col-span-2">
+                                 <FormControl><Input {...field} /></FormControl>
+                                 <FormMessage />
+                               </FormItem>
+                             )} />
+                         </div>
                      </div>
                      <div className="space-y-4 p-4 border rounded-lg">
-                         <h3 className="font-semibold text-lg">3. Accused Person's Details (Respondent)</h3>
-                         <FormField control={form.control} name="respondentName" render={({ field }) => (
-                           <FormItem className="grid grid-cols-3 items-center gap-4">
-                             <FormLabel className="text-right">Full Name</FormLabel>
-                             <FormControl><Input {...field} className="col-span-2" /></FormControl>
-                             <FormMessage className="col-span-3" />
-                           </FormItem>
-                         )} />
-                         <FormField control={form.control} name="respondentDetails" render={({ field }) => (
-                           <FormItem className="grid grid-cols-3 items-center gap-4">
-                             <FormLabel className="text-right">Department/Role</FormLabel>
-                             <FormControl><Input {...field} placeholder="(if known)" className="col-span-2" /></FormControl>
-                             <FormMessage className="col-span-3" />
-                           </FormItem>
-                         )} />
+                         <h3 className="font-semibold text-lg">Accused Person's Details (Respondent)</h3>
+                         <div className="grid grid-cols-3 items-center gap-4">
+                            <Label className="text-right">Full Name</Label>
+                             <FormField control={form.control} name="respondentName" render={({ field }) => (
+                               <FormItem className="col-span-2">
+                                 <FormControl><Input {...field} /></FormControl>
+                                 <FormMessage />
+                               </FormItem>
+                             )} />
+                         </div>
+                         <div className="grid grid-cols-3 items-center gap-4">
+                            <Label className="text-right">Department/Role</Label>
+                             <FormField control={form.control} name="respondentDetails" render={({ field }) => (
+                               <FormItem className="col-span-2">
+                                 <FormControl><Input {...field} placeholder="(if known)" /></FormControl>
+                                 <FormMessage />
+                               </FormItem>
+                             )} />
+                         </div>
                      </div>
                  </div>
 
                 {/* Incident Details */}
                 <div className="space-y-4 p-4 border rounded-lg">
-                    <h3 className="font-semibold text-lg">4. Incident Details</h3>
+                    <h3 className="font-semibold text-lg">Incident Details</h3>
                      <FormField control={form.control} name="incidentDetails" render={({ field }) => (
                        <FormItem><FormLabel>Detailed Description of Incident(s)</FormLabel><FormControl><Textarea {...field} rows={8} placeholder="Describe what happened, including dates, times, and sequence of events..." /></FormControl><FormMessage /></FormItem>
                      )} />
@@ -416,7 +424,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
 
                 {/* Prior History */}
                 <div className="space-y-4 p-4 border rounded-lg">
-                     <h3 className="font-semibold text-lg">5. Prior History</h3>
+                     <h3 className="font-semibold text-lg">Prior History</h3>
                      <FormField control={form.control} name="priorIncidents" render={({ field }) => (
                         <FormItem className="space-y-3">
                             <FormLabel>Have similar incidents with the respondent occurred before?</FormLabel>
@@ -449,7 +457,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
 
                 {/* Consent */}
                 <div className="space-y-4 p-4 border rounded-lg">
-                    <h3 className="font-semibold text-lg">6. Confidentiality and Consent</h3>
+                    <h3 className="font-semibold text-lg">Confidentiality and Consent</h3>
                     <FormField control={form.control} name="confidentialityAcknowledgement" render={({ field }) => (
                        <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
