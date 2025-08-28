@@ -7,6 +7,8 @@ export const roleUserMapping: Record<Role, { name: string; fallback: string; ima
   'AM': { name: 'Ashley Miles', fallback: 'AM', imageHint: 'assistant manager', role: 'AM' },
   'Employee': { name: 'Casey Day', fallback: 'CD', imageHint: 'employee', role: 'Employee' },
   'HR Head': { name: 'Dana Evans', fallback: 'DE', imageHint: 'hr head', role: 'HR Head' },
+  'ICC Head': { name: 'Frank Green', fallback: 'FG', imageHint: 'icc head', role: 'ICC Head' },
+  'ICC Member': { name: 'Gina Harris', fallback: 'GH', imageHint: 'icc member', role: 'ICC Member' },
   'Voice – In Silence': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person', role: 'Voice – In Silence' },
   'Anonymous': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person', role: 'Anonymous' }
 };

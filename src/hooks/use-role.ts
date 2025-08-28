@@ -1,14 +1,13 @@
 
-
 "use client"
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 
-export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Voice – In Silence' | 'Anonymous';
+export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Voice – In Silence' | 'Anonymous' | 'ICC Head' | 'ICC Member';
 
-export const availableRoles: Role[] = ['Employee', 'Team Lead', 'AM', 'Manager', 'HR Head'];
-export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM'];
+export const availableRoles: Role[] = ['Employee', 'Team Lead', 'AM', 'Manager', 'HR Head', 'ICC Head', 'ICC Member'];
+export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM', 'ICC Head', 'ICC Member'];
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 

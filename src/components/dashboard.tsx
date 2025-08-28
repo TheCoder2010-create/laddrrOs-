@@ -5,6 +5,8 @@ import LeadDashboard from './dashboards/lead-dashboard';
 import EmployeeDashboard from './dashboards/employee-dashboard';
 import HRHeadDashboard from './dashboards/hr-head-dashboard';
 import AmDashboard from './dashboards/am-dashboard';
+import IccHeadDashboard from './dashboards/icc-head-dashboard';
+import IccMemberDashboard from './dashboards/icc-member-dashboard';
 
 interface DashboardProps {
   role: Role;
@@ -23,6 +25,10 @@ export default function Dashboard({ role }: DashboardProps) {
         return <EmployeeDashboard />;
       case 'HR Head':
         return <HRHeadDashboard />;
+      case 'ICC Head':
+        return <IccHeadDashboard />;
+      case 'ICC Member':
+        return <IccMemberDashboard />;
       default:
         return <div>Invalid Role</div>;
     }

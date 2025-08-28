@@ -1,7 +1,7 @@
 
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
-import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion, UserCog, ChevronRight } from 'lucide-react';
+import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion, UserCog, ChevronRight, Scale, Building } from 'lucide-react';
 import Header from './header';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,14 @@ const roleDetails = {
   'Voice – In Silence': {
     icon: ShieldQuestion,
     description: "Submit feedback with full anonymity.",
+  },
+  'ICC Head': {
+    icon: Scale,
+    description: "Oversee internal complaints committee cases.",
+  },
+  'ICC Member': {
+    icon: Building,
+    description: "Review and manage assigned ICC cases.",
   }
 };
 
