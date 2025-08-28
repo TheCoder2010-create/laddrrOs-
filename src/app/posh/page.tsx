@@ -494,8 +494,6 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
             </Card>
           </form>
         </Form>
-        <Separator className="my-8" />
-        <MyPoshSubmissions onUpdate={onSubmitted} key={key} />
       </div>
     </>
   );
@@ -521,6 +519,10 @@ export default function PoshPage() {
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
             <PoshComplaintForm onSubmitted={handleSubmission} />
+            <div className="p-4 md:p-8">
+              <Separator className="my-8" />
+              <MyPoshSubmissions onUpdate={handleSubmission} key={key} />
+            </div>
         </DashboardLayout>
     );
 }
