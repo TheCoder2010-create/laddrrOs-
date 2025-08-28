@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Scale, PlusCircle, AlertTriangle, CheckCircle, Users, ChevronDown, Send, Loader2 } from 'lucide-react';
+import { Scale, PlusCircle, AlertTriangle, CheckCircle, Users, ChevronDown, Send, Loader2, File, User, FileText } from 'lucide-react';
 import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -212,13 +212,12 @@ function PoshDeskContent() {
         };
     }, [fetchComplaints]);
 
-    const renderDetail = (label: string, value?: string | null | Date) => {
+    const renderDetailItem = (label: string, value?: string | null) => {
         if (!value) return null;
-        const displayValue = value instanceof Date ? format(value, 'PPP') : value;
         return (
-            <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
-                <p className="text-sm text-foreground">{displayValue}</p>
+            <div className="text-sm">
+                <span className="font-semibold text-foreground">{label}: </span>
+                <span className="text-muted-foreground">{value}</span>
             </div>
         );
     };
@@ -271,34 +270,54 @@ function PoshDeskContent() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 border-t space-y-6">
-                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6">
-                                    {renderDetail("Complainant", complaint.complainantInfo.name)}
-                                    {renderDetail("Complainant Dept", complaint.complainantInfo.department)}
-                                    {renderDetail("Respondent", complaint.respondentInfo.name)}
-                                    {renderDetail("Respondent Details", complaint.respondentInfo.details)}
-                                    {renderDetail("Incident Date", complaint.dateOfIncident)}
-                                    {renderDetail("Incident Location", complaint.location)}
-                                </div>
-                                
-                                <div className="pt-4 space-y-4">
-                                    <div>
-                                        <h4 className="font-semibold">Incident Details</h4>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {/* Incident Information */}
+                                        <div className="space-y-2">
+                                            <h4 className="font-bold flex items-center gap-2"><FileText className="h-4 w-4" />Incident Information</h4>
+                                            {renderDetailItem("Case ID", complaint.caseId)}
+                                            {renderDetailItem("Complaint Title", complaint.title)}
+                                            {renderDetailItem("Date of Incident", format(new Date(complaint.dateOfIncident), 'PPP'))}
+                                            {renderDetailItem("Location", complaint.location)}
+                                            {renderDetailItem("Date of Complaint", format(new Date(complaint.createdAt), 'PPP'))}
+                                            {renderDetailItem("Prior Complaints", complaint.priorHistory.hasPriorComplaints ? 'Yes' : 'No')}
+                                            {renderDetailItem("Prior Incidents", complaint.priorHistory.hasPriorIncidents ? 'Yes' : 'No')}
+                                        </div>
+
+                                        {/* Complainant */}
+                                        <div className="space-y-2">
+                                            <h4 className="font-bold flex items-center gap-2"><User className="h-4 w-4" />Complainant</h4>
+                                            {renderDetailItem("Name", complaint.complainantInfo.name)}
+                                            {renderDetailItem("Department", complaint.complainantInfo.department)}
+                                        </div>
+                                        
+                                        {/* Respondent */}
+                                        <div className="space-y-2">
+                                            <h4 className="font-bold flex items-center gap-2"><User className="h-4 w-4" />Respondent</h4>
+                                            {renderDetailItem("Name", complaint.respondentInfo.name)}
+                                            {renderDetailItem("Details", complaint.respondentInfo.details)}
+                                        </div>
+                                    </div>
+
+                                    {/* Incident Details */}
+                                    <div className="space-y-2 pt-4">
+                                        <h4 className="font-bold">Narrative</h4>
                                         <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words mt-1 border p-3 rounded-md bg-background">
                                             {complaint.incidentDetails}
                                         </div>
                                     </div>
 
-                                    {complaint.priorHistory.hasPriorIncidents && (
-                                         <div>
-                                            <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Incidents</h4>
+                                    {complaint.priorHistory.hasPriorIncidents && complaint.priorHistory.priorIncidentsDetails && (
+                                         <div className="space-y-2">
+                                            <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Incidents Details</h4>
                                             <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
                                                 {complaint.priorHistory.priorIncidentsDetails}
                                             </p>
                                         </div>
                                     )}
-                                    {complaint.priorHistory.hasPriorComplaints && (
-                                         <div>
-                                            <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Complaints</h4>
+                                    {complaint.priorHistory.hasPriorComplaints && complaint.priorHistory.priorComplaintsDetails && (
+                                         <div className="space-y-2">
+                                            <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Complaints Details</h4>
                                             <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
                                                 {complaint.priorHistory.priorComplaintsDetails}
                                             </p>
