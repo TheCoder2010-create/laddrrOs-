@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { CustomSwitch } from '@/components/ui/custom-switch';
 
 
 function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
@@ -55,14 +56,17 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
     const { role } = useRole();
     const { toast } = useToast();
 
-    // State for assigning case
     const [assignees, setAssignees] = useState<Role[]>([]);
+    const [assignmentComment, setAssignmentComment] = useState('');
     const [isAssigning, setIsAssigning] = useState(false);
-    const availableIccMembers = availableRolesForAssignment.filter(r => r === 'ICC Member');
+    const [isUnassignMode, setIsUnassignMode] = useState(false);
 
-    // State for adding internal note
     const [note, setNote] = useState('');
     const [isAddingNote, setIsAddingNote] = useState(false);
+
+    useEffect(() => {
+        setAssignees([]);
+    }, [isUnassignMode]);
     
     const handleAssigneeChange = (role: Role) => {
         setAssignees(prev => 
@@ -74,9 +78,11 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
         if (!role || assignees.length === 0) return;
         setIsAssigning(true);
         try {
-            await assignPoshCase(complaint.caseId, assignees, role);
-            toast({ title: 'Case Assigned', description: `Case assigned to ${assignees.join(', ')}.`});
+            await assignPoshCase(complaint.caseId, assignees, role, isUnassignMode ? 'unassign' : 'assign', assignmentComment);
+            toast({ title: `Case ${isUnassignMode ? 'Unassigned' : 'Assigned'}`, description: `Case has been updated for ${assignees.join(', ')}.`});
             onUpdate();
+            setAssignees([]);
+            setAssignmentComment('');
         } catch (error) {
             toast({ variant: 'destructive', title: 'Assignment Failed' });
         } finally {
@@ -98,25 +104,33 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
             setIsAddingNote(false);
         }
     }
+
+    const assignableRolesForDropdown = isUnassignMode 
+        ? (complaint.assignedTo || []) 
+        : availableRolesForAssignment.filter(r => r === 'ICC Member' && !complaint.assignedTo?.includes(r));
     
     return (
         <div className="pt-4 border-t">
             <h3 className="font-semibold text-lg text-foreground mb-4">ICC Actions</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Assign Case Panel */}
                 <div className="space-y-3 p-4 border rounded-lg bg-background">
-                    <Label className="font-semibold text-base">Assign Case</Label>
-                    <p className="text-sm text-muted-foreground">Assign one or more ICC members to this case. They will be notified.</p>
-                     <div className="flex items-center gap-2">
+                    <Label className="font-semibold text-base">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
+                    <div className="flex items-center justify-between">
+                        <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="flex-1 justify-between">
-                                    <span>{assignees.length > 0 ? assignees.join(', ') : 'Select ICC Member(s)'}</span>
-                                    <ChevronDown className="h-4 w-4" />
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="justify-between"
+                                  disabled={isUnassignMode && (!complaint.assignedTo || complaint.assignedTo.length === 0)}
+                                >
+                                    <span>{assignees.length > 0 ? assignees.join(', ') : 'Select Member(s)'}</span>
+                                    <ChevronDown className="ml-2 h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                                {availableIccMembers.map(r => (
+                            <DropdownMenuContent className="w-auto" align="end">
+                                {assignableRolesForDropdown.map(r => (
                                     <DropdownMenuCheckboxItem
                                         key={r}
                                         checked={assignees.includes(r)}
@@ -128,19 +142,28 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
-                         <Button onClick={handleAssign} disabled={isAssigning || assignees.length === 0}>
-                            {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            Assign
+                    </div>
+                     <p className="text-xs text-muted-foreground">
+                        {complaint.assignedTo && complaint.assignedTo.length > 0 && (
+                            <span className="block">
+                                Currently: <span className="font-semibold text-primary">{complaint.assignedTo.join(', ')}</span>
+                            </span>
+                        )}
+                    </p>
+                    <div className="relative">
+                         <Textarea 
+                            placeholder="Add an assignment note..."
+                            value={assignmentComment}
+                            onChange={(e) => setAssignmentComment(e.target.value)}
+                            className="w-full text-sm pr-12 pb-12"
+                            rows={2}
+                        />
+                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
+                            {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
                         </Button>
                     </div>
-                     {complaint.assignedTo.length > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                            Currently assigned to: <span className="font-semibold text-primary">{complaint.assignedTo.join(', ')}</span>
-                        </p>
-                    )}
                 </div>
 
-                {/* Add Internal Note Panel */}
                 <div className="space-y-3 p-4 border rounded-lg bg-background">
                      <Label className="font-semibold text-base">Add Internal Note</Label>
                      <p className="text-sm text-muted-foreground">Add a private note to the case history, visible only to the ICC.</p>

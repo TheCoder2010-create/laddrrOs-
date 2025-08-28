@@ -218,19 +218,34 @@ export async function getPoshComplaintsForMember(memberRole: Role): Promise<Posh
     return allComplaints.filter(c => c.assignedTo.includes(memberRole));
 }
 
-export async function assignPoshCase(caseId: string, assignees: Role[], actor: Role): Promise<void> {
+export async function assignPoshCase(
+    caseId: string, 
+    assignees: Role[], 
+    actor: Role, 
+    mode: 'assign' | 'unassign',
+    comment: string
+): Promise<void> {
     const allComplaints = getPoshFromStorage();
     const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
     if (caseIndex === -1) return;
 
     const complaint = allComplaints[caseIndex];
-    complaint.assignedTo = [...new Set([...complaint.assignedTo, ...assignees])]; // Add new assignees without duplicates
+    const currentAssignees = new Set(complaint.assignedTo || []);
+
+    if (mode === 'assign') {
+        assignees.forEach(role => currentAssignees.add(role));
+    } else {
+        assignees.forEach(role => currentAssignees.delete(role));
+    }
     
+    complaint.assignedTo = Array.from(currentAssignees);
+    
+    const eventName = mode === 'assign' ? 'Case Assigned' : 'Case Unassigned';
     complaint.auditTrail.push({
-        event: 'Case Assigned',
+        event: eventName,
         timestamp: new Date(),
         actor: actor,
-        details: `Assigned case to: ${assignees.join(', ')}`
+        details: `${eventName} for: ${assignees.join(', ')}.${comment ? ` Note: "${comment}"` : ''}`
     });
 
     savePoshToStorage(allComplaints);
