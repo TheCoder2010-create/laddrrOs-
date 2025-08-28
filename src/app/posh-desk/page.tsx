@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -127,11 +128,8 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
         }
     }
 
-    const handleStatusChange = async (status: CaseStatus, checked: boolean) => {
+    const handleStatusChange = async (status: CaseStatus) => {
         if (!role) return;
-        // For this demo, we only allow advancing status, not reversing.
-        if (!checked) return;
-
         try {
             await updatePoshStatus(complaint.caseId, status, role);
             toast({ title: 'Status Updated', description: `Case status changed to: ${status}`});
@@ -178,10 +176,12 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
     const assignableRolesForDropdown = isUnassignMode 
         ? (complaint.assignedTo || []) 
         : availableRolesForAssignment.filter(r => r === 'ICC Member' && !complaint.assignedTo?.includes(r));
+    
+    // Logic for the intelligent checklist
+    const currentStatusIndex = complaint.caseStatus === 'New' 
+      ? -1 
+      : poshCaseStatuses.indexOf(complaint.caseStatus as CaseStatus);
 
-    const isStatusChecked = (status: CaseStatus) => {
-        return complaint.auditTrail.some(e => e.event === 'Status Updated' && e.details?.includes(status));
-    }
     
     return (
         <div className="pt-4 border-t space-y-6">
@@ -224,20 +224,35 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
             {/* Status Checklist Section */}
             <div className="p-4 border rounded-lg bg-background space-y-3">
                 <Label className="font-semibold text-base">Interactive Case Status Checklist</Label>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    {poshCaseStatuses.map(status => {
-                        const isChecked = isStatusChecked(status);
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                    {poshCaseStatuses.map((status, index) => {
+                        const isCompleted = index < currentStatusIndex;
+                        const isNextAction = index === currentStatusIndex + 1;
+                        const isFuture = index > currentStatusIndex + 1;
+
+                        const isChecked = isCompleted;
+                        const isDisabled = isCompleted || isFuture;
+
                         return (
                         <div key={status} className="flex items-center space-x-2">
                             <Checkbox 
                                 id={`status-${status.replace(/\s/g, '-')}`} 
                                 checked={isChecked}
-                                disabled={isChecked}
-                                onCheckedChange={(checked) => handleStatusChange(status, !!checked)}
+                                disabled={isDisabled}
+                                onCheckedChange={() => {
+                                    if (isNextAction) {
+                                        handleStatusChange(status);
+                                    }
+                                }}
                             />
                             <label
                                 htmlFor={`status-${status.replace(/\s/g, '-')}`}
-                                className={cn("text-sm font-medium leading-none", isChecked ? "text-muted-foreground" : "text-foreground", "peer-disabled:cursor-not-allowed peer-disabled:opacity-70")}
+                                className={cn(
+                                    "text-sm font-medium leading-none", 
+                                    isDisabled && !isChecked ? "text-muted-foreground/50" : "text-foreground",
+                                    isChecked ? "text-muted-foreground line-through" : "",
+                                    "cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                )}
                             >
                                 {status}
                             </label>
@@ -624,8 +639,8 @@ function PoshDeskContent() {
                                 <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
                                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
                                         <div className="flex justify-between items-center w-full">
-                                            <div className="text-left">
-                                                <p className="font-medium text-foreground">{complaint.title}</p>
+                                            <div className="flex flex-col items-start text-left">
+                                                <p className="font-semibold text-foreground">{complaint.title}</p>
                                                 <p className="text-sm text-muted-foreground">
                                                     Case #{complaint.caseId.substring(0, 8)}...
                                                 </p>
@@ -644,7 +659,7 @@ function PoshDeskContent() {
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border-t space-y-6">
-                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                                             <div className="space-y-1">
                                                 <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
                                                 <div><strong className="text-muted-foreground">Case ID: </strong> <span className="text-foreground font-mono text-xs">{complaint.caseId}</span></div>
