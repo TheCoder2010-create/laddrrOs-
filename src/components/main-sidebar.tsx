@@ -186,6 +186,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   }, [fetchFeedbackCounts]);
 
   const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
+  const isIccMember = ['ICC Head', 'ICC Member'].includes(currentRole);
 
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
@@ -194,11 +195,15 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns', badge: myConcernsCount > 0 ? myConcernsCount : null, badgeVariant: 'destructive' as const },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence', badge: voiceInSilenceCount > 0 ? voiceInSilenceCount : null, badgeVariant: 'destructive' as const },
-    { href: '/posh-desk', icon: <Scale />, label: 'POSH Desk', badge: poshDeskCount > 0 ? poshDeskCount : null, badgeVariant: 'destructive' as const },
+    { href: '/posh', icon: <Scale />, label: 'POSH' },
   ];
 
   const hrMenuItems = [
     { href: '/vault', icon: <Vault />, label: 'Vault', badge: vaultFeedbackCount > 0 ? vaultFeedbackCount : null, badgeVariant: 'secondary' as const },
+  ]
+
+  const iccMenuItems = [
+    { href: '/posh-desk', icon: <Scale />, label: 'POSH Desk', badge: poshDeskCount > 0 ? poshDeskCount : null, badgeVariant: 'destructive' as const },
   ]
   
   const assigneeMenuItems = [
@@ -269,6 +274,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
           {currentRole === 'HR Head' && hrMenuItems.map(renderMenuItem)}
+          {isIccMember && iccMenuItems.map(renderMenuItem)}
           {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>

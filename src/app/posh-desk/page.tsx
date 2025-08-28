@@ -22,9 +22,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
-import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon } from 'lucide-react';
+import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon, PlusCircle } from 'lucide-react';
 import { submitPoshComplaint, PoshComplaintInput } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters."),
@@ -43,8 +44,7 @@ const formSchema = z.object({
   consent: z.boolean().refine(val => val === true, { message: "You must provide consent to proceed." }),
 });
 
-function PoshDeskContent() {
-  const { role } = useRole();
+function PoshComplaintForm() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [showDelayDialog, setShowDelayDialog] = useState(false);
@@ -180,140 +180,178 @@ function PoshDeskContent() {
         </DialogContent>
       </Dialog>
       
-      <div className="p-4 md:p-8">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
-                  <Scale className="h-8 w-8" />
-                  POSH Complaint Form
-                </CardTitle>
-                <CardDescription className="text-lg text-muted-foreground">
-                  File a confidential complaint with the Internal Complaints Committee (ICC). All submissions are treated with the utmost seriousness and privacy.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                {/* Complaint Info */}
-                <div className="space-y-4 p-4 border rounded-lg">
-                    <h3 className="font-semibold text-lg">1. Complaint Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="title" render={({ field }) => (
-                           <FormItem><FormLabel>Complaint Title <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="location" render={({ field }) => (
-                           <FormItem><FormLabel>Location of Incident <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} placeholder="e.g., Office, Cafeteria" /></FormControl><FormMessage /></FormItem>
-                        )} />
-                    </div>
-                     <FormField control={form.control} name="dateOfIncident" render={({ field }) => (
-                       <FormItem className="flex flex-col"><FormLabel>Date of Incident <span className="text-destructive">*</span></FormLabel>
-                         <Popover><PopoverTrigger asChild>
-                           <FormControl>
-                             <Button variant={"outline"} className={cn("w-[240px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                               {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                             </Button>
-                           </FormControl>
-                         </PopoverTrigger>
-                         <PopoverContent className="w-auto p-0" align="start">
-                           <Calendar mode="single" selected={field.value} onSelect={(date) => handleDateChange(date)} disabled={(date) => date > new Date()} initialFocus />
-                         </PopoverContent></Popover><FormMessage />
-                       </FormItem>
-                     )} />
-                </div>
-                
-                {/* Complainant & Respondent */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-4 p-4 border rounded-lg">
-                         <h3 className="font-semibold text-lg">2. Your Details (Complainant)</h3>
-                         <FormField control={form.control} name="complainantName" render={({ field }) => (
-                           <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                         <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
-                           <FormItem><FormLabel>Department <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                     </div>
-                     <div className="space-y-4 p-4 border rounded-lg">
-                         <h3 className="font-semibold text-lg">3. Accused Person's Details (Respondent)</h3>
-                         <FormField control={form.control} name="respondentName" render={({ field }) => (
-                           <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                         <FormField control={form.control} name="respondentDetails" render={({ field }) => (
-                           <FormItem><FormLabel>Department/Role (if known)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                         )} />
-                     </div>
-                 </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold font-headline mb-1 text-foreground flex items-center gap-3">
+                <Scale className="h-7 w-7" />
+                POSH Complaint Form
+              </CardTitle>
+              <CardDescription className="text-base text-muted-foreground">
+                File a confidential complaint with the Internal Complaints Committee (ICC). All submissions are treated with the utmost seriousness and privacy.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Complaint Info */}
+              <div className="space-y-4 p-4 border rounded-lg">
+                  <h3 className="font-semibold text-lg">1. Complaint Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField control={form.control} name="title" render={({ field }) => (
+                         <FormItem><FormLabel>Complaint Title <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl><FormMessage /></FormItem>
+                      )} />
+                      <FormField control={form.control} name="location" render={({ field }) => (
+                         <FormItem><FormLabel>Location of Incident <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} placeholder="e.g., Office, Cafeteria" /></FormControl><FormMessage /></FormItem>
+                      )} />
+                  </div>
+                   <FormField control={form.control} name="dateOfIncident" render={({ field }) => (
+                     <FormItem className="flex flex-col"><FormLabel>Date of Incident <span className="text-destructive">*</span></FormLabel>
+                       <Popover><PopoverTrigger asChild>
+                         <FormControl>
+                           <Button variant={"outline"} className={cn("w-[240px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                             {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                           </Button>
+                         </FormControl>
+                       </PopoverTrigger>
+                       <PopoverContent className="w-auto p-0" align="start">
+                         <Calendar mode="single" selected={field.value} onSelect={(date) => handleDateChange(date)} disabled={(date) => date > new Date()} initialFocus />
+                       </PopoverContent></Popover><FormMessage />
+                     </FormItem>
+                   )} />
+              </div>
+              
+              {/* Complainant & Respondent */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-4 p-4 border rounded-lg">
+                       <h3 className="font-semibold text-lg">2. Your Details (Complainant)</h3>
+                       <FormField control={form.control} name="complainantName" render={({ field }) => (
+                         <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                       )} />
+                       <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
+                         <FormItem><FormLabel>Department <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                       )} />
+                   </div>
+                   <div className="space-y-4 p-4 border rounded-lg">
+                       <h3 className="font-semibold text-lg">3. Accused Person's Details (Respondent)</h3>
+                       <FormField control={form.control} name="respondentName" render={({ field }) => (
+                         <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                       )} />
+                       <FormField control={form.control} name="respondentDetails" render={({ field }) => (
+                         <FormItem><FormLabel>Department/Role (if known)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                       )} />
+                   </div>
+               </div>
 
-                {/* Incident Details */}
-                <div className="space-y-4 p-4 border rounded-lg">
-                    <h3 className="font-semibold text-lg">4. Incident Details</h3>
-                     <FormField control={form.control} name="incidentDetails" render={({ field }) => (
-                       <FormItem><FormLabel>Detailed Description of Incident(s) <span className="text-destructive">*</span></FormLabel><FormControl><Textarea {...field} rows={8} placeholder="Describe what happened, including dates, times, and sequence of events..." /></FormControl><FormMessage /></FormItem>
-                     )} />
-                     <FormField control={form.control} name="witnesses" render={({ field }) => (
-                       <FormItem><FormLabel>Witnesses (if any)</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="List names and contact information of anyone who witnessed the incident(s)." /></FormControl><FormMessage /></FormItem>
-                     )} />
-                     <div className="space-y-2">
-                        <FormLabel>Supporting Evidence (e.g., emails, screenshots)</FormLabel>
-                        <Button asChild variant="outline" size="sm">
-                          <Label>
-                            <Paperclip className="mr-2 h-4 w-4" />
-                            Attach Files
-                            <Controller
-                              control={form.control}
-                              name="evidenceFiles"
-                              render={({ field }) => (
-                                <input type="file" className="hidden" multiple onChange={(e) => handleFileChange(e, "evidenceFiles")} />
-                              )}
-                            />
-                          </Label>
-                        </Button>
-                        <div className="space-y-1">
-                            {evidenceFiles?.map((file, i) => (
-                               <div key={i} className="text-sm flex items-center justify-between p-1 bg-muted rounded-md">
-                                   <span className="font-medium text-muted-foreground truncate">{file.name}</span>
-                                   <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file, "evidenceFiles")}>
-                                       <XIcon className="h-4 w-4" />
-                                   </Button>
-                               </div>
-                           ))}
-                        </div>
-                    </div>
-                </div>
+              {/* Incident Details */}
+              <div className="space-y-4 p-4 border rounded-lg">
+                  <h3 className="font-semibold text-lg">4. Incident Details</h3>
+                   <FormField control={form.control} name="incidentDetails" render={({ field }) => (
+                     <FormItem><FormLabel>Detailed Description of Incident(s) <span className="text-destructive">*</span></FormLabel><FormControl><Textarea {...field} rows={8} placeholder="Describe what happened, including dates, times, and sequence of events..." /></FormControl><FormMessage /></FormItem>
+                   )} />
+                   <FormField control={form.control} name="witnesses" render={({ field }) => (
+                     <FormItem><FormLabel>Witnesses (if any)</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="List names and contact information of anyone who witnessed the incident(s)." /></FormControl><FormMessage /></FormItem>
+                   )} />
+                   <div className="space-y-2">
+                      <FormLabel>Supporting Evidence (e.g., emails, screenshots)</FormLabel>
+                      <Button asChild variant="outline" size="sm">
+                        <Label>
+                          <Paperclip className="mr-2 h-4 w-4" />
+                          Attach Files
+                          <Controller
+                            control={form.control}
+                            name="evidenceFiles"
+                            render={({ field }) => (
+                              <input type="file" className="hidden" multiple onChange={(e) => handleFileChange(e, "evidenceFiles")} />
+                            )}
+                          />
+                        </Label>
+                      </Button>
+                      <div className="space-y-1">
+                          {evidenceFiles?.map((file, i) => (
+                             <div key={i} className="text-sm flex items-center justify-between p-1 bg-muted rounded-md">
+                                 <span className="font-medium text-muted-foreground truncate">{file.name}</span>
+                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file, "evidenceFiles")}>
+                                     <XIcon className="h-4 w-4" />
+                                 </Button>
+                             </div>
+                         ))}
+                      </div>
+                  </div>
+              </div>
 
-                {/* Consent */}
-                <div className="space-y-4 p-4 border rounded-lg">
-                    <h3 className="font-semibold text-lg">5. Confidentiality and Consent</h3>
-                    <FormField control={form.control} name="confidentialityAcknowledgement" render={({ field }) => (
-                       <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
-                           <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                       </FormControl><div className="space-y-1 leading-none">
-                           <FormLabel>I acknowledge that this complaint will be handled confidentially by the ICC. <span className="text-destructive">*</span></FormLabel>
-                       </div></FormItem>
-                     )} />
-                     <FormField control={form.control} name="consent" render={({ field }) => (
-                       <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
-                           <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                       </FormControl><div className="space-y-1 leading-none">
-                           <FormLabel>I confirm that the information provided is true to the best of my knowledge and consent to the ICC proceeding with an inquiry. <span className="text-destructive">*</span></FormLabel>
-                       </div></FormItem>
-                     )} />
-                </div>
-              </CardContent>
-              <CardFooter>
-                 <Button type="submit" disabled={isPending || !form.watch("consent") || !form.watch("confidentialityAcknowledgement")}>
-                    {isPending ? <Loader2 className="mr-2 animate-spin" /> : <Send className="mr-2" />}
-                    Submit Complaint
-                </Button>
-              </CardFooter>
-            </Card>
-          </form>
-        </Form>
-      </div>
+              {/* Consent */}
+              <div className="space-y-4 p-4 border rounded-lg">
+                  <h3 className="font-semibold text-lg">5. Confidentiality and Consent</h3>
+                  <FormField control={form.control} name="confidentialityAcknowledgement" render={({ field }) => (
+                     <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
+                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                     </FormControl><div className="space-y-1 leading-none">
+                         <FormLabel>I acknowledge that this complaint will be handled confidentially by the ICC. <span className="text-destructive">*</span></FormLabel>
+                     </div></FormItem>
+                   )} />
+                   <FormField control={form.control} name="consent" render={({ field }) => (
+                     <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
+                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                     </FormControl><div className="space-y-1 leading-none">
+                         <FormLabel>I confirm that the information provided is true to the best of my knowledge and consent to the ICC proceeding with an inquiry. <span className="text-destructive">*</span></FormLabel>
+                     </div></FormItem>
+                   )} />
+              </div>
+            </CardContent>
+            <CardFooter>
+               <Button type="submit" disabled={isPending || !form.watch("consent") || !form.watch("confidentialityAcknowledgement")}>
+                  {isPending ? <Loader2 className="mr-2 animate-spin" /> : <Send className="mr-2" />}
+                  Submit Complaint
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
     </>
-  );
+  )
 }
 
+function PoshDeskContent() {
+    return (
+      <div className="p-4 md:p-8 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
+              <Scale className="h-8 w-8" />
+              POSH Desk
+            </CardTitle>
+            <CardDescription className="text-lg text-muted-foreground">
+              Internal Complaints Committee (ICC) dashboard for managing POSH cases.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Case list will go here */}
+            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+              <p className="text-muted-foreground text-lg">No active cases.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                New complaints assigned to you will appear here.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Accordion type="single" collapsible>
+          <AccordionItem value="complaint-form">
+            <AccordionTrigger>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <PlusCircle className="h-5 w-5" />
+                File a New Complaint
+              </h3>
+            </AccordionTrigger>
+            <AccordionContent className="pt-4">
+              <PoshComplaintForm />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+    )
+}
 
 export default function PoshDeskPage() {
     const { role, setRole, isLoading } = useRole();
@@ -324,6 +362,21 @@ export default function PoshDeskPage() {
                 <Skeleton className="h-screen w-full" />
             </div>
         )
+    }
+
+    if (role !== 'ICC Head' && role !== 'ICC Member') {
+      return (
+        <DashboardLayout role={role} onSwitchRole={setRole}>
+          <div className="p-4 md:p-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Access Denied</CardTitle>
+                <CardDescription>You do not have permission to view the POSH Desk.</CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </DashboardLayout>
+      )
     }
   
     return (
