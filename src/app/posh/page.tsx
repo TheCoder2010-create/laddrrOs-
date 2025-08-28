@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from 'react';
+import { useState, useTransition, useEffect, useCallback, Key } from 'react';
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -85,7 +85,7 @@ function CaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
 
 const getPoshCaseKey = (role: string | null) => role ? `posh_cases_${role.replace(/\s/g, '_')}` : null;
 
-function MyPoshSubmissions({ onUpdate, key }: { onUpdate: () => void, key: number }) {
+function MyPoshSubmissions({ onUpdate }: { onUpdate: () => void }) {
     const [myCases, setMyCases] = useState<PoshComplaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { role } = useRole();
@@ -117,7 +117,7 @@ function MyPoshSubmissions({ onUpdate, key }: { onUpdate: () => void, key: numbe
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('poshComplaintUpdated', handleStorageChange);
         };
-    }, [fetchMyCases, key]);
+    }, [fetchMyCases]);
 
     if (isLoading) {
         return <Skeleton className="h-24 w-full" />
@@ -220,7 +220,15 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     startTransition(async () => {
       try {
-        await submitPoshComplaint(values as PoshComplaintInput);
+        if (!role) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "User role not found.",
+            });
+            return;
+        }
+        await submitPoshComplaint({ ...values, role });
         setShowConfirmationDialog(true);
         form.reset();
         onSubmitted();
