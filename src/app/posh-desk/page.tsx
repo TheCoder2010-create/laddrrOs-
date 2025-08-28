@@ -4,15 +4,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRole, availableRolesForAssignment, type Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase } from 'lucide-react';
+import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase, Search } from 'lucide-react';
 import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { formatActorName } from '@/lib/role-mapping';
+import { format, differenceInDays, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { formatActorName, roleUserMapping } from '@/lib/role-mapping';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +20,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMe
 import { cn } from '@/lib/utils';
 import { CustomSwitch } from '@/components/ui/custom-switch';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import type { DateRange } from 'react-day-picker';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { getAdminAuditLog, getAllUsers, manageIccMembership, overrideCaseStatus, type AdminLogEntry } from '@/services/admin-service';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     if (!trail || trail.length === 0) return null;
@@ -314,7 +324,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                            <label htmlFor="tag-final" className="text-sm font-medium leading-none">Tag as "ICC Final Report"</label>
                         </div>
                         <Button onClick={handleSubmitFinalReport} disabled={!finalReport || isSubmittingFinal}>
-                           {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit & Lock'}
+                           {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit &amp; Lock'}
                         </Button>
                     </div>
                 </div>
@@ -323,18 +333,210 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
     );
 }
 
-function IccHeadDashboardWidgets({ complaints }: { complaints: PoshComplaint[] }) {
+function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshComplaint[], onUpdate: () => void }) {
+    const { toast } = useToast();
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [timePeriod, setTimePeriod] = useState('all');
+    const [customDate, setCustomDate] = useState<DateRange | undefined>();
+    const [fileFormat, setFileFormat] = useState('pdf');
+
+    const [adminHistoryDialogOpen, setAdminHistoryDialogOpen] = useState(false);
+    const [adminLog, setAdminLog] = useState<AdminLogEntry[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
+    const [allUsers, setAllUsers] = useState<string[]>([]);
+    const [iccMembers, setIccMembers] = useState<string[]>([]);
+
+    const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
+    const [selectedCaseId, setSelectedCaseId] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState<CaseStatus | ''>('');
+    const [overrideReason, setOverrideReason] = useState('');
+    const [isOverriding, setIsOverriding] = useState(false);
+
+    const openAdminHistory = async () => {
+        const log = await getAdminAuditLog();
+        setAdminLog(log);
+        setAdminHistoryDialogOpen(true);
+    }
+    
+    const openManageMembers = async () => {
+        const users = await getAllUsers();
+        setAllUsers(users.all);
+        setIccMembers(users.icc);
+        setManageMembersDialogOpen(true);
+    };
+
+    const handleManageMembership = async (user: string, action: 'add' | 'remove') => {
+        await manageIccMembership(user, action);
+        toast({ title: 'Membership Updated', description: `${user} has been ${action === 'add' ? 'added to' : 'removed from'} the ICC.`});
+        openManageMembers(); // Refresh the dialog content
+    };
+
+    const handleOverrideSubmit = async () => {
+        if (!selectedCaseId || !selectedStatus || !overrideReason) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please fill all fields to override.'});
+            return;
+        }
+        setIsOverriding(true);
+        try {
+            await overrideCaseStatus(selectedCaseId, selectedStatus, overrideReason);
+            toast({ title: 'Override Successful', description: `Case ${selectedCaseId} status has been changed.`});
+            onUpdate();
+            setOverrideDialogOpen(false);
+            setSelectedCaseId('');
+            setSelectedStatus('');
+            setOverrideReason('');
+        } catch(e) {
+            toast({ variant: 'destructive', title: 'Override Failed'});
+        } finally {
+            setIsOverriding(false);
+        }
+    };
+    
+    const filteredAdminLog = adminLog.filter(log => log.caseId?.toLowerCase().includes(searchTerm.toLowerCase()));
+
     const totalCases = complaints.length;
-    const openCases = complaints.filter(c => c.caseStatus !== 'Resolved' && c.caseStatus !== 'Closed').length;
-    // Placeholder for average close days logic
-    const avgCloseDays = 0;
+    const closedCases = complaints.filter(c => c.caseStatus.startsWith('Resolved') || c.caseStatus.startsWith('Closed'));
+    
+    const avgCloseDays = (() => {
+        if (closedCases.length === 0) return 0;
+        const totalDays = closedCases.reduce((sum, c) => {
+            const closeEvent = c.auditTrail.find(e => e.details?.includes('Resolved') || e.details?.includes('Closed'));
+            if (closeEvent) {
+                return sum + differenceInDays(new Date(closeEvent.timestamp), new Date(c.createdAt));
+            }
+            return sum;
+        }, 0);
+        return Math.round(totalDays / closedCases.length);
+    })();
+
+    const openCases = totalCases - closedCases.length;
 
     return (
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Generate POSH Report</DialogTitle></DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <RadioGroup value={timePeriod} onValueChange={setTimePeriod}>
+                            <Label>Time Period</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="all" /><Label htmlFor="all">All Cases</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="quarter" id="quarter" /><Label htmlFor="quarter">Current Quarter</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="month" id="month" /><Label htmlFor="month">Current Month</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="year" id="year" /><Label htmlFor="year">Current Year</Label></div>
+                                <div className="flex items-center space-x-2 col-span-2"><RadioGroupItem value="custom" id="custom" /><Label htmlFor="custom">Custom Range</Label></div>
+                            </div>
+                        </RadioGroup>
+                        {timePeriod === 'custom' && (
+                            <Popover><PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !customDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {customDate?.from ? (customDate.to ? `${format(customDate.from, "LLL dd, y")} - ${format(customDate.to, "LLL dd, y")}` : format(customDate.from, "LLL dd, y")) : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar initialFocus mode="range" defaultMonth={customDate?.from} selected={customDate} onSelect={setCustomDate} numberOfMonths={2} /></PopoverContent></Popover>
+                        )}
+                        <RadioGroup value={fileFormat} onValueChange={setFileFormat}>
+                            <Label>File Format</Label>
+                            <div className="flex gap-4">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="pdf" id="pdf" /><Label htmlFor="pdf">PDF</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="csv" id="csv" /><Label htmlFor="csv">CSV</Label></div>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                    <DialogFooter><Button onClick={() => toast({title: "Coming Soon!", description: "Report generation is not yet implemented."})}>Download</Button></DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+             <Dialog open={manageMembersDialogOpen} onOpenChange={setManageMembersDialogOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Manage ICC Members</DialogTitle></DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div>
+                            <Label>Current Members</Label>
+                            <div className="space-y-1 mt-2">
+                                {iccMembers.map(member => (
+                                    <div key={member} className="flex items-center justify-between rounded-md border p-2">
+                                        <span className="text-sm">{member}</span>
+                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleManageMembership(member, 'remove')} disabled={member === 'ICC Head'}>Remove</Button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <Label>Add New Members</Label>
+                            <Select onValueChange={(user) => handleManageMembership(user, 'add')}>
+                                <SelectTrigger><SelectValue placeholder="Select an employee to add..." /></SelectTrigger>
+                                <SelectContent>
+                                    {allUsers.filter(u => !iccMembers.includes(u)).map(user => (
+                                        <SelectItem key={user} value={user}>{user}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={adminHistoryDialogOpen} onOpenChange={setAdminHistoryDialogOpen}>
+                <DialogContent className="max-w-4xl">
+                     <DialogHeader><DialogTitle>System-Wide Admin Log</DialogTitle></DialogHeader>
+                    <div className="py-4 space-y-2">
+                         <div className="relative">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search by Case ID..." className="pl-8" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        </div>
+                        <ScrollArea className="h-[60vh]">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow><TableHead>Timestamp</TableHead><TableHead>Case ID</TableHead><TableHead>Actor</TableHead><TableHead>Action</TableHead></TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredAdminLog.map(log => (
+                                        <TableRow key={log.id}>
+                                            <TableCell>{format(new Date(log.timestamp), 'Pp')}</TableCell>
+                                            <TableCell className="font-mono text-xs">{log.caseId}</TableCell>
+                                            <TableCell>{log.actor}</TableCell>
+                                            <TableCell>{log.action}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            
+            <Dialog open={overrideDialogOpen} onOpenChange={setOverrideDialogOpen}>
+                <DialogContent>
+                     <DialogHeader><DialogTitle>Override Case Status</DialogTitle></DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
+                            <SelectTrigger><SelectValue placeholder="Select a case..." /></SelectTrigger>
+                            <SelectContent>
+                                {complaints.map(c => <SelectItem key={c.caseId} value={c.caseId}>{c.title} ({c.caseId.substring(0,8)}...)</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as CaseStatus)}>
+                            <SelectTrigger><SelectValue placeholder="Select new status..." /></SelectTrigger>
+                            <SelectContent>
+                                {[...poshCaseStatuses, 'New' as const, 'Closed' as const, 'Resolved' as const].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Textarea placeholder="Enter detailed justification for this override..." value={overrideReason} onChange={e => setOverrideReason(e.target.value)} rows={4}/>
+                    </div>
+                    <DialogFooter><Button variant="destructive" onClick={handleOverrideSubmit} disabled={isOverriding}>
+                        {isOverriding && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                        Confirm Override
+                    </Button></DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Card className="bg-card/50">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Reporting &amp; Analytics</CardTitle>
-                    <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/>Report</Button>
+                    <Button variant="outline" size="sm" onClick={() => setReportDialogOpen(true)}><Download className="mr-2 h-4 w-4"/>Report</Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex justify-between items-center text-sm">
@@ -357,10 +559,10 @@ function IccHeadDashboardWidgets({ complaints }: { complaints: PoshComplaint[] }
                     <CardDescription>Manage ICC members, system settings, and case overrides.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-3">
-                     <Button variant="outline"><Users className="mr-2 h-4 w-4"/>Manage Members</Button>
-                     <Button variant="outline"><Timer className="mr-2 h-4 w-4"/>Set SLA Timers</Button>
-                     <Button variant="destructive"><Undo2 className="mr-2 h-4 w-4"/>Override Decision</Button>
-                     <Button variant="outline"><History className="mr-2 h-4 w-4"/>View History</Button>
+                     <Button variant="outline" onClick={openManageMembers}><Users className="mr-2 h-4 w-4"/>Manage Members</Button>
+                     <Button variant="outline" onClick={() => toast({title: "Coming Soon!", description: "SLA timer setting is not yet implemented."})}><Timer className="mr-2 h-4 w-4"/>Set SLA Timers</Button>
+                     <Button variant="destructive" onClick={() => setOverrideDialogOpen(true)}><Undo2 className="mr-2 h-4 w-4"/>Override Decision</Button>
+                     <Button variant="outline" onClick={openAdminHistory}><History className="mr-2 h-4 w-4"/>View History</Button>
                 </CardContent>
             </Card>
         </div>
@@ -375,9 +577,15 @@ function PoshDeskContent() {
     const fetchComplaints = useCallback(async () => {
         setIsLoading(true);
         const data = await getAllPoshComplaints();
-        setComplaints(data);
+        
+        if (role === 'ICC Member') {
+            setComplaints(data.filter(c => c.assignedTo.includes('ICC Member')));
+        } else {
+            setComplaints(data);
+        }
+
         setIsLoading(false);
-    }, []);
+    }, [role]);
 
     const handleUpdate = useCallback(() => {
         fetchComplaints();
@@ -412,7 +620,7 @@ function PoshDeskContent() {
                 <Skeleton className="h-40 w-full" />
             ) : (
                 <>
-                    {role === 'ICC Head' && <IccHeadDashboardWidgets complaints={complaints} />}
+                    {role === 'ICC Head' && <IccHeadDashboardWidgets complaints={complaints} onUpdate={handleUpdate} />}
 
                     {complaints.length === 0 ? (
                          <div className="text-center py-12 border-2 border-dashed rounded-lg">
@@ -447,33 +655,31 @@ function PoshDeskContent() {
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent className="p-4 border-t space-y-6">
-                                        <div className="space-y-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                                                 <div className="space-y-2">
-                                                    <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
-                                                    <div><span className="font-semibold text-muted-foreground">Case ID: </span> <span className="text-muted-foreground">{complaint.caseId}</span></div>
-                                                    <div><span className="font-semibold text-muted-foreground">Title: </span> <span className="text-muted-foreground">{complaint.title}</span></div>
-                                                    <div><span className="font-semibold text-muted-foreground">Date: </span> <span className="text-muted-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
-                                                    <div><span className="font-semibold text-muted-foreground">Location: </span> <span className="text-muted-foreground">{complaint.location}</span></div>
-                                                </div>
-                                                 <div className="space-y-2">
-                                                    <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Complainant</h4>
-                                                    <div><span className="font-semibold text-muted-foreground">Name: </span> <span className="text-muted-foreground">{complaint.complainantInfo.name}</span></div>
-                                                    <div><span className="font-semibold text-muted-foreground">Department: </span> <span className="text-muted-foreground">{complaint.complainantInfo.department}</span></div>
-                                                </div>
-                                                 <div className="space-y-2">
-                                                    <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Respondent</h4>
-                                                    <div><span className="font-semibold text-muted-foreground">Name: </span> <span className="text-muted-foreground">{complaint.respondentInfo.name}</span></div>
-                                                    {complaint.respondentInfo.details && <div><span className="font-semibold text-muted-foreground">Details: </span> <span className="text-muted-foreground">{complaint.respondentInfo.details}</span></div>}
-                                                </div>
+                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                                            <div className="space-y-1">
+                                                <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
+                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="text-foreground">{complaint.caseId}</span></div>
+                                                <div><strong className="text-muted-foreground">Title: </strong> <span className="text-foreground">{complaint.title}</span></div>
+                                                <div><strong className="text-muted-foreground">Date: </strong> <span className="text-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
+                                                <div><strong className="text-muted-foreground">Location: </strong> <span className="text-foreground">{complaint.location}</span></div>
                                             </div>
-
-                                            <div className="space-y-2 pt-4">
-                                                <h4 className="font-bold text-base">Narrative</h4>
-                                                <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words mt-1 border p-3 rounded-md bg-background">
-                                                    {complaint.incidentDetails}
-                                                </div>
+                                             <div className="space-y-1">
+                                                <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Complainant</h4>
+                                                <div><strong className="text-muted-foreground">Name: </strong> <span className="text-foreground">{complaint.complainantInfo.name}</span></div>
+                                                <div><strong className="text-muted-foreground">Department: </strong> <span className="text-foreground">{complaint.complainantInfo.department}</span></div>
                                             </div>
+                                             <div className="space-y-1">
+                                                <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Respondent</h4>
+                                                <div><strong className="text-muted-foreground">Name: </strong> <span className="text-foreground">{complaint.respondentInfo.name}</span></div>
+                                                {complaint.respondentInfo.details && <div><strong className="text-muted-foreground">Details: </strong> <span className="text-foreground">{complaint.respondentInfo.details}</span></div>}
+                                            </div>
+                                        </div>
+                                         <div className="space-y-2 pt-4">
+                                            <h4 className="font-bold text-base">Narrative</h4>
+                                            <div className="text-sm text-foreground whitespace-pre-wrap break-words mt-1 border p-3 rounded-md bg-background">
+                                                {complaint.incidentDetails}
+                                            </div>
+                                        </div>
 
                                             {complaint.priorHistory.hasPriorIncidents && complaint.priorHistory.priorIncidentsDetails && (
                                                  <div className="space-y-2">
@@ -491,7 +697,6 @@ function PoshDeskContent() {
                                                     </p>
                                                 </div>
                                             )}
-                                        </div>
                                         
                                         <PoshCaseHistory trail={complaint.auditTrail} />
                                         
