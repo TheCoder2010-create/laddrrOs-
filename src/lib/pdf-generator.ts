@@ -8,6 +8,7 @@ import type { AuditEvent, Feedback, OneOnOneHistoryItem } from '@/services/feedb
 import type { PoshComplaint, PoshAuditEvent } from '@/services/posh-service';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from './role-mapping';
+import { addAdminLogEntry } from '@/services/admin-service';
 
 
 // Extend jsPDF with autoTable plugin
@@ -243,6 +244,9 @@ export const downloadPoshCasePDF = (caseDetails: PoshComplaint, downloadedBy: Ro
         doc.text(`Page ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
       }
     });
+
+    // Log the download action
+    addAdminLogEntry(downloadedBy, 'Downloaded POSH Case PDF', caseDetails.caseId);
 
     const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
     doc.save(`POSH_Report_${caseDetails.caseId}_${timestamp}.pdf`);

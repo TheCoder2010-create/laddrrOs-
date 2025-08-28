@@ -3,6 +3,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
+import { addAdminLogEntry } from '@/services/admin-service';
 
 // ==========================================
 // Data Structures & Types
@@ -277,6 +278,10 @@ export async function assignPoshCase(
         actor: actor,
         details: `${eventName} for: ${assignees.join(', ')}.${comment ? ` Note: "${comment}"` : ''}`
     });
+
+    // Log this important action to the central admin log
+    const actionText = `${mode === 'assign' ? 'Assigned' : 'Unassigned'} ${assignees.join(', ')} ${mode === 'assign' ? 'to' : 'from'} case`;
+    addAdminLogEntry(actor, actionText, caseId);
 
     savePoshToStorage(allComplaints);
 }

@@ -28,7 +28,7 @@ const saveAdminLogToStorage = (log: AdminLogEntry[]): void => {
     sessionStorage.setItem(ADMIN_LOG_KEY, JSON.stringify(log));
 };
 
-const addAdminLogEntry = (actor: string, action: string, caseId?: string) => {
+export const addAdminLogEntry = (actor: string, action: string, caseId?: string) => {
     const log = getAdminLogFromStorage();
     const newEntry: AdminLogEntry = {
         id: uuidv4(),
