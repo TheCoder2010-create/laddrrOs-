@@ -283,7 +283,7 @@ function PoshDeskContent() {
                                 <div className="pt-4 space-y-4">
                                     <div>
                                         <h4 className="font-semibold">Incident Details</h4>
-                                        <div className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-background">
+                                        <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words mt-1 border p-3 rounded-md bg-background">
                                             {complaint.incidentDetails}
                                         </div>
                                     </div>
