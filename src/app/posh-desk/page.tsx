@@ -332,14 +332,14 @@ export default function PoshDeskPage() {
         )
     }
 
-    if (role !== 'ICC Head') {
+    if (!['ICC Head', 'ICC Member'].includes(role)) {
       return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
           <div className="p-4 md:p-8">
             <Card>
               <CardHeader>
                 <CardTitle>Access Denied</CardTitle>
-                <CardDescription>You do not have permission to view the POSH Desk. This view is for the ICC Head. ICC Members will see their assigned cases here.</CardDescription>
+                <CardDescription>You do not have permission to view the POSH Desk. This view is for ICC members only.</CardDescription>
               </CardHeader>
             </Card>
           </div>
