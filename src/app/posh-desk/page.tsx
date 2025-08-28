@@ -580,6 +580,8 @@ function PoshDeskContent() {
     const { role } = useRole();
     const [complaints, setComplaints] = useState<PoshComplaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
+
 
     const fetchComplaints = useCallback(async () => {
         setIsLoading(true);
@@ -595,12 +597,17 @@ function PoshDeskContent() {
     }, [role]);
 
     const handleUpdate = useCallback(() => {
-        fetchComplaints();
-    }, [fetchComplaints]);
+        const currentOpenItem = openAccordionItem;
+        fetchComplaints().then(() => {
+            if (currentOpenItem) {
+                setOpenAccordionItem(currentOpenItem);
+            }
+        });
+    }, [fetchComplaints, openAccordionItem]);
 
     useEffect(() => {
         fetchComplaints();
-        const handleStorageChange = () => fetchComplaints();
+        const handleStorageChange = () => handleUpdate();
         window.addEventListener('storage', handleStorageChange);
         window.addEventListener('poshComplaintUpdated', handleStorageChange);
 
@@ -608,7 +615,7 @@ function PoshDeskContent() {
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('poshComplaintUpdated', handleStorageChange);
         };
-    }, [fetchComplaints]);
+    }, [fetchComplaints, handleUpdate]);
     
     return (
       <div className="p-4 md:p-8 space-y-6">
@@ -637,7 +644,13 @@ function PoshDeskContent() {
                             </p>
                         </div>
                     ) : (
-                        <Accordion type="single" collapsible className="w-full space-y-2">
+                        <Accordion 
+                            type="single" 
+                            collapsible 
+                            className="w-full space-y-2"
+                            value={openAccordionItem}
+                            onValueChange={setOpenAccordionItem}
+                        >
                             {complaints.map((complaint) => (
                                 <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
                                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
