@@ -46,7 +46,9 @@ export async function getAdminAuditLog(): Promise<AdminLogEntry[]> {
 }
 
 export async function getAllUsers(): Promise<{ all: string[], icc: string[] }> {
-    const allUserNames = Object.values(roleUserMapping).map(u => u.name);
+    const allUserNamesWithDuplicates = Object.values(roleUserMapping).map(u => u.name);
+    const allUserNames = [...new Set(allUserNamesWithDuplicates)]; // Remove duplicates
+    
     const poshCases = await getPoshFromStorage();
     const iccMembers = new Set<string>();
 
