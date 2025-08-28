@@ -285,7 +285,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                         )}
                     </p>
                     <div className="relative">
-                        <Textarea 
+                         <Textarea 
                             placeholder="Add a private note..." 
                             value={assignmentComment} 
                             onChange={(e) => setAssignmentComment(e.target.value)} 
@@ -617,6 +617,10 @@ function PoshDeskContent() {
         };
     }, [fetchComplaints, handleUpdate]);
     
+    const capitalizeFirstLetter = (string: string) => {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    
     return (
       <div className="p-4 md:p-8 space-y-6">
         <Card>
@@ -653,10 +657,10 @@ function PoshDeskContent() {
                         >
                             {complaints.map((complaint) => (
                                 <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
-                                     <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                                     <AccordionTrigger className="px-4 py-3 text-left hover:no-underline [&[data-state=open]>svg]:rotate-180">
                                         <div className="flex justify-between items-center w-full">
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-foreground truncate">{complaint.title}</p>
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <p className="font-semibold text-foreground truncate">{capitalizeFirstLetter(complaint.title)}</p>
                                             </div>
                                             <div className="flex items-center gap-4 pl-2">
                                                 <span className="text-xs text-muted-foreground font-mono cursor-text hidden sm:inline-block">
