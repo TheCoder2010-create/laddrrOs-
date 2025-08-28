@@ -100,6 +100,7 @@ export interface PoshComplaintInput {
     priorComplaintsDetails?: string;
     delayJustification?: string;
     delayEvidenceFiles?: File[];
+    role: Role;
 }
 
 
@@ -108,6 +109,8 @@ export interface PoshComplaintInput {
 // ==========================================
 
 const POSH_COMPLAINTS_KEY = 'posh_complaints_storage';
+const getPoshCaseKey = (role: string | null) => role ? `posh_cases_${role.replace(/\s/g, '_')}` : null;
+
 
 const generatePoshCaseId = () => `Org-POSH-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -207,13 +210,21 @@ export async function submitPoshComplaint(input: PoshComplaintInput): Promise<Po
         auditTrail: [{
             event: 'Complaint Filed',
             timestamp: createdAt,
-            actor: 'System', // The initial actor is the system itself
+            actor: input.role, 
             details: `New POSH complaint filed by ${input.complainantName}.`,
         }],
     };
 
     allComplaints.unshift(newComplaint);
     savePoshToStorage(allComplaints);
+
+    const caseKey = getPoshCaseKey(input.role);
+    if (caseKey) {
+        const caseIds = JSON.parse(sessionStorage.getItem(caseKey) || '[]');
+        caseIds.push(caseId);
+        sessionStorage.setItem(caseKey, JSON.stringify(caseIds));
+    }
+
     return newComplaint;
 }
 
@@ -225,6 +236,11 @@ export async function getAllPoshComplaints(): Promise<PoshComplaint[]> {
 export async function getComplaintsForUser(userName: string): Promise<PoshComplaint[]> {
     const allComplaints = await getAllPoshComplaints();
     return allComplaints.filter(c => c.complainantInfo.name === userName);
+}
+
+export async function getComplaintsByIds(caseIds: string[]): Promise<PoshComplaint[]> {
+    const allComplaints = getPoshFromStorage();
+    return allComplaints.filter(c => caseIds.includes(c.caseId));
 }
 
 export async function getPoshComplaintsForMember(memberRole: Role): Promise<PoshComplaint[]> {

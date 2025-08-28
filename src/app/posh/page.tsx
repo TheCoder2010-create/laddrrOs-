@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon, List, CheckCircle } from 'lucide-react';
-import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent } from '@/services/posh-service';
+import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent, getComplaintsByIds } from '@/services/posh-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
@@ -83,7 +83,9 @@ function CaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     );
 }
 
-function MyPoshSubmissions() {
+const getPoshCaseKey = (role: string | null) => role ? `posh_cases_${role.replace(/\s/g, '_')}` : null;
+
+function MyPoshSubmissions({ onUpdate, key }: { onUpdate: () => void, key: number }) {
     const [myCases, setMyCases] = useState<PoshComplaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { role } = useRole();
@@ -91,9 +93,18 @@ function MyPoshSubmissions() {
     const fetchMyCases = useCallback(async () => {
         if (!role) return;
         setIsLoading(true);
-        const userName = roleUserMapping[role].name;
-        const cases = await getComplaintsForUser(userName);
-        setMyCases(cases);
+        const caseKey = getPoshCaseKey(role);
+        if (caseKey) {
+            const caseIds = JSON.parse(sessionStorage.getItem(caseKey) || '[]');
+            if (caseIds.length > 0) {
+                const cases = await getComplaintsByIds(caseIds);
+                setMyCases(cases);
+            } else {
+                setMyCases([]);
+            }
+        } else {
+             setMyCases([]);
+        }
         setIsLoading(false);
     }, [role]);
 
@@ -106,14 +117,18 @@ function MyPoshSubmissions() {
             window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('poshComplaintUpdated', handleStorageChange);
         };
-    }, [fetchMyCases]);
+    }, [fetchMyCases, key]);
 
     if (isLoading) {
         return <Skeleton className="h-24 w-full" />
     }
 
     if (myCases.length === 0) {
-        return null; // Don't render the section if there are no cases
+        return (
+             <div className="mt-4 text-center py-8 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">You have not submitted any POSH complaints.</p>
+            </div>
+        );
     }
 
     return (
@@ -311,7 +326,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
-                {/* Complaint Info */}
+                
                 <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">Complaint Information</h3>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -339,7 +354,6 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                      </div>
                 </div>
                 
-                {/* Complainant & Respondent */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">Your Details (Complainant)</h3>
@@ -385,7 +399,6 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                      </div>
                  </div>
 
-                {/* Incident Details */}
                 <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">Incident Details</h3>
                      <FormField control={form.control} name="incidentDetails" render={({ field }) => (
@@ -422,7 +435,6 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                     </div>
                 </div>
 
-                {/* Prior History */}
                 <div className="space-y-4 p-4 border rounded-lg">
                      <h3 className="font-semibold text-lg">Prior History</h3>
                      <FormField control={form.control} name="priorIncidents" render={({ field }) => (
@@ -455,7 +467,6 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                     )}
                 </div>
 
-                {/* Consent */}
                 <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">Confidentiality and Consent</h3>
                     <FormField control={form.control} name="confidentialityAcknowledgement" render={({ field }) => (
@@ -484,7 +495,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
           </form>
         </Form>
         <Separator className="my-8" />
-        <MyPoshSubmissions />
+        <MyPoshSubmissions onUpdate={onSubmitted} key={key} />
       </div>
     </>
   );
@@ -493,11 +504,9 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
 
 export default function PoshPage() {
     const { role, setRole, isLoading } = useRole();
-    const [_, startTransition] = useTransition();
-    const [key, setKey] = useState(0); // Used to re-mount the component
+    const [key, setKey] = useState(0); 
 
     const handleSubmission = () => {
-        // Increment key to force re-fetch in MyPoshSubmissions
         setKey(prev => prev + 1);
     }
 
@@ -511,7 +520,7 @@ export default function PoshPage() {
   
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
-            <PoshComplaintForm key={key} onSubmitted={handleSubmission} />
+            <PoshComplaintForm onSubmitted={handleSubmission} />
         </DashboardLayout>
     );
 }
