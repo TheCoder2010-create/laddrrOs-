@@ -271,47 +271,40 @@ function PoshDeskContent() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 border-t space-y-6">
-                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                                        <h3 className="font-semibold text-foreground">Complainant</h3>
-                                        {renderDetail("Name", complaint.complainantInfo.name)}
-                                        {renderDetail("Department", complaint.complainantInfo.department)}
-                                    </div>
-                                    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                                        <h3 className="font-semibold text-foreground">Respondent</h3>
-                                        {renderDetail("Name", complaint.respondentInfo.name)}
-                                        {renderDetail("Details", complaint.respondentInfo.details)}
-                                    </div>
-                                    <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                                        <h3 className="font-semibold text-foreground">Incident</h3>
-                                        {renderDetail("Date", complaint.dateOfIncident)}
-                                        {renderDetail("Location", complaint.location)}
-                                    </div>
+                               <div className="border-b pb-4 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
+                                    {renderDetail("Complainant", complaint.complainantInfo.name)}
+                                    {renderDetail("Complainant Dept", complaint.complainantInfo.department)}
+                                    {renderDetail("Respondent", complaint.respondentInfo.name)}
+                                    {renderDetail("Respondent Details", complaint.respondentInfo.details)}
+                                    {renderDetail("Incident Date", complaint.dateOfIncident)}
+                                    {renderDetail("Incident Location", complaint.location)}
                                 </div>
                                 
-                                <div>
-                                    <h4 className="font-semibold">Incident Details</h4>
-                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-background">
-                                        {complaint.incidentDetails}
-                                    </p>
-                                </div>
+                                <div className="pt-4 space-y-4">
+                                    <div>
+                                        <h4 className="font-semibold">Incident Details</h4>
+                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-background">
+                                            {complaint.incidentDetails}
+                                        </p>
+                                    </div>
 
-                                {complaint.priorHistory.hasPriorIncidents && (
-                                     <div>
-                                        <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Incidents</h4>
-                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
-                                            {complaint.priorHistory.priorIncidentsDetails}
-                                        </p>
-                                    </div>
-                                )}
-                                {complaint.priorHistory.hasPriorComplaints && (
-                                     <div>
-                                        <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Complaints</h4>
-                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
-                                            {complaint.priorHistory.priorComplaintsDetails}
-                                        </p>
-                                    </div>
-                                )}
+                                    {complaint.priorHistory.hasPriorIncidents && (
+                                         <div>
+                                            <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Incidents</h4>
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
+                                                {complaint.priorHistory.priorIncidentsDetails}
+                                            </p>
+                                        </div>
+                                    )}
+                                    {complaint.priorHistory.hasPriorComplaints && (
+                                         <div>
+                                            <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Complaints</h4>
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1 border p-3 rounded-md bg-orange-500/10">
+                                                {complaint.priorHistory.priorComplaintsDetails}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                                 
                                 <PoshCaseHistory trail={complaint.auditTrail} />
                                 
