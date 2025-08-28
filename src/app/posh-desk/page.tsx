@@ -519,7 +519,7 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
                                     {filteredAdminLog.map(log => (
                                         <TableRow key={log.id}>
                                             <TableCell>{format(new Date(log.timestamp), 'Pp')}</TableCell>
-                                            <TableCell className="font-mono text-xs">{log.caseId}</TableCell>
+                                            <TableCell className="font-mono text-sm">{log.caseId}</TableCell>
                                             <TableCell>{log.actor}</TableCell>
                                             <TableCell>{log.action}</TableCell>
                                         </TableRow>
@@ -680,7 +680,7 @@ function PoshDeskContent() {
                                                 <p className="font-semibold text-foreground truncate">{capitalizeFirstLetter(complaint.title)}</p>
                                             </div>
                                             <div className="flex items-center gap-4 pl-2">
-                                                <span className="text-xs text-muted-foreground font-mono cursor-text hidden sm:inline-block">
+                                                <span className="text-sm text-muted-foreground font-mono cursor-text hidden sm:inline-block">
                                                     ID: {complaint.caseId}
                                                 </span>
                                                 <Badge variant={complaint.caseStatus === 'New' ? 'destructive' : 'secondary'}>
@@ -693,7 +693,7 @@ function PoshDeskContent() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                                             <div className="space-y-1">
                                                 <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
-                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="text-foreground font-mono text-xs">{complaint.caseId}</span></div>
+                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="text-foreground font-mono text-sm">{complaint.caseId}</span></div>
                                                 <div><strong className="text-muted-foreground">Title: </strong> <span className="text-foreground">{complaint.title}</span></div>
                                                 <div><strong className="text-muted-foreground">Date: </strong> <span className="text-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
                                                 <div><strong className="text-muted-foreground">Location: </strong> <span className="text-foreground">{complaint.location}</span></div>
@@ -782,4 +782,3 @@ export default function PoshDeskPage() {
         </DashboardLayout>
     );
 }
-
