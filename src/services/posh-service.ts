@@ -119,7 +119,7 @@ const fileToDataUri = (file: File): Promise<string> => {
     });
 };
 
-const getPoshFromStorage = (): PoshComplaint[] => {
+export const getPoshFromStorage = (): PoshComplaint[] => {
     if (typeof window === 'undefined') return [];
     const json = sessionStorage.getItem(POSH_COMPLAINTS_KEY);
     if (!json) return [];

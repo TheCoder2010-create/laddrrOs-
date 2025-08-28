@@ -3,7 +3,8 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { roleUserMapping, type Role } from '@/hooks/use-role';
-import { getPoshFromStorage, savePoshToStorage, type PoshComplaint, type CaseStatus } from './posh-service';
+import { getPoshFromStorage, type PoshComplaint } from './posh-service';
+import { poshCaseStatuses } from './posh-service';
 
 export interface AdminLogEntry {
     id: string;
@@ -78,7 +79,7 @@ export async function manageIccMembership(user: string, action: 'add' | 'remove'
     addAdminLogEntry('ICC Head', actionText);
 }
 
-export async function overrideCaseStatus(caseId: string, newStatus: CaseStatus, reason: string): Promise<void> {
+export async function overrideCaseStatus(caseId: string, newStatus: typeof poshCaseStatuses[number] | 'New' | 'Closed' | 'Resolved', reason: string): Promise<void> {
     const allComplaints = getPoshFromStorage();
     const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
     if (caseIndex === -1) return;
@@ -94,6 +95,11 @@ export async function overrideCaseStatus(caseId: string, newStatus: CaseStatus, 
         details
     });
 
-    savePoshToStorage(allComplaints);
+    const poshComplaintsKey = 'posh_complaints_storage';
+    if(typeof window !== 'undefined') {
+        sessionStorage.setItem(poshComplaintsKey, JSON.stringify(allComplaints));
+        window.dispatchEvent(new CustomEvent('poshComplaintUpdated'));
+    }
+    
     addAdminLogEntry('ICC Head', `Overrode status for case ${caseId} to "${newStatus}".`, caseId);
 }
