@@ -184,7 +184,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return;
     form.setValue("dateOfIncident", date);
-    setIsDatePickerOpen(false); // Close calendar on selection
+    setIsDatePickerOpen(false);
     const daysDiff = differenceInDays(new Date(), date);
     if (daysDiff > 90) {
       setShowDelayDialog(true);
@@ -344,34 +344,34 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">2. Your Details (Complainant)</h3>
                          <FormField control={form.control} name="complainantName" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel>Full Name</FormLabel>
-                             <FormControl><Input {...field} /></FormControl>
-                             <FormMessage />
+                           <FormItem className="grid grid-cols-3 items-center gap-4">
+                             <FormLabel className="text-right">Full Name</FormLabel>
+                             <FormControl><Input {...field} className="col-span-2" /></FormControl>
+                             <FormMessage className="col-span-3" />
                            </FormItem>
                          )} />
                          <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel>Department</FormLabel>
-                             <FormControl><Input {...field} /></FormControl>
-                             <FormMessage />
+                           <FormItem className="grid grid-cols-3 items-center gap-4">
+                             <FormLabel className="text-right">Department</FormLabel>
+                             <FormControl><Input {...field} className="col-span-2" /></FormControl>
+                             <FormMessage className="col-span-3" />
                            </FormItem>
                          )} />
                      </div>
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">3. Accused Person's Details (Respondent)</h3>
                          <FormField control={form.control} name="respondentName" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel>Full Name</FormLabel>
-                             <FormControl><Input {...field} /></FormControl>
-                             <FormMessage />
+                           <FormItem className="grid grid-cols-3 items-center gap-4">
+                             <FormLabel className="text-right">Full Name</FormLabel>
+                             <FormControl><Input {...field} className="col-span-2" /></FormControl>
+                             <FormMessage className="col-span-3" />
                            </FormItem>
                          )} />
                          <FormField control={form.control} name="respondentDetails" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel>Department/Role</FormLabel>
-                             <FormControl><Input {...field} placeholder="(if known)" /></FormControl>
-                             <FormMessage />
+                           <FormItem className="grid grid-cols-3 items-center gap-4">
+                             <FormLabel className="text-right">Department/Role</FormLabel>
+                             <FormControl><Input {...field} placeholder="(if known)" className="col-span-2" /></FormControl>
+                             <FormMessage className="col-span-3" />
                            </FormItem>
                          )} />
                      </div>
