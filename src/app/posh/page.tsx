@@ -23,8 +23,9 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon } from 'lucide-react';
-import { submitPoshComplaint, PoshComplaintInput } from '@/services/feedback-service';
+import { submitPoshComplaint, type PoshComplaintInput } from '@/services/posh-service';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters."),
@@ -37,6 +38,10 @@ const formSchema = z.object({
   incidentDetails: z.string().min(20, "Please provide a detailed description of the incident."),
   witnesses: z.string().optional(),
   evidenceFiles: z.array(z.instanceof(File)).optional(),
+  priorIncidents: z.enum(['yes', 'no']),
+  priorIncidentsDetails: z.string().optional(),
+  priorComplaints: z.enum(['yes', 'no']),
+  priorComplaintsDetails: z.string().optional(),
   delayJustification: z.string().optional(),
   delayEvidenceFiles: z.array(z.instanceof(File)).optional(),
   confidentialityAcknowledgement: z.boolean().refine(val => val === true, { message: "You must acknowledge the confidentiality policy." }),
@@ -61,6 +66,10 @@ function PoshComplaintForm() {
       incidentDetails: "",
       witnesses: "",
       evidenceFiles: [],
+      priorIncidents: 'no',
+      priorIncidentsDetails: "",
+      priorComplaints: 'no',
+      priorComplaintsDetails: "",
       delayJustification: "",
       delayEvidenceFiles: [],
       confidentialityAcknowledgement: false,
@@ -107,6 +116,9 @@ function PoshComplaintForm() {
 
   const evidenceFiles = form.watch("evidenceFiles");
   const delayEvidenceFiles = form.watch("delayEvidenceFiles");
+  const priorIncidents = form.watch("priorIncidents");
+  const priorComplaints = form.watch("priorComplaints");
+
 
   return (
     <>
@@ -280,9 +292,42 @@ function PoshComplaintForm() {
                     </div>
                 </div>
 
+                {/* Prior History */}
+                <div className="space-y-4 p-4 border rounded-lg">
+                     <h3 className="font-semibold text-lg">5. Prior History</h3>
+                     <FormField control={form.control} name="priorIncidents" render={({ field }) => (
+                        <FormItem className="space-y-3">
+                            <FormLabel>Have similar incidents with the respondent occurred before?</FormLabel>
+                            <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                               <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
+                               <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem>
+                            </RadioGroup></FormControl><FormMessage />
+                        </FormItem>
+                     )} />
+                    {priorIncidents === 'yes' && (
+                        <FormField control={form.control} name="priorIncidentsDetails" render={({ field }) => (
+                           <FormItem><FormLabel>If yes, please provide details</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="Briefly describe previous incidents..." /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    )}
+                    <FormField control={form.control} name="priorComplaints" render={({ field }) => (
+                        <FormItem className="space-y-3">
+                            <FormLabel>Have you filed any complaints against the respondent before?</FormLabel>
+                            <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                               <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
+                               <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal">No</FormLabel></FormItem>
+                            </RadioGroup></FormControl><FormMessage />
+                        </FormItem>
+                     )} />
+                    {priorComplaints === 'yes' && (
+                        <FormField control={form.control} name="priorComplaintsDetails" render={({ field }) => (
+                           <FormItem><FormLabel>If yes, please provide details</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="Briefly describe previous complaints (e.g., when, to whom)..." /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    )}
+                </div>
+
                 {/* Consent */}
                 <div className="space-y-4 p-4 border rounded-lg">
-                    <h3 className="font-semibold text-lg">5. Confidentiality and Consent</h3>
+                    <h3 className="font-semibold text-lg">6. Confidentiality and Consent</h3>
                     <FormField control={form.control} name="confidentialityAcknowledgement" render={({ field }) => (
                        <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />

@@ -76,7 +76,7 @@ export interface Feedback {
   parentCaseId?: string; // For retaliation claims
   attachmentNames?: string[];
   attachments?: Attachment[];
-  source?: 'Voice – In Silence' | 'POSH';
+  source?: 'Voice – In Silence'; // This is now distinct from POSH
 }
 
 export interface OneOnOneHistoryItem {
@@ -142,22 +142,6 @@ export interface TrackFeedbackOutput {
   found: boolean;
   feedback?: TrackedFeedback | Feedback; // Can return full feedback for interactive widgets
 }
-
-export interface PoshComplaintInput {
-    title: string;
-    location: string;
-    dateOfIncident: Date;
-    complainantName: string;
-    complainantDepartment: string;
-    respondentName: string;
-    respondentDetails?: string;
-    incidentDetails: string;
-    witnesses?: string;
-    evidenceFiles?: File[];
-    delayJustification?: string;
-    delayEvidenceFiles?: File[];
-}
-
 
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
@@ -1605,64 +1589,4 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
     });
 
     saveFeedbackToStorage(allFeedback);
-}
-
-export async function submitPoshComplaint(input: PoshComplaintInput): Promise<Feedback> {
-    const allFeedback = getFeedbackFromStorage();
-    const trackingId = generateTrackingId();
-
-    const evidenceAttachments = await Promise.all(
-        (input.evidenceFiles || []).map(async (file) => ({
-            name: file.name,
-            dataUri: await fileToDataUri(file),
-        }))
-    );
-    
-    const delayAttachments = await Promise.all(
-        (input.delayEvidenceFiles || []).map(async (file) => ({
-            name: file.name,
-            dataUri: await fileToDataUri(file),
-        }))
-    );
-    
-    const allAttachments = [...evidenceAttachments, ...delayAttachments];
-
-    const messageBody = `
-Complainant: ${input.complainantName} (${input.complainantDepartment})
-Respondent: ${input.respondentName} (${input.respondentDetails || 'N/A'})
-Location: ${input.location}
-Date of Incident: ${input.dateOfIncident.toLocaleDateString()}
-
-Incident Details:
-${input.incidentDetails}
-
-Witnesses:
-${input.witnesses || 'None listed.'}
-
-${input.delayJustification ? `\nJustification for Delay: ${input.delayJustification}` : ''}
-    `;
-
-    const newComplaint: Feedback = {
-        trackingId,
-        subject: `POSH Complaint: ${input.title}`,
-        message: messageBody,
-        submittedAt: new Date(),
-        submittedBy: getRoleByName(input.complainantName) || 'Employee', // Best guess
-        source: 'POSH',
-        criticality: 'Critical',
-        status: 'Open',
-        assignedTo: ['ICC Head'],
-        viewed: false,
-        attachments: allAttachments,
-        auditTrail: [{
-            event: 'POSH Complaint Filed',
-            timestamp: new Date(),
-            actor: getRoleByName(input.complainantName) || 'Employee',
-            details: `New complaint filed by ${input.complainantName}.`,
-        }],
-    };
-
-    allFeedback.unshift(newComplaint);
-    saveFeedbackToStorage(allFeedback);
-    return newComplaint;
 }
