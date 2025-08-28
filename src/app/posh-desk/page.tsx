@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase, Search } from 'lucide-react';
-import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus } from '@/services/posh-service';
+import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus, poshCaseStatuses } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
-import { format, differenceInDays, startOfQuarter, endOfQuarter, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { format, differenceInDays, startOfQuarter, endOfQuarter, startOfMonth, endOfYear } from 'date-fns';
 import { formatActorName, roleUserMapping } from '@/lib/role-mapping';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,18 +63,7 @@ function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     );
 }
 
-const caseStatuses = [
-    'Under Preliminary Review',
-    'Inquiry Initiated',
-    'Evidence Review',
-    'Hearing Scheduled',
-    'Report Drafted',
-    'Resolved (Action Taken)',
-    'Closed (No Action Required)',
-    'Escalated to External Authority'
-] as const;
-
-type CaseStatus = typeof caseStatuses[number];
+type CaseStatus = typeof poshCaseStatuses[number];
 
 function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
     const { role } = useRole();
@@ -236,7 +225,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
             <div className="p-4 border rounded-lg bg-background space-y-3">
                 <Label className="font-semibold text-base">Interactive Case Status Checklist</Label>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    {caseStatuses.map(status => {
+                    {poshCaseStatuses.map(status => {
                         const isChecked = isStatusChecked(status);
                         return (
                         <div key={status} className="flex items-center space-x-2">
@@ -658,7 +647,7 @@ function PoshDeskContent() {
                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                                             <div className="space-y-1">
                                                 <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
-                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="text-foreground">{complaint.caseId}</span></div>
+                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="text-foreground font-mono text-xs">{complaint.caseId}</span></div>
                                                 <div><strong className="text-muted-foreground">Title: </strong> <span className="text-foreground">{complaint.title}</span></div>
                                                 <div><strong className="text-muted-foreground">Date: </strong> <span className="text-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
                                                 <div><strong className="text-muted-foreground">Location: </strong> <span className="text-foreground">{complaint.location}</span></div>
