@@ -195,7 +195,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns', badge: myConcernsCount > 0 ? myConcernsCount : null, badgeVariant: 'destructive' as const },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
     { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence', badge: voiceInSilenceCount > 0 ? voiceInSilenceCount : null, badgeVariant: 'destructive' as const },
-    { href: '/posh', icon: <Scale />, label: 'POSH' },
+    ...(!isIccMember ? [{ href: '/posh', icon: <Scale />, label: 'POSH' }] : []),
   ];
 
   const hrMenuItems = [
