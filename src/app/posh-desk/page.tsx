@@ -2,18 +2,23 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRole } from '@/hooks/use-role';
+import { useRole, availableRolesForAssignment } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Scale, PlusCircle, AlertTriangle, CheckCircle } from 'lucide-react';
-import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent } from '@/services/posh-service';
+import { Scale, PlusCircle, AlertTriangle, CheckCircle, Users, ChevronDown, Send, Loader2 } from 'lucide-react';
+import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { formatActorName } from '@/lib/role-mapping';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+
 
 function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     if (!trail || trail.length === 0) return null;
@@ -46,6 +51,117 @@ function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     );
 }
 
+function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+
+    // State for assigning case
+    const [assignees, setAssignees] = useState<Role[]>([]);
+    const [isAssigning, setIsAssigning] = useState(false);
+    const availableIccMembers = availableRolesForAssignment.filter(r => r === 'ICC Member');
+
+    // State for adding internal note
+    const [note, setNote] = useState('');
+    const [isAddingNote, setIsAddingNote] = useState(false);
+    
+    const handleAssigneeChange = (role: Role) => {
+        setAssignees(prev => 
+            prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+        );
+    };
+
+    const handleAssign = async () => {
+        if (!role || assignees.length === 0) return;
+        setIsAssigning(true);
+        try {
+            await assignPoshCase(complaint.caseId, assignees, role);
+            toast({ title: 'Case Assigned', description: `Case assigned to ${assignees.join(', ')}.`});
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Assignment Failed' });
+        } finally {
+            setIsAssigning(false);
+        }
+    };
+    
+    const handleAddNote = async () => {
+        if (!role || !note) return;
+        setIsAddingNote(true);
+        try {
+            await addPoshInternalNote(complaint.caseId, note, role);
+            toast({ title: 'Note Added', description: 'Your internal note has been saved.' });
+            setNote('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Failed to Add Note' });
+        } finally {
+            setIsAddingNote(false);
+        }
+    }
+    
+    return (
+        <div className="pt-4 border-t">
+            <h3 className="font-semibold text-lg text-foreground mb-4">ICC Actions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Assign Case Panel */}
+                <div className="space-y-3 p-4 border rounded-lg bg-background">
+                    <Label className="font-semibold text-base">Assign Case</Label>
+                    <p className="text-sm text-muted-foreground">Assign one or more ICC members to this case. They will be notified.</p>
+                     <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="flex-1 justify-between">
+                                    <span>{assignees.length > 0 ? assignees.join(', ') : 'Select ICC Member(s)'}</span>
+                                    <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                                {availableIccMembers.map(r => (
+                                    <DropdownMenuCheckboxItem
+                                        key={r}
+                                        checked={assignees.includes(r)}
+                                        onCheckedChange={() => handleAssigneeChange(r)}
+                                        onSelect={(e) => e.preventDefault()}
+                                    >
+                                        {r}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                         <Button onClick={handleAssign} disabled={isAssigning || assignees.length === 0}>
+                            {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            Assign
+                        </Button>
+                    </div>
+                     {complaint.assignedTo.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                            Currently assigned to: <span className="font-semibold text-primary">{complaint.assignedTo.join(', ')}</span>
+                        </p>
+                    )}
+                </div>
+
+                {/* Add Internal Note Panel */}
+                <div className="space-y-3 p-4 border rounded-lg bg-background">
+                     <Label className="font-semibold text-base">Add Internal Note</Label>
+                     <p className="text-sm text-muted-foreground">Add a private note to the case history, visible only to the ICC.</p>
+                     <div className="relative">
+                        <Textarea 
+                            value={note} 
+                            onChange={(e) => setNote(e.target.value)}
+                            placeholder="Your private notes..."
+                            rows={3}
+                            className="pr-12"
+                        />
+                        <Button onClick={handleAddNote} disabled={isAddingNote || !note} size="icon" className="absolute top-2 right-2 h-7 w-7 rounded-full">
+                            {isAddingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                     </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function PoshDeskContent() {
     const [complaints, setComplaints] = useState<PoshComplaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -56,6 +172,10 @@ function PoshDeskContent() {
         setComplaints(data);
         setIsLoading(false);
     }, []);
+
+    const handleUpdate = useCallback(() => {
+        fetchComplaints();
+    }, [fetchComplaints]);
 
     useEffect(() => {
         fetchComplaints();
@@ -114,9 +234,17 @@ function PoshDeskContent() {
                                             Case #{complaint.caseId.substring(0, 8)}...
                                         </p>
                                     </div>
-                                    <Badge variant={complaint.caseStatus === 'New' ? 'destructive' : 'secondary'}>
-                                        {complaint.caseStatus}
-                                    </Badge>
+                                    <div className="flex items-center gap-4">
+                                        {complaint.assignedTo.length > 0 && (
+                                            <Badge variant="outline" className="hidden md:flex items-center gap-2">
+                                                <Users className="h-3 w-3" />
+                                                {complaint.assignedTo.join(', ')}
+                                            </Badge>
+                                        )}
+                                        <Badge variant={complaint.caseStatus === 'New' ? 'destructive' : 'secondary'}>
+                                            {complaint.caseStatus}
+                                        </Badge>
+                                    </div>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 border-t space-y-6">
@@ -164,12 +292,7 @@ function PoshDeskContent() {
                                 
                                 <PoshCaseHistory trail={complaint.auditTrail} />
                                 
-                                <div className="pt-4 border-t">
-                                    <h3 className="font-semibold text-lg text-foreground">ICC Actions (Placeholder)</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        The interactive status checklist and action panel will be built here in the next step.
-                                    </p>
-                                </div>
+                                <ActionPanel complaint={complaint} onUpdate={handleUpdate} />
 
                             </AccordionContent>
                         </AccordionItem>

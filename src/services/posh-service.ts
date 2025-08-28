@@ -217,3 +217,38 @@ export async function getPoshComplaintsForMember(memberRole: Role): Promise<Posh
     const allComplaints = await getAllPoshComplaints();
     return allComplaints.filter(c => c.assignedTo.includes(memberRole));
 }
+
+export async function assignPoshCase(caseId: string, assignees: Role[], actor: Role): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    complaint.assignedTo = [...new Set([...complaint.assignedTo, ...assignees])]; // Add new assignees without duplicates
+    
+    complaint.auditTrail.push({
+        event: 'Case Assigned',
+        timestamp: new Date(),
+        actor: actor,
+        details: `Assigned case to: ${assignees.join(', ')}`
+    });
+
+    savePoshToStorage(allComplaints);
+}
+
+export async function addPoshInternalNote(caseId: string, note: string, actor: Role): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    
+    complaint.auditTrail.push({
+        event: 'Internal Note Added',
+        timestamp: new Date(),
+        actor: actor,
+        details: note
+    });
+
+    savePoshToStorage(allComplaints);
+}
