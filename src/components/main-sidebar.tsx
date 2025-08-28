@@ -20,6 +20,7 @@ import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { getAllPoshComplaints } from '@/services/posh-service';
 
 
 interface MainSidebarProps {
@@ -28,7 +29,7 @@ interface MainSidebarProps {
 }
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
-  const { availableRoles } = useRole();
+  const { availableRoles, isIccMember } = useRole();
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
   const currentUserName = currentUser.name;
   const pathname = usePathname();
@@ -45,6 +46,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     try {
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
+      const poshComplaints = await getAllPoshComplaints();
+
 
       // Vault count (HR Head only)
       if (currentRole === 'HR Head') {
@@ -148,9 +151,14 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setCoachingCount(devCount);
 
       // Posh Desk Count
-      if (currentRole === 'ICC Head' || currentRole === 'ICC Member') {
-        const poshCases = feedback.filter(f => f.source === 'POSH' && f.assignedTo?.includes(currentRole as any) && f.status !== 'Resolved').length;
-        setPoshDeskCount(poshCases);
+      if (isIccMember) {
+        let count = 0;
+        if (currentRole === 'ICC Head') {
+            count = poshComplaints.filter(c => c.caseStatus === 'New').length;
+        } else {
+            count = poshComplaints.filter(c => c.assignedTo?.includes(currentRole as any) && c.caseStatus !== 'Resolved' && c.caseStatus !== 'Closed (No Action Required)' && c.caseStatus !== 'Closed').length;
+        }
+        setPoshDeskCount(count);
       } else {
         setPoshDeskCount(0);
       }
@@ -166,7 +174,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setMyConcernsCount(0);
       setPoshDeskCount(0);
     }
-  }, [currentRole, currentUserName]);
+  }, [currentRole, currentUserName, isIccMember]);
 
 
   useEffect(() => {
@@ -178,15 +186,16 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
     window.addEventListener('storage', handleDataUpdate);
     window.addEventListener('feedbackUpdated', handleDataUpdate);
+    window.addEventListener('poshComplaintUpdated', handleDataUpdate);
 
     return () => {
         window.removeEventListener('storage', handleDataUpdate);
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
+        window.removeEventListener('poshComplaintUpdated', handleDataUpdate);
     };
   }, [fetchFeedbackCounts]);
 
   const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
-  const isIccMember = ['ICC Head', 'ICC Member'].includes(currentRole);
 
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },

@@ -8,7 +8,7 @@ import { getIccMembers } from '@/services/admin-service';
 export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Voice – In Silence' | 'Anonymous' | 'ICC Head' | 'ICC Member';
 
 export const availableRoles: Role[] = ['Employee', 'Team Lead', 'AM', 'Manager', 'HR Head', 'ICC Head', 'ICC Member'];
-export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM', 'ICC Head', 'ICC Member'];
+export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM'];
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 
@@ -26,7 +26,8 @@ export const useRole = () => {
         }
         try {
             const iccMembers = await getIccMembers();
-            setIsIccMember(iccMembers.includes(currentRole));
+            // A user is an ICC member if their specific role is in the list, OR if they are the ICC Head/Member role itself.
+            setIsIccMember(iccMembers.includes(currentRole) || currentRole === 'ICC Head' || currentRole === 'ICC Member');
         } catch (error) {
             console.error("Failed to check ICC membership", error);
             setIsIccMember(false);

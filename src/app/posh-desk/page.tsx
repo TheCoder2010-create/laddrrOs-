@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRole, availableRolesForAssignment, type Role } from '@/hooks/use-role';
+import { useRole, type Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ import type { DateRange } from 'react-day-picker';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getAdminAuditLog, getAllUsers, manageIccMembership, overrideCaseStatus, type AdminLogEntry } from '@/services/admin-service';
+import { getAdminAuditLog, getAllUsers, manageIccMembership, overrideCaseStatus, type AdminLogEntry, getIccMembers } from '@/services/admin-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { downloadPoshCasePDF } from '@/lib/pdf-generator';
@@ -85,6 +85,7 @@ type CaseStatus = typeof poshCaseStatuses[number];
 function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
+    const [availableForAssignment, setAvailableForAssignment] = useState<Role[]>([]);
 
     // Assignment state
     const [assignees, setAssignees] = useState<Role[]>([]);
@@ -102,6 +103,14 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
     const [tagAsFinal, setTagAsFinal] = useState(false);
     const [isSubmittingDisciplinary, setIsSubmittingDisciplinary] = useState(false);
     const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
+
+    useEffect(() => {
+        const fetchIccMembers = async () => {
+            const members = await getIccMembers();
+            setAvailableForAssignment(members);
+        };
+        fetchIccMembers();
+    }, []);
 
     useEffect(() => {
         setAssignees([]);
@@ -191,7 +200,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
 
     const assignableRolesForDropdown = isUnassignMode 
         ? (complaint.assignedTo || []) 
-        : availableRolesForAssignment.filter(r => r === 'ICC Member' && !complaint.assignedTo?.includes(r));
+        : availableForAssignment.filter(r => !complaint.assignedTo?.includes(r));
     
     const currentStatusIndex = complaint.caseStatus === 'New' 
       ? -1 
@@ -543,7 +552,7 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
                         <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
                             <SelectTrigger><SelectValue placeholder="Select a case..." /></SelectTrigger>
                             <SelectContent>
-                                {complaints.map(c => <SelectItem key={c.caseId} value={c.caseId}>{c.title} ({c.caseId})</SelectItem>)}
+                                {complaints.map(c => <SelectItem key={c.caseId} value={c.caseId}>{c.title} ({c.caseId.substring(0,13)}...)</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as CaseStatus)}>
@@ -598,7 +607,7 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
 }
 
 function PoshDeskContent() {
-    const { role } = useRole();
+    const { role, isIccMember } = useRole();
     const [complaints, setComplaints] = useState<PoshComplaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
@@ -610,12 +619,16 @@ function PoshDeskContent() {
         
         if (role === 'ICC Member') {
             setComplaints(data.filter(c => c.assignedTo.includes('ICC Member')));
-        } else {
+        } else if (role === 'ICC Head') {
             setComplaints(data);
+        } else if (isIccMember) {
+             setComplaints(data.filter(c => c.assignedTo.includes(role!)));
+        } else {
+            setComplaints([]);
         }
 
         setIsLoading(false);
-    }, [role]);
+    }, [role, isIccMember]);
 
     const handleUpdate = useCallback(() => {
         const currentOpenItem = openAccordionItem;
