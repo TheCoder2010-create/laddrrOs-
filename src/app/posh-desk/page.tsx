@@ -513,7 +513,12 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
                         <ScrollArea className="h-[60vh]">
                             <Table>
                                 <TableHeader>
-                                    <TableRow><TableHead>Timestamp</TableHead><TableHead>Case ID</TableHead><TableHead>Actor</TableHead><TableHead>Action</TableHead></TableRow>
+                                    <TableRow>
+                                        <TableHead>Timestamp</TableHead>
+                                        <TableHead>Case ID</TableHead>
+                                        <TableHead>Actor</TableHead>
+                                        <TableHead>Action</TableHead>
+                                    </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredAdminLog.map(log => (
