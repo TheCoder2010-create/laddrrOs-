@@ -2,7 +2,8 @@
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import { roleUserMapping, type Role } from '@/hooks/use-role';
+import { type Role } from '@/hooks/use-role';
+import { roleUserMapping } from '@/lib/role-mapping';
 import { getPoshFromStorage, type PoshComplaint } from './posh-service';
 import { poshCaseStatuses } from './posh-service';
 
