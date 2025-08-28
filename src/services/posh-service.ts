@@ -213,6 +213,11 @@ export async function getAllPoshComplaints(): Promise<PoshComplaint[]> {
     return getPoshFromStorage().sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+export async function getComplaintsForUser(userName: string): Promise<PoshComplaint[]> {
+    const allComplaints = await getAllPoshComplaints();
+    return allComplaints.filter(c => c.complainantInfo.name === userName);
+}
+
 export async function getPoshComplaintsForMember(memberRole: Role): Promise<PoshComplaint[]> {
     const allComplaints = await getAllPoshComplaints();
     return allComplaints.filter(c => c.assignedTo.includes(memberRole));

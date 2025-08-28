@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useCallback } from 'react';
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,10 +22,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
-import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon } from 'lucide-react';
-import { submitPoshComplaint, type PoshComplaintInput } from '@/services/posh-service';
+import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon, List, CheckCircle } from 'lucide-react';
+import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent } from '@/services/posh-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { roleUserMapping, formatActorName } from '@/lib/role-mapping';
 
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters."),
@@ -48,8 +52,107 @@ const formSchema = z.object({
   consent: z.boolean().refine(val => val === true, { message: "You must provide consent to proceed." }),
 });
 
-function PoshComplaintForm() {
+function CaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
+    if (!trail || trail.length === 0) return null;
+
+    return (
+        <div className="space-y-2 pt-4">
+            <h4 className="font-semibold">Case History</h4>
+            <div className="relative p-4 border rounded-md bg-muted/50">
+                <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
+                <div className="space-y-4">
+                    {trail.map((event, index) => {
+                        return (
+                            <div key={index} className="flex items-start gap-4 relative">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
+                                    <CheckCircle className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 -mt-1">
+                                    <p className="font-medium text-sm">
+                                        {event.event} by <span className="text-primary">{formatActorName(event.actor)}</span>
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
+                                    {event.details && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.details}</p>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function MyPoshSubmissions() {
+    const [myCases, setMyCases] = useState<PoshComplaint[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { role } = useRole();
+
+    const fetchMyCases = useCallback(async () => {
+        if (!role) return;
+        setIsLoading(true);
+        const userName = roleUserMapping[role].name;
+        const cases = await getComplaintsForUser(userName);
+        setMyCases(cases);
+        setIsLoading(false);
+    }, [role]);
+
+    useEffect(() => {
+        fetchMyCases();
+        const handleStorageChange = () => fetchMyCases();
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('poshComplaintUpdated', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('poshComplaintUpdated', handleStorageChange);
+        };
+    }, [fetchMyCases]);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full" />
+    }
+
+    if (myCases.length === 0) {
+        return null; // Don't render the section if there are no cases
+    }
+
+    return (
+        <div className="space-y-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+                <List className="h-5 w-5" />
+                My Raised Cases
+            </h2>
+             <Accordion type="single" collapsible className="w-full">
+                 {myCases.map(item => (
+                    <AccordionItem value={item.caseId} key={item.caseId}>
+                        <AccordionTrigger>
+                           <div className="flex justify-between items-center w-full">
+                                <div className="flex flex-col items-start text-left">
+                                    <p className="font-semibold">{item.title}</p>
+                                    <p className="text-sm font-normal text-muted-foreground">
+                                        Case #{item.caseId.substring(0, 8)}... &bull; Submitted {format(new Date(item.createdAt), 'PPP')}
+                                    </p>
+                                </div>
+                                <div className="mr-2">
+                                     <Badge variant={item.caseStatus === 'New' ? 'destructive' : 'secondary'}>
+                                        {item.caseStatus}
+                                    </Badge>
+                                </div>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-4 pt-2">
+                            <CaseHistory trail={item.auditTrail} />
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
+        </div>
+    )
+}
+
+function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
   const { toast } = useToast();
+  const { role } = useRole();
   const [isPending, startTransition] = useTransition();
   const [showDelayDialog, setShowDelayDialog] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
@@ -59,7 +162,7 @@ function PoshComplaintForm() {
     defaultValues: {
       title: "",
       location: "",
-      complainantName: "",
+      complainantName: role ? roleUserMapping[role].name : "",
       complainantDepartment: "",
       respondentName: "",
       respondentDetails: "",
@@ -103,6 +206,7 @@ function PoshComplaintForm() {
         await submitPoshComplaint(values as PoshComplaintInput);
         setShowConfirmationDialog(true);
         form.reset();
+        onSubmitted();
       } catch (error) {
         console.error("POSH Submission failed:", error);
         toast({
@@ -127,7 +231,7 @@ function PoshComplaintForm() {
           <AlertDialogHeader>
             <AlertDialogTitle>Complaint Received</AlertDialogTitle>
             <AlertDialogDescription>
-              Your POSH complaint has been submitted successfully. The ICC will review your case and contact you for the next steps.
+              Your POSH complaint has been submitted successfully. The ICC will review your case and contact you for the next steps. You can monitor the status of your case below.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -238,7 +342,7 @@ function PoshComplaintForm() {
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">2. Your Details (Complainant)</h3>
                          <FormField control={form.control} name="complainantName" render={({ field }) => (
-                           <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                           <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
                          )} />
                          <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
                            <FormItem><FormLabel>Department <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -353,6 +457,8 @@ function PoshComplaintForm() {
             </Card>
           </form>
         </Form>
+        <Separator className="my-8" />
+        <MyPoshSubmissions />
       </div>
     </>
   );
@@ -361,6 +467,13 @@ function PoshComplaintForm() {
 
 export default function PoshPage() {
     const { role, setRole, isLoading } = useRole();
+    const [_, startTransition] = useTransition();
+    const [key, setKey] = useState(0); // Used to re-mount the component
+
+    const handleSubmission = () => {
+        // Increment key to force re-fetch in MyPoshSubmissions
+        setKey(prev => prev + 1);
+    }
 
     if (isLoading || !role) {
         return (
@@ -372,7 +485,7 @@ export default function PoshPage() {
   
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
-            <PoshComplaintForm />
+            <PoshComplaintForm key={key} onSubmitted={handleSubmission} />
         </DashboardLayout>
     );
 }
