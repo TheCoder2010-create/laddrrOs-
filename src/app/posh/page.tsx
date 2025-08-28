@@ -254,7 +254,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
               name="delayJustification"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Justification for Delay <span className="text-destructive">*</span></FormLabel>
+                  <FormLabel>Justification for Delay</FormLabel>
                   <FormControl>
                     <Textarea {...field} rows={5} placeholder="Explain the reason for the delay..." />
                   </FormControl>
@@ -312,16 +312,28 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                 {/* Complaint Info */}
                 <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">1. Complaint Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="title" render={({ field }) => (
-                           <FormItem><FormLabel>Complaint Title <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField control={form.control} name="location" render={({ field }) => (
-                           <FormItem><FormLabel>Location of Incident <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} placeholder="e.g., Office, Cafeteria" /></FormControl><FormMessage /></FormItem>
-                        )} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <FormField control={form.control} name="title" render={({ field }) => (
+                         <FormItem className="flex items-center gap-4">
+                           <FormLabel className="w-1/4">Complaint Title</FormLabel>
+                           <div className="w-3/4">
+                             <FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl>
+                             <FormMessage />
+                           </div>
+                         </FormItem>
+                       )} />
+                       <FormField control={form.control} name="location" render={({ field }) => (
+                         <FormItem className="flex items-center gap-4">
+                           <FormLabel className="w-1/4">Location of Incident</FormLabel>
+                           <div className="w-3/4">
+                             <FormControl><Input {...field} placeholder="e.g., Office, Cafeteria" /></FormControl>
+                             <FormMessage />
+                           </div>
+                         </FormItem>
+                       )} />
                     </div>
                      <FormField control={form.control} name="dateOfIncident" render={({ field }) => (
-                       <FormItem className="flex flex-col"><FormLabel>Date of Incident <span className="text-destructive">*</span></FormLabel>
+                       <FormItem className="flex items-center gap-4"><FormLabel className="w-1/4">Date of Incident</FormLabel>
                          <Popover><PopoverTrigger asChild>
                            <FormControl>
                              <Button variant={"outline"} className={cn("w-[240px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -342,19 +354,43 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">2. Your Details (Complainant)</h3>
                          <FormField control={form.control} name="complainantName" render={({ field }) => (
-                           <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
+                           <FormItem className="flex items-center gap-4">
+                             <FormLabel className="w-1/4">Full Name</FormLabel>
+                             <div className="w-3/4">
+                               <FormControl><Input {...field} /></FormControl>
+                               <FormMessage />
+                             </div>
+                           </FormItem>
                          )} />
                          <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
-                           <FormItem><FormLabel>Department <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                           <FormItem className="flex items-center gap-4">
+                             <FormLabel className="w-1/4">Department</FormLabel>
+                             <div className="w-3/4">
+                               <FormControl><Input {...field} /></FormControl>
+                               <FormMessage />
+                             </div>
+                           </FormItem>
                          )} />
                      </div>
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">3. Accused Person's Details (Respondent)</h3>
                          <FormField control={form.control} name="respondentName" render={({ field }) => (
-                           <FormItem><FormLabel>Full Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                           <FormItem className="flex items-center gap-4">
+                             <FormLabel className="w-1/4">Full Name</FormLabel>
+                             <div className="w-3/4">
+                               <FormControl><Input {...field} /></FormControl>
+                               <FormMessage />
+                             </div>
+                           </FormItem>
                          )} />
                          <FormField control={form.control} name="respondentDetails" render={({ field }) => (
-                           <FormItem><FormLabel>Department/Role (if known)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                           <FormItem className="flex items-center gap-4">
+                             <FormLabel className="w-1/4">Department/Role</FormLabel>
+                             <div className="w-3/4">
+                               <FormControl><Input {...field} placeholder="(if known)" /></FormControl>
+                               <FormMessage />
+                             </div>
+                           </FormItem>
                          )} />
                      </div>
                  </div>
@@ -363,7 +399,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                 <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">4. Incident Details</h3>
                      <FormField control={form.control} name="incidentDetails" render={({ field }) => (
-                       <FormItem><FormLabel>Detailed Description of Incident(s) <span className="text-destructive">*</span></FormLabel><FormControl><Textarea {...field} rows={8} placeholder="Describe what happened, including dates, times, and sequence of events..." /></FormControl><FormMessage /></FormItem>
+                       <FormItem><FormLabel>Detailed Description of Incident(s)</FormLabel><FormControl><Textarea {...field} rows={8} placeholder="Describe what happened, including dates, times, and sequence of events..." /></FormControl><FormMessage /></FormItem>
                      )} />
                      <FormField control={form.control} name="witnesses" render={({ field }) => (
                        <FormItem><FormLabel>Witnesses (if any)</FormLabel><FormControl><Textarea {...field} rows={3} placeholder="List names and contact information of anyone who witnessed the incident(s)." /></FormControl><FormMessage /></FormItem>
@@ -436,14 +472,14 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                        <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                        </FormControl><div className="space-y-1 leading-none">
-                           <FormLabel>I acknowledge that this complaint will be handled confidentially by the ICC. <span className="text-destructive">*</span></FormLabel>
+                           <FormLabel>I acknowledge that this complaint will be handled confidentially by the ICC.</FormLabel>
                        </div></FormItem>
                      )} />
                      <FormField control={form.control} name="consent" render={({ field }) => (
                        <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl>
                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                        </FormControl><div className="space-y-1 leading-none">
-                           <FormLabel>I confirm that the information provided is true to the best of my knowledge and consent to the ICC proceeding with an inquiry. <span className="text-destructive">*</span></FormLabel>
+                           <FormLabel>I confirm that the information provided is true to the best of my knowledge and consent to the ICC proceeding with an inquiry.</FormLabel>
                        </div></FormItem>
                      )} />
                 </div>
