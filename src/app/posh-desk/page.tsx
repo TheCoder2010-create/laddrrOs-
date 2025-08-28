@@ -8,10 +8,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History } from 'lucide-react';
-import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote } from '@/services/posh-service';
+import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase } from 'lucide-react';
+import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { formatActorName } from '@/lib/role-mapping';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { CustomSwitch } from '@/components/ui/custom-switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
@@ -52,17 +53,39 @@ function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     );
 }
 
+const caseStatuses = [
+    'Under Preliminary Review',
+    'Inquiry Initiated',
+    'Evidence Review',
+    'Hearing Scheduled',
+    'Report Drafted',
+    'Resolved (Action Taken)',
+    'Closed (No Action Required)',
+    'Escalated to External Authority'
+] as const;
+
+type CaseStatus = typeof caseStatuses[number];
+
 function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
 
+    // Assignment state
     const [assignees, setAssignees] = useState<Role[]>([]);
     const [assignmentComment, setAssignmentComment] = useState('');
     const [isAssigning, setIsAssigning] = useState(false);
     const [isUnassignMode, setIsUnassignMode] = useState(false);
 
+    // Note/Update state
     const [note, setNote] = useState('');
-    const [isAddingNote, setIsAddingNote] = useState(false);
+    const [isAddingNote, setIsAddingNote] = useState('');
+
+    // Disciplinary & Final Report state
+    const [disciplinaryAction, setDisciplinaryAction] = useState('');
+    const [finalReport, setFinalReport] = useState('');
+    const [tagAsFinal, setTagAsFinal] = useState(false);
+    const [isSubmittingDisciplinary, setIsSubmittingDisciplinary] = useState(false);
+    const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
 
     useEffect(() => {
         setAssignees([]);
@@ -90,53 +113,157 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
         }
     };
     
-    const handleAddNote = async () => {
+    const handleAddNote = async (noteType: string, isPublic = false) => {
         if (!role || !note) return;
-        setIsAddingNote(true);
+        setIsAddingNote(noteType);
         try {
-            await addPoshInternalNote(complaint.caseId, note, role);
-            toast({ title: 'Note Added', description: 'Your internal note has been saved.' });
+            await addPoshInternalNote(complaint.caseId, note, role, noteType, isPublic);
+            toast({ title: `${noteType} Added`, description: 'Your note has been saved to the case history.' });
             setNote('');
             onUpdate();
         } catch (error) {
             toast({ variant: 'destructive', title: 'Failed to Add Note' });
         } finally {
-            setIsAddingNote(false);
+            setIsAddingNote('');
+        }
+    }
+
+    const handleStatusChange = async (status: CaseStatus, checked: boolean) => {
+        if (!role) return;
+        // For this demo, we only allow advancing status, not reversing.
+        if (!checked) return;
+
+        try {
+            await updatePoshStatus(complaint.caseId, status, role);
+            toast({ title: 'Status Updated', description: `Case status changed to: ${status}`});
+            onUpdate();
+        } catch (error) {
+             toast({ variant: 'destructive', title: 'Failed to Update Status' });
+        }
+    };
+
+    const handleProposeAction = async () => {
+        if (!role || !disciplinaryAction) return;
+        setIsSubmittingDisciplinary(true);
+        try {
+            await addPoshInternalNote(complaint.caseId, disciplinaryAction, role, 'Disciplinary Action Proposed', false);
+            toast({ title: 'Action Proposed', description: 'Your disciplinary proposal has been logged.' });
+            setDisciplinaryAction('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Failed to Propose Action' });
+        } finally {
+            setIsSubmittingDisciplinary(false);
+        }
+    }
+
+    const handleSubmitFinalReport = async () => {
+        if (!role || !finalReport) return;
+        setIsSubmittingFinal(true);
+        try {
+            await addPoshInternalNote(complaint.caseId, finalReport, role, 'Final Report Submitted', false);
+            if (tagAsFinal) {
+                // In a real app, this would also trigger case locking.
+                await updatePoshStatus(complaint.caseId, 'Closed (No Action Required)', role);
+            }
+            toast({ title: 'Final Report Submitted', description: 'The final report has been added to the case.' });
+            setFinalReport('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Failed to Submit Report' });
+        } finally {
+            setIsSubmittingFinal(false);
         }
     }
 
     const assignableRolesForDropdown = isUnassignMode 
         ? (complaint.assignedTo || []) 
         : availableRolesForAssignment.filter(r => r === 'ICC Member' && !complaint.assignedTo?.includes(r));
+
+    const isStatusChecked = (status: CaseStatus) => {
+        return complaint.auditTrail.some(e => e.event === 'Status Updated' && e.details?.includes(status));
+    }
     
     return (
-        <div className="pt-4 border-t">
-            <h3 className="font-semibold text-lg text-foreground mb-4">ICC Actions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="pt-4 border-t space-y-6">
+            <h3 className="font-semibold text-lg text-foreground">Case Actions</h3>
+            
+            {/* Case Updates Section */}
+            <div className="p-4 border rounded-lg bg-background space-y-3">
+                <Label className="font-semibold text-base">Add Internal Notes or Public Status Updates</Label>
+                <p className="text-sm text-muted-foreground">Internal notes are visible to ICC members only. Complainant updates are visible to the complainant.</p>
+                <Textarea 
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Type your note or update here..."
+                    rows={4}
+                />
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={() => handleAddNote('Observation')} disabled={!note || !!isAddingNote}>
+                        {isAddingNote === 'Observation' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add Observation
+                    </Button>
+                    <Button variant="outline" onClick={() => handleAddNote('Meeting Notes')} disabled={!note || !!isAddingNote}>
+                        {isAddingNote === 'Meeting Notes' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add Meeting Notes
+                    </Button>
+                    <Button variant="outline" onClick={() => handleAddNote('Follow-up')} disabled={!note || !!isAddingNote}>
+                        {isAddingNote === 'Follow-up' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add Follow-up
+                    </Button>
+                    <Button onClick={() => handleAddNote('Complainant Update', true)} disabled={!note || !!isAddingNote}>
+                        {isAddingNote === 'Complainant Update' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Complainant Update
+                    </Button>
+                     <Button variant="secondary" onClick={() => handleAddNote('Meeting')} disabled={!note || !!isAddingNote}>
+                        {isAddingNote === 'Meeting' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Meeting
+                    </Button>
+                </div>
+            </div>
+
+            {/* Status Checklist Section */}
+            <div className="p-4 border rounded-lg bg-background space-y-3">
+                <Label className="font-semibold text-base">Interactive Case Status Checklist</Label>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {caseStatuses.map(status => {
+                        const isChecked = isStatusChecked(status);
+                        return (
+                        <div key={status} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={`status-${status.replace(/\s/g, '-')}`} 
+                                checked={isChecked}
+                                disabled={isChecked}
+                                onCheckedChange={(checked) => handleStatusChange(status, !!checked)}
+                            />
+                            <label
+                                htmlFor={`status-${status.replace(/\s/g, '-')}`}
+                                className={cn("text-sm font-medium leading-none", isChecked ? "text-muted-foreground" : "text-foreground", "peer-disabled:cursor-not-allowed peer-disabled:opacity-70")}
+                            >
+                                {status}
+                            </label>
+                        </div>
+                    )})}
+                </div>
+            </div>
+
+            {/* Bottom Action Panels */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Assign Case */}
                 <div className="space-y-3 p-4 border rounded-lg bg-background">
                     <Label className="font-semibold text-base">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
                     <div className="flex items-center justify-between">
                         <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="justify-between"
-                                  disabled={isUnassignMode && (!complaint.assignedTo || complaint.assignedTo.length === 0)}
-                                >
-                                    <span>{assignees.length > 0 ? assignees.join(', ') : 'Select Member(s)'}</span>
+                                <Button variant="outline" size="sm" className="justify-between" disabled={isUnassignMode && (!complaint.assignedTo || complaint.assignedTo.length === 0)}>
+                                    <span>{assignees.length > 0 ? assignees.join(', ') : 'Select...'}</span>
                                     <ChevronDown className="ml-2 h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-auto" align="end">
                                 {assignableRolesForDropdown.map(r => (
-                                    <DropdownMenuCheckboxItem
-                                        key={r}
-                                        checked={assignees.includes(r)}
-                                        onCheckedChange={() => handleAssigneeChange(r)}
-                                        onSelect={(e) => e.preventDefault()}
-                                    >
+                                    <DropdownMenuCheckboxItem key={r} checked={assignees.includes(r)} onCheckedChange={() => handleAssigneeChange(r)} onSelect={(e) => e.preventDefault()}>
                                         {r}
                                     </DropdownMenuCheckboxItem>
                                 ))}
@@ -150,35 +277,46 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                             </span>
                         )}
                     </p>
-                    <div className="relative">
-                         <Textarea 
-                            placeholder="Add an assignment note..."
-                            value={assignmentComment}
-                            onChange={(e) => setAssignmentComment(e.target.value)}
-                            className="w-full text-sm pr-12 pb-12"
-                            rows={2}
-                        />
-                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
-                            {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
-                        </Button>
-                    </div>
+                    <Textarea placeholder="Add a private note for this assignment..." value={assignmentComment} onChange={(e) => setAssignmentComment(e.target.value)} rows={2} />
+                    <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} className="w-full">
+                        {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm'}
+                    </Button>
                 </div>
 
-                <div className="space-y-3 p-4 border rounded-lg bg-background">
-                     <Label className="font-semibold text-base">Add Internal Note</Label>
-                     <p className="text-sm text-muted-foreground">Add a private note to the case history, visible only to the ICC.</p>
-                     <div className="relative">
-                        <Textarea 
-                            value={note} 
-                            onChange={(e) => setNote(e.target.value)}
-                            placeholder="Your private notes..."
-                            rows={3}
-                            className="pr-12"
-                        />
-                        <Button onClick={handleAddNote} disabled={isAddingNote || !note} size="icon" className="absolute top-2 right-2 h-7 w-7 rounded-full">
-                            {isAddingNote ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {/* Disciplinary Action */}
+                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
+                    <Label className="font-semibold text-base">Disciplinary Action</Label>
+                    <Textarea 
+                        value={disciplinaryAction}
+                        onChange={(e) => setDisciplinaryAction(e.target.value)}
+                        placeholder="Describe disciplinary actions proposed..." 
+                        className="flex-grow" 
+                        rows={4}
+                    />
+                    <Button onClick={handleProposeAction} disabled={!disciplinaryAction || isSubmittingDisciplinary} className="w-full mt-auto">
+                        {isSubmittingDisciplinary ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Propose Action'}
+                    </Button>
+                </div>
+                
+                {/* Final Report */}
+                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
+                    <Label className="font-semibold text-base">Final Report</Label>
+                    <Textarea 
+                        value={finalReport}
+                        onChange={(e) => setFinalReport(e.target.value)}
+                        placeholder="Paste summary of final report..." 
+                        className="flex-grow"
+                        rows={4}
+                    />
+                    <div className="flex items-center justify-between gap-4 mt-auto">
+                        <div className="flex items-center space-x-2">
+                           <Checkbox id="tag-final" checked={tagAsFinal} onCheckedChange={(checked) => setTagAsFinal(!!checked)}/>
+                           <label htmlFor="tag-final" className="text-sm font-medium leading-none">Tag as "ICC Final Report"</label>
+                        </div>
+                        <Button onClick={handleSubmitFinalReport} disabled={!finalReport || isSubmittingFinal}>
+                           {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit & Lock'}
                         </Button>
-                     </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -256,17 +394,7 @@ function PoshDeskContent() {
             window.removeEventListener('poshComplaintUpdated', handleStorageChange);
         };
     }, [fetchComplaints]);
-
-    const renderDetailItem = (label: string, value: string | undefined | null, isBold = false) => {
-        if (!value) return null;
-        return (
-            <div>
-                <span className={cn("font-semibold", isBold ? "text-foreground" : "text-muted-foreground")}>{label}: </span> 
-                <span className="text-muted-foreground">{value}</span>
-            </div>
-        );
-    };
-
+    
     return (
       <div className="p-4 md:p-8 space-y-6">
         <Card>
@@ -321,24 +449,22 @@ function PoshDeskContent() {
                                     <AccordionContent className="p-4 border-t space-y-6">
                                         <div className="space-y-4">
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                                                <div className="space-y-2">
+                                                 <div className="space-y-2">
                                                     <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
-                                                    {renderDetailItem("Case ID", complaint.caseId)}
-                                                    {renderDetailItem("Title", complaint.title)}
-                                                    {renderDetailItem("Date", format(new Date(complaint.dateOfIncident), 'PPP'))}
-                                                    {renderDetailItem("Location", complaint.location)}
+                                                    <div><span className="font-semibold text-muted-foreground">Case ID: </span> <span className="text-muted-foreground">{complaint.caseId}</span></div>
+                                                    <div><span className="font-semibold text-muted-foreground">Title: </span> <span className="text-muted-foreground">{complaint.title}</span></div>
+                                                    <div><span className="font-semibold text-muted-foreground">Date: </span> <span className="text-muted-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
+                                                    <div><span className="font-semibold text-muted-foreground">Location: </span> <span className="text-muted-foreground">{complaint.location}</span></div>
                                                 </div>
-
-                                                <div className="space-y-2">
+                                                 <div className="space-y-2">
                                                     <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Complainant</h4>
-                                                    {renderDetailItem("Name", complaint.complainantInfo.name)}
-                                                    {renderDetailItem("Department", complaint.complainantInfo.department)}
+                                                    <div><span className="font-semibold text-muted-foreground">Name: </span> <span className="text-muted-foreground">{complaint.complainantInfo.name}</span></div>
+                                                    <div><span className="font-semibold text-muted-foreground">Department: </span> <span className="text-muted-foreground">{complaint.complainantInfo.department}</span></div>
                                                 </div>
-                                                
-                                                <div className="space-y-2">
+                                                 <div className="space-y-2">
                                                     <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Respondent</h4>
-                                                    {renderDetailItem("Name", complaint.respondentInfo.name)}
-                                                    {renderDetailItem("Details", complaint.respondentInfo.details)}
+                                                    <div><span className="font-semibold text-muted-foreground">Name: </span> <span className="text-muted-foreground">{complaint.respondentInfo.name}</span></div>
+                                                    {complaint.respondentInfo.details && <div><span className="font-semibold text-muted-foreground">Details: </span> <span className="text-muted-foreground">{complaint.respondentInfo.details}</span></div>}
                                                 </div>
                                             </div>
 

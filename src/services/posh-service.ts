@@ -8,13 +8,20 @@ import type { Role } from '@/hooks/use-role';
 // Data Structures & Types
 // ==========================================
 
+export const poshCaseStatuses = [
+    'Under Preliminary Review',
+    'Inquiry Initiated',
+    'Evidence Review',
+    'Hearing Scheduled',
+    'Report Drafted',
+    'Resolved (Action Taken)',
+    'Closed (No Action Required)',
+    'Escalated to External Authority'
+] as const;
+
 export type CaseStatus = 
   | 'New' 
-  | 'Under Preliminary Review' 
-  | 'Inquiry Initiated' 
-  | 'Evidence Review' 
-  | 'Hearing Scheduled' 
-  | 'Report Drafted' 
+  | typeof poshCaseStatuses[number]
   | 'Resolved' 
   | 'Closed';
 
@@ -256,7 +263,7 @@ export async function assignPoshCase(
     savePoshToStorage(allComplaints);
 }
 
-export async function addPoshInternalNote(caseId: string, note: string, actor: Role): Promise<void> {
+export async function addPoshInternalNote(caseId: string, note: string, actor: Role, noteType: string = 'Internal Note Added', isPublic: boolean = false): Promise<void> {
     const allComplaints = getPoshFromStorage();
     const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
     if (caseIndex === -1) return;
@@ -264,10 +271,28 @@ export async function addPoshInternalNote(caseId: string, note: string, actor: R
     const complaint = allComplaints[caseIndex];
     
     complaint.auditTrail.push({
-        event: 'Internal Note Added',
+        event: noteType,
         timestamp: new Date(),
         actor: actor,
         details: note
+    });
+
+    savePoshToStorage(allComplaints);
+}
+
+export async function updatePoshStatus(caseId: string, status: CaseStatus, actor: Role): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    complaint.caseStatus = status;
+
+    complaint.auditTrail.push({
+        event: 'Status Updated',
+        timestamp: new Date(),
+        actor,
+        details: `Case status changed to: ${status}`
     });
 
     savePoshToStorage(allComplaints);
