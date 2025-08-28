@@ -286,7 +286,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                     </p>
                     <div className="relative">
                         <Textarea 
-                            placeholder="Add a private note for this assignment..." 
+                            placeholder="Add a private note..." 
                             value={assignmentComment} 
                             onChange={(e) => setAssignmentComment(e.target.value)} 
                             rows={2} 
@@ -655,11 +655,8 @@ function PoshDeskContent() {
                                 <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
                                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
                                         <div className="flex justify-between items-center w-full">
-                                            <div className="flex flex-col items-start text-left flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0">
                                                 <p className="font-semibold text-foreground truncate">{complaint.title}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Submitted {format(new Date(complaint.createdAt), 'PPP')}
-                                                </p>
                                             </div>
                                             <div className="flex items-center gap-4 pl-2">
                                                 <span className="text-xs text-muted-foreground font-mono cursor-text hidden sm:inline-block">
