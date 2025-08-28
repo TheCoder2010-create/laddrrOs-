@@ -109,6 +109,8 @@ export interface PoshComplaintInput {
 
 const POSH_COMPLAINTS_KEY = 'posh_complaints_storage';
 
+const generatePoshCaseId = () => `Org-POSH-${Math.floor(1000 + Math.random() * 9000)}`;
+
 // Helper to read a file as a data URI
 const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -149,7 +151,7 @@ const savePoshToStorage = (complaints: PoshComplaint[]): void => {
 
 export async function submitPoshComplaint(input: PoshComplaintInput): Promise<PoshComplaint> {
     const allComplaints = getPoshFromStorage();
-    const caseId = uuidv4();
+    const caseId = generatePoshCaseId();
     const createdAt = new Date();
 
     const evidenceAttachments = await Promise.all(
