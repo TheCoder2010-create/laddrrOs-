@@ -14,7 +14,7 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
@@ -38,6 +38,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [coachingCount, setCoachingCount] = useState(0);
   const [voiceInSilenceCount, setVoiceInSilenceCount] = useState(0);
   const [myConcernsCount, setMyConcernsCount] = useState(0);
+  const [poshDeskCount, setPoshDeskCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
@@ -146,6 +147,14 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       setCoachingCount(devCount);
 
+      // Posh Desk Count
+      if (currentRole === 'ICC Head' || currentRole === 'ICC Member') {
+        const poshCases = feedback.filter(f => f.assignedTo?.includes(currentRole as any) && (f.criticality === 'High' || f.criticality === 'Critical')).length; // Example logic
+        setPoshDeskCount(poshCases);
+      } else {
+        setPoshDeskCount(0);
+      }
+
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
@@ -155,6 +164,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setCoachingCount(0);
       setVoiceInSilenceCount(0);
       setMyConcernsCount(0);
+      setPoshDeskCount(0);
     }
   }, [currentRole, currentUserName]);
 
@@ -176,6 +186,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   }, [fetchFeedbackCounts]);
 
   const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
+  const isIccMember = ['ICC Head', 'ICC Member'].includes(currentRole);
 
   const menuItems = [
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
@@ -188,6 +199,10 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
   const hrMenuItems = [
     { href: '/vault', icon: <Vault />, label: 'Vault', badge: vaultFeedbackCount > 0 ? vaultFeedbackCount : null, badgeVariant: 'secondary' as const },
+  ]
+  
+  const iccMenuItems = [
+      { href: '/posh-desk', icon: <Scale />, label: 'POSH Desk', badge: poshDeskCount > 0 ? poshDeskCount : null, badgeVariant: 'destructive' as const },
   ]
 
   const assigneeMenuItems = [
@@ -258,6 +273,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
           {currentRole === 'HR Head' && hrMenuItems.map(renderMenuItem)}
+          {isIccMember && iccMenuItems.map(renderMenuItem)}
           {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>
