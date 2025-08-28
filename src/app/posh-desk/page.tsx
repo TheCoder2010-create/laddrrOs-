@@ -177,7 +177,6 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
         ? (complaint.assignedTo || []) 
         : availableRolesForAssignment.filter(r => r === 'ICC Member' && !complaint.assignedTo?.includes(r));
     
-    // Logic for the intelligent checklist
     const currentStatusIndex = complaint.caseStatus === 'New' 
       ? -1 
       : poshCaseStatuses.indexOf(complaint.caseStatus as CaseStatus);
@@ -187,7 +186,6 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
         <div className="pt-4 border-t space-y-6">
             <h3 className="font-semibold text-lg text-foreground">Case Actions</h3>
             
-            {/* Case Updates Section */}
             <div className="p-4 border rounded-lg bg-background space-y-3">
                 <Label className="font-semibold text-base">Add Internal Notes or Public Status Updates</Label>
                 <p className="text-sm text-muted-foreground">Internal notes are visible to ICC members only. Complainant updates are visible to the complainant.</p>
@@ -221,17 +219,15 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                 </div>
             </div>
 
-            {/* Status Checklist Section */}
             <div className="p-4 border rounded-lg bg-background space-y-3">
                 <Label className="font-semibold text-base">Interactive Case Status Checklist</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
                     {poshCaseStatuses.map((status, index) => {
                         const isCompleted = index < currentStatusIndex;
                         const isNextAction = index === currentStatusIndex + 1;
-                        const isFuture = index > currentStatusIndex + 1;
-
-                        const isChecked = isCompleted;
-                        const isDisabled = isCompleted || isFuture;
+                        
+                        const isChecked = isCompleted || index === currentStatusIndex;
+                        const isDisabled = !isNextAction;
 
                         return (
                         <div key={status} className="flex items-center space-x-2">
@@ -248,10 +244,9 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                             <label
                                 htmlFor={`status-${status.replace(/\s/g, '-')}`}
                                 className={cn(
-                                    "text-sm font-medium leading-none", 
-                                    isDisabled && !isChecked ? "text-muted-foreground/50" : "text-foreground",
-                                    isChecked ? "text-muted-foreground line-through" : "",
-                                    "cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    "text-sm font-medium leading-none peer-disabled:cursor-not-allowed", 
+                                    (isDisabled && !isChecked) ? "text-muted-foreground/50" : "text-foreground",
+                                    isChecked ? "text-muted-foreground line-through" : ""
                                 )}
                             >
                                 {status}
@@ -261,9 +256,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                 </div>
             </div>
 
-            {/* Bottom Action Panels */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Assign Case */}
                 <div className="space-y-3 p-4 border rounded-lg bg-background">
                     <Label className="font-semibold text-base">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
                     <div className="flex items-center justify-between">
@@ -291,45 +284,55 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                             </span>
                         )}
                     </p>
-                    <Textarea placeholder="Add a private note for this assignment..." value={assignmentComment} onChange={(e) => setAssignmentComment(e.target.value)} rows={2} />
-                    <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} className="w-full">
-                        {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm'}
-                    </Button>
+                    <div className="relative">
+                        <Textarea 
+                            placeholder="Add a private note for this assignment..." 
+                            value={assignmentComment} 
+                            onChange={(e) => setAssignmentComment(e.target.value)} 
+                            rows={2} 
+                            className="pr-12 pb-8"
+                        />
+                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
+                            {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Disciplinary Action */}
                 <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
                     <Label className="font-semibold text-base">Disciplinary Action</Label>
-                    <Textarea 
-                        value={disciplinaryAction}
-                        onChange={(e) => setDisciplinaryAction(e.target.value)}
-                        placeholder="Describe disciplinary actions proposed..." 
-                        className="flex-grow" 
-                        rows={4}
-                    />
-                    <Button onClick={handleProposeAction} disabled={!disciplinaryAction || isSubmittingDisciplinary} className="w-full mt-auto">
-                        {isSubmittingDisciplinary ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Propose Action'}
-                    </Button>
+                    <div className="relative flex-grow">
+                        <Textarea 
+                            value={disciplinaryAction}
+                            onChange={(e) => setDisciplinaryAction(e.target.value)}
+                            placeholder="Describe disciplinary actions proposed..." 
+                            className="h-full pr-12 pb-8"
+                            rows={4}
+                        />
+                        <Button onClick={handleProposeAction} disabled={!disciplinaryAction || isSubmittingDisciplinary} size="icon" className="absolute bottom-2 right-2 h-7 w-7 rounded-full">
+                            {isSubmittingDisciplinary ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                    </div>
                 </div>
                 
-                {/* Final Report */}
                 <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
                     <Label className="font-semibold text-base">Final Report</Label>
-                    <Textarea 
-                        value={finalReport}
-                        onChange={(e) => setFinalReport(e.target.value)}
-                        placeholder="Paste summary of final report..." 
-                        className="flex-grow"
-                        rows={4}
-                    />
-                    <div className="flex items-center justify-between gap-4 mt-auto">
-                        <div className="flex items-center space-x-2">
-                           <Checkbox id="tag-final" checked={tagAsFinal} onCheckedChange={(checked) => setTagAsFinal(!!checked)}/>
-                           <label htmlFor="tag-final" className="text-sm font-medium leading-none">Tag as "ICC Final Report"</label>
+                    <div className="relative flex-grow">
+                        <Textarea 
+                            value={finalReport}
+                            onChange={(e) => setFinalReport(e.target.value)}
+                            placeholder="Paste summary of final report..." 
+                            className="h-full pr-12 pb-12"
+                            rows={4}
+                        />
+                        <div className="absolute bottom-2 right-2 flex items-center gap-2">
+                             <div className="flex items-center space-x-2">
+                               <Checkbox id="tag-final" checked={tagAsFinal} onCheckedChange={(checked) => setTagAsFinal(!!checked)}/>
+                               <label htmlFor="tag-final" className="text-xs font-medium leading-none cursor-pointer">Tag Final</label>
+                            </div>
+                            <Button onClick={handleSubmitFinalReport} disabled={!finalReport || isSubmittingFinal} size="icon" className="h-7 w-7 rounded-full">
+                               {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            </Button>
                         </div>
-                        <Button onClick={handleSubmitFinalReport} disabled={!finalReport || isSubmittingFinal}>
-                           {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit &amp; Lock'}
-                        </Button>
                     </div>
                 </div>
             </div>
@@ -406,7 +409,7 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
     const avgCloseDays = (() => {
         if (closedCases.length === 0) return 0;
         const totalDays = closedCases.reduce((sum, c) => {
-            const closeEvent = c.auditTrail.find(e => e.details?.includes('Resolved') || e.details?.includes('Closed'));
+            const closeEvent = c.auditTrail.find(e => e.event === 'Status Updated' && (e.details?.includes('Resolved') || e.details?.includes('Closed')));
             if (closeEvent) {
                 return sum + differenceInDays(new Date(closeEvent.timestamp), new Date(c.createdAt));
             }
@@ -462,7 +465,7 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
                             <div className="space-y-1 mt-2">
                                 {iccMembers.map(member => (
                                     <div key={member} className="flex items-center justify-between rounded-md border p-2">
-                                        <span className="text-sm">{member}</span>
+                                        <span className="text-sm">{roleUserMapping[member as Role]?.name || member} ({member})</span>
                                         <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleManageMembership(member, 'remove')} disabled={member === 'ICC Head'}>Remove</Button>
                                     </div>
                                 ))}
@@ -470,11 +473,11 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
                         </div>
                         <div>
                             <Label>Add New Members</Label>
-                            <Select onValueChange={(user) => handleManageMembership(user, 'add')}>
+                            <Select onValueChange={(userRole) => handleManageMembership(userRole, 'add')}>
                                 <SelectTrigger><SelectValue placeholder="Select an employee to add..." /></SelectTrigger>
                                 <SelectContent>
-                                    {allUsers.filter(u => !iccMembers.includes(u)).map(user => (
-                                        <SelectItem key={user} value={user}>{user}</SelectItem>
+                                    {allUsers.filter(u => !iccMembers.includes(u)).map(userRole => (
+                                        <SelectItem key={userRole} value={userRole}>{roleUserMapping[userRole as Role]?.name || userRole} ({userRole})</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -519,7 +522,7 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
                         <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
                             <SelectTrigger><SelectValue placeholder="Select a case..." /></SelectTrigger>
                             <SelectContent>
-                                {complaints.map(c => <SelectItem key={c.caseId} value={c.caseId}>{c.title} ({c.caseId.substring(0,8)}...)</SelectItem>)}
+                                {complaints.map(c => <SelectItem key={c.caseId} value={c.caseId}>{c.title} ({c.caseId})</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as CaseStatus)}>
@@ -642,7 +645,7 @@ function PoshDeskContent() {
                                             <div className="flex flex-col items-start text-left">
                                                 <p className="font-semibold text-foreground">{complaint.title}</p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    Case #{complaint.caseId.substring(0, 8)}...
+                                                    Case #{complaint.caseId}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-4">
@@ -751,3 +754,4 @@ export default function PoshDeskPage() {
         </DashboardLayout>
     );
 }
+
