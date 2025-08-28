@@ -32,13 +32,29 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getAdminAuditLog, getAllUsers, manageIccMembership, overrideCaseStatus, type AdminLogEntry } from '@/services/admin-service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { downloadPoshCasePDF } from '@/lib/pdf-generator';
 
-function PoshCaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
+function PoshCaseHistory({ trail, onDownload }: { trail: PoshAuditEvent[], onDownload: () => void }) {
     if (!trail || trail.length === 0) return null;
 
     return (
         <div className="space-y-2">
-            <h4 className="font-semibold">Case History</h4>
+            <div className="flex justify-between items-center">
+                <h4 className="font-semibold">Case History</h4>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={onDownload}>
+                                <Download className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Download PDF</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
@@ -618,6 +634,7 @@ function PoshDeskContent() {
     }, [fetchComplaints, handleUpdate]);
     
     const capitalizeFirstLetter = (string: string) => {
+        if (!string) return '';
         return string.charAt(0).toUpperCase() + string.slice(1);
     }
     
@@ -716,7 +733,7 @@ function PoshDeskContent() {
                                                 </div>
                                             )}
                                         
-                                        <PoshCaseHistory trail={complaint.auditTrail} />
+                                        <PoshCaseHistory trail={complaint.auditTrail} onDownload={() => role && downloadPoshCasePDF(complaint, role)} />
                                         
                                         <ActionPanel complaint={complaint} onUpdate={handleUpdate} />
 
@@ -765,3 +782,4 @@ export default function PoshDeskPage() {
         </DashboardLayout>
     );
 }
+

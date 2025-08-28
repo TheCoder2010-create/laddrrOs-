@@ -5,6 +5,10 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
 import type { AuditEvent, Feedback, OneOnOneHistoryItem } from '@/services/feedback-service';
+import type { PoshComplaint, PoshAuditEvent } from '@/services/posh-service';
+import type { Role } from '@/hooks/use-role';
+import { roleUserMapping } from './role-mapping';
+
 
 // Extend jsPDF with autoTable plugin
 interface jsPDFWithAutoTable extends jsPDF {
@@ -129,5 +133,121 @@ export const downloadAuditTrailPDF = (caseDetails: CaseDetails) => {
   } catch (error) {
       console.error("Failed to generate PDF:", error);
       alert("There was an error generating the PDF. Please check the console for details.");
+  }
+};
+
+export const downloadPoshCasePDF = (caseDetails: PoshComplaint, downloadedBy: Role) => {
+  try {
+    const doc = new jsPDF() as jsPDFWithAutoTable;
+    let yPos = 15;
+    const margin = 14;
+    const maxWidth = 180;
+    
+    const downloaderName = roleUserMapping[downloadedBy]?.name || downloadedBy;
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('POSH Complaint Report', margin, yPos);
+    yPos += 8;
+
+    // Sub-header
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Case ID: ${caseDetails.caseId}`, margin, yPos);
+    doc.text(`Status: ${caseDetails.caseStatus}`, margin + 80, yPos);
+    yPos += 5;
+    doc.text(`Filed On: ${format(new Date(caseDetails.createdAt), 'PPP p')}`, margin, yPos);
+    doc.text(`Downloaded By: ${downloaderName} on ${format(new Date(), 'PPP p')}`, margin + 80, yPos);
+    yPos += 10;
+
+    doc.setDrawColor(200);
+    doc.line(margin, yPos, 200, yPos);
+    yPos += 8;
+
+    // Case Details Section
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Case Details', margin, yPos);
+    yPos += 6;
+
+    const caseData = [
+        ['Title', caseDetails.title],
+        ['Date of Incident', format(new Date(caseDetails.dateOfIncident), 'PPP')],
+        ['Location', caseDetails.location],
+        ['Complainant', `${caseDetails.complainantInfo.name} (${caseDetails.complainantInfo.department})`],
+        ['Respondent', `${caseDetails.respondentInfo.name} (${caseDetails.respondentInfo.details || 'N/A'})`],
+    ];
+
+    doc.autoTable({
+        body: caseData,
+        startY: yPos,
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 1.5 },
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } },
+    });
+    yPos = (doc as any).lastAutoTable.finalY + 8;
+    
+    // Narrative
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Incident Narrative', margin, yPos);
+    yPos += 6;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    yPos = addWrappedText(doc, caseDetails.incidentDetails, margin, yPos, maxWidth);
+    yPos += 5;
+
+    // Witnesses
+    if (caseDetails.witnesses) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Witnesses:', margin, yPos);
+      yPos += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      yPos = addWrappedText(doc, caseDetails.witnesses, margin, yPos, maxWidth);
+      yPos += 5;
+    }
+
+    // Audit Trail
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Case Audit Trail', margin, yPos);
+    yPos += 6;
+
+    const tableColumn = ["Timestamp", "Event", "Actor", "Details"];
+    const tableRows = caseDetails.auditTrail.map(event => [
+      format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm'),
+      event.event,
+      String(event.actor),
+      event.details || 'N/A'
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: yPos,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [78, 26, 94], textColor: 255 }, // Dark Purple
+      columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 'auto' },
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.text(`Page ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+      }
+    });
+
+    const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
+    doc.save(`POSH_Report_${caseDetails.caseId}_${timestamp}.pdf`);
+  } catch (error) {
+    console.error("Failed to generate POSH case PDF:", error);
+    alert("There was an error generating the PDF. Please check the console for details.");
   }
 };
