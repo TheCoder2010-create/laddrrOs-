@@ -387,7 +387,7 @@ function IccHeadDashboardWidgets({ complaints, onUpdate }: { complaints: PoshCom
         }
         setIsOverriding(true);
         try {
-            await overrideCaseStatus(selectedCaseId, selectedStatus, overrideReason);
+            await overrideCaseStatus(selectedCaseId, selectedStatus as CaseStatus, overrideReason);
             toast({ title: 'Override Successful', description: `Case ${selectedCaseId} status has been changed.`});
             onUpdate();
             setOverrideDialogOpen(false);
@@ -642,19 +642,16 @@ function PoshDeskContent() {
                                 <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
                                      <AccordionTrigger className="px-4 py-3 hover:no-underline">
                                         <div className="flex justify-between items-center w-full">
-                                            <div className="flex flex-col items-start text-left">
-                                                <p className="font-semibold text-foreground">{complaint.title}</p>
+                                            <div className="flex flex-col items-start text-left flex-1 min-w-0">
+                                                <p className="font-semibold text-foreground truncate">{complaint.title}</p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    Case #{complaint.caseId}
+                                                    Submitted {format(new Date(complaint.createdAt), 'PPP')}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                {complaint.assignedTo.length > 0 && (
-                                                    <Badge variant="outline" className="hidden md:flex items-center gap-2">
-                                                        <Users className="h-3 w-3" />
-                                                        {complaint.assignedTo.join(', ')}
-                                                    </Badge>
-                                                )}
+                                            <div className="flex items-center gap-4 pl-2">
+                                                <span className="text-xs text-muted-foreground font-mono cursor-text hidden sm:inline-block">
+                                                    ID: {complaint.caseId}
+                                                </span>
                                                 <Badge variant={complaint.caseStatus === 'New' ? 'destructive' : 'secondary'}>
                                                     {complaint.caseStatus}
                                                 </Badge>
@@ -754,4 +751,3 @@ export default function PoshDeskPage() {
         </DashboardLayout>
     );
 }
-
