@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase, Search } from 'lucide-react';
+import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase, Search, ListChecks } from 'lucide-react';
 import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus, poshCaseStatuses, respondToComplainantRequest, submitPoshFinalDisposition } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays, startOfQuarter, endOfQuarter, startOfMonth, endOfYear } from 'date-fns';
@@ -861,100 +861,109 @@ function PoshDeskContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-                <Skeleton className="h-40 w-full" />
-            ) : (
-                <>
-                    {role === 'ICC Head' && <IccHeadDashboardWidgets complaints={complaints} onUpdate={handleUpdate} />}
-
-                    {complaints.length === 0 ? (
-                         <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground text-lg">No active cases.</p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                                New complaints will appear here as they are submitted.
-                            </p>
-                        </div>
-                    ) : (
-                        <Accordion 
-                            type="single" 
-                            collapsible 
-                            className="w-full space-y-2"
-                            value={openAccordionItem}
-                            onValueChange={setOpenAccordionItem}
-                        >
-                            {complaints.map((complaint) => (
-                                <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
-                                     <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&[data-state=open]>svg]:rotate-180">
-                                        <div className="flex w-full items-center justify-between">
-                                            <div className="flex-1 text-left">
-                                                <p className="font-semibold text-foreground truncate">{capitalizeFirstLetter(complaint.title)}</p>
-                                            </div>
-                                            <div className="ml-4 flex flex-shrink-0 items-center gap-4">
-                                                <span className="hidden font-mono text-sm text-muted-foreground sm:inline-block">
-                                                    ID: {complaint.caseId}
-                                                </span>
-                                                <Badge variant={complaint.caseStatus === 'New' || complaint.caseStatus === 'Pending Withdrawal' || complaint.caseStatus === 'Pending Conciliation' ? 'destructive' : 'secondary'}>
-                                                    {complaint.caseStatus}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="p-4 border-t space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                                            <div className="space-y-1">
-                                                <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
-                                                <div><strong className="text-muted-foreground">Case ID: </strong> <span className="font-mono text-sm text-foreground">{complaint.caseId}</span></div>
-                                                <div><strong className="text-muted-foreground">Title: </strong> <span className="text-foreground">{complaint.title}</span></div>
-                                                <div><strong className="text-muted-foreground">Date: </strong> <span className="text-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
-                                                <div><strong className="text-muted-foreground">Location: </strong> <span className="text-foreground">{complaint.location}</span></div>
-                                            </div>
-                                             <div className="space-y-1">
-                                                <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Complainant</h4>
-                                                <div><strong className="text-muted-foreground">Name: </strong> <span className="text-foreground">{complaint.complainantInfo.name}</span></div>
-                                                <div><strong className="text-muted-foreground">Department: </strong> <span className="text-foreground">{complaint.complainantInfo.department}</span></div>
-                                            </div>
-                                             <div className="space-y-1">
-                                                <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Respondent</h4>
-                                                <div><strong className="text-muted-foreground">Name: </strong> <span className="text-foreground">{complaint.respondentInfo.name}</span></div>
-                                                {complaint.respondentInfo.details && <div><strong className="text-muted-foreground">Details: </strong> <span className="text-foreground">{complaint.respondentInfo.details}</span></div>}
-                                            </div>
-                                        </div>
-                                         <div className="space-y-2 pt-4">
-                                            <h4 className="font-bold text-base">Narrative</h4>
-                                            <div className="mt-1 whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-sm text-foreground">
-                                                {complaint.incidentDetails}
-                                            </div>
-                                        </div>
-
-                                            {complaint.priorHistory.hasPriorIncidents && complaint.priorHistory.priorIncidentsDetails && (
-                                                 <div className="space-y-2">
-                                                    <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Incidents Details</h4>
-                                                    <p className="mt-1 whitespace-pre-wrap rounded-md border bg-orange-500/10 p-3 text-sm text-muted-foreground">
-                                                        {complaint.priorHistory.priorIncidentsDetails}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {complaint.priorHistory.hasPriorComplaints && complaint.priorHistory.priorComplaintsDetails && (
-                                                 <div className="space-y-2">
-                                                    <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Complaints Details</h4>
-                                                    <p className="mt-1 whitespace-pre-wrap rounded-md border bg-orange-500/10 p-3 text-sm text-muted-foreground">
-                                                        {complaint.priorHistory.priorComplaintsDetails}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        
-                                        <PoshCaseHistory trail={complaint.auditTrail} onDownload={() => role && downloadPoshCasePDF(complaint, role)} />
-                                        
-                                        <ActionPanel complaint={complaint} onUpdate={handleUpdate} />
-
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    )}
-                </>
-            )}
+            {role === 'ICC Head' && <IccHeadDashboardWidgets complaints={complaints} onUpdate={handleUpdate} />}
           </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <ListChecks className="h-6 w-6" />
+                    Active Cases
+                </CardTitle>
+                <CardDescription>
+                    Review, manage, and take action on assigned POSH cases.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <Skeleton className="h-40 w-full" />
+                ) : complaints.length === 0 ? (
+                    <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground text-lg">No active cases assigned to you.</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                            New complaints will appear here as they are assigned.
+                        </p>
+                    </div>
+                ) : (
+                    <Accordion 
+                        type="single" 
+                        collapsible 
+                        className="w-full space-y-2"
+                        value={openAccordionItem}
+                        onValueChange={setOpenAccordionItem}
+                    >
+                        {complaints.map((complaint) => (
+                            <AccordionItem value={complaint.caseId} key={complaint.caseId} className="border rounded-lg">
+                                 <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&[data-state=open]>svg]:rotate-180">
+                                    <div className="flex w-full items-center justify-between">
+                                        <div className="flex-1 text-left">
+                                            <p className="font-semibold text-foreground truncate">{capitalizeFirstLetter(complaint.title)}</p>
+                                        </div>
+                                        <div className="ml-4 flex flex-shrink-0 items-center gap-4">
+                                            <span className="hidden font-mono text-sm text-muted-foreground sm:inline-block">
+                                                ID: {complaint.caseId.substring(0, 14)}...
+                                            </span>
+                                            <Badge variant={complaint.caseStatus === 'New' || complaint.caseStatus === 'Pending Withdrawal' || complaint.caseStatus === 'Pending Conciliation' ? 'destructive' : 'secondary'}>
+                                                {complaint.caseStatus}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 border-t space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                                        <div className="space-y-1">
+                                            <h4 className="font-bold flex items-center gap-2 text-base"><FileText className="h-4 w-4" />Incident Information</h4>
+                                            <div><strong className="text-muted-foreground">Case ID: </strong> <span className="font-mono text-sm text-foreground">{complaint.caseId}</span></div>
+                                            <div><strong className="text-muted-foreground">Title: </strong> <span className="text-foreground">{complaint.title}</span></div>
+                                            <div><strong className="text-muted-foreground">Date: </strong> <span className="text-foreground">{format(new Date(complaint.dateOfIncident), 'PPP')}</span></div>
+                                            <div><strong className="text-muted-foreground">Location: </strong> <span className="text-foreground">{complaint.location}</span></div>
+                                        </div>
+                                         <div className="space-y-1">
+                                            <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Complainant</h4>
+                                            <div><strong className="text-muted-foreground">Name: </strong> <span className="text-foreground">{complaint.complainantInfo.name}</span></div>
+                                            <div><strong className="text-muted-foreground">Department: </strong> <span className="text-foreground">{complaint.complainantInfo.department}</span></div>
+                                        </div>
+                                         <div className="space-y-1">
+                                            <h4 className="font-bold flex items-center gap-2 text-base"><User className="h-4 w-4" />Respondent</h4>
+                                            <div><strong className="text-muted-foreground">Name: </strong> <span className="text-foreground">{complaint.respondentInfo.name}</span></div>
+                                            {complaint.respondentInfo.details && <div><strong className="text-muted-foreground">Details: </strong> <span className="text-foreground">{complaint.respondentInfo.details}</span></div>}
+                                        </div>
+                                    </div>
+                                     <div className="space-y-2 pt-4">
+                                        <h4 className="font-bold text-base">Narrative</h4>
+                                        <div className="mt-1 whitespace-pre-wrap break-words rounded-md border bg-background p-3 text-sm text-foreground">
+                                            {complaint.incidentDetails}
+                                        </div>
+                                    </div>
+
+                                        {complaint.priorHistory.hasPriorIncidents && complaint.priorHistory.priorIncidentsDetails && (
+                                             <div className="space-y-2">
+                                                <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Incidents Details</h4>
+                                                <p className="mt-1 whitespace-pre-wrap rounded-md border bg-orange-500/10 p-3 text-sm text-muted-foreground">
+                                                    {complaint.priorHistory.priorIncidentsDetails}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {complaint.priorHistory.hasPriorComplaints && complaint.priorHistory.priorComplaintsDetails && (
+                                             <div className="space-y-2">
+                                                <h4 className="font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-orange-500" />Prior Complaints Details</h4>
+                                                <p className="mt-1 whitespace-pre-wrap rounded-md border bg-orange-500/10 p-3 text-sm text-muted-foreground">
+                                                    {complaint.priorHistory.priorComplaintsDetails}
+                                                </p>
+                                            </div>
+                                        )}
+                                    
+                                    <PoshCaseHistory trail={complaint.auditTrail} onDownload={() => role && downloadPoshCasePDF(complaint, role)} />
+                                    
+                                    <ActionPanel complaint={complaint} onUpdate={handleUpdate} />
+
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                )}
+            </CardContent>
         </Card>
       </div>
     )
@@ -992,4 +1001,3 @@ export default function PoshDeskPage() {
         </DashboardLayout>
     );
 }
-
