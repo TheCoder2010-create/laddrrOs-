@@ -417,12 +417,12 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
                     const isAwaitingMyAction = item.caseStatus === 'Pending Complainant Acknowledgement';
                     return (
                     <AccordionItem value={item.caseId} key={item.caseId}>
-                        <AccordionTrigger className="text-left">
+                        <AccordionTrigger className="text-left hover:no-underline">
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <p className="font-semibold truncate">{capitalizeFirstLetter(item.title)}</p>
                                 </div>
-                                <div className="flex items-center gap-4 mr-2">
+                                <div className="flex items-center gap-4 pl-4 mr-2">
                                     <span className="font-mono text-sm text-muted-foreground truncate hidden sm:inline-block">
                                         ID: {item.caseId}
                                     </span>
@@ -647,25 +647,34 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                 <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-semibold text-lg">Complaint Information</h3>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <FormField control={form.control} name="title" render={({ field }) => (
-                            <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl><FormMessage /></FormItem>
+                        <FormField control={form.control} name="title" render={({ field }) => (
+                           <FormItem className="grid grid-cols-[auto_1fr] items-center gap-4">
+                             <FormLabel>Title</FormLabel>
+                             <FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl>
+                             <FormMessage className="col-span-2 col-start-2" />
+                           </FormItem>
                          )} />
                          <FormField control={form.control} name="location" render={({ field }) => (
-                            <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} placeholder="e.g., Office, Cafeteria" /></FormControl><FormMessage /></FormItem>
+                           <FormItem className="grid grid-cols-[auto_1fr] items-center gap-4">
+                             <FormLabel>Location</FormLabel>
+                             <FormControl><Input {...field} placeholder="e.g., Office, Cafeteria" /></FormControl>
+                             <FormMessage className="col-span-2 col-start-2" />
+                           </FormItem>
                          )} />
                          <FormField control={form.control} name="dateOfIncident" render={({ field }) => (
-                           <FormItem><FormLabel>Date</FormLabel>
-                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}><PopoverTrigger asChild>
+                           <FormItem className="grid grid-cols-[auto_1fr] items-center gap-4">
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}><PopoverTrigger asChild>
                                <FormControl>
-                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                 <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal pl-3", !field.value && "text-muted-foreground")}>
+                                   <CalendarIcon className="mr-2 h-4 w-4" />
                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                  </Button>
                                </FormControl>
                              </PopoverTrigger>
                              <PopoverContent className="w-auto p-0" align="start">
                                <Calendar mode="single" selected={field.value} onSelect={handleDateChange} disabled={(date) => date > new Date()} initialFocus />
-                             </PopoverContent></Popover><FormMessage />
+                             </PopoverContent></Popover>
+                           <FormMessage className="col-span-2" />
                            </FormItem>
                          )} />
                      </div>
