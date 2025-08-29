@@ -360,6 +360,11 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
       onUpdate();
     }
 
+    const capitalizeFirstLetter = (string: string) => {
+        if (!string) return '';
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
 
     if (isLoading) {
         return <Skeleton className="h-24 w-full" />
@@ -412,13 +417,13 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
                     const isAwaitingMyAction = item.caseStatus === 'Pending Complainant Acknowledgement';
                     return (
                     <AccordionItem value={item.caseId} key={item.caseId}>
-                        <AccordionTrigger>
+                        <AccordionTrigger className="text-left">
                            <div className="flex justify-between items-center w-full">
-                                <div className="flex flex-col items-start text-left">
-                                    <p className="font-semibold">{item.title}</p>
-                                    <p className="text-sm font-normal text-muted-foreground">
-                                        Case #{item.caseId.substring(0, 8)}... &bull; Submitted {format(new Date(item.createdAt), 'PPP')}
-                                    </p>
+                                <div className="flex items-center gap-4 flex-1 min-w-0">
+                                    <p className="font-semibold truncate">{capitalizeFirstLetter(item.title)}</p>
+                                    <span className="font-mono text-sm text-muted-foreground truncate hidden sm:inline-block">
+                                        ID: {item.caseId}
+                                    </span>
                                 </div>
                                 <div className="mr-2">
                                      <Badge variant={item.caseStatus === 'New' || isAwaitingMyAction ? 'destructive' : 'secondary'}>
