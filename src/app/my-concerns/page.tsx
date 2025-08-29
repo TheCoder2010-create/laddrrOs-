@@ -291,7 +291,7 @@ function IdentifiedConcernForm({ onCaseSubmitted, files, setFiles }: { onCaseSub
         }
     }
 
-    const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence' && user.role !== role && user.role !== 'Anonymous');
+    const availableRecipients = Object.values(roleUserMapping).filter(user => user.role !== 'Voice – In Silence' && user.role !== 'Anonymous');
     const [concern, setConcern] = useState('');
 
     return (
@@ -935,11 +935,21 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
 
     const filteredTrail = useMemo(() => {
         if (!item.auditTrail) return [];
-        if (role === 'Manager') {
-            return item.auditTrail.filter(event => event.event !== 'Retaliation Claim Filed');
+        // The complainant's view should filter out non-public events
+        if (role === item.submittedBy) {
+            return item.auditTrail.filter(event => {
+                // Always show these core, non-detailed events
+                const alwaysPublicEvents = ['Submitted', 'Identified Concern Submitted', 'Retaliation Claim Filed', 'Resolved', 'Closed', 'Employee Accepted Resolution', 'Employee Escalated Concern'];
+                if (alwaysPublicEvents.includes(event.event)) {
+                    return true;
+                }
+                // Show events explicitly marked as public
+                return event.isPublic;
+            });
         }
+        // Managers and HR see everything
         return item.auditTrail;
-    }, [item.auditTrail, role]);
+    }, [item.auditTrail, item.submittedBy, role]);
 
     if (!filteredTrail || filteredTrail.length === 0) return null;
 
@@ -1977,6 +1987,7 @@ export default function MyConcernsPage() {
 
 
     
+
 
 
 

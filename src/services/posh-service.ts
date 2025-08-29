@@ -31,6 +31,7 @@ export interface PoshAuditEvent {
   timestamp: Date | string;
   actor: Role | string;
   details?: string;
+  isPublic?: boolean; // New flag for complainant visibility
 }
 
 export interface PoshAttachment {
@@ -213,6 +214,7 @@ export async function submitPoshComplaint(input: PoshComplaintInput): Promise<Po
             timestamp: createdAt,
             actor: input.role, 
             details: `New POSH complaint filed by ${input.complainantName}.`,
+            isPublic: true,
         }],
     };
 
@@ -276,7 +278,8 @@ export async function assignPoshCase(
         event: eventName,
         timestamp: new Date(),
         actor: actor,
-        details: `${eventName} for: ${assignees.join(', ')}.${comment ? ` Note: "${comment}"` : ''}`
+        details: `${eventName} for: ${assignees.join(', ')}.${comment ? ` Note: "${comment}"` : ''}`,
+        isPublic: false, // Internal action
     });
 
     // Log this important action to the central admin log
@@ -297,7 +300,8 @@ export async function addPoshInternalNote(caseId: string, note: string, actor: R
         event: noteType,
         timestamp: new Date(),
         actor: actor,
-        details: note
+        details: note,
+        isPublic: isPublic,
     });
 
     savePoshToStorage(allComplaints);
@@ -315,7 +319,8 @@ export async function updatePoshStatus(caseId: string, status: CaseStatus, actor
         event: 'Status Updated',
         timestamp: new Date(),
         actor,
-        details: `Case status changed to: ${status}`
+        details: `Case status changed to: ${status}`,
+        isPublic: true,
     });
 
     savePoshToStorage(allComplaints);
