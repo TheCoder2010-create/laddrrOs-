@@ -83,6 +83,7 @@ export interface PoshComplaint {
   auditTrail: PoshAuditEvent[];
   isLocked: boolean;
   assignedTo: Role[];
+  parentCaseId?: string; // For linking retaliation cases
 }
 
 export interface PoshComplaintInput {
@@ -103,6 +104,13 @@ export interface PoshComplaintInput {
     delayJustification?: string;
     delayEvidenceFiles?: File[];
     role: Role;
+}
+
+export interface RetaliationReportInput {
+    parentCaseId: string;
+    submittedBy: Role;
+    description: string;
+    files: File[];
 }
 
 
@@ -229,6 +237,103 @@ export async function submitPoshComplaint(input: PoshComplaintInput): Promise<Po
     }
 
     return newComplaint;
+}
+
+export async function requestPoshCaseWithdrawal(caseId: string, actor: Role, reason: string): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    complaint.auditTrail.push({
+        event: 'Withdrawal Requested by Complainant',
+        timestamp: new Date(),
+        actor: actor,
+        details: reason,
+        isPublic: false, // This is an internal request for the ICC
+    });
+    // Optionally change status
+    // complaint.caseStatus = 'Pending Withdrawal Approval'; 
+
+    savePoshToStorage(allComplaints);
+}
+
+export async function requestPoshCaseConciliation(caseId: string, actor: Role, reason: string): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    complaint.auditTrail.push({
+        event: 'Conciliation Requested by Complainant',
+        timestamp: new Date(),
+        actor: actor,
+        details: reason,
+        isPublic: false, // Internal request
+    });
+
+    savePoshToStorage(allComplaints);
+}
+
+export async function reportPoshRetaliation(input: RetaliationReportInput): Promise<PoshComplaint> {
+    const allComplaints = getPoshFromStorage();
+    const childCaseId = generatePoshCaseId();
+    const createdAt = new Date();
+
+    const parentCase = allComplaints.find(c => c.caseId === input.parentCaseId);
+    if (!parentCase) {
+        throw new Error("Parent case not found");
+    }
+
+    const attachments = await Promise.all(
+        input.files.map(async (file) => ({
+            name: file.name,
+            dataUri: await fileToDataUri(file),
+        }))
+    );
+
+    const newRetaliationCase: PoshComplaint = {
+        ...parentCase, // Inherit details from parent
+        caseId: childCaseId,
+        parentCaseId: input.parentCaseId,
+        createdAt,
+        title: `Retaliation Claim for case ${input.parentCaseId}`,
+        incidentDetails: input.description,
+        attachments,
+        caseStatus: 'New',
+        assignedTo: ['ICC Head'],
+        isLocked: false,
+        auditTrail: [{
+            event: 'Retaliation Claim Filed',
+            timestamp: createdAt,
+            actor: input.submittedBy,
+            details: `This case was filed as a retaliation claim linked to parent case ${input.parentCaseId}.`,
+            isPublic: true,
+        }],
+    };
+
+    // Add event to parent case
+    parentCase.auditTrail.push({
+        event: 'Retaliation Claim Filed',
+        timestamp: createdAt,
+        actor: input.submittedBy,
+        details: `A linked retaliation case was filed. New Case ID: ${childCaseId}`,
+        isPublic: false, // Internal note for ICC
+    });
+
+    allComplaints.unshift(newRetaliationCase);
+    savePoshToStorage(allComplaints);
+
+     // Add new case to complainant's list
+    const caseKey = getPoshCaseKey(input.submittedBy);
+    if (caseKey) {
+        const caseIds = JSON.parse(sessionStorage.getItem(caseKey) || '[]');
+        caseIds.push(childCaseId);
+        sessionStorage.setItem(caseKey, JSON.stringify(caseIds));
+    }
+
+
+    return newRetaliationCase;
 }
 
 

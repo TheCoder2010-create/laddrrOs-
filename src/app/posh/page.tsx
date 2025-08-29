@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect, useCallback, Key } from 'react';
+import { useState, useTransition, useEffect, useCallback, Key, ChangeEvent, useRef } from 'react';
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,8 +22,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
-import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon, List, CheckCircle } from 'lucide-react';
-import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent, getComplaintsByIds } from '@/services/posh-service';
+import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon, List, CheckCircle, Handshake, AlertTriangle, GitBranch } from 'lucide-react';
+import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent, getComplaintsByIds, requestPoshCaseWithdrawal, requestPoshCaseConciliation, reportPoshRetaliation } from '@/services/posh-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
@@ -55,13 +55,15 @@ const formSchema = z.object({
 function CaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     if (!trail || trail.length === 0) return null;
 
+    const publicTrail = trail.filter(event => event.isPublic || !('isPublic' in event));
+
     return (
         <div className="space-y-2 pt-4">
             <h4 className="font-semibold">Case History</h4>
             <div className="relative p-4 border rounded-md bg-muted/50">
                 <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
-                    {trail.map((event, index) => {
+                    {publicTrail.map((event, index) => {
                         return (
                             <div key={index} className="flex items-start gap-4 relative">
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
@@ -83,41 +85,217 @@ function CaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
     );
 }
 
+function CaseActionDialog({
+  open,
+  onOpenChange,
+  caseId,
+  actionType,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  caseId: string;
+  actionType: 'Withdraw' | 'Conciliation';
+  onSubmit: () => void;
+}) {
+  const [reason, setReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const { role } = useRole();
+
+  const handleSubmit = async () => {
+    if (!reason || !role) {
+      toast({ variant: 'destructive', title: 'Reason required', description: 'Please provide a reason for your request.' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      if (actionType === 'Withdraw') {
+        await requestPoshCaseWithdrawal(caseId, role, reason);
+      } else {
+        await requestPoshCaseConciliation(caseId, role, reason);
+      }
+      toast({ title: 'Request Submitted', description: `Your request for ${actionType.toLowerCase()} has been sent to the ICC.` });
+      onSubmit();
+      onOpenChange(false);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Submission Failed' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Request Case {actionType}</DialogTitle>
+          <DialogDescription>Please provide a detailed reason for your request. This will be sent to the ICC for review.</DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={6} placeholder={`My reason for requesting ${actionType.toLowerCase()} is...`} />
+        </div>
+        <DialogFooter>
+          <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !reason}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Submit Request
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RetaliationDialog({
+  open,
+  onOpenChange,
+  parentCaseId,
+  onSubmit
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  parentCaseId: string;
+  onSubmit: (newCaseId: string) => void;
+}) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [description, setDescription] = useState('');
+    const [files, setFiles] = useState<File[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setFiles([...files, ...Array.from(e.target.files)]);
+        }
+    };
+
+    const removeFile = (fileToRemove: File) => {
+        setFiles(files.filter(file => file !== fileToRemove));
+    };
+
+    const handleSubmit = async () => {
+        if (!description || !role) {
+            toast({ variant: 'destructive', title: "Description Required", description: "Please describe the incident of retaliation." });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const newCase = await reportPoshRetaliation({
+                parentCaseId,
+                submittedBy: role,
+                description,
+                files,
+            });
+            toast({ title: "Retaliation Report Submitted", description: "A new linked case has been created and sent to the ICC Head." });
+            onSubmit(newCase.caseId);
+            onOpenChange(false);
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Report Retaliation</DialogTitle>
+                    <DialogDescription>This will create a new, confidential case linked to this one and assign it directly to the ICC Head. Describe the retaliatory action in detail.</DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={8} placeholder="Describe the incident of retaliation..." />
+                    <div className="space-y-2">
+                        <Label>Attach Evidence (Optional)</Label>
+                        <Button asChild variant="outline" size="sm">
+                            <Label>
+                                <Paperclip className="mr-2 h-4 w-4" />
+                                Attach Files
+                                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
+                            </Label>
+                        </Button>
+                        <div className="space-y-1">
+                            {files.map((file, i) => (
+                               <div key={i} className="text-sm flex items-center justify-between p-1 bg-muted rounded-md">
+                                   <span className="font-medium text-muted-foreground truncate">{file.name}</span>
+                                   <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeFile(file)}>
+                                       <XIcon className="h-4 w-4" />
+                                   </Button>
+                               </div>
+                           ))}
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                    <Button variant="destructive" onClick={handleSubmit} disabled={isSubmitting || !description}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit Report
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 const getPoshCaseKey = (role: string | null) => role ? `posh_cases_${role.replace(/\s/g, '_')}` : null;
 
-function MyPoshSubmissions({ onUpdate }: { onUpdate: () => void }) {
+function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () => void, allCases: PoshComplaint[], setAllCases: (cases: PoshComplaint[]) => void }) {
     const [myCases, setMyCases] = useState<PoshComplaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { role } = useRole();
+    
+    // State for action dialogs
+    const [dialogState, setDialogState] = useState<{ open: 'withdraw' | 'conciliation' | 'retaliation' | null, caseId: string | null }>({ open: null, caseId: null });
 
     const fetchMyCases = useCallback(async () => {
         if (!role) return;
         setIsLoading(true);
         const caseKey = getPoshCaseKey(role);
+        let allKnownCaseIds: string[] = [];
+
         if (caseKey) {
-            const caseIds = JSON.parse(sessionStorage.getItem(caseKey) || '[]');
-            if (caseIds.length > 0) {
-                const cases = await getComplaintsByIds(caseIds);
-                setMyCases(cases);
-            } else {
-                setMyCases([]);
-            }
-        } else {
-             setMyCases([]);
+            allKnownCaseIds = JSON.parse(sessionStorage.getItem(caseKey) || '[]');
         }
+        
+        const mySubmittedCases = allCases.filter(c => c.complainantInfo.name === roleUserMapping[role].name);
+        mySubmittedCases.forEach(c => {
+            if (!allKnownCaseIds.includes(c.caseId)) {
+                allKnownCaseIds.push(c.caseId);
+            }
+        });
+
+        if (caseKey) {
+            sessionStorage.setItem(caseKey, JSON.stringify(allKnownCaseIds));
+        }
+
+        if (allKnownCaseIds.length > 0) {
+            const cases = await getComplaintsByIds(allKnownCaseIds);
+            setMyCases(cases);
+        } else {
+            setMyCases([]);
+        }
+
         setIsLoading(false);
-    }, [role]);
+    }, [role, allCases]);
 
     useEffect(() => {
         fetchMyCases();
-        const handleStorageChange = () => fetchMyCases();
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('poshComplaintUpdated', handleStorageChange);
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('poshComplaintUpdated', handleStorageChange);
-        };
     }, [fetchMyCases]);
+    
+    const handleLocalUpdate = async () => {
+      const caseKey = getPoshCaseKey(role);
+      let allKnownCaseIds: string[] = [];
+       if (caseKey) {
+            allKnownCaseIds = JSON.parse(sessionStorage.getItem(caseKey) || '[]');
+        }
+      const updatedCases = await getComplaintsByIds(allKnownCaseIds);
+      setAllCases(updatedCases);
+      onUpdate();
+    }
+
 
     if (isLoading) {
         return <Skeleton className="h-24 w-full" />
@@ -137,8 +315,37 @@ function MyPoshSubmissions({ onUpdate }: { onUpdate: () => void }) {
                 <List className="h-5 w-5" />
                 My Raised Cases
             </h2>
+            <CaseActionDialog
+              open={dialogState.open === 'withdraw'}
+              onOpenChange={() => setDialogState({ open: null, caseId: null })}
+              caseId={dialogState.caseId!}
+              actionType="Withdraw"
+              onSubmit={handleLocalUpdate}
+            />
+            <CaseActionDialog
+              open={dialogState.open === 'conciliation'}
+              onOpenChange={() => setDialogState({ open: null, caseId: null })}
+              caseId={dialogState.caseId!}
+              actionType="Conciliation"
+              onSubmit={handleLocalUpdate}
+            />
+            <RetaliationDialog
+              open={dialogState.open === 'retaliation'}
+              onOpenChange={() => setDialogState({ open: null, caseId: null })}
+              parentCaseId={dialogState.caseId!}
+              onSubmit={() => {
+                  const caseKey = getPoshCaseKey(role);
+                  if (caseKey) {
+                     // The new case ID will be fetched with the update
+                      handleLocalUpdate();
+                  }
+              }}
+            />
+
              <Accordion type="single" collapsible className="w-full">
-                 {myCases.map(item => (
+                 {myCases.map(item => {
+                    const isCaseClosed = item.caseStatus.startsWith('Closed') || item.caseStatus.startsWith('Resolved');
+                    return (
                     <AccordionItem value={item.caseId} key={item.caseId}>
                         <AccordionTrigger>
                            <div className="flex justify-between items-center w-full">
@@ -157,9 +364,40 @@ function MyPoshSubmissions({ onUpdate }: { onUpdate: () => void }) {
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-2">
                             <CaseHistory trail={item.auditTrail} />
+                             <div className="pt-4 border-t">
+                                <p className="text-sm font-medium mb-2">Case Actions</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={isCaseClosed}
+                                        onClick={() => setDialogState({ open: 'withdraw', caseId: item.caseId })}
+                                    >
+                                        <XIcon className="mr-2 h-4 w-4" />
+                                        Withdraw
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={isCaseClosed}
+                                        onClick={() => setDialogState({ open: 'conciliation', caseId: item.caseId })}
+                                    >
+                                        <Handshake className="mr-2 h-4 w-4" />
+                                        Request Conciliation
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => setDialogState({ open: 'retaliation', caseId: item.caseId })}
+                                    >
+                                        <AlertTriangle className="mr-2 h-4 w-4" />
+                                        Report Retaliation
+                                    </Button>
+                                </div>
+                            </div>
                         </AccordionContent>
                     </AccordionItem>
-                ))}
+                )})}
             </Accordion>
         </div>
     )
@@ -510,11 +748,25 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
 
 export default function PoshPage() {
     const { role, setRole, isLoading } = useRole();
-    const [key, setKey] = useState(0); 
+    const [allCases, setAllCases] = useState<PoshComplaint[]>([]);
+    
+    const fetchAllCases = useCallback(async () => {
+        const cases = await getComplaintsByIds([]); // This seems odd, let's fix it.
+        const all = await getAllPoshComplaints();
+        setAllCases(all);
+    }, []);
 
-    const handleSubmission = () => {
-        setKey(prev => prev + 1);
-    }
+    useEffect(() => {
+        fetchAllCases();
+         const handleStorageChange = () => fetchAllCases();
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('poshComplaintUpdated', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('poshComplaintUpdated', handleStorageChange);
+        };
+    }, [fetchAllCases]);
+
 
     if (isLoading || !role) {
         return (
@@ -526,10 +778,10 @@ export default function PoshPage() {
   
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
-            <PoshComplaintForm onSubmitted={handleSubmission} />
+            <PoshComplaintForm onSubmitted={fetchAllCases} />
             <div className="p-4 md:p-8">
               <Separator className="my-8" />
-              <MyPoshSubmissions onUpdate={handleSubmission} key={key} />
+              <MyPoshSubmissions onUpdate={fetchAllCases} allCases={allCases} setAllCases={setAllCases} />
             </div>
         </DashboardLayout>
     );
