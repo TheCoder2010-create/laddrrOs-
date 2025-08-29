@@ -421,11 +421,11 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
                            <div className="flex justify-between items-center w-full">
                                 <div className="flex items-center gap-4 flex-1 min-w-0">
                                     <p className="font-semibold truncate">{capitalizeFirstLetter(item.title)}</p>
+                                </div>
+                                <div className="flex items-center gap-4 mr-2">
                                     <span className="font-mono text-sm text-muted-foreground truncate hidden sm:inline-block">
                                         ID: {item.caseId}
                                     </span>
-                                </div>
-                                <div className="mr-2">
                                      <Badge variant={item.caseStatus === 'New' || isAwaitingMyAction ? 'destructive' : 'secondary'}>
                                         {item.caseStatus}
                                     </Badge>
