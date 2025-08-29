@@ -11,6 +11,8 @@ import { addAdminLogEntry } from '@/services/admin-service';
 
 export const poshCaseStatuses = [
     'Under Preliminary Review',
+    'Pending Withdrawal',
+    'Pending Conciliation',
     'Inquiry Initiated',
     'Evidence Review',
     'Hearing Scheduled',
@@ -245,6 +247,7 @@ export async function requestPoshCaseWithdrawal(caseId: string, actor: Role, rea
     if (caseIndex === -1) return;
 
     const complaint = allComplaints[caseIndex];
+    complaint.caseStatus = 'Pending Withdrawal';
     complaint.auditTrail.push({
         event: 'Withdrawal Requested by Complainant',
         timestamp: new Date(),
@@ -252,8 +255,6 @@ export async function requestPoshCaseWithdrawal(caseId: string, actor: Role, rea
         details: reason,
         isPublic: false, // This is an internal request for the ICC
     });
-    // Optionally change status
-    // complaint.caseStatus = 'Pending Withdrawal Approval'; 
 
     savePoshToStorage(allComplaints);
 }
@@ -264,12 +265,44 @@ export async function requestPoshCaseConciliation(caseId: string, actor: Role, r
     if (caseIndex === -1) return;
 
     const complaint = allComplaints[caseIndex];
+    complaint.caseStatus = 'Pending Conciliation';
     complaint.auditTrail.push({
         event: 'Conciliation Requested by Complainant',
         timestamp: new Date(),
         actor: actor,
         details: reason,
         isPublic: false, // Internal request
+    });
+
+    savePoshToStorage(allComplaints);
+}
+
+export async function respondToComplainantRequest(
+    caseId: string,
+    actor: Role,
+    requestType: 'Withdrawal' | 'Conciliation',
+    approved: boolean,
+    notes: string
+): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    const decision = approved ? 'Approved' : 'Denied';
+
+    if (approved) {
+        complaint.caseStatus = requestType === 'Withdrawal' ? 'Closed' : 'Under Preliminary Review'; // Or a specific conciliation status
+    } else {
+        complaint.caseStatus = 'Under Preliminary Review'; // Revert to a previous state
+    }
+    
+    complaint.auditTrail.push({
+        event: `${requestType} Request ${decision}`,
+        timestamp: new Date(),
+        actor,
+        details: `ICC Head ${decision.toLowerCase()} the request. Notes: ${notes}`,
+        isPublic: true, // Make the decision public to the complainant
     });
 
     savePoshToStorage(allComplaints);

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase, Search } from 'lucide-react';
-import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus, poshCaseStatuses } from '@/services/posh-service';
+import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus, poshCaseStatuses, respondToComplainantRequest } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays, startOfQuarter, endOfQuarter, startOfMonth, endOfYear } from 'date-fns';
 import { formatActorName, roleUserMapping } from '@/lib/role-mapping';
@@ -81,6 +81,51 @@ function PoshCaseHistory({ trail, onDownload }: { trail: PoshAuditEvent[], onDow
 }
 
 type CaseStatus = typeof poshCaseStatuses[number];
+
+function ComplainantRequestPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [notes, setNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const requestType = complaint.caseStatus === 'Pending Withdrawal' ? 'Withdrawal' : 'Conciliation';
+    const requestEvent = complaint.auditTrail.find(e => e.event.includes(requestType));
+    
+    const handleDecision = async (approved: boolean) => {
+        if (!notes || !role) {
+            toast({ variant: 'destructive', title: 'Notes required', description: 'Please provide notes for your decision.'});
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            await respondToComplainantRequest(complaint.caseId, role, requestType, approved, notes);
+            toast({ title: 'Decision Submitted' });
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Submission Failed' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    return (
+        <div className="p-4 border-2 border-blue-500/50 bg-blue-500/10 rounded-lg space-y-4">
+            <h4 className="font-semibold text-lg text-blue-700 dark:text-blue-400">Action Required: Complainant Request for {requestType}</h4>
+            <div className="p-3 bg-background/50 rounded-md border">
+                <p className="font-semibold text-foreground">Complainant's Reason:</p>
+                <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{requestEvent?.details}</p>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="decision-notes">Your Decision & Notes</Label>
+                <Textarea id="decision-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Provide your reasoning here..."/>
+            </div>
+            <div className="flex gap-2">
+                <Button variant="success" onClick={() => handleDecision(true)} disabled={isSubmitting || !notes}>Approve</Button>
+                <Button variant="destructive" onClick={() => handleDecision(false)} disabled={isSubmitting || !notes}>Deny</Button>
+            </div>
+        </div>
+    )
+}
 
 function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
     const { role } = useRole();
@@ -205,11 +250,14 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
     const currentStatusIndex = complaint.caseStatus === 'New' 
       ? -1 
       : poshCaseStatuses.indexOf(complaint.caseStatus as CaseStatus);
-
     
+    const isPendingRequest = complaint.caseStatus === 'Pending Withdrawal' || complaint.caseStatus === 'Pending Conciliation';
+
     return (
         <div className="pt-4 border-t space-y-6">
             <h3 className="font-semibold text-lg text-foreground">Case Actions</h3>
+
+            {isPendingRequest && <ComplainantRequestPanel complaint={complaint} onUpdate={onUpdate} />}
             
             <div className="p-4 border rounded-lg bg-background space-y-3">
                 <Label className="font-semibold text-base">Add Internal Notes or Public Status Updates</Label>
@@ -701,7 +749,7 @@ function PoshDeskContent() {
                                                 <span className="hidden font-mono text-sm text-muted-foreground sm:inline-block">
                                                     ID: {complaint.caseId}
                                                 </span>
-                                                <Badge variant={complaint.caseStatus === 'New' ? 'destructive' : 'secondary'}>
+                                                <Badge variant={complaint.caseStatus === 'New' || complaint.caseStatus === 'Pending Withdrawal' || complaint.caseStatus === 'Pending Conciliation' ? 'destructive' : 'secondary'}>
                                                     {complaint.caseStatus}
                                                 </Badge>
                                             </div>
