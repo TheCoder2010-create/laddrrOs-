@@ -127,6 +127,83 @@ function ComplainantRequestPanel({ complaint, onUpdate }: { complaint: PoshCompl
     )
 }
 
+function RetaliationActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [note, setNote] = useState('');
+    const [isAddingNote, setIsAddingNote] = useState(false);
+    const [resolution, setResolution] = useState('');
+    const [isResolving, setIsResolving] = useState(false);
+
+    const handleAddNote = async (noteType: string, isPublic: boolean) => {
+        if (!role || !note) return;
+        setIsAddingNote(true);
+        try {
+            await addPoshInternalNote(complaint.caseId, note, role, noteType, isPublic);
+            toast({ title: 'Note Added' });
+            setNote('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Failed to Add Note' });
+        } finally {
+            setIsAddingNote(false);
+        }
+    }
+    
+    const handleResolve = async () => {
+        if (!role || !resolution) return;
+        setIsResolving(true);
+        try {
+            // A retaliation claim resolution is always public to the complainant.
+            await addPoshInternalNote(complaint.caseId, resolution, role, 'HR Responded to Retaliation Claim', true);
+            await updatePoshStatus(complaint.caseId, 'Resolved', role);
+            toast({ title: 'Resolution Submitted' });
+            setResolution('');
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Failed to Submit Resolution' });
+        } finally {
+            setIsResolving(false);
+        }
+    }
+    
+    return (
+        <div className="pt-4 border-t space-y-6">
+            <h3 className="font-semibold text-lg text-foreground">Retaliation Case Actions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 border rounded-lg bg-background space-y-3">
+                    <Label className="font-semibold text-base">Add Internal Note</Label>
+                    <p className="text-sm text-muted-foreground">Log investigation notes. These are for ICC members only and not visible to the complainant.</p>
+                    <Textarea 
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Type your internal note here..."
+                        rows={4}
+                    />
+                    <Button variant="outline" onClick={() => handleAddNote('Internal Note', false)} disabled={!note || isAddingNote}>
+                        {isAddingNote && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add Internal Note
+                    </Button>
+                </div>
+                 <div className="p-4 border rounded-lg bg-background space-y-3">
+                    <Label className="font-semibold text-base">Submit Final Resolution</Label>
+                    <p className="text-sm text-muted-foreground">Provide the final resolution. This will be sent to the complainant and close the case.</p>
+                    <Textarea 
+                        value={resolution}
+                        onChange={(e) => setResolution(e.target.value)}
+                        placeholder="Type your final resolution here..."
+                        rows={4}
+                    />
+                    <Button variant="destructive" onClick={handleResolve} disabled={!resolution || isResolving}>
+                        {isResolving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Submit to Complainant
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -161,6 +238,10 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
         setAssignees([]);
     }, [isUnassignMode]);
     
+    if (complaint.title.toLowerCase().includes('retaliation claim')) {
+        return <RetaliationActionPanel complaint={complaint} onUpdate={onUpdate} />;
+    }
+
     const handleAssigneeChange = (role: Role) => {
         setAssignees(prev => 
             prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
@@ -679,13 +760,9 @@ function PoshDeskContent() {
     }, [role, isIccMember]);
 
     const handleUpdate = useCallback(() => {
-        const currentOpenItem = openAccordionItem;
-        fetchComplaints().then(() => {
-            if (currentOpenItem) {
-                setOpenAccordionItem(currentOpenItem);
-            }
-        });
-    }, [fetchComplaints, openAccordionItem]);
+        fetchComplaints();
+    }, [fetchComplaints]);
+
 
     useEffect(() => {
         fetchComplaints();
@@ -848,3 +925,4 @@ export default function PoshDeskPage() {
         </DashboardLayout>
     );
 }
+
