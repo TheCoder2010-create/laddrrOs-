@@ -478,48 +478,50 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="space-y-3 p-4 border rounded-lg bg-background">
-                    <Label className="font-semibold text-base">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
-                    <div className="flex items-center justify-between">
-                        <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="justify-between" disabled={isUnassignMode && (!complaint.assignedTo || complaint.assignedTo.length === 0)}>
-                                    <span>{assignees.length > 0 ? assignees.join(', ') : 'Select...'}</span>
-                                    <ChevronDown className="ml-2 h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-auto" align="end">
-                                {assignableRolesForDropdown.map(r => (
-                                    <DropdownMenuCheckboxItem key={r} checked={assignees.includes(r)} onCheckedChange={() => handleAssigneeChange(r)} onSelect={(e) => e.preventDefault()}>
-                                        {r}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                     <p className="text-xs text-muted-foreground">
-                        {complaint.assignedTo && complaint.assignedTo.length > 0 && (
-                            <span className="block">
-                                Currently: <span className="font-semibold text-primary">{complaint.assignedTo.join(', ')}</span>
-                            </span>
-                        )}
-                    </p>
-                    <div className="relative">
-                         <Textarea 
-                            placeholder="Add a private note..." 
-                            value={assignmentComment} 
-                            onChange={(e) => setAssignmentComment(e.target.value)} 
-                            rows={2} 
-                            className="pr-12 pb-8 text-sm"
-                        />
-                         <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute right-2 bottom-2 h-7 w-7 rounded-full">
-                            {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
-                        </Button>
-                    </div>
-                </div>
+                {role === 'ICC Head' && (
+                  <div className="space-y-3 p-4 border rounded-lg bg-background">
+                      <Label className="font-semibold text-base">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
+                      <div className="flex items-center justify-between">
+                          <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" className="justify-between" disabled={isUnassignMode && (!complaint.assignedTo || complaint.assignedTo.length === 0)}>
+                                      <span>{assignees.length > 0 ? assignees.join(', ') : 'Select...'}</span>
+                                      <ChevronDown className="ml-2 h-4 w-4" />
+                                  </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="w-auto" align="end">
+                                  {assignableRolesForDropdown.map(r => (
+                                      <DropdownMenuCheckboxItem key={r} checked={assignees.includes(r)} onCheckedChange={() => handleAssigneeChange(r)} onSelect={(e) => e.preventDefault()}>
+                                          {r}
+                                      </DropdownMenuCheckboxItem>
+                                  ))}
+                              </DropdownMenuContent>
+                          </DropdownMenu>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                          {complaint.assignedTo && complaint.assignedTo.length > 0 && (
+                              <span className="block">
+                                  Currently: <span className="font-semibold text-primary">{complaint.assignedTo.join(', ')}</span>
+                              </span>
+                          )}
+                      </p>
+                      <div className="relative">
+                          <Textarea 
+                              placeholder="Add a private note..." 
+                              value={assignmentComment} 
+                              onChange={(e) => setAssignmentComment(e.target.value)} 
+                              rows={2} 
+                              className="pr-12 pb-8 text-sm"
+                          />
+                          <Button onClick={handleAssign} disabled={assignees.length === 0 || isAssigning} size="icon" className="absolute right-2 bottom-2 h-7 w-7 rounded-full">
+                              {isAssigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                          </Button>
+                      </div>
+                  </div>
+                )}
 
-                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
+                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col lg:col-span-2">
                     <Label className="font-semibold text-base">Disciplinary Action</Label>
                     <div className="relative flex-grow">
                         <Textarea 
@@ -535,7 +537,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                     </div>
                 </div>
                 
-                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
+                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col lg:col-span-3">
                     <Label className="font-semibold text-base">Final Report</Label>
                     <div className="relative flex-grow">
                         <Textarea 
