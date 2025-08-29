@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon, List, CheckCircle, Handshake, AlertTriangle, GitBranch } from 'lucide-react';
-import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent, getComplaintsByIds, requestPoshCaseWithdrawal, requestPoshCaseConciliation, reportPoshRetaliation } from '@/services/posh-service';
+import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent, getComplaintsByIds, requestPoshCaseWithdrawal, requestPoshCaseConciliation, reportPoshRetaliation, getAllPoshComplaints } from '@/services/posh-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
@@ -751,7 +751,6 @@ export default function PoshPage() {
     const [allCases, setAllCases] = useState<PoshComplaint[]>([]);
     
     const fetchAllCases = useCallback(async () => {
-        const cases = await getComplaintsByIds([]); // This seems odd, let's fix it.
         const all = await getAllPoshComplaints();
         setAllCases(all);
     }, []);
