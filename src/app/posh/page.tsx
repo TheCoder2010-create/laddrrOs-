@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback, Key, ChangeEvent, useRef } from 'react';
@@ -23,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
 import { Scale, CalendarIcon, Send, Loader2, Paperclip, XIcon, List, CheckCircle, Handshake, AlertTriangle, GitBranch } from 'lucide-react';
-import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent, getComplaintsByIds, requestPoshCaseWithdrawal, requestPoshCaseConciliation, reportPoshRetaliation, getAllPoshComplaints } from '@/services/posh-service';
+import { submitPoshComplaint, type PoshComplaintInput, getComplaintsForUser, PoshComplaint, PoshAuditEvent, getComplaintsByIds, requestPoshCaseWithdrawal, requestPoshCaseConciliation, reportPoshRetaliation, getAllPoshComplaints, submitPoshComplainantAcknowledgement } from '@/services/posh-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
@@ -82,6 +83,69 @@ function CaseHistory({ trail }: { trail: PoshAuditEvent[] }) {
                 </div>
             </div>
         </div>
+    );
+}
+
+function RetaliationAcknowledgementWidget({ item, onUpdate }: { item: PoshComplaint, onUpdate: () => void }) {
+    const { toast } = useToast();
+    const { role } = useRole();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const handleAccept = async () => {
+        if (!role) return;
+        setIsSubmitting(true);
+        try {
+            await submitPoshComplainantAcknowledgement(item.caseId, role, true);
+            toast({ title: "Resolution Accepted", description: "This case has now been closed." });
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Submission Failed' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const handleEscalate = async () => {
+         if (!role) return;
+        setIsSubmitting(true);
+        try {
+            await submitPoshComplainantAcknowledgement(item.caseId, role, false, 'Employee escalated after retaliation response.');
+            toast({ title: "Case Escalated", description: "Your dissatisfaction has been noted and the case has been sent back for final disposition." });
+            onUpdate();
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Submission Failed' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const resolutionEvent = item.auditTrail.find(e => e.event === 'HR Responded to Retaliation Claim');
+
+    return (
+        <Card className="border-2 border-blue-500/50 bg-blue-500/5 rounded-lg mt-4">
+            <CardHeader>
+                <CardTitle className="text-lg text-blue-700 dark:text-blue-400">Action Required: Response to Your Retaliation Claim</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="p-3 bg-background/50 rounded-md border">
+                    <p className="font-semibold text-foreground">ICC Head's Response:</p>
+                    <p className="text-muted-foreground mt-1 whitespace-pre-wrap">{resolutionEvent?.details}</p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    Please review the response. If you are satisfied, you can accept it to close the case. If not, you may escalate it for a final logged disposition by the ICC Head.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="success" onClick={handleAccept} disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Accept Resolution
+                    </Button>
+                    <Button variant="destructive" onClick={handleEscalate} disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        I'm Not Satisfied, Escalate
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -192,7 +256,7 @@ function RetaliationDialog({
             onSubmit(newCase.caseId);
             onOpenChange(false);
         } catch (error) {
-            toast({ variant: 'destructive', title: "Submission Failed" });
+            toast({ variant: 'destructive', title: 'Submission Failed' });
         } finally {
             setIsSubmitting(false);
         }
@@ -345,6 +409,7 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
              <Accordion type="single" collapsible className="w-full">
                  {myCases.map(item => {
                     const isCaseClosed = item.caseStatus.startsWith('Closed') || item.caseStatus.startsWith('Resolved');
+                    const isAwaitingMyAction = item.caseStatus === 'Pending Complainant Acknowledgement';
                     return (
                     <AccordionItem value={item.caseId} key={item.caseId}>
                         <AccordionTrigger>
@@ -356,13 +421,14 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
                                     </p>
                                 </div>
                                 <div className="mr-2">
-                                     <Badge variant={item.caseStatus === 'New' ? 'destructive' : 'secondary'}>
+                                     <Badge variant={item.caseStatus === 'New' || isAwaitingMyAction ? 'destructive' : 'secondary'}>
                                         {item.caseStatus}
                                     </Badge>
                                 </div>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-4 pt-2">
+                            {isAwaitingMyAction && <RetaliationAcknowledgementWidget item={item} onUpdate={handleLocalUpdate} />}
                             <CaseHistory trail={item.auditTrail} />
                              <div className="pt-4 border-t">
                                 <p className="text-sm font-medium mb-2">Case Actions</p>

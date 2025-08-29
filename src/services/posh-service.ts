@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -13,6 +14,8 @@ export const poshCaseStatuses = [
     'Under Preliminary Review',
     'Pending Withdrawal',
     'Pending Conciliation',
+    'Pending Complainant Acknowledgement',
+    'Pending Final Disposition',
     'Inquiry Initiated',
     'Evidence Review',
     'Hearing Scheduled',
@@ -369,6 +372,54 @@ export async function reportPoshRetaliation(input: RetaliationReportInput): Prom
     return newRetaliationCase;
 }
 
+export async function submitPoshComplainantAcknowledgement(caseId: string, actor: Role, accepted: boolean, comments?: string): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    
+    if (accepted) {
+        complaint.caseStatus = 'Resolved';
+        complaint.auditTrail.push({
+            event: 'Complainant Accepted Resolution',
+            timestamp: new Date(),
+            actor,
+            details: `The complainant has accepted the resolution. ${comments ? `Comments: "${comments}"` : ''}`,
+            isPublic: true,
+        });
+    } else {
+        complaint.caseStatus = 'Pending Final Disposition';
+        complaint.auditTrail.push({
+            event: 'Complainant Rejected Resolution',
+            timestamp: new Date(),
+            actor,
+            details: `The complainant was not satisfied with the resolution and has escalated the case for final disposition. ${comments ? `Comments: "${comments}"` : ''}`,
+            isPublic: true,
+        });
+    }
+    
+    savePoshToStorage(allComplaints);
+}
+
+export async function submitPoshFinalDisposition(caseId: string, actor: Role, disposition: string, notes: string): Promise<void> {
+    const allComplaints = getPoshFromStorage();
+    const caseIndex = allComplaints.findIndex(c => c.caseId === caseId);
+    if (caseIndex === -1) return;
+
+    const complaint = allComplaints[caseIndex];
+    complaint.caseStatus = 'Closed';
+    
+    complaint.auditTrail.push({
+        event: 'Final Disposition Logged',
+        timestamp: new Date(),
+        actor,
+        details: `Case closed and routed to ${disposition}. Final notes: ${notes}`,
+        isPublic: true,
+    });
+    
+    savePoshToStorage(allComplaints);
+}
 
 export async function getAllPoshComplaints(): Promise<PoshComplaint[]> {
     return getPoshFromStorage().sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

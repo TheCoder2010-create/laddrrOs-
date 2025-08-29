@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Scale, Users, AlertTriangle, CheckCircle, ChevronDown, Send, Loader2, File, User, FileText, Download, Clock, BarChart3, Folder, Shield, Timer, Undo2, History, Briefcase, Search } from 'lucide-react';
-import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus, poshCaseStatuses, respondToComplainantRequest } from '@/services/posh-service';
+import { PoshComplaint, getAllPoshComplaints, PoshAuditEvent, assignPoshCase, addPoshInternalNote, updatePoshStatus, poshCaseStatuses, respondToComplainantRequest, submitPoshFinalDisposition } from '@/services/posh-service';
 import { Badge } from '@/components/ui/badge';
 import { format, differenceInDays, startOfQuarter, endOfQuarter, startOfMonth, endOfYear } from 'date-fns';
 import { formatActorName, roleUserMapping } from '@/lib/role-mapping';
@@ -127,6 +127,69 @@ function ComplainantRequestPanel({ complaint, onUpdate }: { complaint: PoshCompl
     )
 }
 
+function FinalDispositionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [finalAction, setFinalAction] = useState<string | null>(null);
+    const [finalActionNotes, setFinalActionNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!finalAction || !finalActionNotes || !role) {
+            toast({ variant: 'destructive', title: "Information Missing", description: "Please select an action and provide notes."});
+            return;
+        };
+        setIsSubmitting(true);
+        try {
+            await submitPoshFinalDisposition(complaint.caseId, role, finalAction, finalActionNotes);
+            toast({ title: "Final Action Logged", description: `The case has been closed and routed to ${finalAction}.`});
+            onUpdate();
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="p-4 border-t mt-4 space-y-4 bg-destructive/10 rounded-b-lg">
+            <Label className="text-base font-semibold text-destructive">Final Disposition Required</Label>
+            <p className="text-sm text-destructive/90">
+                The complainant has rejected the final resolution for this retaliation claim. Select a final action to formally close the case. This is the last step.
+            </p>
+
+            {!finalAction ? (
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" onClick={() => setFinalAction('Ombudsman')}>Assign to Ombudsman</Button>
+                    <Button variant="secondary" onClick={() => setFinalAction('Grievance Office')}>Assign to Grievance Office</Button>
+                    <Button variant="destructive" onClick={() => setFinalAction('Log & Close')}>Log Dissatisfaction & Close</Button>
+                </div>
+            ) : (
+                <div className="w-full space-y-3">
+                    <p className="font-medium">Action: <span className="text-primary">{finalAction}</span></p>
+                    <Label htmlFor="final-notes">Reasoning / Final Notes</Label>
+                    <Textarea
+                        id="final-notes"
+                        value={finalActionNotes}
+                        onChange={(e) => setFinalActionNotes(e.target.value)}
+                        rows={4}
+                        className="bg-background"
+                        placeholder="Provide your justification for this final action..."
+                    />
+                    <div className="flex gap-2">
+                        <Button className="bg-black hover:bg-black/80 text-white" onClick={handleSubmit} disabled={isSubmitting || !finalActionNotes}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                        Submit Final Action
+                        </Button>
+                        <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function RetaliationActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpdate: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
@@ -134,6 +197,10 @@ function RetaliationActionPanel({ complaint, onUpdate }: { complaint: PoshCompla
     const [isAddingNote, setIsAddingNote] = useState(false);
     const [resolution, setResolution] = useState('');
     const [isResolving, setIsResolving] = useState(false);
+
+    if (complaint.caseStatus === 'Pending Final Disposition') {
+        return <FinalDispositionPanel complaint={complaint} onUpdate={onUpdate} />;
+    }
 
     const handleAddNote = async (noteType: string, isPublic: boolean) => {
         if (!role || !note) return;
@@ -156,8 +223,8 @@ function RetaliationActionPanel({ complaint, onUpdate }: { complaint: PoshCompla
         try {
             // A retaliation claim resolution is always public to the complainant.
             await addPoshInternalNote(complaint.caseId, resolution, role, 'HR Responded to Retaliation Claim', true);
-            await updatePoshStatus(complaint.caseId, 'Resolved', role);
-            toast({ title: 'Resolution Submitted' });
+            await updatePoshStatus(complaint.caseId, 'Pending Complainant Acknowledgement', role);
+            toast({ title: 'Resolution Submitted', description: "The response has been sent to the complainant for acknowledgement." });
             setResolution('');
             onUpdate();
         } catch (error) {
@@ -238,7 +305,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
         setAssignees([]);
     }, [isUnassignMode]);
     
-    if (complaint.title.toLowerCase().includes('retaliation claim')) {
+    if (complaint.title.toLowerCase().includes('retaliation claim') || complaint.parentCaseId) {
         return <RetaliationActionPanel complaint={complaint} onUpdate={onUpdate} />;
     }
 
@@ -746,9 +813,7 @@ function PoshDeskContent() {
         setIsLoading(true);
         const data = await getAllPoshComplaints();
         
-        if (role === 'ICC Member') {
-            setComplaints(data.filter(c => c.assignedTo.includes('ICC Member')));
-        } else if (role === 'ICC Head') {
+        if (role === 'ICC Head') {
             setComplaints(data);
         } else if (isIccMember) {
              setComplaints(data.filter(c => c.assignedTo.includes(role!)));
@@ -760,8 +825,10 @@ function PoshDeskContent() {
     }, [role, isIccMember]);
 
     const handleUpdate = useCallback(() => {
+        const currentOpen = openAccordionItem;
         fetchComplaints();
-    }, [fetchComplaints]);
+        setOpenAccordionItem(currentOpen);
+    }, [fetchComplaints, openAccordionItem]);
 
 
     useEffect(() => {
