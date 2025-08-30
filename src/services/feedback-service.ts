@@ -1,4 +1,5 @@
 
+
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -1141,6 +1142,7 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
         timestamp: new Date(),
         actor,
         details: details,
+        isPublic: true,
     });
 
     saveFeedbackToStorage(allFeedback);
@@ -1212,6 +1214,7 @@ export async function submitSupervisorUpdate(trackingId: string, actor: Role, co
             timestamp: new Date(),
             actor: actor,
             details: comment,
+            isPublic: true,
         });
     } else {
         // This is just an interim update, so only add to audit trail.
@@ -1220,6 +1223,7 @@ export async function submitSupervisorUpdate(trackingId: string, actor: Role, co
             timestamp: new Date(),
             actor: actor,
             details: comment,
+            isPublic: true,
         });
     }
 

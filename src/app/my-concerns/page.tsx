@@ -939,7 +939,7 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
         if (role === item.submittedBy) {
             return item.auditTrail.filter(event => {
                 // Always show these core, non-detailed events
-                const alwaysPublicEvents = ['Submitted', 'Identified Concern Submitted', 'Retaliation Claim Filed', 'Resolved', 'Closed', 'Employee Accepted Resolution', 'Employee Escalated Concern'];
+                const alwaysPublicEvents = ['Submitted', 'Identified Concern Submitted', 'Retaliation Claim Filed', 'Resolved', 'Closed', 'Employee Accepted Resolution', 'Employee Escalated Concern', 'Update Added'];
                 if (alwaysPublicEvents.includes(event.event)) {
                     return true;
                 }
@@ -1987,6 +1987,7 @@ export default function MyConcernsPage() {
 
 
     
+
 
 
 
