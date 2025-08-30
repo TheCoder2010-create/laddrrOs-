@@ -19,6 +19,7 @@ export interface AuditEvent {
   timestamp: Date | string; 
   actor: Role | string;
   details?: string;
+  isPublic?: boolean;
 }
 
 // Simplified status for the first level of escalation
@@ -747,6 +748,7 @@ export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Pr
         timestamp: submittedAt,
         actor: 'Anonymous',
         details: details,
+        isPublic: true,
       },
     ],
     attachments,
@@ -1004,12 +1006,12 @@ export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFee
   }
 
   // Otherwise, create a limited, public-safe version of the feedback
-  const publicAuditTrail = feedback.auditTrail?.map(event => ({
+  const publicAuditTrail = feedback.auditTrail?.filter(e => e.isPublic).map(event => ({
       event: event.event,
       timestamp: new Date(event.timestamp).toISOString(),
       actor: event.actor,
       // Omit details for privacy unless it's a 'Resolved' event
-      details: event.event === 'Resolved' ? event.details : undefined,
+      details: event.event === 'Resolved' || event.event === 'Resolution Provided by HR' ? event.details : undefined,
   }));
 
   return {
@@ -1318,7 +1320,8 @@ export async function submitAnonymousAcknowledgement(
             event: 'Resolution Accepted',
             timestamp: new Date(),
             actor: 'Anonymous',
-            details: 'Anonymous user accepted the final resolution from HR.'
+            details: 'Anonymous user accepted the final resolution from HR.',
+            isPublic: true,
         });
     } else {
         item.status = 'Closed';
@@ -1327,7 +1330,8 @@ export async function submitAnonymousAcknowledgement(
             event: 'User Escalated to ' + escalationPath,
             timestamp: new Date(),
             actor: 'Anonymous',
-            details: `User challenged the HR resolution and chose to escalate to the ${escalationPath}.\n\nJustification: ${justification}`
+            details: `User challenged the HR resolution and chose to escalate to the ${escalationPath}.\n\nJustification: ${justification}`,
+            isPublic: true,
         });
     }
 
@@ -1335,7 +1339,8 @@ export async function submitAnonymousAcknowledgement(
         event: 'Case Closed',
         timestamp: new Date(),
         actor: 'System',
-        details: 'The case was closed following the anonymous user\'s final decision.'
+        details: 'The case was closed following the anonymous user\'s final decision.',
+        isPublic: true,
     });
 
     saveFeedbackToStorage(allFeedback);
@@ -1363,6 +1368,7 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
             timestamp: new Date(),
             actor,
             details: resolution,
+            isPublic: true,
         });
         feedback.auditTrail?.push({
             event: 'Notification to HR',
@@ -1378,7 +1384,8 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
             event: 'Resolved',
             timestamp: new Date(),
             actor,
-            details: resolution
+            details: resolution,
+            isPublic: true,
         });
     }
 
@@ -1536,6 +1543,7 @@ export async function requestAnonymousInformation(trackingId: string, actor: Rol
         timestamp: new Date(),
         actor: actor,
         details: question,
+        isPublic: true,
     });
 
     saveFeedbackToStorage(allFeedback);
@@ -1559,6 +1567,7 @@ export async function submitAnonymousReply(trackingId: string, reply: string): P
         timestamp: new Date(),
         actor: 'Anonymous',
         details: reply,
+        isPublic: true,
     });
 
     saveFeedbackToStorage(allFeedback);

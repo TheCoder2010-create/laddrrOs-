@@ -217,25 +217,21 @@ const publicAuditEventIcons = {
 function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
     if (!trail || trail.length === 0) return null;
 
+    const publicTrail = trail.filter(e => e.isPublic);
+
+    if (publicTrail.length === 0) return null;
+
     return (
         <div className="space-y-2">
             <Label>Case History</Label>
             <div className="relative p-4 border rounded-md bg-muted/50">
                  <div className="absolute left-8 top-8 bottom-8 w-px bg-border -translate-x-1/2"></div>
                 <div className="space-y-4">
-                    {trail.map((event, index) => {
+                    {publicTrail.map((event, index) => {
                         const Icon = publicAuditEventIcons[event.event as keyof typeof publicAuditEventIcons] || publicAuditEventIcons.default;
                         
                         let eventText = event.event;
                         let detailsText = event.details;
-
-                        if (event.event === 'Assigned') {
-                            eventText = 'Case assigned for review';
-                            detailsText = undefined; // Don't show assignment notes publicly
-                        } else if (event.event === 'Update Added') {
-                            eventText = 'An update was added to the case';
-                            detailsText = undefined; // Don't show private updates
-                        }
 
                         return (
                             <div key={index} className="flex items-start gap-4 relative">
@@ -507,7 +503,7 @@ function TrackingForm() {
                <div>
                   <Label>Assigned To</Label>
                   <p className="text-muted-foreground">
-                    {searchResult.status === 'Resolved' || searchResult.status === 'Closed' ? 'Case Closed' : `Under review by ${searchResult.assignedTo && searchResult.assignedTo.length > 0 ? searchResult.assignedTo.join(', ') : 'HR Head'}`}
+                    {searchResult.status === 'Resolved' || searchResult.status === 'Closed' ? 'Case Closed' : `Under review by ${searchResult.assignedTo && searchResult.assignedTo.length > 0 ? searchResult.assignedTo.map(formatActorName).join(', ') : 'HR Head'}`}
                   </p>
               </div>
               <div>
@@ -628,6 +624,7 @@ export default function VoiceInSilenceSubmitPage() {
     </div>
   );
 }
+
 
 
 
