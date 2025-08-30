@@ -294,11 +294,15 @@ function TrackingForm() {
     }
   };
 
-  const getStatusBadge = (status?: string) => {
+  const getStatusBadge = (item: Feedback) => {
+    const { status, assignedTo } = item;
+
+    if (status === 'In Progress') {
+        return <Badge variant='secondary'>Under Review</Badge>;
+    }
     switch(status) {
         case 'Resolved': return <Badge variant='success'>Resolved</Badge>;
         case 'Closed': return <Badge variant='secondary'>Closed</Badge>;
-        case 'In Progress': return <Badge variant='secondary'>In Progress</Badge>;
         case 'Pending Anonymous Reply': return <Badge variant='destructive'>Action Required</Badge>;
         case 'Pending Anonymous Acknowledgement': return <Badge variant='destructive'>Action Required</Badge>;
         default: return <Badge variant='default'>Open</Badge>;
@@ -489,7 +493,7 @@ function TrackingForm() {
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 <span>Submission Status</span>
-                {getStatusBadge(searchResult.status)}
+                {getStatusBadge(searchResult)}
               </CardTitle>
               <CardDescription>
                 Submitted on {format(new Date(searchResult.submittedAt), "PPP p")}
@@ -503,7 +507,11 @@ function TrackingForm() {
                <div>
                   <Label>Assigned To</Label>
                   <p className="text-muted-foreground">
-                    {searchResult.status === 'Resolved' || searchResult.status === 'Closed' ? 'Case Closed' : `Under review by ${searchResult.assignedTo && searchResult.assignedTo.length > 0 ? searchResult.assignedTo.map(formatActorName).join(', ') : 'HR Head'}`}
+                    {
+                      (searchResult.assignedTo && searchResult.assignedTo.length > 0)
+                        ? `Under review by ${searchResult.assignedTo.map(formatActorName).join(', ')}`
+                        : "Awaiting review by HR Head"
+                    }
                   </p>
               </div>
               <div>
@@ -624,6 +632,7 @@ export default function VoiceInSilenceSubmitPage() {
     </div>
   );
 }
+
 
 
 
