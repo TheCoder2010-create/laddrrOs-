@@ -233,6 +233,16 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
                         let eventText = event.event;
                         let detailsText = event.details;
 
+                        // Customize text for public view
+                        if (event.event === 'Assigned') {
+                            eventText = 'Case assigned for review';
+                            detailsText = 'The case has been assigned to the appropriate reviewer.';
+                        }
+                         if (event.event === 'Update Added') {
+                            eventText = 'Case Update';
+                            detailsText = `An update was added to the case by ${formatActorName(event.actor)}.`;
+                        }
+
                         return (
                             <div key={index} className="flex items-start gap-4 relative">
                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10">
@@ -240,7 +250,7 @@ function PublicAuditTrail({ trail }: { trail: AuditEvent[] }) {
                                 </div>
                                 <div className="flex-1 -mt-1">
                                     <p className="font-medium text-sm">
-                                        {eventText} by <span className="text-primary">{formatActorName(event.actor)}</span>
+                                        {eventText}
                                     </p>
                                     <p className="text-xs text-muted-foreground">{format(new Date(event.timestamp), "PPP p")}</p>
                                     {detailsText && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{detailsText}</p>}
@@ -632,6 +642,7 @@ export default function VoiceInSilenceSubmitPage() {
     </div>
   );
 }
+
 
 
 
