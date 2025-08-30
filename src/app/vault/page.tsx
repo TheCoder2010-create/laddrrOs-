@@ -422,12 +422,8 @@ function VaultContent({ onLogout }: { onLogout: () => void }) {
     setIsLoading(true);
     try {
       const feedback = await getAllFeedback();
-       // A case belongs in the vault if it's from Voice-in-Silence OR has ever been assigned to HR Head.
-      const vaultItems = feedback.filter(f => 
-          f.source === 'Voice – In Silence' ||
-          f.assignedTo?.includes('HR Head') || 
-          f.auditTrail?.some(e => e.actor === 'HR Head')
-      );
+       // The vault ONLY shows cases from Voice - in Silence.
+      const vaultItems = feedback.filter(f => f.source === 'Voice – In Silence');
       setAllFeedback(vaultItems.sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.date).getTime()));
 
       const unreadVaultIds = vaultItems.filter(c => !c.viewed).map(c => c.trackingId);

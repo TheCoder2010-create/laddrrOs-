@@ -1791,36 +1791,43 @@ function MyConcernsContent() {
 
     allCases.forEach(c => {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
+        // A case is "received" if the current user is an assignee OR was ever involved in the audit trail.
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
         const wasEverInvolved = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
         const isReceivedViewable = !isRaisedByMe && (isCurrentlyAssigned || wasEverInvolved);
         
-        const isRaisedActionable = complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = respondentActionStatuses.includes(c.status || '') && isCurrentlyAssigned;
+        const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
+        const isReceivedActionable = isCurrentlyAssigned && respondentActionStatuses.includes(c.status || '');
+        
+        // This is a direct retaliation claim filed by the user.
+        const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
+        // This is a retaliation claim filed against a case I was involved in.
+        const isLinkedRetaliationReceived = isReceivedViewable && c.criticality === 'Retaliation Claim';
 
-        if (isRaisedByMe) {
-            if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
+        if (isMyDirectRetaliationClaim) {
+            retaliationRaised.push(c);
+            if (isRaisedActionable) raisedActionCounts.retaliation++;
+        } else if (isRaisedByMe) {
+            // It's a standard identified or anonymous concern raised by me.
+            if (!c.isAnonymous) {
                 identifiedRaised.push(c);
                 if (isRaisedActionable) raisedActionCounts.identified++;
-            } else if (c.isAnonymous) {
+            } else {
                 anonymousRaised.push(c);
                 if (isRaisedActionable) raisedActionCounts.anonymous++;
-            } else if (c.criticality === 'Retaliation Claim' && !c.parentCaseId) {
-                retaliationRaised.push(c);
-                if (isRaisedActionable) raisedActionCounts.retaliation++;
             }
         }
         
-        if (isReceivedViewable) {
-            if (!c.isAnonymous && c.criticality !== 'Retaliation Claim') {
-                if (!identifiedReceived.some(i => i.trackingId === c.trackingId)) identifiedReceived.push(c);
+        if (isLinkedRetaliationReceived) {
+            retaliationReceived.push(c);
+            if (isReceivedActionable) receivedActionCounts.retaliation++;
+        } else if (isReceivedViewable) {
+            if (!c.isAnonymous) {
+                identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
-            } else if (c.isAnonymous) {
-                if (!anonymousReceived.some(i => i.trackingId === c.trackingId)) anonymousReceived.push(c);
+            } else {
+                anonymousReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.anonymous++;
-            } else if (c.criticality === 'Retaliation Claim') {
-                 if (!retaliationReceived.some(i => i.trackingId === c.trackingId)) retaliationReceived.push(c);
-                 if (isReceivedActionable) receivedActionCounts.retaliation++;
             }
         }
     });
@@ -1987,6 +1994,7 @@ export default function MyConcernsPage() {
 
 
     
+
 
 
 
