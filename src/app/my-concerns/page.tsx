@@ -1099,7 +1099,7 @@ function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: 
         
         setIsSubmitting(true);
         try {
-            await addFeedbackUpdate(feedback.trackingId, role, interimUpdate, false);
+            await addFeedbackUpdate(feedback.trackingId, role, interimUpdate, true);
             setInterimUpdate('');
             toast({ title: "Update Added" });
             onUpdate(feedback.trackingId);
@@ -1854,7 +1854,7 @@ function MyConcernsContent() {
     
     const currentUserName = roleUserMapping[role]?.name;
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-    const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
+    const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required'];
     
     const raisedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
     const receivedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
@@ -1875,11 +1875,11 @@ function MyConcernsContent() {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
         
-        // A case is viewable in "received" if it's assigned to the current user.
         const isReceivedViewable = !isRaisedByMe && isCurrentlyAssigned;
 
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
         const isReceivedActionable = isCurrentlyAssigned && respondentActionStatuses.includes(c.status || '');
+        const isRetaliationReceivedActionable = isCurrentlyAssigned && (c.status === 'Retaliation Claim' || c.status === 'Pending Employee Acknowledgment');
         
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
         const isLinkedRetaliationReceived = isReceivedViewable && c.criticality === 'Retaliation Claim';
@@ -1899,9 +1899,8 @@ function MyConcernsContent() {
         
         if (isLinkedRetaliationReceived) {
             retaliationReceived.push(c);
-            if (isReceivedActionable) receivedActionCounts.retaliation++;
+            if (isRetaliationReceivedActionable) receivedActionCounts.retaliation++;
         } else if (isReceivedViewable) {
-            // Special case for collaborative resolution: The case should stay in both Manager and HR Head queues.
             if (c.status === 'Pending HR Action') {
                 if (role === 'Manager' || role === 'HR Head') {
                     anonymousReceived.push(c);
@@ -2074,4 +2073,3 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
