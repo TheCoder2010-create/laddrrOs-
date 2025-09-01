@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition, addFeedbackUpdate, resolveFeedback } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition, addFeedbackUpdate, resolveFeedback, submitCollaborativeResolution } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText, ChevronsRight, X as XIcon, Undo2 } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
@@ -1204,7 +1204,7 @@ function CollaborativeResolutionPanel({ feedback, onUpdate }: { feedback: Feedba
         setIsSubmitting(true);
         try {
             const notes = role === 'HR Head' ? hrNotes : managerNotes;
-            await resolveFeedback(feedback.trackingId, role, notes);
+            await submitCollaborativeResolution(feedback.trackingId, role, notes);
             toast({ title: "Resolution Saved", description: "Your notes have been saved. The case will be resolved once all parties respond."});
             onUpdate(feedback.trackingId);
         } catch (error) {
@@ -1876,7 +1876,6 @@ function MyConcernsContent() {
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
         
         // A case is viewable in "received" if it's assigned to the current user.
-        // Special case: HR Head can see all non-anonymous, non-retaliation received cases
         const isReceivedViewable = !isRaisedByMe && isCurrentlyAssigned;
 
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
@@ -1902,10 +1901,12 @@ function MyConcernsContent() {
             retaliationReceived.push(c);
             if (isReceivedActionable) receivedActionCounts.retaliation++;
         } else if (isReceivedViewable) {
-            // For the "Pending HR Action", it means both Manager and HR Head are assigned. It should show up in the anonymous tab for both.
+            // Special case for collaborative resolution: The case should stay in both Manager and HR Head queues.
             if (c.status === 'Pending HR Action') {
-                anonymousReceived.push(c);
-                 if (isReceivedActionable) receivedActionCounts.anonymous++;
+                if (role === 'Manager' || role === 'HR Head') {
+                    anonymousReceived.push(c);
+                    if (isReceivedActionable) receivedActionCounts.anonymous++;
+                }
             } else if (!c.isAnonymous) {
                 identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
