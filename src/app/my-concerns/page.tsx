@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, ChangeEvent, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition } from '@/services/feedback-service';
+import { submitAnonymousConcernFromDashboard, getFeedbackByIds, Feedback, respondToIdentityReveal, employeeAcknowledgeMessageRead, submitIdentifiedConcern, submitEmployeeFeedbackAcknowledgement, submitRetaliationReport, getAllFeedback, submitDirectRetaliationReport, submitAnonymousReply, submitIdentifiedReply, submitSupervisorUpdate, requestIdentityReveal, requestAnonymousInformation, submitFinalDisposition, addFeedbackUpdate, resolveFeedback } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldQuestion, Send, Loader2, User, UserX, List, CheckCircle, Clock, ShieldCheck, Info, MessageCircleQuestion, AlertTriangle, FileUp, GitMerge, Link as LinkIcon, Paperclip, Flag, FolderClosed, FileCheck, MessageSquare, Copy, Download, Sparkles, UserPlus, FileText, ChevronsRight, X as XIcon, Undo2 } from 'lucide-react';
 import { useRole, Role } from '@/hooks/use-role';
@@ -1099,7 +1099,7 @@ function AddUpdatePanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: 
         
         setIsSubmitting(true);
         try {
-            await submitSupervisorUpdate(feedback.trackingId, role, interimUpdate, false);
+            await addFeedbackUpdate(feedback.trackingId, role, interimUpdate, false);
             setInterimUpdate('');
             toast({ title: "Update Added" });
             onUpdate(feedback.trackingId);
@@ -1192,7 +1192,81 @@ function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedba
     );
 }
 
+function CollaborativeResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [hrNotes, setHrNotes] = useState(feedback.hrHeadResolution || '');
+    const [managerNotes, setManagerNotes] = useState(feedback.managerResolution || '');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSaveResolution = async () => {
+        if (!role) return;
+        setIsSubmitting(true);
+        try {
+            const notes = role === 'HR Head' ? hrNotes : managerNotes;
+            await resolveFeedback(feedback.trackingId, role, notes);
+            toast({ title: "Resolution Saved", description: "Your notes have been saved. The case will be resolved once all parties respond."});
+            onUpdate(feedback.trackingId);
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Failed to save resolution" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    const isHrTurn = role === 'HR Head';
+    const hrHasResponded = !!feedback.hrHeadResolution;
+    const managerHasResponded = !!feedback.managerResolution;
+
+    return (
+        <div className="p-4 border-t mt-4 space-y-4">
+            <h3 className="text-lg font-semibold">Collaborative Review Required</h3>
+            <p className="text-sm text-muted-foreground">The user declined to reveal their identity. Both the assigned Manager and HR Head must review and provide resolution notes. The case will be closed once both have responded.</p>
+            
+            <div className="space-y-4">
+                <div className="p-3 border rounded-lg bg-background">
+                    <Label htmlFor="manager-resolution" className="font-semibold flex items-center gap-2">
+                        Manager's Resolution Notes
+                        {managerHasResponded && <CheckCircle className="h-4 w-4 text-green-500" />}
+                    </Label>
+                    <Textarea 
+                        id="manager-resolution"
+                        value={managerNotes}
+                        onChange={(e) => setManagerNotes(e.target.value)}
+                        placeholder="Manager enters resolution here..."
+                        rows={4}
+                        disabled={role !== 'Manager' || managerHasResponded || isSubmitting}
+                    />
+                </div>
+                 <div className="p-3 border rounded-lg bg-background">
+                    <Label htmlFor="hr-resolution" className="font-semibold flex items-center gap-2">
+                        HR Head's Resolution Notes
+                         {hrHasResponded && <CheckCircle className="h-4 w-4 text-green-500" />}
+                    </Label>
+                    <Textarea 
+                        id="hr-resolution"
+                        value={hrNotes}
+                        onChange={(e) => setHrNotes(e.target.value)}
+                        placeholder="HR Head enters resolution here..."
+                        rows={4}
+                        disabled={role !== 'HR Head' || hrHasResponded || isSubmitting}
+                    />
+                </div>
+                 <Button onClick={handleSaveResolution} disabled={isSubmitting || (isHrTurn && hrHasResponded) || (!isHrTurn && managerHasResponded) || (isHrTurn && !hrNotes) || (!isHrTurn && !managerNotes)}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save My Resolution
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 function AnonymousConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
+    if (feedback.status === 'Pending HR Action') {
+        return <CollaborativeResolutionPanel feedback={feedback} onUpdate={onUpdate} />;
+    }
+
     if (feedback.status === 'Pending Anonymous Reply') {
         return (
              <div className="p-4 border rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 mt-4">
@@ -1239,7 +1313,7 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
         if (!update || !role) return;
         setIsSubmitting('update');
         try {
-            await submitSupervisorUpdate(feedback.trackingId, role, update, false);
+            await addFeedbackUpdate(feedback.trackingId, role, update, false);
             setUpdate('');
             toast({ title: "Update Added" });
             onUpdate(feedback.trackingId);
@@ -1548,12 +1622,15 @@ function MySubmissions({ items, onUpdate, allCases, concernType, isReceivedView,
                         <AccordionItem value={item.trackingId} key={item.trackingId} id={`accordion-item-${item.trackingId}`}>
                              <AccordionTrigger className="w-full px-4 py-3 text-left hover:no-underline [&_svg]:ml-auto">
                                 <div className="flex justify-between items-center w-full">
-                                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <p className="font-medium truncate">{item.subject}</p>
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        <span className="font-medium truncate">{item.subject}</span>
                                     </div>
                                     <div className="flex items-center gap-4 pl-4 mr-2">
-                                        <span className="text-xs text-muted-foreground font-mono cursor-text">
-                                            {(item.isAnonymous && !isCaseClosed) ? 'ID Hidden Until Closure' : `ID: ${item.trackingId}`}
+                                        <span 
+                                            className="text-xs text-muted-foreground font-mono cursor-text"
+                                            onClick={(e) => { e.stopPropagation(); }}
+                                        >
+                                            ID: {item.trackingId}
                                         </span>
                                         {getStatusBadge(item)}
                                     </div>
@@ -1796,24 +1873,22 @@ function MyConcernsContent() {
         }
 
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
-        // A case is "received" if the current user is an assignee OR was ever involved in the audit trail.
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
-        const wasEverInvolved = c.auditTrail?.some(event => event.actor === role || event.actor === currentUserName);
-        const isReceivedViewable = !isRaisedByMe && (isCurrentlyAssigned || wasEverInvolved);
         
+        // A case is viewable in "received" if it's assigned to the current user.
+        // Special case: HR Head can see all non-anonymous, non-retaliation received cases
+        const isReceivedViewable = !isRaisedByMe && isCurrentlyAssigned;
+
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
         const isReceivedActionable = isCurrentlyAssigned && respondentActionStatuses.includes(c.status || '');
         
-        // This is a direct retaliation claim filed by the user.
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
-        // This is a retaliation claim filed against a case I was involved in.
         const isLinkedRetaliationReceived = isReceivedViewable && c.criticality === 'Retaliation Claim';
 
         if (isMyDirectRetaliationClaim) {
             retaliationRaised.push(c);
             if (isRaisedActionable) raisedActionCounts.retaliation++;
         } else if (isRaisedByMe) {
-            // It's a standard identified or anonymous concern raised by me.
             if (!c.isAnonymous) {
                 identifiedRaised.push(c);
                 if (isRaisedActionable) raisedActionCounts.identified++;
@@ -1827,7 +1902,11 @@ function MyConcernsContent() {
             retaliationReceived.push(c);
             if (isReceivedActionable) receivedActionCounts.retaliation++;
         } else if (isReceivedViewable) {
-            if (!c.isAnonymous) {
+            // For the "Pending HR Action", it means both Manager and HR Head are assigned. It should show up in the anonymous tab for both.
+            if (c.status === 'Pending HR Action') {
+                anonymousReceived.push(c);
+                 if (isReceivedActionable) receivedActionCounts.anonymous++;
+            } else if (!c.isAnonymous) {
                 identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
             } else {
@@ -1994,3 +2073,4 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
