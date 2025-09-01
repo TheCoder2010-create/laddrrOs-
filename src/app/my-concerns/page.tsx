@@ -1854,7 +1854,9 @@ function MyConcernsContent() {
     
     const currentUserName = roleUserMapping[role]?.name;
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-    const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required'];
+    
+    // Statuses that require action from a respondent/manager
+    const baseRespondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
     
     const raisedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
     const receivedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
@@ -1867,7 +1869,6 @@ function MyConcernsContent() {
     const retaliationReceived: Feedback[] = [];
 
     allCases.forEach(c => {
-        // Explicitly filter out Voice - in Silence cases from this page
         if (c.source === 'Voice – In Silence') {
             return;
         }
@@ -1877,9 +1878,14 @@ function MyConcernsContent() {
         
         const isReceivedViewable = !isRaisedByMe && isCurrentlyAssigned;
 
+        // An HR Head should see received cases even after responding if they are still pending employee ack
+        let respondentActionStatuses = [...baseRespondentActionStatuses];
+        if (role === 'HR Head') {
+            respondentActionStatuses.push('Pending Employee Acknowledgment');
+        }
+
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
         const isReceivedActionable = isCurrentlyAssigned && respondentActionStatuses.includes(c.status || '');
-        const isRetaliationReceivedActionable = isCurrentlyAssigned && (c.status === 'Retaliation Claim' || c.status === 'Pending Employee Acknowledgment');
         
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
         const isLinkedRetaliationReceived = isReceivedViewable && c.criticality === 'Retaliation Claim';
@@ -1899,13 +1905,11 @@ function MyConcernsContent() {
         
         if (isLinkedRetaliationReceived) {
             retaliationReceived.push(c);
-            if (isRetaliationReceivedActionable) receivedActionCounts.retaliation++;
+             if (isReceivedActionable) receivedActionCounts.retaliation++;
         } else if (isReceivedViewable) {
-            if (c.status === 'Pending HR Action') {
-                if (role === 'Manager' || role === 'HR Head') {
-                    anonymousReceived.push(c);
-                    if (isReceivedActionable) receivedActionCounts.anonymous++;
-                }
+            if (c.status === 'Pending HR Action' && (role === 'Manager' || role === 'HR Head')) {
+                anonymousReceived.push(c);
+                if (isReceivedActionable) receivedActionCounts.anonymous++;
             } else if (!c.isAnonymous) {
                 identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
@@ -2073,3 +2077,4 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
