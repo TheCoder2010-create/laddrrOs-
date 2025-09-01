@@ -1790,6 +1790,11 @@ function MyConcernsContent() {
     const retaliationReceived: Feedback[] = [];
 
     allCases.forEach(c => {
+        // Explicitly filter out Voice - in Silence cases from this page
+        if (c.source === 'Voice – In Silence') {
+            return;
+        }
+
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
         // A case is "received" if the current user is an assignee OR was ever involved in the audit trail.
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
@@ -1989,14 +1994,3 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
-    
-
-
-    
-
-
-
-
-
-
