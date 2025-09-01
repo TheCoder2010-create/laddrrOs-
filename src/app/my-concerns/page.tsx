@@ -1855,8 +1855,7 @@ function MyConcernsContent() {
     const currentUserName = roleUserMapping[role]?.name;
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
     
-    // Statuses that require action from a respondent/manager
-    const baseRespondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
+    const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
     
     const raisedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
     const receivedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
@@ -1878,17 +1877,20 @@ function MyConcernsContent() {
         
         const isReceivedViewable = !isRaisedByMe && isCurrentlyAssigned;
 
-        // An HR Head should see received cases even after responding if they are still pending employee ack
-        let respondentActionStatuses = [...baseRespondentActionStatuses];
+        let respondentActionableStatuses = [...respondentActionStatuses];
         if (role === 'HR Head') {
-            respondentActionStatuses.push('Pending Employee Acknowledgment');
+            // HR Head should see cases they've responded to but are awaiting employee action.
+            respondentActionableStatuses.push('Pending Employee Acknowledgment');
         }
 
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = isCurrentlyAssigned && respondentActionStatuses.includes(c.status || '');
+        const isReceivedActionable = isCurrentlyAssigned && respondentActionableStatuses.includes(c.status || '');
         
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
-        const isLinkedRetaliationReceived = isReceivedViewable && c.criticality === 'Retaliation Claim';
+        
+        // This is the main fix: if the current role is HR Head and the case is a retaliation claim,
+        // it should *always* appear in their received queue, regardless of status.
+        const isLinkedRetaliationReceivedForHr = (role === 'HR Head' && c.criticality === 'Retaliation Claim');
 
         if (isMyDirectRetaliationClaim) {
             retaliationRaised.push(c);
@@ -1903,13 +1905,13 @@ function MyConcernsContent() {
             }
         }
         
-        if (isLinkedRetaliationReceived) {
-            retaliationReceived.push(c);
+        if (isLinkedRetaliationReceivedForHr) {
+             retaliationReceived.push(c);
              if (isReceivedActionable) receivedActionCounts.retaliation++;
         } else if (isReceivedViewable) {
             if (c.status === 'Pending HR Action' && (role === 'Manager' || role === 'HR Head')) {
                 anonymousReceived.push(c);
-                if (isReceivedActionable) receivedActionCounts.anonymous++;
+                 if (isReceivedActionable) receivedActionCounts.anonymous++;
             } else if (!c.isAnonymous) {
                 identifiedReceived.push(c);
                 if (isReceivedActionable) receivedActionCounts.identified++;
@@ -2077,4 +2079,5 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
