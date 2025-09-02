@@ -1854,7 +1854,6 @@ function MyConcernsContent() {
     
     const currentUserName = roleUserMapping[role]?.name;
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-    
     const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
     
     const raisedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
@@ -1868,6 +1867,7 @@ function MyConcernsContent() {
     const retaliationReceived: Feedback[] = [];
 
     allCases.forEach(c => {
+        // Exclude Voice in Silence cases from this entire page
         if (c.source === 'Voice – In Silence') {
             return;
         }
@@ -1875,11 +1875,8 @@ function MyConcernsContent() {
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
         const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
         
-        const isReceivedViewable = !isRaisedByMe && isCurrentlyAssigned;
-
         let respondentActionableStatuses = [...respondentActionStatuses];
         if (role === 'HR Head') {
-            // HR Head should see cases they've responded to but are awaiting employee action.
             respondentActionableStatuses.push('Pending Employee Acknowledgment');
         }
 
@@ -1888,8 +1885,6 @@ function MyConcernsContent() {
         
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
         
-        // This is the main fix: if the current role is HR Head and the case is a retaliation claim,
-        // it should *always* appear in their received queue, regardless of status.
         const isLinkedRetaliationReceivedForHr = (role === 'HR Head' && c.criticality === 'Retaliation Claim');
 
         if (isMyDirectRetaliationClaim) {
@@ -1905,19 +1900,26 @@ function MyConcernsContent() {
             }
         }
         
+        // This is the "Received" logic
         if (isLinkedRetaliationReceivedForHr) {
              retaliationReceived.push(c);
              if (isReceivedActionable) receivedActionCounts.retaliation++;
-        } else if (isReceivedViewable) {
-            if (c.status === 'Pending HR Action' && (role === 'Manager' || role === 'HR Head')) {
-                anonymousReceived.push(c);
-                 if (isReceivedActionable) receivedActionCounts.anonymous++;
-            } else if (!c.isAnonymous) {
+        } else if (isCurrentlyAssigned) {
+            // New logic: Once a case is assigned, it stays in the assignee's view.
+            if (!c.isAnonymous) {
                 identifiedReceived.push(c);
-                if (isReceivedActionable) receivedActionCounts.identified++;
             } else {
+                // Anonymous dashboard submissions & anonymous cases where identity was revealed but declined
                 anonymousReceived.push(c);
-                if (isReceivedActionable) receivedActionCounts.anonymous++;
+            }
+
+            // Count actionable items separately
+            if (isReceivedActionable) {
+                if (!c.isAnonymous) {
+                    receivedActionCounts.identified++;
+                } else {
+                    receivedActionCounts.anonymous++;
+                }
             }
         }
     });
@@ -2079,5 +2081,6 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
