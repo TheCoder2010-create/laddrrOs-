@@ -938,12 +938,10 @@ function CaseHistory({ item, handleViewCaseDetails, onDownload }: { item: Feedba
         // The complainant's view should filter out non-public events
         if (role === item.submittedBy) {
             return item.auditTrail.filter(event => {
-                // Always show these core, non-detailed events
                 const alwaysPublicEvents = ['Submitted', 'Identified Concern Submitted', 'Retaliation Claim Filed', 'Resolved', 'Closed', 'Employee Accepted Resolution', 'Employee Escalated Concern', 'Update Added'];
                 if (alwaysPublicEvents.includes(event.event)) {
                     return true;
                 }
-                // Show events explicitly marked as public
                 return event.isPublic;
             });
         }
@@ -1797,7 +1795,7 @@ function MyConcernsContent() {
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
-  const [viewMode, setViewMode] = useState<'raised' | 'received'>(isSupervisor ? 'received' : 'raised');
+  const [viewMode, setViewMode] useState<'raised' | 'received'>(isSupervisor ? 'received' : 'raised');
   const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
   
   const [attachmentState, setAttachmentState] = useState<{
@@ -1854,7 +1852,6 @@ function MyConcernsContent() {
     
     const currentUserName = roleUserMapping[role]?.name;
     const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-    const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
     
     const raisedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
     const receivedActionCounts = { identified: 0, anonymous: 0, retaliation: 0 };
@@ -1872,9 +1869,8 @@ function MyConcernsContent() {
         const assignments = new Set<Role>();
         c.auditTrail?.forEach(event => {
             if (event.event === 'Assigned' && event.details) {
-                // Example detail: "Case assigned for: Manager, AM."
-                const roles = (event.details.match(/for: ([\w\s,]+)/)?.[1] || '').split(',').map(r => r.trim() as Role);
-                roles.forEach(r => assignments.add(r));
+                const rolesInvolved = ['Manager', 'Team Lead', 'AM', 'HR Head'].filter(r => event.details?.includes(r));
+                rolesInvolved.forEach(r => assignments.add(r as Role));
             }
         });
         if(c.assignedTo) {
@@ -1884,7 +1880,6 @@ function MyConcernsContent() {
     });
 
     allCases.forEach(c => {
-        // Exclude Voice in Silence cases from this entire page
         if (c.source === 'Voice – In Silence') {
             return;
         }
@@ -1893,10 +1888,9 @@ function MyConcernsContent() {
         const wasEverAssignedToMe = historicalAssignments.get(c.trackingId)?.has(role as Role) || false;
 
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = wasEverAssignedToMe && respondentActionStatuses.includes(c.status || '');
+        const isReceivedActionable = wasEverAssignedToMe && c.status !== 'Resolved' && c.status !== 'Closed';
         
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
-        
         const isLinkedRetaliationReceivedForHr = (role === 'HR Head' && c.criticality === 'Retaliation Claim');
 
         if (isMyDirectRetaliationClaim) {
@@ -1912,26 +1906,16 @@ function MyConcernsContent() {
             }
         }
         
-        // This is the "Received" logic
         if (isLinkedRetaliationReceivedForHr) {
              retaliationReceived.push(c);
-             if (isReceivedActionable) receivedActionCounts.retaliation++;
-        } else if (wasEverAssignedToMe) { // Changed from isCurrentlyAssigned to wasEverAssignedToMe
-            // New logic: Once a case is assigned, it stays in the assignee's view.
-            if (!c.isAnonymous) {
-                identifiedReceived.push(c);
-            } else {
-                // Anonymous dashboard submissions & anonymous cases where identity was revealed but declined
+             if (c.status !== 'Resolved' && c.status !== 'Closed') receivedActionCounts.retaliation++;
+        } else if (wasEverAssignedToMe) {
+            if (c.isAnonymous) {
                 anonymousReceived.push(c);
-            }
-
-            // Count actionable items separately
-            if (isReceivedActionable) {
-                if (!c.isAnonymous) {
-                    receivedActionCounts.identified++;
-                } else {
-                    receivedActionCounts.anonymous++;
-                }
+                if (c.status !== 'Resolved' && c.status !== 'Closed') receivedActionCounts.anonymous++;
+            } else {
+                 identifiedReceived.push(c);
+                 if (c.status !== 'Resolved' && c.status !== 'Closed') receivedActionCounts.identified++;
             }
         }
     });
@@ -2093,6 +2077,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
