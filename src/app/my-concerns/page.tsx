@@ -1402,7 +1402,7 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                             placeholder="Ask a clarifying question..."
                         />
                         <Button onClick={handleRequestInformation} disabled={!question || !!isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
-                            {isSubmitting === 'question' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            {isSubmitting === 'question' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </div>
                 </div>
@@ -1865,6 +1865,23 @@ function MyConcernsContent() {
     const identifiedReceived: Feedback[] = [];
     const anonymousReceived: Feedback[] = [];
     const retaliationReceived: Feedback[] = [];
+    
+    // A map to track which roles have been assigned a case at any point in its history.
+    const historicalAssignments = new Map<string, Set<Role>>();
+    allCases.forEach(c => {
+        const assignments = new Set<Role>();
+        c.auditTrail?.forEach(event => {
+            if (event.event === 'Assigned' && event.details) {
+                // Example detail: "Case assigned for: Manager, AM."
+                const roles = (event.details.match(/for: ([\w\s,]+)/)?.[1] || '').split(',').map(r => r.trim() as Role);
+                roles.forEach(r => assignments.add(r));
+            }
+        });
+        if(c.assignedTo) {
+             c.assignedTo.forEach(r => assignments.add(r));
+        }
+        historicalAssignments.set(c.trackingId, assignments);
+    });
 
     allCases.forEach(c => {
         // Exclude Voice in Silence cases from this entire page
@@ -1873,15 +1890,10 @@ function MyConcernsContent() {
         }
 
         const isRaisedByMe = c.submittedBy === role || c.submittedBy === currentUserName;
-        const isCurrentlyAssigned = c.assignedTo?.includes(role as Role) || false;
-        
-        let respondentActionableStatuses = [...respondentActionStatuses];
-        if (role === 'HR Head') {
-            respondentActionableStatuses.push('Pending Employee Acknowledgment');
-        }
+        const wasEverAssignedToMe = historicalAssignments.get(c.trackingId)?.has(role as Role) || false;
 
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = isCurrentlyAssigned && respondentActionableStatuses.includes(c.status || '');
+        const isReceivedActionable = wasEverAssignedToMe && respondentActionStatuses.includes(c.status || '');
         
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
         
@@ -1904,7 +1916,7 @@ function MyConcernsContent() {
         if (isLinkedRetaliationReceivedForHr) {
              retaliationReceived.push(c);
              if (isReceivedActionable) receivedActionCounts.retaliation++;
-        } else if (isCurrentlyAssigned) {
+        } else if (wasEverAssignedToMe) { // Changed from isCurrentlyAssigned to wasEverAssignedToMe
             // New logic: Once a case is assigned, it stays in the assignee's view.
             if (!c.isAnonymous) {
                 identifiedReceived.push(c);
@@ -2081,6 +2093,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
