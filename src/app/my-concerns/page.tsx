@@ -1795,7 +1795,7 @@ function MyConcernsContent() {
   const [allCases, setAllCases] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const isSupervisor = role && ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role);
-  const [viewMode, setViewMode] useState<'raised' | 'received'>(isSupervisor ? 'received' : 'raised');
+  const [viewMode, setViewMode] = useState<'raised' | 'received'>(isSupervisor ? 'received' : 'raised');
   const [trackedCase, setTrackedCase] = useState<Feedback | null>(null);
   
   const [attachmentState, setAttachmentState] = useState<{
@@ -1888,7 +1888,6 @@ function MyConcernsContent() {
         const wasEverAssignedToMe = historicalAssignments.get(c.trackingId)?.has(role as Role) || false;
 
         const isRaisedActionable = isRaisedByMe && complainantActionStatuses.includes(c.status || '');
-        const isReceivedActionable = wasEverAssignedToMe && c.status !== 'Resolved' && c.status !== 'Closed';
         
         const isMyDirectRetaliationClaim = isRaisedByMe && c.criticality === 'Retaliation Claim' && !c.parentCaseId;
         const isLinkedRetaliationReceivedForHr = (role === 'HR Head' && c.criticality === 'Retaliation Claim');
@@ -1906,16 +1905,13 @@ function MyConcernsContent() {
             }
         }
         
-        if (isLinkedRetaliationReceivedForHr) {
-             retaliationReceived.push(c);
-             if (c.status !== 'Resolved' && c.status !== 'Closed') receivedActionCounts.retaliation++;
-        } else if (wasEverAssignedToMe) {
-            if (c.isAnonymous) {
-                anonymousReceived.push(c);
-                if (c.status !== 'Resolved' && c.status !== 'Closed') receivedActionCounts.anonymous++;
+        if (wasEverAssignedToMe) {
+            if (isLinkedRetaliationReceivedForHr) {
+                retaliationReceived.push(c);
+            } else if (c.isAnonymous) {
+                 anonymousReceived.push(c);
             } else {
                  identifiedReceived.push(c);
-                 if (c.status !== 'Resolved' && c.status !== 'Closed') receivedActionCounts.identified++;
             }
         }
     });
@@ -2077,6 +2073,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
