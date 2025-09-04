@@ -298,20 +298,27 @@ export async function submitEmployeeAcknowledgement(historyId: string, acknowled
     const wasManagerAction = insight.auditTrail?.some(e => e.event === 'Manager Resolution');
     const wasHrAction = insight.auditTrail?.some(e => e.event === 'HR Resolution');
 
+    const currentAssignees = new Set(item.assignedTo || []);
+
     if (acknowledgement === "The concern was fully addressed to my satisfaction.") {
         insight.status = 'resolved';
+        item.assignedTo = Array.from(currentAssignees); // Keep current assignees for history
     } else if (wasHrAction) {
         insight.status = 'pending_final_hr_action';
-        item.assignedTo = ['HR Head'];
+        currentAssignees.add('HR Head');
+        item.assignedTo = Array.from(currentAssignees);
     } else if (wasManagerAction) {
         insight.status = 'pending_hr_review';
-        item.assignedTo = ['HR Head'];
+        currentAssignees.add('HR Head');
+        item.assignedTo = Array.from(currentAssignees);
     } else if (wasRetry || wasAmResponse) {
         insight.status = 'pending_manager_review';
-        item.assignedTo = ['Manager'];
+        currentAssignees.add('Manager');
+        item.assignedTo = Array.from(currentAssignees);
     } else {
         insight.status = 'pending_am_review';
-        item.assignedTo = ['AM'];
+        currentAssignees.add('AM');
+        item.assignedTo = Array.from(currentAssignees);
     }
 
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
@@ -380,8 +387,11 @@ export async function escalateToManager(historyId: string, actor: Role, notes: s
     const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
 
     insight.status = 'pending_manager_review';
-    item.assignedTo = ['Manager'];
     
+    const currentAssignees = new Set(item.assignedTo || []);
+    currentAssignees.add('Manager');
+    item.assignedTo = Array.from(currentAssignees);
+
     if (!insight.auditTrail) {
         insight.auditTrail = [];
     }
@@ -433,7 +443,7 @@ export async function submitManagerResolution(historyId: string, actor: Role, no
 
     // Send back to employee for acknowledgement
     insight.status = 'pending_employee_acknowledgement';
-    item.assignedTo = []; // Unassign so it only appears in employee's inbox
+    // Don't unassign, keep in manager's view
     
     if (!insight.auditTrail) {
         insight.auditTrail = [];
@@ -487,8 +497,7 @@ export async function submitFinalHrDecision(historyId: string, actor: Role, deci
     
     // This is the end of the line. Mark as resolved.
     insight.status = 'resolved';
-    item.assignedTo = []; // No longer assigned to anyone
-
+    
     if (!insight.auditTrail) {
         insight.auditTrail = [];
     }
@@ -1259,12 +1268,13 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         
         let nextAssignee: Role | undefined = undefined;
         let nextStatus: FeedbackStatus = 'Pending Manager Action';
+        const currentAssignees = new Set(item.assignedTo || []);
 
         const lastResponderRole = Object.values(roleUserMapping).find(u => u.name === lastResponder)?.role || lastResponder;
         
         if (item.criticality === 'Retaliation Claim' || lastResponderEvent?.event === 'HR Resolution Submitted' || lastResponderRole === 'HR Head') {
              item.status = 'Final Disposition Required';
-             item.assignedTo = ['HR Head'];
+             currentAssignees.add('HR Head');
              item.auditTrail?.push({
                 event: 'Final Disposition Required',
                 timestamp: new Date(),
@@ -1285,7 +1295,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
 
         if (nextAssignee) {
              item.status = nextStatus;
-             item.assignedTo = [nextAssignee];
+             currentAssignees.add(nextAssignee);
              item.auditTrail?.push({
                 event: 'Employee Escalated Concern',
                 timestamp: new Date(),
@@ -1293,6 +1303,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
                 details: `Concern escalated to ${nextAssignee}. ${escalationDetails}`
             });
         }
+        item.assignedTo = Array.from(currentAssignees);
     }
 
     saveFeedbackToStorage(allFeedback);
@@ -1596,3 +1607,4 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
 
     saveFeedbackToStorage(allFeedback);
 }
+
