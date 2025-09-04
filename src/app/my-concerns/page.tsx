@@ -1174,6 +1174,15 @@ function SubmitResolutionPanel({ feedback, onUpdate }: { feedback: Feedback, onU
 
 
 function IdentifiedConcernActionPanel({ feedback, onUpdate }: { feedback: Feedback, onUpdate: (id: string) => void }) {
+    const { role } = useRole();
+
+    // The current user must be the last person in the `assignedTo` array to take action.
+    const isCurrentUserActiveAssignee = feedback.assignedTo && feedback.assignedTo[feedback.assignedTo.length - 1] === role;
+
+    if (!isCurrentUserActiveAssignee) {
+        return null; // Not this user's turn, show no actions.
+    }
+    
     if (feedback.status === 'Final Disposition Required') {
         return <FinalDispositionPanel feedback={feedback} onUpdate={() => onUpdate(feedback.trackingId)} />;
     }
@@ -1863,18 +1872,17 @@ function MyConcernsContent() {
     const anonymousReceived: Feedback[] = [];
     const retaliationReceived: Feedback[] = [];
     
-    // A map to track which roles have ever been assigned a case.
     const historicalAssignments = new Map<string, Set<Role>>();
     allCases.forEach(c => {
         const assignments = new Set<Role>();
         c.auditTrail?.forEach(event => {
-            if (event.event === 'Assigned' && event.details) {
-                // Heuristic to find roles in the details string
-                const rolesInvolved = ['Manager', 'Team Lead', 'AM', 'HR Head'].filter(r => event.details?.includes(r));
+            if (event.event === 'Assigned' && event.actor) {
+                // Heuristic: Extract roles from the details or use the actor
+                const details = event.details || '';
+                const rolesInvolved = ['Manager', 'Team Lead', 'AM', 'HR Head'].filter(r => details.includes(r) || event.actor === r);
                 rolesInvolved.forEach(r => assignments.add(r as Role));
             }
         });
-        // Also include the currently assigned roles
         if(c.assignedTo) {
              c.assignedTo.forEach(r => assignments.add(r));
         }
@@ -2075,10 +2083,4 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
-
-
-
-
-
-
 
