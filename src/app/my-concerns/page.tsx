@@ -1400,7 +1400,7 @@ function AnonymousConcernActionCards({ feedback, onUpdate }: { feedback: Feedbac
                             placeholder="Ask a clarifying question..."
                         />
                         <Button onClick={handleRequestInformation} disabled={!question || !!isSubmitting} size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-full">
-                            {isSubmitting === 'question' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            {isSubmitting === 'question' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </div>
                 </div>
@@ -1863,16 +1863,18 @@ function MyConcernsContent() {
     const anonymousReceived: Feedback[] = [];
     const retaliationReceived: Feedback[] = [];
     
-    // A map to track which roles have been assigned a case at any point in its history.
+    // A map to track which roles have ever been assigned a case.
     const historicalAssignments = new Map<string, Set<Role>>();
     allCases.forEach(c => {
         const assignments = new Set<Role>();
         c.auditTrail?.forEach(event => {
             if (event.event === 'Assigned' && event.details) {
+                // Heuristic to find roles in the details string
                 const rolesInvolved = ['Manager', 'Team Lead', 'AM', 'HR Head'].filter(r => event.details?.includes(r));
                 rolesInvolved.forEach(r => assignments.add(r as Role));
             }
         });
+        // Also include the currently assigned roles
         if(c.assignedTo) {
              c.assignedTo.forEach(r => assignments.add(r));
         }
@@ -2073,6 +2075,7 @@ export default function MyConcernsPage() {
         </DashboardLayout>
     );
 }
+
 
 
 
