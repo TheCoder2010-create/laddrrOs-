@@ -1149,7 +1149,7 @@ export async function addFeedbackUpdate(trackingId: string, actor: Role, comment
     item.auditTrail?.push({
         event: 'Update Added',
         timestamp: new Date(),
-        actor,
+        actor: actor,
         details: details,
         isPublic: true,
     });
@@ -1248,6 +1248,8 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     const lastResponderEvent = item.auditTrail?.slice().reverse().find(e => relevantEvents.includes(e.event));
     const lastResponder = lastResponderEvent?.actor as Role | undefined;
 
+    const currentAssignees = new Set(item.assignedTo || []);
+
     if (accepted) {
         item.status = 'Resolved';
         item.resolution = item.supervisorUpdate;
@@ -1268,8 +1270,7 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
         
         let nextAssignee: Role | undefined = undefined;
         let nextStatus: FeedbackStatus = 'Pending Manager Action';
-        const currentAssignees = new Set(item.assignedTo || []);
-
+        
         const lastResponderRole = Object.values(roleUserMapping).find(u => u.name === lastResponder)?.role || lastResponder;
         
         if (item.criticality === 'Retaliation Claim' || lastResponderEvent?.event === 'HR Resolution Submitted' || lastResponderRole === 'HR Head') {
@@ -1303,9 +1304,9 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
                 details: `Concern escalated to ${nextAssignee}. ${escalationDetails}`
             });
         }
-        item.assignedTo = Array.from(currentAssignees);
     }
-
+    
+    item.assignedTo = Array.from(currentAssignees);
     saveFeedbackToStorage(allFeedback);
 }
 
@@ -1408,7 +1409,6 @@ export async function submitFinalDisposition(trackingId: string, actor: Role, di
     const item = allFeedback[feedbackIndex];
     item.status = 'Closed';
     item.resolution = `Final Disposition: ${disposition}.\n\nHR Notes: ${notes}`;
-    item.assignedTo = [];
     item.auditTrail?.push({
         event: 'Final Disposition',
         timestamp: new Date(),
@@ -1607,4 +1607,5 @@ export async function submitIdentifiedReply(trackingId: string, actor: Role, rep
 
     saveFeedbackToStorage(allFeedback);
 }
+
 
