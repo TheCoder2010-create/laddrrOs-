@@ -1195,13 +1195,6 @@ export async function submitSupervisorUpdate(trackingId: string, actor: Role, co
         item.supervisorUpdate = comment;
         item.status = 'Pending Employee Acknowledgment';
         
-        // Correctly assign the case back to the complainant for retaliation claims
-        if (item.criticality === 'Retaliation Claim' && item.submittedBy) {
-            item.assignedTo = [item.submittedBy];
-        } else {
-             item.assignedTo = []; // Unset assignee so it leaves the manager's queue
-        }
-        
         let eventName = 'Resolution Submitted';
         if (actor === 'HR Head') {
             eventName = item.criticality === 'Retaliation Claim' 
