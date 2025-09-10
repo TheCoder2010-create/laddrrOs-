@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useTransition, useEffect, useCallback, Key, ChangeEvent, useRef } from 'react';
@@ -648,34 +647,37 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                     <h3 className="font-semibold text-lg">Complaint Information</h3>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FormField control={form.control} name="title" render={({ field }) => (
-                           <FormItem className="grid grid-cols-[auto_1fr] items-center gap-4">
+                           <FormItem className="space-y-2">
                              <FormLabel>Title</FormLabel>
                              <FormControl><Input {...field} placeholder="e.g., Incident of Harassment" /></FormControl>
-                             <FormMessage className="col-span-2 col-start-2" />
+                             <FormMessage />
                            </FormItem>
                          )} />
                          <FormField control={form.control} name="location" render={({ field }) => (
-                           <FormItem className="grid grid-cols-[auto_1fr] items-center gap-4">
+                           <FormItem className="space-y-2">
                              <FormLabel>Location</FormLabel>
                              <FormControl><Input {...field} placeholder="e.g., Office, Cafeteria" /></FormControl>
-                             <FormMessage className="col-span-2 col-start-2" />
+                             <FormMessage />
                            </FormItem>
                          )} />
                          <FormField control={form.control} name="dateOfIncident" render={({ field }) => (
-                           <FormItem className="grid grid-cols-[auto_1fr] items-center gap-4">
-                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}><PopoverTrigger asChild>
-                               <FormControl>
-                                 <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal pl-3", !field.value && "text-muted-foreground")}>
-                                   <CalendarIcon className="mr-2 h-4 w-4" />
-                                   {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                 </Button>
-                               </FormControl>
-                             </PopoverTrigger>
-                             <PopoverContent className="w-auto p-0" align="start">
-                               <Calendar mode="single" selected={field.value} onSelect={handleDateChange} disabled={(date) => date > new Date()} initialFocus />
-                             </PopoverContent></Popover>
-                           <FormMessage className="col-span-2" />
-                           </FormItem>
+                            <FormItem className="flex flex-col space-y-2">
+                                <FormLabel>Date of Incident</FormLabel>
+                                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={handleDateChange} disabled={(date) => date > new Date()} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage/>
+                            </FormItem>
                          )} />
                      </div>
                 </div>
@@ -683,45 +685,37 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">Your Details (Complainant)</h3>
-                         <div className="grid grid-cols-3 items-center gap-4">
-                             <Label className="text-right">Full Name</Label>
-                             <FormField control={form.control} name="complainantName" render={({ field }) => (
-                               <FormItem className="col-span-2">
-                                 <FormControl><Input {...field} /></FormControl>
-                                 <FormMessage />
-                               </FormItem>
-                             )} />
-                         </div>
-                         <div className="grid grid-cols-3 items-center gap-4">
-                              <Label className="text-right">Department</Label>
-                             <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
-                               <FormItem className="col-span-2">
-                                 <FormControl><Input {...field} /></FormControl>
-                                 <FormMessage />
-                               </FormItem>
-                             )} />
-                         </div>
+                         <FormField control={form.control} name="complainantName" render={({ field }) => (
+                           <FormItem className="space-y-2">
+                            <FormLabel>Full Name</FormLabel>
+                             <FormControl><Input {...field} /></FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )} />
+                         <FormField control={form.control} name="complainantDepartment" render={({ field }) => (
+                           <FormItem className="space-y-2">
+                            <FormLabel>Department</FormLabel>
+                             <FormControl><Input {...field} /></FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )} />
                      </div>
                      <div className="space-y-4 p-4 border rounded-lg">
                          <h3 className="font-semibold text-lg">Accused Person's Details (Respondent)</h3>
-                         <div className="grid grid-cols-3 items-center gap-4">
-                            <Label className="text-right">Full Name</Label>
-                             <FormField control={form.control} name="respondentName" render={({ field }) => (
-                               <FormItem className="col-span-2">
-                                 <FormControl><Input {...field} /></FormControl>
-                                 <FormMessage />
-                               </FormItem>
-                             )} />
-                         </div>
-                         <div className="grid grid-cols-3 items-center gap-4">
-                            <Label className="text-right">Department/Role</Label>
-                             <FormField control={form.control} name="respondentDetails" render={({ field }) => (
-                               <FormItem className="col-span-2">
-                                 <FormControl><Input {...field} placeholder="(if known)" /></FormControl>
-                                 <FormMessage />
-                               </FormItem>
-                             )} />
-                         </div>
+                         <FormField control={form.control} name="respondentName" render={({ field }) => (
+                           <FormItem className="space-y-2">
+                            <FormLabel>Full Name</FormLabel>
+                             <FormControl><Input {...field} /></FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )} />
+                         <FormField control={form.control} name="respondentDetails" render={({ field }) => (
+                           <FormItem className="space-y-2">
+                            <FormLabel>Department/Role (if known)</FormLabel>
+                             <FormControl><Input {...field} placeholder="(if known)" /></FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )} />
                      </div>
                  </div>
 
@@ -865,3 +859,5 @@ export default function PoshPage() {
         </DashboardLayout>
     );
 }
+
+    
