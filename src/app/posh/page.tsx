@@ -578,7 +578,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
           <DialogHeader>
             <DialogTitle>Submission Beyond Time Limit</DialogTitle>
             <DialogDescription>
-              Your incident date is more than 90 days ago. Please provide a justification for the delay in filing your complaint.
+                The incident date is more than 90 days ago. Submissions beyond this period require special approval. Please provide a justification for the delay; this will be sent to the ICC Head for review before the case can proceed.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -660,7 +660,10 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                              <FormMessage />
                            </FormItem>
                          )} />
-                         <FormField control={form.control} name="dateOfIncident" render={({ field }) => (
+                         <FormField
+                            control={form.control}
+                            name="dateOfIncident"
+                            render={({ field }) => (
                             <FormItem className="flex flex-col space-y-2">
                                 <FormLabel>Date of Incident</FormLabel>
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
