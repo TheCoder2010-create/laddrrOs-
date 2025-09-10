@@ -859,5 +859,3 @@ export default function PoshPage() {
         </DashboardLayout>
     );
 }
-
-    
