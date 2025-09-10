@@ -479,7 +479,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {role === 'ICC Head' && (
-                  <div className="space-y-3 p-4 border rounded-lg bg-background">
+                  <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
                       <Label className="font-semibold text-base">{isUnassignMode ? 'Unassign Case' : 'Assign Case'}</Label>
                       <div className="flex items-center justify-between">
                           <CustomSwitch id="assign-mode-switch" checked={isUnassignMode} onCheckedChange={setIsUnassignMode} />
@@ -499,7 +499,7 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                               </DropdownMenuContent>
                           </DropdownMenu>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground flex-grow">
                           {complaint.assignedTo && complaint.assignedTo.length > 0 && (
                               <span className="block">
                                   Currently: <span className="font-semibold text-primary">{complaint.assignedTo.join(', ')}</span>
@@ -521,42 +521,40 @@ function ActionPanel({ complaint, onUpdate }: { complaint: PoshComplaint, onUpda
                   </div>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:col-span-3">
-                    <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
-                        <Label className="font-semibold text-base">Disciplinary Action</Label>
-                        <div className="relative flex-grow">
-                            <Textarea 
-                                value={disciplinaryAction}
-                                onChange={(e) => setDisciplinaryAction(e.target.value)}
-                                placeholder="Describe disciplinary actions proposed..." 
-                                className="h-full pr-12 pb-8"
-                                rows={4}
-                            />
-                            <Button onClick={handleProposeAction} disabled={!disciplinaryAction || isSubmittingDisciplinary} size="icon" className="absolute right-2 bottom-2 h-7 w-7 rounded-full">
-                                {isSubmittingDisciplinary ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                            </Button>
-                        </div>
+                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
+                    <Label className="font-semibold text-base">Disciplinary Action</Label>
+                    <div className="relative flex-grow">
+                        <Textarea 
+                            value={disciplinaryAction}
+                            onChange={(e) => setDisciplinaryAction(e.target.value)}
+                            placeholder="Describe disciplinary actions proposed..." 
+                            className="h-full pr-12 pb-8"
+                            rows={4}
+                        />
+                        <Button onClick={handleProposeAction} disabled={!disciplinaryAction || isSubmittingDisciplinary} size="icon" className="absolute right-2 bottom-2 h-7 w-7 rounded-full">
+                            {isSubmittingDisciplinary ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
                     </div>
-                    
-                    <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
-                        <Label className="font-semibold text-base">Final Report</Label>
-                        <div className="relative flex-grow">
-                            <Textarea 
-                                value={finalReport}
-                                onChange={(e) => setFinalReport(e.target.value)}
-                                placeholder="Paste summary of final report..." 
-                                className="h-full pr-12 pb-12"
-                                rows={4}
-                            />
-                            <div className="absolute right-2 bottom-2 flex items-center gap-2">
-                                 <div className="flex items-center space-x-2">
-                                   <Checkbox id="tag-final" checked={tagAsFinal} onCheckedChange={(checked) => setTagAsFinal(!!checked)}/>
-                                   <label htmlFor="tag-final" className="cursor-pointer text-xs font-medium leading-none">Tag Final</label>
-                                </div>
-                                <Button onClick={handleSubmitFinalReport} disabled={!finalReport || isSubmittingFinal} size="icon" className="h-7 w-7 rounded-full">
-                                   {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                                </Button>
+                </div>
+                
+                <div className="space-y-3 p-4 border rounded-lg bg-background flex flex-col">
+                    <Label className="font-semibold text-base">Final Report</Label>
+                    <div className="relative flex-grow">
+                        <Textarea 
+                            value={finalReport}
+                            onChange={(e) => setFinalReport(e.target.value)}
+                            placeholder="Paste summary of final report..." 
+                            className="h-full pr-12 pb-12"
+                            rows={4}
+                        />
+                        <div className="absolute right-2 bottom-2 flex items-center gap-2">
+                             <div className="flex items-center space-x-2">
+                               <Checkbox id="tag-final" checked={tagAsFinal} onCheckedChange={(checked) => setTagAsFinal(!!checked)}/>
+                               <label htmlFor="tag-final" className="cursor-pointer text-xs font-medium leading-none">Tag Final</label>
                             </div>
+                            <Button onClick={handleSubmitFinalReport} disabled={!finalReport || isSubmittingFinal} size="icon" className="h-7 w-7 rounded-full">
+                               {isSubmittingFinal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            </Button>
                         </div>
                     </div>
                 </div>
