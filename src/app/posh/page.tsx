@@ -380,11 +380,7 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
 
     return (
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-                <List className="h-5 w-5" />
-                My Raised Cases
-            </h2>
-            <CaseActionDialog
+             <CaseActionDialog
               open={dialogState.open === 'withdraw'}
               onOpenChange={() => setDialogState({ open: null, caseId: null })}
               caseId={dialogState.caseId!}
@@ -410,6 +406,10 @@ function MyPoshSubmissions({ onUpdate, allCases, setAllCases }: { onUpdate: () =
                   }
               }}
             />
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+                <List className="h-5 w-5" />
+                My Raised Cases
+            </h2>
 
              <Accordion type="single" collapsible className="w-full">
                  {myCases.map(item => {
@@ -579,7 +579,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
           <DialogHeader>
             <DialogTitle>Submission Beyond Time Limit</DialogTitle>
             <DialogDescription>
-                The incident date is more than 90 days ago. Submissions beyond this period require special approval from the ICC Head before the case can proceed. Please provide a justification for the delay.
+              The incident date is more than 90 days ago. Submissions beyond this period require special approval from the ICC Head before the case can proceed. Please provide a justification for the delay.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -665,7 +665,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                             control={form.control}
                             name="dateOfIncident"
                             render={({ field }) => (
-                            <FormItem className="flex flex-col">
+                            <FormItem className="flex flex-col gap-2">
                                 <FormLabel>Date of Incident</FormLabel>
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                     <PopoverTrigger asChild>
@@ -863,5 +863,6 @@ export default function PoshPage() {
         </DashboardLayout>
     );
 }
+
 
 
