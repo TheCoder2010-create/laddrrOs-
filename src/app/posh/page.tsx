@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback, Key, ChangeEvent, useRef } from 'react';
@@ -206,7 +207,6 @@ function CaseActionDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
   );
 }
 
@@ -578,7 +578,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
           <DialogHeader>
             <DialogTitle>Submission Beyond Time Limit</DialogTitle>
             <DialogDescription>
-                The incident date is more than 90 days ago. Submissions beyond this period require special approval. Please provide a justification for the delay; this will be sent to the ICC Head for review before the case can proceed.
+                The incident date is more than 90 days ago. Submissions beyond this period require special approval from the ICC Head before the case can proceed. Please provide a justification for the delay.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -664,7 +664,7 @@ function PoshComplaintForm({ onSubmitted }: { onSubmitted: () => void }) {
                             control={form.control}
                             name="dateOfIncident"
                             render={({ field }) => (
-                            <FormItem className="flex flex-col space-y-2">
+                            <FormItem className="flex flex-col">
                                 <FormLabel>Date of Incident</FormLabel>
                                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                     <PopoverTrigger asChild>
@@ -862,3 +862,4 @@ export default function PoshPage() {
         </DashboardLayout>
     );
 }
+
