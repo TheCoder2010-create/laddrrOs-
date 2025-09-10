@@ -207,6 +207,7 @@ function CaseActionDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+    </Dialog>
   );
 }
 
@@ -862,4 +863,5 @@ export default function PoshPage() {
         </DashboardLayout>
     );
 }
+
 
