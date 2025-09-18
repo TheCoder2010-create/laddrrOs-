@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
@@ -10,7 +9,7 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2, Check, Plus, Calendar as CalendarIcon, NotebookPen } from 'lucide-react';
+import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2, Check, Plus, Calendar as CalendarIcon, NotebookPen, Bot } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,9 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
+import { getGoalFeedback } from '@/ai/flows/get-goal-feedback-flow';
+import type { GoalFeedbackInput } from '@/ai/schemas/goal-feedback-schemas';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -122,6 +124,120 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onO
     );
 }
 
+function GoalFeedbackDialog({
+    rec,
+    historyId,
+    open,
+    onOpenChange,
+    onFeedbackSubmitted
+}: {
+    rec: CoachingRecommendation | null;
+    historyId: string | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onFeedbackSubmitted: () => void;
+}) {
+    const { toast } = useToast();
+    const [situation, setSituation] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (open) {
+            setSituation('');
+            setAiFeedback(null);
+            setError(null);
+        }
+    }, [open]);
+
+    const handleSubmit = async () => {
+        if (!rec || !historyId || !situation) return;
+        setIsSubmitting(true);
+        setError(null);
+        setAiFeedback(null);
+
+        try {
+            const input: GoalFeedbackInput = {
+                goalArea: rec.area,
+                goalDescription: rec.resource,
+                userSituation: situation,
+            };
+            const result = await getGoalFeedback(input);
+            setAiFeedback(result.feedback);
+            
+            // Log the AI feedback as a check-in
+            const checkInMessage = `[AI FEEDBACK on "${rec.area}"]\nSITUATION: ${situation}\n\nCOACH: ${result.feedback}`;
+            await addCoachingCheckIn(historyId, rec.id, checkInMessage);
+
+            toast({ title: "AI Feedback Received", description: "Your AI coach's feedback has been added to your check-in history." });
+            onFeedbackSubmitted();
+
+        } catch (e) {
+            console.error("Failed to get AI feedback", e);
+            setError("The AI coach could not provide feedback at this time. Please try again later.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Get AI Feedback on Your Goal</DialogTitle>
+                    <DialogDescription>
+                        For your goal: <span className="font-semibold text-primary">{rec?.area} - {rec?.resource}</span>
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="situation-description">Describe a recent situation where you tried to apply this goal.</Label>
+                        <Textarea
+                            id="situation-description"
+                            value={situation}
+                            onChange={(e) => setSituation(e.target.value)}
+                            placeholder="Example: I led a team meeting and tried to be more concise. It felt rushed, and I'm not sure everyone understood the key takeaways. What could I do differently?"
+                            rows={6}
+                        />
+                    </div>
+                    {isSubmitting && (
+                         <Alert>
+                            <div className="flex items-center gap-2 font-bold text-primary">
+                                <Loader2 className="animate-spin" />
+                                <AlertTitle>Thinking...</AlertTitle>
+                            </div>
+                            <AlertDescription>
+                                Your AI coach is analyzing your situation. This may take a moment.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    {error && (
+                         <Alert variant="destructive">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                     {aiFeedback && (
+                        <Alert variant="success">
+                            <Bot className="h-4 w-4" />
+                            <AlertTitle>AI Coach Feedback</AlertTitle>
+                            <AlertDescription className="whitespace-pre-wrap">{aiFeedback}</AlertDescription>
+                        </Alert>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
+                    <Button onClick={handleSubmit} disabled={isSubmitting || !situation || !!aiFeedback}>
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                        Get Feedback
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function DevelopmentPlanWidget() {
     const { role } = useRole();
     const { toast } = useToast();
@@ -135,6 +251,8 @@ export default function DevelopmentPlanWidget() {
 
     const [historyInView, setHistoryInView] = useState<CoachingRecommendation | null>(null);
     const [isAddPlanDialogOpen, setIsAddPlanDialogOpen] = useState(false);
+    
+    const [feedbackGoal, setFeedbackGoal] = useState<{ historyId: string, rec: CoachingRecommendation } | null>(null);
 
     const fetchActivePlans = useCallback(async () => {
         if (!role) return;
@@ -218,6 +336,14 @@ export default function DevelopmentPlanWidget() {
                 onPlanAdded={fetchActivePlans} 
             />
 
+             <GoalFeedbackDialog
+                rec={feedbackGoal?.rec ?? null}
+                historyId={feedbackGoal?.historyId ?? null}
+                open={!!feedbackGoal}
+                onOpenChange={() => setFeedbackGoal(null)}
+                onFeedbackSubmitted={fetchActivePlans}
+            />
+
             <Dialog open={!!checkInRec} onOpenChange={(isOpen) => !isOpen && handleCheckInCancel()}>
                 <DialogContent>
                     <DialogHeader>
@@ -249,7 +375,7 @@ export default function DevelopmentPlanWidget() {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={!!historyInView} onOpenChange={setHistoryInView}>
+            <Dialog open={!!historyInView} onOpenChange={(isOpen) => !isOpen && setHistoryInView(null)}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Check-in History</DialogTitle>
@@ -265,7 +391,7 @@ export default function DevelopmentPlanWidget() {
                                         <MessageSquare className="h-4 w-4 mt-1 text-primary/70 flex-shrink-0" />
                                         <div className="flex-1">
                                             <p className="text-xs text-muted-foreground">{format(new Date(checkIn.date), 'PPP, p')}</p>
-                                            <p className="text-sm text-foreground">{checkIn.notes}</p>
+                                            <p className="text-sm text-foreground whitespace-pre-wrap">{checkIn.notes}</p>
                                         </div>
                                     </div>
                                 ))
@@ -304,20 +430,35 @@ export default function DevelopmentPlanWidget() {
                             {activePlans.map(({ historyId, rec }) => (
                                 <div 
                                     key={rec.id} 
-                                    className="p-2 space-y-1.5 border rounded-lg bg-card/50 flex flex-col justify-between cursor-pointer hover:bg-muted/50 transition-colors min-h-[100px]"
-                                    onClick={() => setHistoryInView(rec)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
-                                    role="button"
-                                    tabIndex={0}
+                                    className="p-2 space-y-1.5 border rounded-lg bg-card/50 flex flex-col justify-between min-h-[100px]"
                                 >
-                                    <div className="flex justify-between items-start gap-2">
-                                        <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
-                                        <p className="text-lg font-bold text-secondary flex-shrink-0">{rec.progress ?? 0}%</p>
+                                     <div className="flex justify-between items-start gap-2">
+                                        <div 
+                                            className="flex-1 cursor-pointer"
+                                            onClick={() => setHistoryInView(rec)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
+                                            role="button"
+                                            tabIndex={0}
+                                        >
+                                            <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
+                                        </div>
+                                        <div className="flex items-center">
+                                            {rec.type === "Other" && (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-7 w-7 text-primary/70 hover:text-primary"
+                                                    onClick={() => setFeedbackGoal({ historyId, rec })}
+                                                >
+                                                    <Bot className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                            <p className="text-lg font-bold text-secondary flex-shrink-0">{rec.progress ?? 0}%</p>
+                                        </div>
                                     </div>
+
                                     <div 
                                         className="w-full space-y-2 mt-auto"
-                                        onClick={(e) => e.stopPropagation()}
-                                        onKeyDown={(e) => e.stopPropagation()}
                                     >
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
                                             <RecommendationIcon type={rec.type} />
