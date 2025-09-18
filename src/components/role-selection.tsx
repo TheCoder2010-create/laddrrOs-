@@ -33,14 +33,6 @@ const roleDetails = {
     icon: ShieldCheck,
     description: "Access the vault and manage all cases.",
   },
-  'ICC Head': {
-    icon: Scale,
-    description: "Oversee internal complaints committee cases.",
-  },
-  'ICC Member': {
-    icon: Building,
-    description: "Review and manage assigned ICC cases.",
-  }
 };
 
 export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
