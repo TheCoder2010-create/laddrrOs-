@@ -3,14 +3,14 @@
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getOneOnOneHistory, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn, addCustomCoachingPlan } from '@/services/feedback-service';
 import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { useRole } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2, Check } from 'lucide-react';
+import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2, Check, Plus, Calendar as CalendarIcon, NotebookPen } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,9 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -29,6 +32,95 @@ const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) 
         default: return <Lightbulb className="h-4 w-4" />;
     }
 };
+
+function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onOpenChange: (open: boolean) => void; onPlanAdded: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Form state
+    const [area, setArea] = useState('');
+    const [resource, setResource] = useState('');
+    const [startDate, setStartDate] = useState<Date | undefined>();
+    const [endDate, setEndDate] = useState<Date | undefined>();
+
+    const handleSubmit = async () => {
+        if (!role || !area || !resource || !startDate || !endDate) {
+            toast({ variant: 'destructive', title: "Missing Information", description: "Please fill out all fields to add a plan." });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            await addCustomCoachingPlan(role, { area, resource, startDate, endDate });
+            toast({ title: "Development Plan Added", description: "Your new goal is now active." });
+            onPlanAdded();
+            onOpenChange(false);
+        } catch (error) {
+            console.error("Failed to add custom plan", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add a Custom Development Goal</DialogTitle>
+                    <DialogDescription>
+                        Define a new coaching or development activity for yourself. This will appear in your active plan.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="goal-area">Goal Area</Label>
+                        <Input id="goal-area" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g., Public Speaking, Project Management" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="goal-resource">Activity / Resource</Label>
+                        <Input id="goal-resource" value={resource} onChange={(e) => setResource(e.target.value)} placeholder="e.g., Read 'Crucial Conversations', Complete Udemy course" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Start Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                       <Label>Tentative End Date</Label>
+                       <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(date) => date < (startDate || new Date())} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSubmit} disabled={isSubmitting || !area || !resource || !startDate || !endDate}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Add to My Plan
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function DevelopmentPlanWidget() {
     const { role } = useRole();
@@ -42,6 +134,7 @@ export default function DevelopmentPlanWidget() {
     const [isSubmittingCheckIn, setIsSubmittingCheckIn] = useState(false);
 
     const [historyInView, setHistoryInView] = useState<CoachingRecommendation | null>(null);
+    const [isAddPlanDialogOpen, setIsAddPlanDialogOpen] = useState(false);
 
     const fetchActivePlans = useCallback(async () => {
         if (!role) return;
@@ -59,7 +152,7 @@ export default function DevelopmentPlanWidget() {
                 });
             }
         });
-        setActivePlans(plans);
+        setActivePlans(plans.sort((a, b) => new Date(a.rec.startDate || 0).getTime() - new Date(b.rec.startDate || 0).getTime()));
         setIsLoading(false);
     }, [role]);
 
@@ -117,12 +210,14 @@ export default function DevelopmentPlanWidget() {
         return <Skeleton className="h-48 w-full" />;
     }
 
-    if (activePlans.length === 0) {
-        return null; // Don't render the widget if there are no active plans
-    }
-
     return (
         <>
+            <AddPlanDialog 
+                open={isAddPlanDialogOpen} 
+                onOpenChange={setIsAddPlanDialogOpen} 
+                onPlanAdded={fetchActivePlans} 
+            />
+
             <Dialog open={!!checkInRec} onOpenChange={(isOpen) => !isOpen && handleCheckInCancel()}>
                 <DialogContent>
                     <DialogHeader>
@@ -183,54 +278,67 @@ export default function DevelopmentPlanWidget() {
             </Dialog>
 
             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Activity />
-                        Active Development Plan
-                    </CardTitle>
-                    <CardDescription>
-                        Update your progress on your current coaching goals. Click a card to view its history.
-                    </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div className="space-y-1.5">
+                        <CardTitle className="flex items-center gap-2">
+                            <Activity />
+                            Active Development Plan
+                        </CardTitle>
+                        <CardDescription>
+                            Update your progress on your current coaching goals. Click a card to view its history.
+                        </CardDescription>
+                    </div>
+                     <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)}>
+                        <Plus className="h-5 w-5" />
+                    </Button>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {activePlans.map(({ historyId, rec }) => (
-                            <div 
-                                key={rec.id} 
-                                className="p-2 space-y-1.5 border rounded-lg bg-card/50 flex flex-col justify-between cursor-pointer hover:bg-muted/50 transition-colors min-h-[100px]"
-                                onClick={() => setHistoryInView(rec)}
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
-                                role="button"
-                                tabIndex={0}
-                            >
-                                <div className="flex justify-between items-start gap-2">
-                                    <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
-                                    <p className="text-lg font-bold text-secondary flex-shrink-0">{rec.progress ?? 0}%</p>
-                                </div>
+                    {activePlans.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                            <NotebookPen className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Active Plans</h3>
+                            <p className="text-muted-foreground mt-1">Accept an AI recommendation or add your own goal to get started.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {activePlans.map(({ historyId, rec }) => (
                                 <div 
-                                    className="w-full space-y-2 mt-auto"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onKeyDown={(e) => e.stopPropagation()}
+                                    key={rec.id} 
+                                    className="p-2 space-y-1.5 border rounded-lg bg-card/50 flex flex-col justify-between cursor-pointer hover:bg-muted/50 transition-colors min-h-[100px]"
+                                    onClick={() => setHistoryInView(rec)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
+                                    role="button"
+                                    tabIndex={0}
                                 >
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
-                                        <RecommendationIcon type={rec.type} />
-                                        <span className="truncate">{rec.type}: {rec.resource}</span>
+                                    <div className="flex justify-between items-start gap-2">
+                                        <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
+                                        <p className="text-lg font-bold text-secondary flex-shrink-0">{rec.progress ?? 0}%</p>
                                     </div>
                                     <div 
-                                        className="w-full"
+                                        className="w-full space-y-2 mt-auto"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => e.stopPropagation()}
                                     >
-                                        <Slider
-                                            defaultValue={[rec.progress ?? 0]}
-                                            max={100}
-                                            step={10}
-                                            onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                                            <RecommendationIcon type={rec.type} />
+                                            <span className="truncate">{rec.type}: {rec.resource}</span>
+                                        </div>
+                                        <div 
                                             className="w-full"
-                                        />
+                                        >
+                                            <Slider
+                                                defaultValue={[rec.progress ?? 0]}
+                                                max={100}
+                                                step={10}
+                                                onValueChange={(value) => debouncedProgressUpdate(historyId, rec.id, value[0])}
+                                                className="w-full"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </>

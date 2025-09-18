@@ -520,6 +520,70 @@ export async function updateCoachingRecommendationStatus(
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
+export async function addCustomCoachingPlan(actor: Role, data: { area: string; resource: string; startDate: Date; endDate: Date }): Promise<void> {
+    const supervisorName = roleUserMapping[actor]?.name;
+    if (!supervisorName) throw new Error("Invalid actor role provided.");
+
+    const allHistory = await getOneOnOneHistory();
+
+    const newCustomRecommendation: CoachingRecommendation = {
+        id: uuidv4(),
+        area: data.area,
+        recommendation: `Custom goal added by user: ${data.resource}`,
+        example: "N/A (user-added goal)",
+        type: "Other", // Default type for custom plans
+        resource: data.resource,
+        justification: "This is a self-directed development goal.",
+        status: "accepted",
+        rejectionReason: undefined,
+        auditTrail: [{
+            event: "Custom Goal Created",
+            actor: supervisorName,
+            timestamp: new Date().toISOString(),
+            details: "User added a new self-directed development goal."
+        }],
+        startDate: data.startDate.toISOString(),
+        endDate: data.endDate.toISOString(),
+        progress: 0,
+        checkIns: [],
+    };
+    
+    // We need a "dummy" 1-on-1 history item to attach this to.
+    // Let's find one or create one.
+    let supervisorHistory = allHistory.find(h => h.supervisorName === supervisorName);
+
+    if (supervisorHistory) {
+        // Add to the most recent 1-on-1's recommendations list.
+        supervisorHistory.analysis.coachingRecommendations.unshift(newCustomRecommendation);
+    } else {
+        // If no history exists, create a dummy entry.
+        const newHistoryItem: OneOnOneHistoryItem = {
+            id: generateTrackingId(),
+            supervisorName: supervisorName,
+            employeeName: "System", // Indicates a system-generated container
+            date: new Date().toISOString(),
+            analysis: {
+                supervisorSummary: "Container for custom development goals.",
+                employeeSummary: "",
+                leadershipScore: 0,
+                effectivenessScore: 0,
+                employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
+                strengthsObserved: [],
+                coachingRecommendations: [newCustomRecommendation],
+                actionItems: [],
+                legalDataCompliance: { piiOmitted: false, privacyRequest: false },
+                biasFairnessCheck: { flag: false },
+                localizationCompliance: { applied: false },
+            },
+            assignedTo: [],
+        };
+        allHistory.unshift(newHistoryItem);
+    }
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+}
+
+
 export async function updateCoachingProgress(historyId: string, recommendationId: string, progress: number): Promise<void> {
     let allHistory = await getOneOnOneHistory();
     const historyIndex = allHistory.findIndex(h => h.id === historyId);
