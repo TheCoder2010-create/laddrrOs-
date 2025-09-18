@@ -35,7 +35,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
-  const [myConcernsCount, setMyConcernsCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
@@ -89,25 +88,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }).length;
       
       setMessageCount(totalMessages);
-
-       // My Concerns Count
-      let concernsActionCount = 0;
-      const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-      const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
-      
-      feedback.forEach(f => {
-          if (f.source === 'Voice – In Silence') return;
-          const isMyConcern = f.submittedBy === currentRole || f.submittedBy === currentUserName;
-          const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
-
-          if (isMyConcern && complainantActionStatuses.includes(f.status || '')) {
-              concernsActionCount++;
-          }
-          if (isAssignedToMe && respondentActionStatuses.includes(f.status || '')) {
-              concernsActionCount++;
-          }
-      });
-      setMyConcernsCount(concernsActionCount);
       
       // Coaching & Development Count
       let devCount = 0;
@@ -135,7 +115,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setActionItemCount(0);
       setMessageCount(0);
       setCoachingCount(0);
-      setMyConcernsCount(0);
     }
   }, [currentRole, currentUserName]);
 
@@ -162,7 +141,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns', badge: myConcernsCount > 0 ? myConcernsCount : null, badgeVariant: 'destructive' as const },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
 

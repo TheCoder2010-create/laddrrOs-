@@ -20,7 +20,6 @@ import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { getAllPoshComplaints } from '@/services/posh-service';
 
 
 interface MainSidebarProps {
@@ -29,22 +28,19 @@ interface MainSidebarProps {
 }
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
-  const { availableRoles, isIccMember } = useRole();
+  const { availableRoles } = useRole();
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
   const currentUserName = currentUser.name;
   const pathname = usePathname();
   const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
-  const [myConcernsCount, setMyConcernsCount] = useState(0);
-  const [poshDeskCount, setPoshDeskCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
     try {
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
-      const poshComplaints = await getAllPoshComplaints();
 
       // Action items count
       let totalActionItems = 0;
@@ -92,25 +88,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }).length;
       
       setMessageCount(totalMessages);
-
-       // My Concerns Count
-      let concernsActionCount = 0;
-      const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
-      const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
-      
-      feedback.forEach(f => {
-          if (f.source === 'Voice – In Silence') return;
-          const isMyConcern = f.submittedBy === currentRole || f.submittedBy === currentUserName;
-          const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
-
-          if (isMyConcern && complainantActionStatuses.includes(f.status || '')) {
-              concernsActionCount++;
-          }
-          if (isAssignedToMe && respondentActionStatuses.includes(f.status || '')) {
-              concernsActionCount++;
-          }
-      });
-      setMyConcernsCount(concernsActionCount);
       
       // Coaching & Development Count
       let devCount = 0;
@@ -133,29 +110,13 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       setCoachingCount(devCount);
 
-      // Posh Desk Count
-      if (isIccMember) {
-        let count = 0;
-        if (currentRole === 'ICC Head') {
-            count = poshComplaints.filter(c => c.caseStatus === 'New').length;
-        } else {
-            count = poshComplaints.filter(c => c.assignedTo?.includes(currentRole as any) && c.caseStatus !== 'Resolved' && c.caseStatus !== 'Closed (No Action Required)' && c.caseStatus !== 'Closed').length;
-        }
-        setPoshDeskCount(count);
-      } else {
-        setPoshDeskCount(0);
-      }
-
-
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
       setActionItemCount(0);
       setMessageCount(0);
       setCoachingCount(0);
-      setMyConcernsCount(0);
-      setPoshDeskCount(0);
     }
-  }, [currentRole, currentUserName, isIccMember]);
+  }, [currentRole, currentUserName]);
 
 
   useEffect(() => {
@@ -167,12 +128,10 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
     window.addEventListener('storage', handleDataUpdate);
     window.addEventListener('feedbackUpdated', handleDataUpdate);
-    window.addEventListener('poshComplaintUpdated', handleDataUpdate);
 
     return () => {
         window.removeEventListener('storage', handleDataUpdate);
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
-        window.removeEventListener('poshComplaintUpdated', handleDataUpdate);
     };
   }, [fetchFeedbackCounts]);
 
@@ -182,14 +141,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns', badge: myConcernsCount > 0 ? myConcernsCount : null, badgeVariant: 'destructive' as const },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
-    ...(!isIccMember ? [{ href: '/posh', icon: <Scale />, label: 'POSH' }] : []),
   ];
-
-  const iccMenuItems = [
-    { href: '/posh-desk', icon: <Scale />, label: 'POSH Desk', badge: poshDeskCount > 0 ? poshDeskCount : null, badgeVariant: 'destructive' as const },
-  ]
   
   const assigneeMenuItems = [
     { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
@@ -258,7 +211,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
-          {isIccMember && iccMenuItems.map(renderMenuItem)}
           {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>

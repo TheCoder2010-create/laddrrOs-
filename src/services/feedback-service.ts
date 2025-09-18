@@ -10,7 +10,6 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
-import { summarizeAnonymousFeedback } from '@/ai/flows/summarize-anonymous-feedback-flow';
 
 // Helper function to generate a new ID format
 const generateTrackingId = () => `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -78,7 +77,6 @@ export interface Feedback {
   parentCaseId?: string; // For retaliation claims
   attachmentNames?: string[];
   attachments?: Attachment[];
-  source?: 'Voice – In Silence'; // This is now distinct from POSH
 }
 
 export interface OneOnOneHistoryItem {
@@ -91,66 +89,8 @@ export interface OneOnOneHistoryItem {
     assignedTo?: Role[]; 
 }
 
-// Client-side submission types
-export interface AnonymousFeedbackInput {
-  subject: string;
-  message: string;
-  files: File[];
-  file?: File | null;
-}
-export interface AnonymousFeedbackOutput {
-  trackingId: string;
-}
-
-export interface IdentifiedConcernInput {
-    submittedBy: string;
-    submittedByRole: Role;
-    recipient: Role;
-    subject: string;
-    message: string;
-    criticality: 'Low' | 'Medium' | 'High' | 'Critical';
-    isAnonymous: false;
-    files: File[];
-}
-
-export interface RetaliationReportInput {
-    parentCaseId: string;
-    submittedBy: Role;
-    description: string;
-    files: File[];
-}
-
-export interface DirectRetaliationReportInput {
-    submittedBy: Role;
-    subject: string;
-    description: string;
-    files: File[];
-}
-
-// Client-side tracking types
-export interface TrackFeedbackInput {
-  trackingId: string;
-}
-export interface TrackedFeedback {
-  trackingId: string;
-  subject: string;
-  submittedAt: string;
-  status?: FeedbackStatus;
-  assignedTo?: Role[];
-  auditTrail?: AuditEvent[];
-  resolution?: string;
-}
-export interface TrackFeedbackOutput {
-  found: boolean;
-  feedback?: TrackedFeedback | Feedback; // Can return full feedback for interactive widgets
-}
-
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
-
-const getIdentifiedCaseKey = (role: string | null) => role ? `identified_cases_${role.replace(/\s/g, '_')}` : null;
-const getRetaliationCaseKey = (role: string | null) => role ? `direct_retaliation_cases_${role.replace(/\s/g, '_')}` : null;
-
 
 // ==========================================
 // Generic Storage Helpers
@@ -704,17 +644,6 @@ export async function acknowledgeDeclinedRecommendation(
 // Feedback Service
 // ==========================================
 
-// Helper to read a file as a data URI
-const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(file);
-    });
-};
-
-
 export const getFeedbackFromStorage = (): Feedback[] => {
   const feedback = getFromStorage<Feedback>(FEEDBACK_KEY);
   return feedback.map(c => ({
@@ -727,332 +656,6 @@ export const getFeedbackFromStorage = (): Feedback[] => {
 export const saveFeedbackToStorage = (feedback: Feedback[]): void => {
    saveToStorage(FEEDBACK_KEY, feedback);
 };
-
-export async function submitAnonymousFeedback(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
-  const allFeedback = getFeedbackFromStorage();
-  const trackingId = generateTrackingId();
-  const submittedAt = new Date();
-  const { subject, message, files = [] } = input;
-  const attachmentNames = files.map(f => f.name);
-  const details = `Feedback was received by the system.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
-
-  const attachments = await Promise.all(
-    files.map(async (file) => ({
-      name: file.name,
-      dataUri: await fileToDataUri(file),
-    }))
-  );
-
-  const newFeedback: Feedback = {
-    subject,
-    message,
-    trackingId,
-    submittedAt,
-    viewed: false,
-    status: 'Open',
-    assignedTo: [],
-    source: 'Voice – In Silence',
-    auditTrail: [
-      {
-        event: 'Submitted',
-        timestamp: submittedAt,
-        actor: 'Anonymous',
-        details: details,
-        isPublic: true,
-      },
-    ],
-    attachments,
-  };
-
-  allFeedback.unshift(newFeedback);
-  saveFeedbackToStorage(allFeedback);
-  
-  return { trackingId };
-}
-
-export async function summarizeFeedback(trackingId: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) {
-        throw new Error("Feedback item not found.");
-    }
-
-    const feedback = allFeedback[feedbackIndex];
-    if (feedback.summary) {
-        return; // Already summarized
-    }
-
-    // Call the on-demand summarization flow
-    const analysis = await summarizeAnonymousFeedback({
-        subject: feedback.subject,
-        message: feedback.message,
-    });
-
-    // Update the feedback item with the analysis results
-    feedback.summary = analysis.summary;
-    feedback.criticality = analysis.criticality;
-    feedback.criticalityReasoning = analysis.criticalityReasoning;
-
-    if (!feedback.auditTrail) {
-        feedback.auditTrail = [];
-    }
-    feedback.auditTrail.push({
-        event: 'AI Analysis Completed',
-        timestamp: new Date(),
-        actor: 'HR Head', // Attributed to the user who triggered it
-        details: `AI assessed criticality as ${analysis.criticality}.`,
-    });
-    
-    saveFeedbackToStorage(allFeedback);
-}
-
-export async function submitAnonymousConcernFromDashboard(input: AnonymousFeedbackInput): Promise<AnonymousFeedbackOutput> {
-    const allFeedback = getFeedbackFromStorage();
-    const trackingId = generateTrackingId();
-    const { files, ...rest } = input;
-    const attachmentNames = files.map(f => f.name);
-    const details = `A concern was submitted anonymously from a user dashboard.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
-    
-    const attachments = await Promise.all(
-        (files || []).map(async (file) => ({
-            name: file.name,
-            dataUri: await fileToDataUri(file),
-        }))
-    );
-
-    const newFeedback: Feedback = {
-        ...rest,
-        trackingId,
-        submittedAt: new Date(),
-        isAnonymous: true,
-        status: 'Pending Manager Action', // Route directly to Manager
-        assignedTo: ['Manager'],
-        criticality: 'Medium', // Default criticality
-        auditTrail: [{
-            event: 'Submitted',
-            timestamp: new Date(),
-            actor: 'Anonymous',
-            details: details,
-        }],
-        attachments,
-    };
-    allFeedback.unshift(newFeedback);
-    saveFeedbackToStorage(allFeedback);
-    return { trackingId };
-}
-
-export async function submitIdentifiedConcern(input: IdentifiedConcernInput): Promise<AnonymousFeedbackOutput> {
-    const allFeedback = getFeedbackFromStorage();
-    const trackingId = generateTrackingId();
-    const { files, ...rest } = input;
-    const attachmentNames = files.map(f => f.name);
-    const details = `Concern submitted by ${rest.submittedBy} (${rest.submittedByRole}) to ${rest.recipient}.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
-    
-    const attachments = await Promise.all(
-        (files || []).map(async (file) => ({
-            name: file.name,
-            dataUri: await fileToDataUri(file),
-        }))
-    );
-
-    const newFeedback: Feedback = {
-        trackingId: trackingId,
-        subject: rest.subject,
-        message: rest.message,
-        submittedAt: new Date(),
-        submittedBy: rest.submittedByRole,
-        isAnonymous: false,
-        criticality: rest.criticality,
-        status: 'Pending Supervisor Action', 
-        assignedTo: [rest.recipient],
-        viewed: false,
-        auditTrail: [
-            {
-                event: 'Identified Concern Submitted',
-                timestamp: new Date(),
-                actor: rest.submittedByRole,
-                details: details
-            }
-        ],
-        attachments,
-    };
-    allFeedback.unshift(newFeedback);
-    saveFeedbackToStorage(allFeedback);
-    return { trackingId };
-}
-
-export async function submitDirectRetaliationReport(input: DirectRetaliationReportInput): Promise<AnonymousFeedbackOutput> {
-    const allFeedback = getFeedbackFromStorage();
-    const trackingId = generateTrackingId();
-    const attachmentNames = input.files.map(f => f.name);
-    const details = `A direct retaliation claim was submitted.${attachmentNames.length > 0 ? ` Attachments: ${attachmentNames.join(', ')}` : ''}`;
-
-    const attachments = await Promise.all(
-        (input.files || []).map(async (file) => ({
-            name: file.name,
-            dataUri: await fileToDataUri(file),
-        }))
-    );
-
-    const newRetaliationCase: Feedback = {
-        trackingId,
-        subject: input.subject,
-        message: input.description,
-        submittedAt: new Date(),
-        submittedBy: input.submittedBy,
-        criticality: 'Retaliation Claim',
-        status: 'Retaliation Claim',
-        assignedTo: ['HR Head'],
-        viewed: false,
-        isAnonymous: false,
-        auditTrail: [{
-            event: 'Retaliation Claim Submitted',
-            timestamp: new Date(),
-            actor: input.submittedBy,
-            details: details
-        }],
-        attachments,
-    };
-    allFeedback.unshift(newRetaliationCase);
-    saveFeedbackToStorage(allFeedback);
-    return { trackingId };
-}
-
-
-export async function submitRetaliationReport(input: RetaliationReportInput): Promise<AnonymousFeedbackOutput> {
-    const allFeedback = getFeedbackFromStorage();
-    const childCaseId = generateTrackingId();
-    const attachmentNames = input.files.map(f => f.name);
-    const details = `Claim submitted for case ${input.parentCaseId}.\nNew Case ID: ${childCaseId}${attachmentNames.length > 0 ? `\nAttachments: ${attachmentNames.join(', ')}` : ''}`;
-
-    const attachments = await Promise.all(
-        (input.files || []).map(async (file) => ({
-            name: file.name,
-            dataUri: await fileToDataUri(file),
-        }))
-    );
-
-    // Create the new child retaliation case
-    const newRetaliationCase: Feedback = {
-        trackingId: childCaseId,
-        parentCaseId: input.parentCaseId,
-        subject: `Retaliation Claim`,
-        message: input.description,
-        submittedAt: new Date(),
-        submittedBy: input.submittedBy,
-        criticality: 'Retaliation Claim',
-        status: 'Retaliation Claim',
-        assignedTo: ['HR Head'],
-        isAnonymous: false,
-        viewed: false,
-        auditTrail: [{
-            event: 'Retaliation Claim Submitted',
-            timestamp: new Date(),
-            actor: input.submittedBy,
-            details: details,
-        }],
-        attachments,
-    };
-    allFeedback.unshift(newRetaliationCase);
-    
-    // Add an event to the parent case linking to the new child case
-    const parentCaseIndex = allFeedback.findIndex(f => f.trackingId === input.parentCaseId);
-    if (parentCaseIndex !== -1) {
-        if (!allFeedback[parentCaseIndex].auditTrail) {
-            allFeedback[parentCaseIndex].auditTrail = [];
-        }
-        allFeedback[parentCaseIndex].auditTrail!.push({
-            event: 'Retaliation Claim Filed',
-            timestamp: new Date(),
-            actor: input.submittedBy,
-            details: `A new retaliation claim has been filed and linked to this case. New Case ID: ${childCaseId}`
-        });
-    }
-
-    saveFeedbackToStorage(allFeedback);
-    return { trackingId: childCaseId };
-}
-
-export async function submitHrRetaliationResponse(trackingId: string, actor: Role, response: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    item.status = 'Pending Employee Acknowledgment';
-    item.supervisorUpdate = response; // Re-use this field for the response
-    
-    // Ensure the employee who submitted the claim is assigned to see the response.
-    if (item.submittedBy) {
-        item.assignedTo = [item.submittedBy];
-    } else {
-        // Fallback, though a retaliation claim should always have a submitter.
-        item.assignedTo = [];
-    }
-
-
-    item.auditTrail?.push({
-        event: 'HR Responded to Retaliation Claim',
-        timestamp: new Date(),
-        actor,
-        details: response,
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-
-export async function trackFeedback(input: TrackFeedbackInput): Promise<TrackFeedbackOutput> {
-  const allFeedback = getFeedbackFromStorage();
-  const feedback = allFeedback.find(f => f.trackingId === input.trackingId);
-
-  if (!feedback) {
-    return { found: false };
-  }
-  
-  // If the case requires interaction, return the full object.
-  if (['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Anonymous Acknowledgement'].includes(feedback.status || '')) {
-      return { found: true, feedback };
-  }
-
-  // Otherwise, create a limited, public-safe version of the feedback
-  const publicAuditTrail = feedback.auditTrail?.filter(e => e.isPublic).map(event => ({
-      event: event.event,
-      timestamp: new Date(event.timestamp).toISOString(),
-      actor: event.actor,
-      // Omit details for privacy unless it's a 'Resolved' event
-      details: event.event === 'Resolved' || event.event === 'Resolution Provided by HR' ? event.details : undefined,
-  }));
-
-  return {
-    found: true,
-    feedback: {
-      trackingId: feedback.trackingId,
-      subject: feedback.subject,
-      submittedAt: new Date(feedback.submittedAt).toISOString(),
-      status: feedback.status,
-      assignedTo: feedback.assignedTo,
-      auditTrail: publicAuditTrail,
-      resolution: feedback.resolution,
-    },
-  };
-}
-
-export async function getFeedbackById(id: string): Promise<Feedback | null> {
-    const allFeedback = getFeedbackFromStorage();
-    return allFeedback.find(f => f.trackingId === id) || null;
-}
-
-export async function getFeedbackByIds(ids: string[]): Promise<Feedback[]> {
-    const allFeedback = getFeedbackFromStorage();
-    return allFeedback.filter(f => ids.includes(f.trackingId));
-}
-
-
-export async function getCriticalFeedbackByOneOnOneId(oneOnOneId: string): Promise<Feedback | null> {
-    const allFeedback = getFeedbackFromStorage();
-    return allFeedback.find(f => f.oneOnOneId === oneOnOneId && f.criticality === 'Critical') || null;
-}
 
 export async function getAllFeedback(): Promise<Feedback[]> {
   return getFeedbackFromStorage();
@@ -1067,175 +670,52 @@ export async function saveFeedback(feedback: Feedback[], append = false): Promis
     }
 }
 
-export async function markAllFeedbackAsViewed(idsToMark?: string[]): Promise<void> {
-  let allFeedback = getFeedbackFromStorage();
-  let changed = false;
-
-  if (idsToMark) {
-    allFeedback = allFeedback.map(c => {
-        if (idsToMark.includes(c.trackingId) && !c.viewed) {
-            changed = true;
-            return { ...c, viewed: true };
-        }
-        return c;
-    });
-  } else { // Fallback to old behavior if no IDs are passed
-      if (allFeedback.some(c => !c.viewed)) {
-        changed = true;
-        allFeedback = allFeedback.map(c => ({ ...c, viewed: true }));
-      }
-  }
-  
-  if (changed) {
-    saveFeedbackToStorage(allFeedback);
-  }
-}
-
 /**
- * Assigns or unassigns roles for a feedback item.
+ * Resolves a feedback item.
  */
-export async function assignFeedback(
-    trackingId: string, 
-    roles: Role[], 
-    actor: Role, 
-    comment: string,
-    mode: 'assign' | 'unassign' = 'assign'
-): Promise<void> {
+export async function resolveFeedback(trackingId: string, actor: Role, resolution: string): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
+
     if (feedbackIndex === -1) return;
 
-    const item = allFeedback[feedbackIndex];
-    const currentAssignees = new Set(item.assignedTo || []);
-
-    if (mode === 'assign') {
-        roles.forEach(role => currentAssignees.add(role));
-        item.status = 'In Progress';
-    } else { // unassign
-        roles.forEach(role => currentAssignees.delete(role));
-    }
+    const feedback = allFeedback[feedbackIndex];
     
-    item.assignedTo = Array.from(currentAssignees);
-
-    const eventName = mode === 'assign' ? 'Assigned' : 'Unassigned';
-    item.auditTrail?.push({
-        event: eventName,
+    feedback.status = 'Resolved';
+    feedback.resolution = resolution;
+    feedback.assignedTo = [];
+    feedback.auditTrail?.push({
+        event: 'Resolved',
         timestamp: new Date(),
         actor,
-        details: `Case ${eventName.toLowerCase()} for ${roles.join(', ')}.${comment ? `\nNote: "${comment}"` : ''}`,
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-
-/**
- * Adds a general update to a feedback item's audit trail.
- */
-export async function addFeedbackUpdate(trackingId: string, actor: Role, comment: string, files?: File[]): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    
-    let details = comment;
-    if (files && files.length > 0) {
-        const attachmentNames = files.map(f => f.name);
-        details += `\n\n[System]: Attachments added: ${attachmentNames.join(', ')}.`;
-        item.attachmentNames = [...(item.attachmentNames || []), ...attachmentNames];
-    }
-
-    item.auditTrail?.push({
-        event: 'Update Added',
-        timestamp: new Date(),
-        actor: actor,
-        details: details,
+        details: resolution,
         isPublic: true,
     });
 
     saveFeedbackToStorage(allFeedback);
 }
 
+
 /**
- * Submits a collaborative resolution from a Manager or HR Head.
- * The case is only resolved when both parties have submitted their resolution.
+ * Toggles the status of a specific action item within a feedback object.
  */
-export async function submitCollaborativeResolution(trackingId: string, actor: Role, comment: string): Promise<void> {
+export async function toggleActionItemStatus(trackingId: string, actionItemId: string): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
     if (feedbackIndex === -1) return;
 
-    const item = allFeedback[feedbackIndex];
+    const feedback = allFeedback[feedbackIndex];
+    if (!feedback.actionItems) return;
 
-    if (actor === 'HR Head') {
-        item.hrHeadResolution = comment;
-        item.auditTrail?.push({ event: 'HR Head provided resolution', timestamp: new Date(), actor, details: comment });
-    } else if (actor === 'Manager') {
-        item.managerResolution = comment;
-        item.auditTrail?.push({ event: 'Manager provided resolution', timestamp: new Date(), actor, details: comment });
-    }
+    const actionItemIndex = feedback.actionItems.findIndex(a => a.id === actionItemId);
+    if (actionItemIndex === -1) return;
 
-    // Check if both have provided their resolutions
-    if (item.hrHeadResolution && item.managerResolution) {
-        item.status = 'Resolved';
-        const finalResolution = `JOINT RESOLUTION:\n\nManager: ${item.managerResolution}\n\nHR Head: ${item.hrHeadResolution}`;
-        item.resolution = finalResolution;
-        item.auditTrail?.push({ event: 'Resolved', timestamp: new Date(), actor: 'System', details: 'Case resolved by joint agreement.' });
-    }
+    const currentStatus = feedback.actionItems[actionItemIndex].status;
+    feedback.actionItems[actionItemIndex].status = currentStatus === 'pending' ? 'completed' : 'pending';
 
     saveFeedbackToStorage(allFeedback);
 }
 
-
-
-/**
- * Supervisor submits an update for a critical insight or identified concern.
- * This now sends it back to the employee for acknowledgment.
- */
-export async function submitSupervisorUpdate(trackingId: string, actor: Role, comment: string, isFinal: boolean): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    
-    if (isFinal) {
-        item.supervisorUpdate = comment;
-        item.status = 'Pending Employee Acknowledgment';
-        
-        let eventName = 'Resolution Submitted';
-        if (actor === 'HR Head') {
-            eventName = item.criticality === 'Retaliation Claim' 
-                ? 'HR Responded to Retaliation Claim' 
-                : 'HR Resolution Submitted';
-        }
-
-        item.auditTrail?.push({
-            event: eventName,
-            timestamp: new Date(),
-            actor: actor,
-            details: comment,
-            isPublic: true,
-        });
-    } else {
-        // This is just an interim update, so only add to audit trail.
-        item.auditTrail?.push({
-            event: 'Update Added',
-            timestamp: new Date(),
-            actor: actor,
-            details: comment,
-            isPublic: true,
-        });
-    }
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-/**
- * Handles the employee's acknowledgment of a feedback resolution.
- * Can resolve the case or escalate it.
- */
 export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, accepted: boolean, comments: string): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
@@ -1309,303 +789,3 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     item.assignedTo = Array.from(currentAssignees);
     saveFeedbackToStorage(allFeedback);
 }
-
-export async function submitAnonymousAcknowledgement(
-    trackingId: string, 
-    accepted: boolean, 
-    escalationPath: string, 
-    justification: string
-): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    if (item.status !== 'Pending Anonymous Acknowledgement') return;
-
-    if (accepted) {
-        item.status = 'Resolved';
-        item.auditTrail?.push({
-            event: 'Resolution Accepted',
-            timestamp: new Date(),
-            actor: 'Anonymous',
-            details: 'Anonymous user accepted the final resolution from HR.',
-            isPublic: true,
-        });
-    } else {
-        item.status = 'Closed';
-        item.resolution = `Case closed after user escalated to ${escalationPath}.\n\nUser Justification: ${justification}`;
-        item.auditTrail?.push({
-            event: 'User Escalated to ' + escalationPath,
-            timestamp: new Date(),
-            actor: 'Anonymous',
-            details: `User challenged the HR resolution and chose to escalate to the ${escalationPath}.\n\nJustification: ${justification}`,
-            isPublic: true,
-        });
-    }
-
-    item.auditTrail?.push({
-        event: 'Case Closed',
-        timestamp: new Date(),
-        actor: 'System',
-        details: 'The case was closed following the anonymous user\'s final decision.',
-        isPublic: true,
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-
-/**
- * Resolves a feedback item.
- */
-export async function resolveFeedback(trackingId: string, actor: Role, resolution: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-
-    if (feedbackIndex === -1) return;
-
-    const feedback = allFeedback[feedbackIndex];
-    
-    // For anonymous "Voice - in Silence" cases, resolving it puts it in a pending state for the user
-    if (feedback.source === 'Voice – In Silence' && actor === 'HR Head') {
-        feedback.status = 'Pending Anonymous Acknowledgement';
-        feedback.resolution = resolution;
-        const notificationText = 'The resolution has been sent to the user for acknowledgement. If the complainant is not satisfied, they will have the option to escalate the case.';
-        feedback.auditTrail?.push({
-            event: 'Resolution Provided by HR',
-            timestamp: new Date(),
-            actor,
-            details: resolution,
-            isPublic: true,
-        });
-        feedback.auditTrail?.push({
-            event: 'Notification to HR',
-            timestamp: new Date(),
-            actor: 'System',
-            details: notificationText
-        });
-    } else {
-        feedback.status = 'Resolved';
-        feedback.resolution = resolution;
-        feedback.assignedTo = [];
-        feedback.auditTrail?.push({
-            event: 'Resolved',
-            timestamp: new Date(),
-            actor,
-            details: resolution,
-            isPublic: true,
-        });
-    }
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-export async function submitFinalDisposition(trackingId: string, actor: Role, disposition: string, notes: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    item.status = 'Closed';
-    item.resolution = `Final Disposition: ${disposition}.\n\nHR Notes: ${notes}`;
-    item.auditTrail?.push({
-        event: 'Final Disposition',
-        timestamp: new Date(),
-        actor: actor,
-        details: `Case routed to ${disposition}. Notes: ${notes}`
-    });
-     item.auditTrail?.push({
-        event: 'Closed',
-        timestamp: new Date(),
-        actor: 'System',
-        details: 'Case closed after final disposition by HR.'
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-/**
- * Toggles the status of a specific action item within a feedback object.
- */
-export async function toggleActionItemStatus(trackingId: string, actionItemId: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const feedback = allFeedback[feedbackIndex];
-    if (!feedback.actionItems) return;
-
-    const actionItemIndex = feedback.actionItems.findIndex(a => a.id === actionItemId);
-    if (actionItemIndex === -1) return;
-
-    const currentStatus = feedback.actionItems[actionItemIndex].status;
-    feedback.actionItems[actionItemIndex].status = currentStatus === 'pending' ? 'completed' : 'pending';
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-
-export async function requestIdentityReveal(trackingId: string, actor: Role, reason: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    item.status = 'Pending Identity Reveal';
-
-    const commitmentText = `Manager’s Acknowledgment:\n"I acknowledge my responsibility to protect the employee from any form of bias, retaliation, or adverse consequence during this process. I am committed to handling this matter with fairness, discretion, and confidentiality."\n\nManager’s Reason:`;
-    const details = `${commitmentText}\n"${reason}"`;
-    
-    item.auditTrail?.push({
-        event: 'Identity Reveal Requested',
-        timestamp: new Date(),
-        actor: actor,
-        details: details,
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-
-export async function respondToIdentityReveal(trackingId: string, actor: Role, accepted: boolean): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    const user = roleUserMapping[actor];
-
-    if (accepted) {
-        item.isAnonymous = false;
-        item.submittedBy = user.role;
-        item.status = 'Pending Manager Action'; // Return to manager's queue, now identified
-        item.auditTrail?.push({
-            event: 'User acknowledged retaliation/bias feature',
-            timestamp: new Date(),
-            actor: user.role,
-            details: 'User was informed of the retaliation/bias reporting feature and acknowledged this before revealing their identity.',
-        });
-        item.auditTrail?.push({
-            event: 'Identity Revealed',
-            timestamp: new Date(),
-            actor: user.role,
-            details: `User ${user.name} accepted the request and revealed their identity.`,
-        });
-
-        // Add the tracking ID to the identified list in localStorage
-        const key = getIdentifiedCaseKey(actor);
-        if (key) {
-            const existingIds = JSON.parse(localStorage.getItem(key) || '[]');
-            if (!existingIds.includes(trackingId)) {
-                existingIds.push(trackingId);
-                localStorage.setItem(key, JSON.stringify(existingIds));
-            }
-        }
-
-    } else {
-        item.status = 'Pending HR Action';
-        item.assignedTo = ['Manager', 'HR Head'];
-        item.auditTrail?.push({
-            event: 'Identity Reveal Declined; Escalated to HR',
-            timestamp: new Date(),
-            actor: 'Anonymous',
-            details: `User declined the request to reveal their identity. Case has been escalated to HR Head and Manager for collaborative review.`,
-        });
-    }
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-export async function employeeAcknowledgeMessageRead(trackingId: string, actor: Role): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-
-    // Check if this event already exists to prevent duplicates
-    const alreadyAcknowledged = item.auditTrail?.some(e => e.event === "Employee acknowledged manager's assurance message");
-
-    if (!alreadyAcknowledged) {
-        item.auditTrail?.push({
-            event: "Employee acknowledged manager's assurance message",
-            timestamp: new Date(),
-            actor: 'Anonymous',
-            details: `The user has read and acknowledged the manager's message and assurance of a non-retaliatory process.`
-        });
-        saveFeedbackToStorage(allFeedback);
-    }
-}
-
-export async function requestAnonymousInformation(trackingId: string, actor: Role, question: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    item.status = 'Pending Anonymous Reply';
-    
-    item.auditTrail?.push({
-        event: 'Information Requested',
-        timestamp: new Date(),
-        actor: actor,
-        details: question,
-        isPublic: true,
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-export async function submitAnonymousReply(trackingId: string, reply: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    
-    if (item.source === 'Voice – In Silence') {
-        item.status = 'In Progress'; // Keep it in HR's view
-    } else {
-        item.status = 'Pending Manager Action';
-    }
-    
-    item.auditTrail?.push({
-        event: 'Anonymous User Responded',
-        timestamp: new Date(),
-        actor: 'Anonymous',
-        details: reply,
-        isPublic: true,
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-    
-export async function submitIdentifiedReply(trackingId: string, actor: Role, reply: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const item = allFeedback[feedbackIndex];
-    
-    // Find the original question asker to re-assign the case to them.
-    const questionEvent = item.auditTrail?.find(e => e.event === 'Information Requested');
-    const originalAsker = questionEvent?.actor as Role;
-
-    if (originalAsker) {
-        item.assignedTo = [originalAsker];
-    }
-    // Return case to an actionable state for the manager
-    item.status = 'Pending Supervisor Action';
-    
-    item.auditTrail?.push({
-        event: 'User Responded to Information Request',
-        timestamp: new Date(),
-        actor: actor,
-        details: reply,
-    });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-
