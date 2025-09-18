@@ -33,11 +33,9 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
   const currentUserName = currentUser.name;
   const pathname = usePathname();
-  const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
   const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
-  const [voiceInSilenceCount, setVoiceInSilenceCount] = useState(0);
   const [myConcernsCount, setMyConcernsCount] = useState(0);
   const [poshDeskCount, setPoshDeskCount] = useState(0);
 
@@ -47,22 +45,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
       const poshComplaints = await getAllPoshComplaints();
-
-
-      // Vault count (HR Head only)
-      if (currentRole === 'HR Head') {
-        setVaultFeedbackCount(feedback.filter(c => !c.viewed && c.status === 'Open' && c.source === 'Voice – In Silence').length);
-      } else {
-        setVaultFeedbackCount(0);
-      }
-      
-      // Voice - in Silence count (for assignees)
-       setVoiceInSilenceCount(feedback.filter(f => 
-            f.source === 'Voice – In Silence' && 
-            f.assignedTo?.includes(currentRole) &&
-            f.status !== 'Resolved'
-        ).length);
-
 
       // Action items count
       let totalActionItems = 0;
@@ -117,6 +99,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
       
       feedback.forEach(f => {
+          if (f.source === 'Voice – In Silence') return;
           const isMyConcern = f.submittedBy === currentRole || f.submittedBy === currentUserName;
           const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
 
@@ -166,11 +149,9 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
-      setVaultFeedbackCount(0);
       setActionItemCount(0);
       setMessageCount(0);
       setCoachingCount(0);
-      setVoiceInSilenceCount(0);
       setMyConcernsCount(0);
       setPoshDeskCount(0);
     }
@@ -203,13 +184,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns', badge: myConcernsCount > 0 ? myConcernsCount : null, badgeVariant: 'destructive' as const },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
-    { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence', badge: voiceInSilenceCount > 0 ? voiceInSilenceCount : null, badgeVariant: 'destructive' as const },
     ...(!isIccMember ? [{ href: '/posh', icon: <Scale />, label: 'POSH' }] : []),
   ];
-
-  const hrMenuItems = [
-    { href: '/vault', icon: <Vault />, label: 'Vault', badge: vaultFeedbackCount > 0 ? vaultFeedbackCount : null, badgeVariant: 'secondary' as const },
-  ]
 
   const iccMenuItems = [
     { href: '/posh-desk', icon: <Scale />, label: 'POSH Desk', badge: poshDeskCount > 0 ? poshDeskCount : null, badgeVariant: 'destructive' as const },
@@ -282,7 +258,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
-          {currentRole === 'HR Head' && hrMenuItems.map(renderMenuItem)}
           {isIccMember && iccMenuItems.map(renderMenuItem)}
           {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
