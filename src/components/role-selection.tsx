@@ -1,4 +1,5 @@
 
+
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion, UserCog, ChevronRight, Scale, Building } from 'lucide-react';
@@ -32,10 +33,6 @@ const roleDetails = {
     icon: ShieldCheck,
     description: "Access the vault and manage all cases.",
   },
-  'Voice – In Silence': {
-    icon: ShieldQuestion,
-    description: "Submit feedback with full anonymity.",
-  },
   'ICC Head': {
     icon: Scale,
     description: "Oversee internal complaints committee cases.",
@@ -48,11 +45,11 @@ const roleDetails = {
 
 export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
   const { availableRoles } = useRole();
-  const specialRole = 'Voice – In Silence';
-  const standardRoles = availableRoles.filter(r => r !== specialRole);
+  const standardRoles = availableRoles;
 
-  const RoleTile = ({ role, isSpecial = false }: { role: Role, isSpecial?: boolean }) => {
+  const RoleTile = ({ role }: { role: Role }) => {
     const details = roleDetails[role as keyof typeof roleDetails];
+    if (!details) return null; // Don't render if no details exist
     const Icon = details.icon;
     return (
       <button
@@ -61,9 +58,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
           "group relative w-full text-left rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
            "bg-card/50 hover:bg-card/100 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/20",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          isSpecial 
-            ? "border-2 border-dashed border-muted-foreground/50 hover:border-primary hover:bg-primary/10" 
-            : "p-4"
+          "p-4"
         )}
       >
         <div className="flex items-center gap-4">
@@ -88,16 +83,6 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
             {standardRoles.map((role) => (
               <RoleTile key={role} role={role} />
             ))}
-            {availableRoles.includes(specialRole) && (
-              <>
-                <div className="relative flex py-2 items-center">
-                  <div className="flex-grow border-t border-border"></div>
-                  <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase">Or</span>
-                  <div className="flex-grow border-t border-border"></div>
-                </div>
-                <RoleTile role={specialRole} isSpecial={true} />
-              </>
-            )}
           </CardContent>
         </Card>
       </main>

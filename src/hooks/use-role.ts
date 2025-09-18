@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 import { getIccMembers } from '@/services/admin-service';
 
-export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Voice – In Silence' | 'Anonymous' | 'ICC Head' | 'ICC Member';
+export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Anonymous' | 'ICC Head' | 'ICC Member';
 
 export const availableRoles: Role[] = ['Employee', 'Team Lead', 'AM', 'Manager', 'HR Head', 'ICC Head', 'ICC Member'];
 export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM'];
@@ -38,7 +38,7 @@ export const useRole = () => {
         const initializeRole = async () => {
             try {
                 const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as Role;
-                if (storedRole && [...availableRoles, 'Voice – In Silence'].includes(storedRole)) {
+                if (storedRole && [...availableRoles].includes(storedRole)) {
                     setRole(storedRole);
                     await checkIccMembership(storedRole);
                 }
@@ -56,11 +56,6 @@ export const useRole = () => {
         await checkIccMembership(newRole);
         
         try {
-            if (newRole === 'Voice – In Silence') {
-                localStorage.removeItem(ROLE_STORAGE_KEY);
-                router.push('/voice-in-silence/submit');
-                return;
-            }
             if (newRole) {
                 localStorage.setItem(ROLE_STORAGE_KEY, newRole);
             } else {
@@ -69,10 +64,7 @@ export const useRole = () => {
         } catch (error) {
             console.error("Could not write role to localStorage", error);
         }
-    }, [router, checkIccMembership]);
+    }, [checkIccMembership]);
 
-    // We add 'Voice – In Silence' separately for the selection screen
-    const allAvailableRoles: Role[] = [...availableRoles, 'Voice – In Silence'];
-
-    return { role, setRole: setCurrentRole, isLoading, isIccMember, availableRoles: allAvailableRoles, toast };
+    return { role, setRole: setCurrentRole, isLoading, isIccMember, availableRoles: availableRoles, toast };
 };

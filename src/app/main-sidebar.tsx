@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -13,12 +14,13 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { getAllPoshComplaints } from '@/services/posh-service';
 
 
 interface MainSidebarProps {
@@ -27,59 +29,97 @@ interface MainSidebarProps {
 }
 
 export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarProps) {
-  const { availableRoles } = useRole();
+  const { availableRoles, isIccMember } = useRole();
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
+  const currentUserName = currentUser.name;
   const pathname = usePathname();
-  const [vaultFeedbackCount, setVaultFeedbackCount] = useState(0);
   const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
+  const [myConcernsCount, setMyConcernsCount] = useState(0);
+  const [poshDeskCount, setPoshDeskCount] = useState(0);
 
   const fetchFeedbackCounts = useCallback(async () => {
     if (!currentRole) return;
     try {
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
-      const currentUserName = roleUserMapping[currentRole].name;
+      const poshComplaints = await getAllPoshComplaints();
 
-      // Vault count
-      if (currentRole === 'HR Head') {
-        setVaultFeedbackCount(feedback.filter(c => !c.viewed && c.status === 'Open' && c.source === 'Voice – In Silence').length);
-      } else {
-        setVaultFeedbackCount(0);
-      }
-      
       // Action items count
-      setActionItemCount(feedback.filter(f => f.assignedTo?.includes(currentRole as any) && f.status !== 'Resolved' && f.status !== 'Closed').length);
-
-      // Messages count (Critical Insights)
-      const insightStatusesToCount: string[] = [];
-      if (currentRole === 'Employee') insightStatusesToCount.push('pending_employee_acknowledgement');
-      if (currentRole === 'AM') insightStatusesToCount.push('pending_am_review');
-      if (currentRole === 'Manager') insightStatusesToCount.push('pending_manager_review');
-      if (currentRole === 'HR Head') insightStatusesToCount.push('pending_hr_review', 'pending_final_hr_action');
-
-      const messageNotifications = history.filter(h => {
-          const insight = h.analysis.criticalCoachingInsight;
-          if (!insight || !insight.status) return false;
-          if (currentRole === 'Employee') {
-              return h.employeeName === currentUserName && insightStatusesToCount.includes(insight.status);
-          }
-          // For managers, we check if the case is escalated to them
-          if (insight.status === 'pending_am_review' && currentRole === 'AM') return true;
-          if (insight.status === 'pending_manager_review' && currentRole === 'Manager') return true;
-          if ((insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action') && currentRole === 'HR Head') return true;
-
-          return false;
+      let totalActionItems = 0;
+      
+      // Active To-Do lists
+      totalActionItems += feedback.filter(f => {
+         const isAssigned = f.supervisor === currentUserName;
+         const isToDo = f.status === 'To-Do';
+         return isAssigned && isToDo;
       }).length;
-      setMessageCount(messageNotifications);
+
+      // Escalated 1-on-1 insights
+      totalActionItems += history.filter(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          if (!insight || insight.status === 'resolved') return false;
+          
+          const isAmMatch = currentRole === 'AM' && insight.status === 'pending_am_review';
+          const isManagerMatch = currentRole === 'Manager' && insight.status === 'pending_manager_review';
+          const isHrMatch = currentRole === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
+
+          return isAmMatch || isManagerMatch || isHrMatch;
+      }).length;
+
+      setActionItemCount(totalActionItems);
+
+
+      // Messages count
+      let totalMessages = 0;
+      // Critical Insights for employee acknowledgement
+      totalMessages += history.filter(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          if (!insight || insight.status === 'resolved') return false;
+
+          return currentRole === 'Employee' && h.employeeName === currentUserName && insight.status === 'pending_employee_acknowledgement';
+      }).length;
+      
+      // General Notifications (e.g. from coaching plans) and identified concern acknowledgements
+      totalMessages += feedback.filter(f => {
+        const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
+        if (!isAssignedToMe) return false;
+
+        const isPendingAck = f.status === 'Pending Acknowledgement';
+        const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
+        return isPendingAck || isIdentifiedAck;
+      }).length;
+      
+      setMessageCount(totalMessages);
+
+       // My Concerns Count
+      let concernsActionCount = 0;
+      const complainantActionStatuses: string[] = ['Pending Identity Reveal', 'Pending Anonymous Reply', 'Pending Employee Acknowledgment'];
+      const respondentActionStatuses: string[] = ['Pending Supervisor Action', 'Pending Manager Action', 'Pending HR Action', 'Final Disposition Required', 'Retaliation Claim'];
+      
+      feedback.forEach(f => {
+          if (f.source === 'Voice – In Silence') return;
+          const isMyConcern = f.submittedBy === currentRole || f.submittedBy === currentUserName;
+          const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
+
+          if (isMyConcern && complainantActionStatuses.includes(f.status || '')) {
+              concernsActionCount++;
+          }
+          if (isAssignedToMe && respondentActionStatuses.includes(f.status || '')) {
+              concernsActionCount++;
+          }
+      });
+      setMyConcernsCount(concernsActionCount);
       
       // Coaching & Development Count
       let devCount = 0;
       // My Development (pending recommendations for me)
-      devCount += history.filter(h => h.supervisorName === currentUserName)
-                         .flatMap(h => h.analysis.coachingRecommendations)
-                         .filter(rec => rec.status === 'pending').length;
+      history.forEach(h => {
+        if (h.supervisorName === currentUserName) {
+          devCount += h.analysis.coachingRecommendations.filter(rec => rec.status === 'pending').length;
+        }
+      });
 
       // Team Development (escalations for me to review)
       const recStatusesToCount: string[] = [];
@@ -87,20 +127,35 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
 
       if (recStatusesToCount.length > 0) {
-        devCount += history.flatMap(h => h.analysis.coachingRecommendations)
-                         .filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
+        history.forEach(h => {
+            devCount += h.analysis.coachingRecommendations.filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
+        });
       }
       setCoachingCount(devCount);
+
+      // Posh Desk Count
+      if (isIccMember) {
+        let count = 0;
+        if (currentRole === 'ICC Head') {
+            count = poshComplaints.filter(c => c.caseStatus === 'New').length;
+        } else {
+            count = poshComplaints.filter(c => c.assignedTo?.includes(currentRole as any) && c.caseStatus !== 'Resolved' && c.caseStatus !== 'Closed (No Action Required)' && c.caseStatus !== 'Closed').length;
+        }
+        setPoshDeskCount(count);
+      } else {
+        setPoshDeskCount(0);
+      }
 
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
-      setVaultFeedbackCount(0);
       setActionItemCount(0);
       setMessageCount(0);
       setCoachingCount(0);
+      setMyConcernsCount(0);
+      setPoshDeskCount(0);
     }
-  }, [currentRole, currentUser.name]);
+  }, [currentRole, currentUserName, isIccMember]);
 
 
   useEffect(() => {
@@ -112,10 +167,12 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
     window.addEventListener('storage', handleDataUpdate);
     window.addEventListener('feedbackUpdated', handleDataUpdate);
+    window.addEventListener('poshComplaintUpdated', handleDataUpdate);
 
     return () => {
         window.removeEventListener('storage', handleDataUpdate);
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
+        window.removeEventListener('poshComplaintUpdated', handleDataUpdate);
     };
   }, [fetchFeedbackCounts]);
 
@@ -125,15 +182,15 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/', icon: <BarChart />, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns' },
+    { href: '/my-concerns', icon: <ShieldQuestion />, label: 'My Concerns', badge: myConcernsCount > 0 ? myConcernsCount : null, badgeVariant: 'destructive' as const },
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
-    { href: '/voice-in-silence', icon: <User />, label: 'Voice – in Silence' },
+    ...(!isIccMember ? [{ href: '/posh', icon: <Scale />, label: 'POSH' }] : []),
   ];
 
-  const hrMenuItems = [
-    { href: '/vault', icon: <Vault />, label: 'Vault', badge: vaultFeedbackCount > 0 ? vaultFeedbackCount : null, badgeVariant: 'secondary' as const },
+  const iccMenuItems = [
+    { href: '/posh-desk', icon: <Scale />, label: 'POSH Desk', badge: poshDeskCount > 0 ? poshDeskCount : null, badgeVariant: 'destructive' as const },
   ]
-
+  
   const assigneeMenuItems = [
     { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
   ]
@@ -201,7 +258,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
-          {currentRole === 'HR Head' && hrMenuItems.map(renderMenuItem)}
+          {isIccMember && iccMenuItems.map(renderMenuItem)}
           {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>

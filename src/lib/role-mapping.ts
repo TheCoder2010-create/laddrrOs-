@@ -1,4 +1,5 @@
 
+
 import type { Role } from '@/hooks/use-role';
 
 export const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint: string, role: Role }> = {
@@ -9,7 +10,6 @@ export const roleUserMapping: Record<Role, { name: string; fallback: string; ima
   'HR Head': { name: 'Dana Evans', fallback: 'DE', imageHint: 'hr head', role: 'HR Head' },
   'ICC Head': { name: 'Frank Green', fallback: 'FG', imageHint: 'icc head', role: 'ICC Head' },
   'ICC Member': { name: 'Gina Harris', fallback: 'GH', imageHint: 'icc member', role: 'ICC Member' },
-  'Voice – In Silence': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person', role: 'Voice – In Silence' },
   'Anonymous': { name: 'Anonymous', fallback: '??', imageHint: 'anonymous person', role: 'Anonymous' }
 };
 
@@ -30,7 +30,7 @@ export const formatActorName = (actor: Role | string | undefined): string => {
     // Check if actor is a valid role first
     if (Object.keys(roleUserMapping).includes(actor as string)) {
         const user = roleUserMapping[actor as Role];
-        if (user.role === 'Anonymous' || user.role === 'Voice – In Silence') return 'Anonymous';
+        if (user.role === 'Anonymous') return 'Anonymous';
         return `${user.name} - ${user.role}`;
     }
 
