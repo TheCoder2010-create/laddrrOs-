@@ -195,9 +195,6 @@ function BriefingPacketDialog({ meeting, supervisor }: { meeting: Meeting; super
                         </div>
                     )}
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
