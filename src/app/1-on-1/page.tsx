@@ -1061,59 +1061,50 @@ function HistorySection({ role }: { role: Role }) {
                                                 )}
 
                                                 {canEmployeeAck && (
-                                                    <div className="mt-4 pt-4 border-t border-dashed">
-                                                        {acknowledgingInsightId !== item.id ? (
-                                                            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setAcknowledgingInsightId(item.id)}>
-                                                                <MessageCircleQuestion className="mr-2 h-4 w-4" /> Acknowledge Resolution
-                                                            </Button>
-                                                        ) : (
-                                                            <div className="space-y-4 pt-2">
-                                                                <div className="space-y-1">
-                                                                    <Label className="font-semibold text-base">Your Acknowledgement</Label>
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        Please review the latest response and provide feedback on the resolution.
-                                                                    </p>
-                                                                </div>
-                                                                <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
-                                                                        <Label htmlFor={`ack-yes-${item.id}`}>The concern was fully addressed to my satisfaction.</Label>
-                                                                    </div>
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <RadioGroupItem value="The concern was partially addressed, but I still have reservations." id={`ack-partial-${item.id}`} />
-                                                                        <Label htmlFor={`ack-partial-${item.id}`}>The concern was partially addressed, but I still have reservations.</Label>
-                                                                    </div>
-                                                                    <div className="flex items-center space-x-2">
-                                                                        <RadioGroupItem value="I do not feel the concern was adequately addressed." id={`ack-no-${item.id}`} />
-                                                                        <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
-                                                                    </div>
-                                                                </RadioGroup>
-                                                                <div className="space-y-2 pt-2">
-                                                                    <Label htmlFor={`ack-comments-${item.id}`}>Additional Comments (Optional)</Label>
-                                                                    <Textarea
-                                                                        id={`ack-comments-${item.id}`}
-                                                                        value={acknowledgementComments}
-                                                                        onChange={(e) => setAcknowledgementComments(e.target.value)}
-                                                                        placeholder="Provide more detail about your selection..."
-                                                                        rows={3}
-                                                                        className="bg-background"
-                                                                    />
-                                                                </div>
-                                                                <div className="flex gap-2 pt-2">
-                                                                    <Button
-                                                                        onClick={() => handleEmployeeAckSubmit(item)}
-                                                                        disabled={isSubmittingAck || !employeeAcknowledgement}
-                                                                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                                                                    >
-                                                                        {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
-                                                                        Submit Acknowledgement
-                                                                    </Button>
-                                                                     <Button variant="ghost" onClick={() => setAcknowledgingInsightId(null)}>
-                                                                        Cancel
-                                                                    </Button>
-                                                                </div>
+                                                    <div className="mt-4 pt-4 border-t border-dashed space-y-4">
+                                                        <div className="space-y-1">
+                                                            <Label className="font-semibold text-base text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                                                                <MessageCircleQuestion className="h-5 w-5" /> Your Acknowledgement
+                                                            </Label>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Please review the latest response and provide feedback on the resolution.
+                                                            </p>
+                                                        </div>
+                                                        <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
+                                                            <div className="flex items-center space-x-2">
+                                                                <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
+                                                                <Label htmlFor={`ack-yes-${item.id}`}>The concern was fully addressed to my satisfaction.</Label>
                                                             </div>
-                                                        )}
+                                                            <div className="flex items-center space-x-2">
+                                                                <RadioGroupItem value="The concern was partially addressed, but I still have reservations." id={`ack-partial-${item.id}`} />
+                                                                <Label htmlFor={`ack-partial-${item.id}`}>The concern was partially addressed, but I still have reservations.</Label>
+                                                            </div>
+                                                            <div className="flex items-center space-x-2">
+                                                                <RadioGroupItem value="I do not feel the concern was adequately addressed." id={`ack-no-${item.id}`} />
+                                                                <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
+                                                            </div>
+                                                        </RadioGroup>
+                                                        <div className="space-y-2 pt-2">
+                                                            <Label htmlFor={`ack-comments-${item.id}`}>Additional Comments (Optional)</Label>
+                                                            <Textarea
+                                                                id={`ack-comments-${item.id}`}
+                                                                value={acknowledgementComments}
+                                                                onChange={(e) => setAcknowledgementComments(e.target.value)}
+                                                                placeholder="Provide more detail about your selection..."
+                                                                rows={3}
+                                                                className="bg-background"
+                                                            />
+                                                        </div>
+                                                        <div className="flex gap-2 pt-2">
+                                                            <Button
+                                                                onClick={() => handleEmployeeAckSubmit(item)}
+                                                                disabled={isSubmittingAck || !employeeAcknowledgement}
+                                                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                            >
+                                                                {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
+                                                                Submit Acknowledgement
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 )}
 
@@ -1292,3 +1283,4 @@ export default function Home() {
     
 
     
+
