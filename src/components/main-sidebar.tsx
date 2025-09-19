@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
@@ -42,22 +41,13 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
 
-      // Action items count (now for non-1-on-1 items, so it's 0 for now)
+      // Action items count (non-1-on-1 escalations)
       let totalActionItems = 0;
       setActionItemCount(totalActionItems);
 
 
-      // Messages count
+      // Messages count (only non-1-on-1 items)
       let totalMessages = 0;
-      // Critical Insights for employee acknowledgement
-      totalMessages += history.filter(h => {
-          const insight = h.analysis.criticalCoachingInsight;
-          if (!insight || insight.status === 'resolved') return false;
-
-          return currentRole === 'Employee' && h.employeeName === currentUserName && insight.status === 'pending_employee_acknowledgement';
-      }).length;
-      
-      // General Notifications (e.g. from coaching plans) and identified concern acknowledgements
       totalMessages += feedback.filter(f => {
         const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
         if (!isAssignedToMe) return false;
@@ -118,14 +108,14 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
 
   const menuItems = [
-    { href: '/', icon: <BarChart />, label: 'Dashboard' },
-    { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
-    ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
+    { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
+    { href: '/1-on-1', icon: <CheckSquare className="text-green-500"/>, label: '1-on-1' },
+    ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
+    { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
   
   const assigneeMenuItems = [
-    { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
+    { href: '/action-items', icon: <ListTodo className="text-orange-500"/>, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
   ]
 
   const renderMenuItem = (item: any) => (
@@ -172,7 +162,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
                 {availableRoles.map(role => (
                     <DropdownMenuItem key={role} onClick={() => onSwitchRole(role)}>
                          {currentRole === role ? (
-                            <Check className="mr-2 h-4 w-4" />
+                            <Check className="mr-2 h-4 w-4 text-green-500" />
                         ) : (
                             <span className="mr-2 h-4 w-4" />
                         )}
@@ -182,7 +172,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onSwitchRole(null)}>
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4 text-destructive" />
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -198,7 +188,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => onSwitchRole(null)}>
-              <LogOut />
+              <LogOut className="text-destructive"/>
               <span>Log out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

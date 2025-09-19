@@ -227,7 +227,7 @@ function ToDoSection({ role }: { role: Role }) {
     return (
         <div className="mt-8">
             <h2 className="text-xl font-semibold mb-4 text-muted-foreground flex items-center gap-2">
-                <ListTodo className="h-5 w-5" />
+                <ListTodo className="h-5 w-5 text-primary" />
                 To-Do
             </h2>
             {toDoItems.length > 0 ? (
@@ -304,20 +304,20 @@ function SlaTimer({ expiryTimestamp }: { expiryTimestamp: number }) {
 }
 
 function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
-    const eventIcons = {
-        'default': Briefcase,
-        'Responded': MessageSquare,
-        'Acknowledged': CheckCircle,
-        'AM Coaching Notes': BrainCircuit,
-        'AM Responded to Employee': MessageSquare,
-        'Supervisor Retry Action': MessageSquare,
-        'Manager Resolution': Briefcase,
-        'HR Resolution': ShieldCheck,
-        'Assigned to Ombudsman': UserX,
-        'Assigned to Grievance Office': UserPlus,
-        'Logged Dissatisfaction & Closed': FileText,
+    const eventIcons: { [key: string]: { icon: React.ElementType, color: string } } = {
+        'default': { icon: Briefcase, color: 'text-muted-foreground' },
+        'Responded': { icon: MessageSquare, color: 'text-primary' },
+        'Acknowledged': { icon: CheckCircle, color: 'text-success' },
+        'AM Coaching Notes': { icon: BrainCircuit, color: 'text-yellow-600' },
+        'AM Responded to Employee': { icon: MessageSquare, color: 'text-blue-600' },
+        'Supervisor Retry Action': { icon: Repeat, color: 'text-purple-600' },
+        'Manager Resolution': { icon: Briefcase, color: 'text-red-700' },
+        'HR Resolution': { icon: ShieldCheck, color: 'text-black dark:text-white' },
+        'Assigned to Ombudsman': { icon: UserX, color: 'text-gray-500' },
+        'Assigned to Grievance Office': { icon: UserPlus, color: 'text-gray-500' },
+        'Logged Dissatisfaction & Closed': { icon: FileText, color: 'text-gray-500' },
     };
-
+    
     const formatEventTitle = (event: string) => {
         switch (event) {
             case 'Responded': return "Supervisor's Response";
@@ -337,11 +337,11 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
     return (
         <div className="space-y-4 pt-4 border-t border-muted">
             {eventsToDisplay.map((event, index) => { 
-                const Icon = eventIcons[event.event as keyof typeof eventIcons] || eventIcons.default;
+                const { icon: Icon, color } = eventIcons[event.event as keyof typeof eventIcons] || eventIcons.default;
                 return (
                     <div key={index} className="space-y-2">
                         <p className="font-semibold text-foreground text-sm flex items-center gap-2">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <Icon className={cn("h-4 w-4", color)} />
                             {formatEventTitle(event.event)} by {formatActorName(event.actor)}
                         </p>
                         {event.details && <p className="text-sm text-muted-foreground whitespace-pre-wrap ml-6 italic">"{event.details}"</p>}
@@ -779,11 +779,11 @@ function HistorySection({ role }: { role: Role }) {
                                                 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="p-3 rounded-md bg-background/50 border">
-                                                        <h4 className="font-semibold text-foreground flex items-center gap-2"><Star /> Leadership Score</h4>
+                                                        <h4 className="font-semibold text-foreground flex items-center gap-2"><Star className="text-yellow-400" /> Leadership Score</h4>
                                                         <p className="text-2xl font-bold">{analysisResult.leadershipScore}/10</p>
                                                     </div>
                                                     <div className="p-3 rounded-md bg-background/50 border">
-                                                        <h4 className="font-semibold text-foreground flex items-center gap-2"><BarChart /> Effectiveness Score</h4>
+                                                        <h4 className="font-semibold text-foreground flex items-center gap-2"><BarChart className="text-green-500" /> Effectiveness Score</h4>
                                                         <p className="text-2xl font-bold">{analysisResult.effectivenessScore}/10</p>
                                                     </div>
                                                 </div>
@@ -853,7 +853,7 @@ function HistorySection({ role }: { role: Role }) {
                                                 
                                                 {displayedMissedSignals.length > 0 && (
                                                      <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
-                                                        <h4 className="font-semibold text-yellow-700 dark:text-yellow-400">Missed Signals</h4>
+                                                        <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle />Missed Signals</h4>
                                                          <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
                                                             {displayedMissedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
                                                         </ul>
@@ -884,7 +884,7 @@ function HistorySection({ role }: { role: Role }) {
                                      <Card>
                                         <CardHeader>
                                             <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
-                                                <EyeOff className="h-5 w-5" /> Employee View
+                                                <EyeOff className="h-5 w-5 text-muted-foreground" /> Employee View
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
@@ -1160,13 +1160,13 @@ function OneOnOnePage({ role }: { role: Role }) {
                      {['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role) && (
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => handleStartMeeting(meeting)}>
-                            <Video className="h-5 w-5" />
+                            <Video className="h-5 w-5 text-green-500" />
                           </Button>
 
                           <Dialog>
                             <DialogTrigger asChild>
                                 <Button variant="ghost" size="icon">
-                                    <CalendarCheck className="h-5 w-5" />
+                                    <CalendarCheck className="h-5 w-5 text-blue-500" />
                                 </Button>
                             </DialogTrigger>
                             <ScheduleMeetingDialog meetingToEdit={meeting} onSchedule={handleSchedule} />

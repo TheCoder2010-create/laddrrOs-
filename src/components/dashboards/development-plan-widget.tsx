@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
@@ -27,11 +28,11 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
-        case 'Book': return <BookOpen className="h-4 w-4" />;
-        case 'Podcast': return <Podcast className="h-4 w-4" />;
-        case 'Article': return <Newspaper className="h-4 w-4" />;
-        case 'Course': return <GraduationCap className="h-4 w-4" />;
-        default: return <Lightbulb className="h-4 w-4" />;
+        case 'Book': return <BookOpen className="h-4 w-4 text-blue-500" />;
+        case 'Podcast': return <Podcast className="h-4 w-4 text-purple-500" />;
+        case 'Article': return <Newspaper className="h-4 w-4 text-green-500" />;
+        case 'Course': return <GraduationCap className="h-4 w-4 text-orange-500" />;
+        default: return <Lightbulb className="h-4 w-4 text-yellow-500" />;
     }
 };
 
@@ -407,7 +408,7 @@ export default function DevelopmentPlanWidget() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div className="space-y-1.5">
                         <CardTitle className="flex items-center gap-2">
-                            <Activity />
+                            <Activity className="text-primary" />
                             Active Development Plan
                         </CardTitle>
                         <CardDescription>

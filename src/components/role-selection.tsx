@@ -16,22 +16,27 @@ const roleDetails = {
   'Employee': {
     icon: UserCheck,
     description: "Access your tasks and feedback.",
+    color: "text-green-500",
   },
   'Team Lead': {
     icon: Users,
     description: "Manage your team's performance.",
+     color: "text-blue-500",
   },
   'AM': {
     icon: UserCog,
     description: "Coach leads and track escalations.",
+     color: "text-orange-500",
   },
   'Manager': {
     icon: Briefcase,
     description: "Oversee departmental accountability.",
+     color: "text-purple-500",
   },
   'HR Head': {
     icon: ShieldCheck,
     description: "Access the vault and manage all cases.",
+     color: "text-red-500",
   },
 };
 
@@ -54,7 +59,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         )}
       >
         <div className="flex items-center gap-4">
-            <Icon className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
+            <Icon className={cn("h-6 w-6 transition-colors group-hover:text-primary", details.color)} />
             <div>
               <p className="font-semibold text-foreground">{role}</p>
             </div>

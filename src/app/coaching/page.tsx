@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog, History, Calendar as CalendarIcon } from 'lucide-react';
+import { Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, ThumbsUp, ThumbsDown, Loader2, CheckCircle, MessageSquareQuote, BrainCircuit, Users, CheckSquare as CheckSquareIcon, UserCog, History, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -26,17 +26,17 @@ import { Calendar } from '@/components/ui/calendar';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
-        case 'Book': return <BookOpen className="h-4 w-4" />;
-        case 'Podcast': return <Podcast className="h-4 w-4" />;
-        case 'Article': return <Newspaper className="h-4 w-4" />;
-        case 'Course': return <GraduationCap className="h-4 w-4" />;
-        default: return <Lightbulb className="h-4 w-4" />;
+        case 'Book': return <BookOpen className="h-4 w-4 text-blue-500" />;
+        case 'Podcast': return <Podcast className="h-4 w-4 text-purple-500" />;
+        case 'Article': return <Newspaper className="h-4 w-4 text-green-500" />;
+        case 'Course': return <GraduationCap className="h-4 w-4 text-orange-500" />;
+        default: return <Lightbulb className="h-4 w-4 text-yellow-500" />;
     }
 };
 
 function MyDevelopmentWidget() {
     const { role } = useRole();
-    const [recommendations, setRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
+    const [recommendations, setRecommendations<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
@@ -258,7 +258,7 @@ function MyDevelopmentWidget() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <BrainCircuit />
+                        <BrainCircuit className="text-primary" />
                         My Actionable Items
                     </CardTitle>
                     <CardDescription>
@@ -303,7 +303,7 @@ function MyDevelopmentWidget() {
 
                                              {rec.example && (
                                                 <div className="p-3 bg-muted/50 rounded-md border-l-4 border-primary">
-                                                    <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                                                    <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4 text-primary" /> Example from Session</p>
                                                     <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
                                                 </div>
                                              )}
@@ -329,7 +329,7 @@ function MyDevelopmentWidget() {
 
                                             {!isActionable && (
                                                 <div className="mt-4 pt-4 border-t">
-                                                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4"/>Status: {rec.status.replace(/_/g, ' ')}</p>
+                                                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4 text-muted-foreground"/>Status: {rec.status.replace(/_/g, ' ')}</p>
                                                     {rec.rejectionReason && (
                                                         <div className="mt-2 p-2 bg-muted/50 rounded-md">
                                                             <p className="text-xs font-semibold text-muted-foreground">Your Decline Reason:</p>
@@ -382,7 +382,7 @@ function AmReviewWidget({ item, rec, onUpdate }: { item: OneOnOneHistoryItem, re
                 <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
                 {rec.example && (
                     <div className="mt-2 p-3 bg-background/80 rounded-md border-l-4 border-primary">
-                        <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                        <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4 text-primary" /> Example from Session</p>
                         <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
                     </div>
                 )}
@@ -445,7 +445,7 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
                 <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
                 {rec.example && (
                     <div className="p-2 bg-background/80 rounded-md border-l-2 border-primary mt-2">
-                         <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example from Session</p>
+                         <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4 text-primary" /> Example from Session</p>
                          <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
                     </div>
                 )}
@@ -478,7 +478,7 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
                 </div>
             ) : (
                  <div className="space-y-3 pt-4 border-t">
-                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4"/>This item has been acknowledged and is closed.</p>
+                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4 text-muted-foreground"/>This item has been acknowledged and is closed.</p>
                 </div>
             )}
         </div>
@@ -486,7 +486,7 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
 }
 
 function TeamDevelopmentWidget({ role }: { role: Role }) {
-    const [teamActions, setTeamActions] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
+    const [teamActions, setTeamActions]<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
@@ -593,7 +593,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         }
         if (role === 'Manager') {
             isActionable = rec.status === 'pending_manager_acknowledgement';
-            icon = <CheckSquareIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
+            icon = <CheckSquareIcon className="h-5 w-5 text-red-600 dark:text-red-500" />;
             title = isActionable ? "Acknowledge Declined Recommendation" : "Declined Recommendation History";
             subtitle = `For AM: ${roleUserMapping['AM'].name} | TL: ${item.supervisorName}`;
             statusBadge = isActionable ? <Badge variant="destructive">Ack Required</Badge> : <Badge variant="success">Acknowledged</Badge>;
@@ -605,7 +605,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Users />
+                    <Users className="text-primary"/>
                     Team Development
                 </CardTitle>
                 <CardDescription>

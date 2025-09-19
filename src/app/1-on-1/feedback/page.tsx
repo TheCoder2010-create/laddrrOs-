@@ -315,6 +315,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                               <Label>Record Session or Upload Audio/Transcript</Label>
                               {micPermission === 'denied' && (
                                   <Alert variant="destructive">
+                                      <AlertTriangle className="h-4 w-4" />
                                       <AlertTitle>Microphone Access Denied</AlertTitle>
                                       <AlertDescription>
                                           Please enable it in your browser settings to record.
@@ -360,7 +361,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                   {/* Detailed Input Accordion */}
                   <Accordion type="multiple" defaultValue={['feedback']}>
                       <AccordionItem value="feedback">
-                          <AccordionTrigger><MessageSquareQuote className="mr-2" /> Feedback & Conversation Capture</AccordionTrigger>
+                          <AccordionTrigger><MessageSquareQuote className="mr-2 text-primary" /> Feedback & Conversation Capture</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="primaryFeedback" render={({ field }) => (
                                   <FormItem><FormLabel>Primary Feedback / Talking Points {!hasMedia && <span className="text-destructive">*</span>}</FormLabel><FormControl><Textarea rows={5} placeholder="What was the core message delivered?" {...field} /></FormControl><FormMessage /></FormItem>
@@ -382,7 +383,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           </AccordionContent>
                       </AccordionItem>
                        <AccordionItem value="signals">
-                          <AccordionTrigger>Sentiment & Signals</AccordionTrigger>
+                          <AccordionTrigger><Zap className="mr-2 text-yellow-500"/> Sentiment & Signals</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="showedSignsOfStress" render={({ field }) => (
                                   <FormItem><FormLabel>Did employee show signs of stress or disengagement?</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem><SelectItem value="Unsure">Unsure</SelectItem></SelectContent></Select><FormMessage /></FormItem>
@@ -399,7 +400,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           </AccordionContent>
                       </AccordionItem>
                       <AccordionItem value="appreciation">
-                          <AccordionTrigger>Appreciation Block</AccordionTrigger>
+                          <AccordionTrigger><Star className="mr-2 text-yellow-400"/> Appreciation Block</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="didAppreciate" render={({ field }) => (
                                   <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Did you specifically appreciate the employee for something?</FormLabel></FormItem>
@@ -416,7 +417,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           </AccordionContent>
                       </AccordionItem>
                        <AccordionItem value="summary">
-                          <AccordionTrigger>Media & Summary</AccordionTrigger>
+                          <AccordionTrigger><MessageSquareQuote className="mr-2 text-muted-foreground"/> Media & Summary</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                               <FormField control={form.control} name="otherComments" render={({ field }) => (
                                   <FormItem><FormLabel>Other Comments or Observations</FormLabel><FormControl><Textarea rows={4} placeholder="Anything else of note from the conversation?" {...field} /></FormControl><FormMessage /></FormItem>
@@ -467,11 +468,11 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-3 rounded-md bg-background/50 border">
-                            <h4 className="font-semibold text-foreground flex items-center gap-2"><Star /> Leadership Score</h4>
+                            <h4 className="font-semibold text-foreground flex items-center gap-2"><Star className="text-yellow-400"/> Leadership Score</h4>
                             <p className="text-2xl font-bold">{analysisResult.leadershipScore}/10</p>
                         </div>
                         <div className="p-3 rounded-md bg-background/50 border">
-                            <h4 className="font-semibold text-foreground flex items-center gap-2"><BarChart /> Effectiveness Score</h4>
+                            <h4 className="font-semibold text-foreground flex items-center gap-2"><BarChart className="text-green-500"/> Effectiveness Score</h4>
                             <p className="text-2xl font-bold">{analysisResult.effectivenessScore}/10</p>
                         </div>
                     </div>
@@ -520,7 +521,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                                         
                     {displayedMissedSignals.length > 0 && (
                          <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
-                            <h4 className="font-semibold text-yellow-700 dark:text-yellow-400">Missed Signals</h4>
+                            <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle/>Missed Signals</h4>
                              <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
                                 {displayedMissedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
                             </ul>
@@ -562,6 +563,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         )}
         {analysisError && (
             <Alert variant="destructive" className="mt-6">
+                <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Analysis Error</AlertTitle>
                 <AlertDescription>{analysisError}</AlertDescription>
             </Alert>

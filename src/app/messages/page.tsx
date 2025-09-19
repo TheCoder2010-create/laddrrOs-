@@ -138,7 +138,7 @@ function ConcernAcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUp
 }
 
 function MessagesContent({ role }: { role: Role }) {
-  const [messages, setMessages] = useState<Feedback[]>([]);
+  const [messages, setMessages<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
@@ -179,7 +179,7 @@ function MessagesContent({ role }: { role: Role }) {
     return () => {
         window.removeEventListener('storage', handleDataUpdate);
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
-    }
+    };
   }, [fetchMessages]);
 
   const hasMessages = messages.length > 0;
@@ -199,7 +199,7 @@ function MessagesContent({ role }: { role: Role }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold font-headline mb-2 text-foreground flex items-center gap-3">
-            <MessageSquare className="h-8 w-8" />
+            <MessageSquare className="h-8 w-8 text-primary" />
             Messages
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
@@ -215,8 +215,9 @@ function MessagesContent({ role }: { role: Role }) {
                 </>
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground text-lg">No new messages or actions.</p>
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+                    <h3 className="mt-4 text-lg font-semibold text-foreground">All Caught Up</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
                         Important updates and required actions will appear here.
                     </p>
                 </div>
