@@ -10,8 +10,9 @@ import { ai } from '@/ai/genkit';
 import { BriefingPacketInputSchema, BriefingPacketOutputSchema, type BriefingPacketInput, type BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
 import { getOneOnOneHistory, getActiveCoachingPlansForSupervisor } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
+import type { Role } from '@/hooks/use-role';
 
-export async function generateBriefingPacket(input: BriefingPacketInput): Promise<BriefingPacketOutput> {
+export async function generateBriefingPacket(input: { supervisorName: string; employeeName: string; viewerRole: Role; }): Promise<BriefingPacketOutput> {
     // 1. Fetch all relevant data
     const allHistory = await getOneOnOneHistory();
     const supervisorActiveGoals = await getActiveCoachingPlansForSupervisor(input.supervisorName);
@@ -26,6 +27,15 @@ export async function generateBriefingPacket(input: BriefingPacketInput): Promis
         date: `${format(new Date(h.date), 'PPP')} (${formatDistanceToNow(new Date(h.date), { addSuffix: true })})`,
         summary: h.analysis.supervisorSummary,
     }));
+
+    const allActionItems = relevantHistory.flatMap(h => 
+        h.analysis.actionItems?.map(item => ({
+            task: item.task,
+            owner: item.owner,
+            status: item.status,
+            completedAt: item.completedAt ? `${format(new Date(item.completedAt), 'PPP')}` : undefined,
+        })) || []
+    );
 
     const openCriticalInsights = relevantHistory
         .filter(h => h.analysis.criticalCoachingInsight && h.analysis.criticalCoachingInsight.status !== 'resolved')
@@ -42,9 +52,10 @@ export async function generateBriefingPacket(input: BriefingPacketInput): Promis
     }));
     
     // 4. Call the AI flow with the prepared data
-    const flowInput = {
+    const flowInput: BriefingPacketInput = {
         ...input,
         pastIssues,
+        actionItems: allActionItems,
         openCriticalInsights,
         coachingGoalsInProgress,
     };
@@ -59,13 +70,14 @@ const prompt = ai.definePrompt({
   name: 'generateBriefingPacketPrompt',
   input: { schema: BriefingPacketInputSchema },
   output: { schema: BriefingPacketOutputSchema },
-  prompt: `You are an expert leadership coach and AI assistant. Your task is to generate a concise, actionable pre-1-on-1 briefing packet for a supervisor about to meet with their employee.
+  prompt: `You are an expert leadership and performance coach. Your task is to generate a concise, actionable pre-1-on-1 briefing packet. The content MUST be tailored to the person viewing it (the 'viewerRole').
 
 **Context:**
 - Supervisor: {{{supervisorName}}}
 - Employee: {{{employeeName}}}
+- Viewer: {{{viewerRole}}}
 
-**Past 3 Sessions:**
+**Past 3 Sessions (Supervisor's Summary):**
 {{#if pastIssues}}
   {{#each pastIssues}}
   - **Date:** {{this.date}}
@@ -75,7 +87,16 @@ const prompt = ai.definePrompt({
 - No past sessions found.
 {{/if}}
 
-**Open Critical Insights:**
+**All Past Action Items:**
+{{#if actionItems}}
+    {{#each actionItems}}
+    - Task: "{{this.task}}" (Owner: {{this.owner}}, Status: {{this.status}}{{#if this.completedAt}}, Completed: {{this.completedAt}}{{/if}})
+    {{/each}}
+{{else}}
+- No action items found.
+{{/if}}
+
+**Open Critical Insights (Visible to Supervisor Only):**
 {{#if openCriticalInsights}}
   {{#each openCriticalInsights}}
   - **From Session on:** {{this.date}}
@@ -86,7 +107,7 @@ const prompt = ai.definePrompt({
 - No open critical insights.
 {{/if}}
 
-**Supervisor's Active Coaching Goals:**
+**Supervisor's Active Coaching Goals (Visible to Supervisor Only):**
 {{#if coachingGoalsInProgress}}
     {{#each coachingGoalsInProgress}}
     - **Goal:** {{this.area}} ({{this.resource}}) - {{this.progress}}% complete
@@ -95,14 +116,27 @@ const prompt = ai.definePrompt({
 - No active coaching goals.
 {{/if}}
 
+---
+
 **Your Task:**
 
-Based on all the provided context, generate the following JSON output:
+Based on the context, generate a JSON output SPECIFICALLY for the '{{{viewerRole}}}'.
 
-1.  **keyDiscussionPoints**: A bulleted list of 2-3 key themes or recurring topics from past sessions. What are the most important things to follow up on?
-2.  **outstandingActionItems**: A bulleted list of any critical unresolved issues, primarily focusing on the "Open Critical Insights". If there are none, state that all critical items are resolved.
-3.  **coachingOpportunities**: A bulleted list suggesting 1-2 ways the supervisor can practice their "Active Coaching Goals" in this upcoming meeting. Be specific. For example, if their goal is "Active Listening", suggest they try paraphrasing the employee's concerns.
-4.  **suggestedQuestions**: A bulleted list of 3-4 insightful, open-ended questions the supervisor can ask to facilitate a productive conversation. These should be inspired by the past issues and goals. Examples: "How are you feeling about [past issue] now?", "What's one thing we could do to make progress on [opportunity]?", "What's been most energizing for you lately?".
+**1. actionItemAnalysis**: Analyze all past action items. What is the ratio of supervisor vs. employee tasks? What is the completion rate? Are there patterns in the types of tasks assigned? Provide a brief, neutral analysis.
+
+{{#if (eq viewerRole "Employee")}}
+**2. talkingPoints**: For the EMPLOYEE. Generate a bulleted list of 2-3 forward-looking talking points they can bring to the meeting. Focus on their progress, recent achievements based on feedback, and potential growth areas they might want to discuss. Frame this positively.
+
+**3. employeeSummary**: For the EMPLOYEE. A very brief, encouraging summary of their journey based on the provided session history.
+{{else}}
+**2. keyDiscussionPoints**: For the SUPERVISOR. A bulleted list of 2-3 key themes or recurring topics from past sessions. What are the most important things to follow up on?
+
+**3. outstandingActionItems**: For the SUPERVISOR. A bulleted list of any critical unresolved issues, primarily focusing on the "Open Critical Insights". If there are none, state that all critical items are resolved.
+
+**4. coachingOpportunities**: For the SUPERVISOR. A bulleted list suggesting 1-2 ways the supervisor can practice their "Active Coaching Goals" in this upcoming meeting. Be specific.
+
+**5. suggestedQuestions**: For the SUPERVISOR. A bulleted list of 3-4 insightful, open-ended questions the supervisor can ask. These should be inspired by the past issues and goals.
+{{/if}}
 `,
 });
 
@@ -120,3 +154,5 @@ const generateBriefingPacketFlow = ai.defineFlow(
     return output;
   }
 );
+
+    

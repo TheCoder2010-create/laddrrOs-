@@ -107,7 +107,7 @@ const getMeetingDataForRole = (role: Role) => {
 
 type Meeting = ReturnType<typeof getMeetingDataForRole>['meetings'][0];
 
-function BriefingPacketDialog({ meeting, supervisor }: { meeting: Meeting; supervisor: string; }) {
+function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Meeting; supervisor: string; viewerRole: Role; }) {
     const [isLoading, setIsLoading] = useState(true);
     const [packet, setPacket] = useState<BriefingPacketOutput | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -125,9 +125,13 @@ function BriefingPacketDialog({ meeting, supervisor }: { meeting: Meeting; super
         setIsLoading(true);
         setError(null);
         try {
+            const employeeName = viewerRole === 'Employee' ? supervisor : meeting.with;
+            const currentSupervisorName = viewerRole === 'Employee' ? meeting.with : supervisor;
+
             const result = await generateBriefingPacket({
-                supervisorName: supervisor,
-                employeeName: meeting.with,
+                supervisorName: currentSupervisorName,
+                employeeName: employeeName,
+                viewerRole: viewerRole,
             });
             setPacket(result);
         } catch (e) {
@@ -136,13 +140,18 @@ function BriefingPacketDialog({ meeting, supervisor }: { meeting: Meeting; super
         } finally {
             setIsLoading(false);
         }
-    }, [supervisor, meeting.with]);
+    }, [supervisor, meeting.with, viewerRole]);
 
-    const renderList = (items: string[]) => (
-        <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
-            {items.map((item, index) => <li key={index}>{item}</li>)}
-        </ul>
-    );
+    const renderList = (items?: string[]) => {
+        if (!items || items.length === 0) {
+            return <p className="text-sm text-muted-foreground">None found.</p>;
+        }
+        return (
+            <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                {items.map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+        );
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -157,7 +166,7 @@ function BriefingPacketDialog({ meeting, supervisor }: { meeting: Meeting; super
                         <SquareStack className="h-6 w-6 text-purple-500" /> Pre-1-on-1 Briefing Packet
                     </DialogTitle>
                     <DialogDescription>
-                        AI-generated summary for your upcoming meeting with {meeting.with}.
+                        Your AI-generated summary for the upcoming meeting.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 max-h-[70vh] overflow-y-auto pr-2 space-y-6">
@@ -176,22 +185,52 @@ function BriefingPacketDialog({ meeting, supervisor }: { meeting: Meeting; super
                     )}
                     {packet && (
                         <div className="space-y-4">
-                            <div>
-                                <h4 className="font-semibold text-foreground mb-2">Key Discussion Points</h4>
-                                {renderList(packet.keyDiscussionPoints)}
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-foreground mb-2">Outstanding Action Items</h4>
-                                {renderList(packet.outstandingActionItems)}
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-foreground mb-2">Coaching Opportunities</h4>
-                                {renderList(packet.coachingOpportunities)}
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-foreground mb-2">Suggested Questions</h4>
-                                {renderList(packet.suggestedQuestions)}
-                            </div>
+                            {packet.actionItemAnalysis && (
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Action Item Analysis</h4>
+                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{packet.actionItemAnalysis}</p>
+                                </div>
+                            )}
+
+                             {/* Employee View */}
+                            {packet.talkingPoints && (
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Your Talking Points</h4>
+                                    {renderList(packet.talkingPoints)}
+                                </div>
+                            )}
+                             {packet.employeeSummary && (
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Your Progress Summary</h4>
+                                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{packet.employeeSummary}</p>
+                                </div>
+                            )}
+                            
+                            {/* Supervisor View */}
+                            {packet.keyDiscussionPoints && (
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Key Discussion Points</h4>
+                                    {renderList(packet.keyDiscussionPoints)}
+                                </div>
+                            )}
+                            {packet.outstandingActionItems && (
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Outstanding Critical Items</h4>
+                                    {renderList(packet.outstandingActionItems)}
+                                </div>
+                            )}
+                            {packet.coachingOpportunities && (
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Coaching Opportunities</h4>
+                                    {renderList(packet.coachingOpportunities)}
+                                </div>
+                            )}
+                            {packet.suggestedQuestions && (
+                                <div>
+                                    <h4 className="font-semibold text-foreground mb-2">Suggested Questions</h4>
+                                    {renderList(packet.suggestedQuestions)}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -1325,7 +1364,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                     <span>{format(new Date(meeting.date), 'MM/dd/yy')}</span>
                     <Clock className="h-5 w-5 text-primary" />
                     <span>{formatTime(meeting.time)}</span>
-                    <BriefingPacketDialog meeting={meeting} supervisor={supervisor} />
+                    <BriefingPacketDialog meeting={meeting} supervisor={supervisor} viewerRole={role} />
                   </div>
                 </div>
               </div>
@@ -1376,3 +1415,5 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
