@@ -897,29 +897,35 @@ function HistorySection({ role }: { role: Role }) {
                                       {supervisorActionItems.length > 0 && (
                                           <div className="space-y-2" key={`${item.id}-supervisor-items`}>
                                               <h5 className="font-medium">{formatActorName('Supervisor')}</h5>
-                                              {supervisorActionItems.map(ai => (
-                                                  <div key={ai.id} className="flex items-center gap-3">
-                                                      <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} />
-                                                      <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
-                                                          {ai.task}
-                                                      </label>
-                                                      {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
-                                                  </div>
-                                              ))}
+                                              {supervisorActionItems.map(ai => {
+                                                  const isOwner = ai.owner === 'Supervisor' && isSupervisorInvolved;
+                                                  return (
+                                                      <div key={ai.id} className="flex items-center gap-3">
+                                                          <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
+                                                          <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
+                                                              {ai.task}
+                                                          </label>
+                                                          {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
+                                                      </div>
+                                                  );
+                                              })}
                                           </div>
                                       )}
                                       {employeeActionItems.length > 0 && (
                                           <div className="space-y-2" key={`${item.id}-employee-items`}>
                                               <h5 className="font-medium">{formatActorName('Employee')}</h5>
-                                              {employeeActionItems.map(ai => (
-                                                  <div key={ai.id} className="flex items-center gap-3">
-                                                      <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} />
-                                                      <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
-                                                          {ai.task}
-                                                      </label>
-                                                      {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
-                                                  </div>
-                                              ))}
+                                              {employeeActionItems.map(ai => {
+                                                  const isOwner = ai.owner === 'Employee' && isEmployee;
+                                                  return (
+                                                      <div key={ai.id} className="flex items-center gap-3">
+                                                          <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
+                                                          <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
+                                                              {ai.task}
+                                                          </label>
+                                                          {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
+                                                      </div>
+                                                  );
+                                              })}
                                           </div>
                                       )}
                                     </div>
