@@ -42,32 +42,13 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
 
-      // Action items count (only escalations)
-      let totalActionItems = history.filter(h => {
-          const insight = h.analysis.criticalCoachingInsight;
-          if (!insight || insight.status === 'resolved') return false;
-          
-          const isAmMatch = currentRole === 'AM' && insight.status === 'pending_am_review';
-          const isManagerMatch = currentRole === 'Manager' && insight.status === 'pending_manager_review';
-          const isHrMatch = currentRole === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-
-          return isAmMatch || isManagerMatch || isHrMatch;
-      }).length;
-
+      // Action items count (non-1-on-1 escalations)
+      let totalActionItems = 0;
       setActionItemCount(totalActionItems);
 
 
-      // Messages count
+      // Messages count (only non-1-on-1 items)
       let totalMessages = 0;
-      // Critical Insights for employee acknowledgement
-      totalMessages += history.filter(h => {
-          const insight = h.analysis.criticalCoachingInsight;
-          if (!insight || insight.status === 'resolved') return false;
-
-          return currentRole === 'Employee' && h.employeeName === currentUserName && insight.status === 'pending_employee_acknowledgement';
-      }).length;
-      
-      // General Notifications (e.g. from coaching plans) and identified concern acknowledgements
       totalMessages += feedback.filter(f => {
         const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
         if (!isAssignedToMe) return false;

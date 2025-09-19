@@ -20,139 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 
-
-function OneOnOneAcknowledgementWidget({ item, onUpdate }: { item: OneOnOneHistoryItem, onUpdate: () => void }) {
-    const { toast } = useToast();
-    const [employeeAcknowledgement, setEmployeeAcknowledgement] = useState('');
-    const [acknowledgementComments, setAcknowledgementComments] = useState('');
-    const [isSubmittingAck, setIsSubmittingAck] = useState(false);
-
-    const handleEmployeeAckSubmit = async () => {
-        if (!employeeAcknowledgement) return;
-        setIsSubmittingAck(true);
-        
-        const previousStatus = item.analysis.criticalCoachingInsight?.status;
-
-        try {
-            await submitEmployeeAcknowledgement(item.id, employeeAcknowledgement, acknowledgementComments, previousStatus);
-            setEmployeeAcknowledgement("");
-            setAcknowledgementComments("");
-            
-            if (employeeAcknowledgement === "The concern was fully addressed to my satisfaction.") {
-                 toast({ title: "Acknowledgement Submitted", description: "Thank you for your feedback. This insight is now resolved." });
-            } else {
-                 toast({ title: "Feedback Escalated", description: "Your feedback has been sent to the next level for review." });
-            }
-
-            onUpdate(); // Re-fetch data in parent component
-        } catch (error) {
-            console.error("Failed to submit acknowledgement", error);
-            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your acknowledgement." });
-        } finally {
-            setIsSubmittingAck(false);
-        }
-    };
-    
-    const wasHrAction = item.analysis.criticalCoachingInsight?.auditTrail?.some(e => e.event === 'HR Responded to Retaliation Claim');
-    
-    const supervisorResponse = item.analysis.criticalCoachingInsight?.supervisorResponse;
-    const amResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Responded to Employee');
-    const managerResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'Manager Resolution');
-    const retryNotes = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'Supervisor Retry Action');
-    const hrResponse = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'HR Resolution');
-
-    const timelineEvents = [
-        { actor: item.supervisorName, actorRole: 'Team Lead', response: supervisorResponse, icon: User },
-        { actor: amResponse?.actor, actorRole: 'AM', response: amResponse?.details, icon: Users },
-        { actor: retryNotes?.actor, actorRole: 'Team Lead', response: retryNotes?.details, label: "Supervisor's Follow-up Notes", icon: User },
-        { actor: managerResponse?.actor, actorRole: 'Manager', response: managerResponse?.details, icon: Briefcase },
-        { actor: hrResponse?.actor, actorRole: 'HR Head', response: hrResponse?.details, icon: ShieldCheck },
-    ].filter(e => e.response);
-    
-
-    return (
-        <Card className="border-blue-500/50">
-            <CardHeader className="bg-blue-500/10">
-                <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                    <MessageCircleQuestion className="h-6 w-6" />
-                    1-on-1 Follow-Up Required
-                </CardTitle>
-                <CardDescription>
-                    From your meeting with {item.supervisorName} on {format(new Date(item.date), 'PPP')}.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-6">
-                <div className="relative pl-8">
-                    {timelineEvents.map((event, index) => {
-                        const Icon = event.icon;
-                        return (
-                        <div key={index} className="flex gap-4 relative">
-                             <div className="absolute top-0 -left-8 h-full flex items-center">
-                                <div className={cn(
-                                    "flex-shrink-0 w-8 h-8 rounded-full bg-background border flex items-center justify-center z-10",
-                                )}>
-                                    <Icon className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                                {index < timelineEvents.length - 1 && (
-                                     <div className="absolute left-1/2 -translate-x-1/2 top-8 h-full w-px bg-border"></div>
-                                )}
-                            </div>
-                            <div className="pb-8 flex-1">
-                                <p className="font-semibold text-foreground">{event.label || `${formatActorName(event.actorRole)}'s Response`}</p>
-                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.response}</p>
-                            </div>
-                        </div>
-                    )})}
-                </div>
-
-                <div className="space-y-4 pt-6 border-t border-dashed">
-                    <div className="space-y-1">
-                        <Label className="font-semibold text-base">Your Acknowledgement</Label>
-                        <p className="text-sm text-muted-foreground">
-                            Please review the latest response and provide feedback on the resolution.
-                        </p>
-                    </div>
-                    <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
-                            <Label htmlFor={`ack-yes-${item.id}`}>The concern was fully addressed to my satisfaction.</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="The concern was partially addressed, but I still have reservations." id={`ack-partial-${item.id}`} />
-                            <Label htmlFor={`ack-partial-${item.id}`}>The concern was partially addressed, but I still have reservations.</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="I do not feel the concern was adequately addressed." id={`ack-no-${item.id}`} />
-                            <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
-                        </div>
-                    </RadioGroup>
-                    <div className="space-y-2 pt-2">
-                        <Label htmlFor={`ack-comments-${item.id}`}>Additional Comments (Optional)</Label>
-                        <Textarea
-                            id={`ack-comments-${item.id}`}
-                            value={acknowledgementComments}
-                            onChange={(e) => setAcknowledgementComments(e.target.value)}
-                            placeholder="Provide more detail about your selection..."
-                            rows={3}
-                            className="bg-background"
-                        />
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                        <Button
-                            onClick={handleEmployeeAckSubmit}
-                            disabled={isSubmittingAck || !employeeAcknowledgement}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                            {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
-                            Submit Acknowledgement
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
 function GeneralNotificationWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void }) {
     const { toast } = useToast();
     const { role } = useRole();
@@ -271,27 +138,14 @@ function ConcernAcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUp
 }
 
 function MessagesContent({ role }: { role: Role }) {
-  const [messages, setMessages] = useState<(OneOnOneHistoryItem | Feedback)[]>([]);
+  const [messages, setMessages] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
     setIsLoading(true);
-    const history = await getOneOnOneHistory();
     const feedback = await getAllFeedback();
-    const currentUser = roleUserMapping[role];
-
-    const userMessages: (OneOnOneHistoryItem | Feedback)[] = [];
-
-    // Critical Insight Escalations
-    history.forEach(item => {
-        const insight = item.analysis.criticalCoachingInsight;
-        if (insight && insight.status !== 'resolved') {
-            // Employee acknowledgements always appear in their message inbox
-            if (role === 'Employee' && item.employeeName === currentUser.name && insight.status === 'pending_employee_acknowledgement') {
-                userMessages.push(item);
-            }
-        }
-    });
+    
+    const userMessages: Feedback[] = [];
 
     // General notifications and identified concern acknowledgements
     feedback.forEach(item => {
@@ -307,9 +161,7 @@ function MessagesContent({ role }: { role: Role }) {
     });
 
     userMessages.sort((a, b) => {
-        const dateA = 'submittedAt' in a ? a.submittedAt : a.date;
-        const dateB = 'submittedAt' in b ? b.submittedAt : b.date;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
+        return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
     });
 
     setMessages(userMessages);
@@ -332,22 +184,12 @@ function MessagesContent({ role }: { role: Role }) {
 
   const hasMessages = messages.length > 0;
 
-  const renderWidgets = (item: OneOnOneHistoryItem | Feedback) => {
-    // Check if it's a OneOnOneHistoryItem (has 'analysis' property)
-    if ('analysis' in item) {
-        const insight = item.analysis.criticalCoachingInsight;
-        if (insight && insight.status === 'pending_employee_acknowledgement' && role === 'Employee') {
-            return <OneOnOneAcknowledgementWidget key={`${item.id}-1on1`} item={item} onUpdate={fetchMessages} />;
-        }
-    } 
-    // Check if it's a Feedback item (has 'trackingId' property)
-    else if ('trackingId' in item) {
-        if (item.status === 'Pending Acknowledgement') {
-            return <GeneralNotificationWidget key={`${item.trackingId}-info`} item={item} onUpdate={fetchMessages} />;
-        }
-        if (item.status === 'Pending Employee Acknowledgment') {
-            return <ConcernAcknowledgementWidget key={`${item.trackingId}-concern`} item={item} onUpdate={fetchMessages} />;
-        }
+  const renderWidgets = (item: Feedback) => {
+    if (item.status === 'Pending Acknowledgement') {
+        return <GeneralNotificationWidget key={`${item.trackingId}-info`} item={item} onUpdate={fetchMessages} />;
+    }
+    if (item.status === 'Pending Employee Acknowledgment') {
+        return <ConcernAcknowledgementWidget key={`${item.trackingId}-concern`} item={item} onUpdate={fetchMessages} />;
     }
     return null;
   };

@@ -9,7 +9,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote, CheckCircle2, XCircle, ChevronsRight } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote, CheckCircle2, XCircle, ChevronsRight, User as UserIcon } from 'lucide-react';
 import { format, formatDistanceToNow, addHours } from 'date-fns';
 import {
   Dialog,
@@ -46,14 +46,14 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus, AuditEvent, submitAmCoachingNotes, submitAmDirectResponse, submitManagerResolution, submitHrResolution, submitFinalHrDecision } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus, AuditEvent, submitAmCoachingNotes, submitAmDirectResponse, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitEmployeeAcknowledgement } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];
@@ -552,15 +552,21 @@ function HistorySection({ role }: { role: Role }) {
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
-    // State for inline insight addressing
+    // State for inline insight addressing (supervisor)
     const [addressingInsightId, setAddressingInsightId] = useState<string | null>(null);
     const [supervisorResponse, setSupervisorResponse] = useState('');
     const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
 
-    // State for retry flow
+    // State for retry flow (supervisor)
     const [retryingInsightId, setRetryingInsightId] = useState<string | null>(null);
     const [retryResponse, setRetryResponse] = useState('');
     const [isSubmittingRetry, setIsSubmittingRetry] = useState(false);
+
+    // State for employee acknowledgement
+    const [acknowledgingInsightId, setAcknowledgingInsightId] = useState<string | null>(null);
+    const [employeeAcknowledgement, setEmployeeAcknowledgement] = useState('');
+    const [acknowledgementComments, setAcknowledgementComments] = useState('');
+    const [isSubmittingAck, setIsSubmittingAck] = useState(false);
 
     const fetchHistory = useCallback(async () => {
         setIsLoading(true);
@@ -628,6 +634,33 @@ function HistorySection({ role }: { role: Role }) {
         }
     };
 
+    const handleEmployeeAckSubmit = async (itemToUpdate: OneOnOneHistoryItem) => {
+        if (!employeeAcknowledgement) return;
+        setIsSubmittingAck(true);
+        
+        const previousStatus = itemToUpdate.analysis.criticalCoachingInsight?.status;
+
+        try {
+            await submitEmployeeAcknowledgement(itemToUpdate.id, employeeAcknowledgement, acknowledgementComments, previousStatus);
+            setEmployeeAcknowledgement("");
+            setAcknowledgementComments("");
+            setAcknowledgingInsightId(null);
+            
+            if (employeeAcknowledgement === "The concern was fully addressed to my satisfaction.") {
+                 toast({ title: "Acknowledgement Submitted", description: "Thank you for your feedback. This insight is now resolved." });
+            } else {
+                 toast({ title: "Feedback Escalated", description: "Your feedback has been sent to the next level for review." });
+            }
+
+            fetchHistory();
+        } catch (error) {
+            console.error("Failed to submit acknowledgement", error);
+            toast({ variant: 'destructive', title: "Submission Failed", description: "Could not submit your acknowledgement." });
+        } finally {
+            setIsSubmittingAck(false);
+        }
+    };
+
     if (isLoading) {
         return <Skeleton className="h-24 w-full mt-8" />;
     }
@@ -663,6 +696,8 @@ function HistorySection({ role }: { role: Role }) {
 
                     const canSupervisorAct = isSupervisorInvolved && insightStatus === 'open';
                     const canSupervisorRetry = isSupervisorInvolved && insightStatus === 'pending_supervisor_retry';
+                    const canEmployeeAck = isEmployee && insightStatus === 'pending_employee_acknowledgement';
+
                     const finalDecisionEvent = insight?.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
                     const amCoachingNotes = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
 
@@ -842,113 +877,6 @@ function HistorySection({ role }: { role: Role }) {
 
                                             </div>
                                         </div>
-
-                                        {insight && (
-                                            <Card className="mt-4">
-                                                <CardHeader>
-                                                    <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
-                                                        <AlertTriangle className="h-5 w-5 text-destructive" />Critical Coaching Insight
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="space-y-4">
-                                                    <div className="space-y-4">
-                                                        <p className="text-sm text-muted-foreground">{insight.summary}</p>
-                                                        
-                                                        {canSupervisorAct && (
-                                                            <div className="mt-4">
-                                                                {addressingInsightId !== item.id ? (
-                                                                    <div className="flex items-center gap-4">
-                                                                        <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
-                                                                            Address Insight
-                                                                        </Button>
-                                                                        {insight.auditTrail && insight.auditTrail.length > 0 && (
-                                                                            <SlaTimer expiryTimestamp={addHours(new Date(insight.auditTrail[0].timestamp), 48).getTime()} />
-                                                                        )}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="space-y-2 bg-background/50 p-3 rounded-md">
-                                                                        <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
-                                                                            How did you address this?
-                                                                        </Label>
-                                                                        <Textarea
-                                                                            id={`supervisor-response-${item.id}`}
-                                                                            value={supervisorResponse}
-                                                                            onChange={(e) => setSupervisorResponse(e.target.value)}
-                                                                            rows={4}
-                                                                            className="bg-background"
-                                                                        />
-                                                                        <div className="flex gap-2">
-                                                                            <Button
-                                                                                onClick={() => handleAddressInsightSubmit(item)}
-                                                                                disabled={isSubmittingResponse || !supervisorResponse}
-                                                                            >
-                                                                                {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
-                                                                                Submit
-                                                                            </Button>
-                                                                            <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
-                                                                                Cancel
-                                                                            </Button>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
-
-                                                        {canSupervisorRetry && (
-                                                             <div className="mt-4 p-4 border rounded-lg bg-purple-500/10 space-y-4">
-                                                                <h4 className="font-semibold text-lg text-purple-700 dark:text-purple-400">Action Required: Retry 1-on-1</h4>
-                                                                
-                                                                {amCoachingNotes && (
-                                                                     <div className="p-3 bg-muted/80 rounded-md border">
-                                                                        <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
-                                                                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                <p className="text-sm text-muted-foreground">
-                                                                  Your AM has reviewed this case and coached you. Please re-engage with the employee to address their remaining concerns.
-                                                                </p>
-
-                                                                {retryingInsightId !== item.id ? (
-                                                                    <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setRetryingInsightId(item.id)}>
-                                                                        <Repeat className="mr-2 h-4 w-4" /> Log Retry Actions
-                                                                    </Button>
-                                                                ) : (
-                                                                    <div className="space-y-2 bg-background/50 p-3 rounded-md">
-                                                                        <Label htmlFor={`retry-response-${item.id}`} className="text-foreground font-semibold">
-                                                                            Describe your follow-up actions
-                                                                        </Label>
-                                                                        <Textarea
-                                                                            id={`retry-response-${item.id}`}
-                                                                            value={retryResponse}
-                                                                            onChange={(e) => setRetryResponse(e.target.value)}
-                                                                            rows={4}
-                                                                            className="bg-background"
-                                                                        />
-                                                                        <div className="flex gap-2">
-                                                                            <Button
-                                                                                onClick={() => handleRetrySubmit(item)}
-                                                                                disabled={isSubmittingRetry || !retryResponse}
-                                                                                className="bg-purple-600 hover:bg-purple-700 text-white"
-                                                                            >
-                                                                                {isSubmittingRetry && <Loader2 className="mr-2 animate-spin" />}
-                                                                                Submit Follow-up
-                                                                            </Button>
-                                                                            <Button variant="ghost" onClick={() => setRetryingInsightId(null)}>
-                                                                                Cancel
-                                                                            </Button>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                             </div>
-                                                        )}
-                                                         {isManagerialRole && <EscalationActionWidget item={item} onUpdate={fetchHistory} role={role} />}
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        )}
                                     </div>
                                 )}
                                 
@@ -991,35 +919,172 @@ function HistorySection({ role }: { role: Role }) {
                                                 </div>
                                             )}
                                         </CardContent>
-                                        
-                                        {insight && (
-                                            <>
-                                                <CardHeader className="pt-0">
-                                                    <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
-                                                        <AlertTriangle className="h-5 w-5" />Critical Insight & Resolution
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="space-y-4">
-                                                    <div className="space-y-3">
-                                                        <div className="space-y-2">
-                                                            <p className="font-semibold text-foreground text-sm">Initial Summary</p>
-                                                            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{insight.summary}</p>
-                                                        </div>
-                                                        
-                                                        {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
-                                                    </div>
-                                                    
-                                                    {insight.status === 'pending_employee_acknowledgement' && (
-                                                        <div className="mt-4 pt-4 border-t">
-                                                            <p className="text-sm font-medium">
-                                                                You have a pending action for this item. Please go to your <Link href="/messages" className="font-bold underline text-primary">Messages</Link> to respond.
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </>
-                                        )}
                                      </Card>
+                                )}
+                                
+                                {insight && (
+                                    <Card className="mt-4">
+                                        <CardHeader>
+                                            <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
+                                                <AlertTriangle className="h-5 w-5 text-destructive" />Critical Coaching Insight & Resolution
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="space-y-4">
+                                                <p className="text-sm text-muted-foreground">{insight.summary}</p>
+                                                
+                                                {canSupervisorAct && (
+                                                    <div className="mt-4">
+                                                        {addressingInsightId !== item.id ? (
+                                                            <div className="flex items-center gap-4">
+                                                                <Button variant="destructive" onClick={() => setAddressingInsightId(item.id)}>
+                                                                    Address Insight
+                                                                </Button>
+                                                                {insight.auditTrail && insight.auditTrail.length > 0 && (
+                                                                    <SlaTimer expiryTimestamp={addHours(new Date(insight.auditTrail[0].timestamp), 48).getTime()} />
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                                <Label htmlFor={`supervisor-response-${item.id}`} className="text-foreground font-semibold">
+                                                                    How did you address this?
+                                                                </Label>
+                                                                <Textarea
+                                                                    id={`supervisor-response-${item.id}`}
+                                                                    value={supervisorResponse}
+                                                                    onChange={(e) => setSupervisorResponse(e.target.value)}
+                                                                    rows={4}
+                                                                    className="bg-background"
+                                                                />
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        onClick={() => handleAddressInsightSubmit(item)}
+                                                                        disabled={isSubmittingResponse || !supervisorResponse}
+                                                                    >
+                                                                        {isSubmittingResponse && <Loader2 className="mr-2 animate-spin" />}
+                                                                        Submit
+                                                                    </Button>
+                                                                    <Button variant="ghost" onClick={() => setAddressingInsightId(null)}>
+                                                                        Cancel
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                
+                                                {insight.auditTrail && <InsightAuditTrail trail={insight.auditTrail} />}
+
+                                                {canSupervisorRetry && (
+                                                     <div className="mt-4 p-4 border rounded-lg bg-purple-500/10 space-y-4">
+                                                        <h4 className="font-semibold text-lg text-purple-700 dark:text-purple-400">Action Required: Retry 1-on-1</h4>
+                                                        
+                                                        {amCoachingNotes && (
+                                                             <div className="p-3 bg-muted/80 rounded-md border">
+                                                                <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
+                                                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        <p className="text-sm text-muted-foreground">
+                                                          Your AM has reviewed this case and coached you. Please re-engage with the employee to address their remaining concerns.
+                                                        </p>
+
+                                                        {retryingInsightId !== item.id ? (
+                                                            <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setRetryingInsightId(item.id)}>
+                                                                <Repeat className="mr-2 h-4 w-4" /> Log Retry Actions
+                                                            </Button>
+                                                        ) : (
+                                                            <div className="space-y-2 bg-background/50 p-3 rounded-md">
+                                                                <Label htmlFor={`retry-response-${item.id}`} className="text-foreground font-semibold">
+                                                                    Describe your follow-up actions
+                                                                </Label>
+                                                                <Textarea
+                                                                    id={`retry-response-${item.id}`}
+                                                                    value={retryResponse}
+                                                                    onChange={(e) => setRetryResponse(e.target.value)}
+                                                                    rows={4}
+                                                                    className="bg-background"
+                                                                />
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        onClick={() => handleRetrySubmit(item)}
+                                                                        disabled={isSubmittingRetry || !retryResponse}
+                                                                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                                                                    >
+                                                                        {isSubmittingRetry && <Loader2 className="mr-2 animate-spin" />}
+                                                                        Submit Follow-up
+                                                                    </Button>
+                                                                    <Button variant="ghost" onClick={() => setRetryingInsightId(null)}>
+                                                                        Cancel
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                     </div>
+                                                )}
+
+                                                {canEmployeeAck && (
+                                                    <div className="mt-4 pt-4 border-t border-dashed">
+                                                        {acknowledgingInsightId !== item.id ? (
+                                                            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setAcknowledgingInsightId(item.id)}>
+                                                                <MessageCircleQuestion className="mr-2 h-4 w-4" /> Acknowledge Resolution
+                                                            </Button>
+                                                        ) : (
+                                                            <div className="space-y-4 pt-2">
+                                                                <div className="space-y-1">
+                                                                    <Label className="font-semibold text-base">Your Acknowledgement</Label>
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        Please review the latest response and provide feedback on the resolution.
+                                                                    </p>
+                                                                </div>
+                                                                <RadioGroup onValueChange={setEmployeeAcknowledgement} value={employeeAcknowledgement}>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <RadioGroupItem value="The concern was fully addressed to my satisfaction." id={`ack-yes-${item.id}`} />
+                                                                        <Label htmlFor={`ack-yes-${item.id}`}>The concern was fully addressed to my satisfaction.</Label>
+                                                                    </div>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <RadioGroupItem value="The concern was partially addressed, but I still have reservations." id={`ack-partial-${item.id}`} />
+                                                                        <Label htmlFor={`ack-partial-${item.id}`}>The concern was partially addressed, but I still have reservations.</Label>
+                                                                    </div>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <RadioGroupItem value="I do not feel the concern was adequately addressed." id={`ack-no-${item.id}`} />
+                                                                        <Label htmlFor={`ack-no-${item.id}`}>I do not feel the concern was adequately addressed.</Label>
+                                                                    </div>
+                                                                </RadioGroup>
+                                                                <div className="space-y-2 pt-2">
+                                                                    <Label htmlFor={`ack-comments-${item.id}`}>Additional Comments (Optional)</Label>
+                                                                    <Textarea
+                                                                        id={`ack-comments-${item.id}`}
+                                                                        value={acknowledgementComments}
+                                                                        onChange={(e) => setAcknowledgementComments(e.target.value)}
+                                                                        placeholder="Provide more detail about your selection..."
+                                                                        rows={3}
+                                                                        className="bg-background"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex gap-2 pt-2">
+                                                                    <Button
+                                                                        onClick={() => handleEmployeeAckSubmit(item)}
+                                                                        disabled={isSubmittingAck || !employeeAcknowledgement}
+                                                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                                    >
+                                                                        {isSubmittingAck && <Loader2 className="mr-2 animate-spin" />}
+                                                                        Submit Acknowledgement
+                                                                    </Button>
+                                                                     <Button variant="ghost" onClick={() => setAcknowledgingInsightId(null)}>
+                                                                        Cancel
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {isManagerialRole && <EscalationActionWidget item={item} onUpdate={fetchHistory} role={role} />}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 )}
                             </AccordionContent>
                         </AccordionItem>
