@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -138,7 +137,7 @@ function ConcernAcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUp
 }
 
 function MessagesContent({ role }: { role: Role }) {
-  const [messages, setMessages<Feedback[]>([]);
+  const [messages, setMessages] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
