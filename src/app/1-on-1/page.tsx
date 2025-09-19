@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -139,7 +140,7 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
                   !date && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
                 {date ? format(date, "PPP") : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
@@ -297,10 +298,10 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
         'default': { icon: Briefcase, color: 'text-muted-foreground' },
         'Responded': { icon: MessageSquare, color: 'text-primary' },
         'Acknowledged': { icon: CheckCircle, color: 'text-success' },
-        'AM Coaching Notes': { icon: BrainCircuit, color: 'text-yellow-600' },
-        'AM Responded to Employee': { icon: MessageSquare, color: 'text-blue-600' },
-        'Supervisor Retry Action': { icon: Repeat, color: 'text-purple-600' },
-        'Manager Resolution': { icon: Briefcase, color: 'text-red-700' },
+        'AM Coaching Notes': { icon: BrainCircuit, color: 'text-orange-500' },
+        'AM Responded to Employee': { icon: MessageSquare, color: 'text-blue-500' },
+        'Supervisor Retry Action': { icon: Repeat, color: 'text-purple-500' },
+        'Manager Resolution': { icon: Briefcase, color: 'text-red-600' },
         'HR Resolution': { icon: ShieldCheck, color: 'text-black dark:text-white' },
         'Assigned to Ombudsman': { icon: UserX, color: 'text-gray-500' },
         'Assigned to Grievance Office': { icon: UserPlus, color: 'text-gray-500' },
@@ -1016,7 +1017,7 @@ function HistorySection({ role }: { role: Role }) {
                                                         
                                                         {amCoachingNotes && (
                                                              <div className="p-3 bg-muted/80 rounded-md border">
-                                                                <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4" />AM Coaching Notes ({formatActorName('AM')})</p>
+                                                                <p className="font-semibold text-foreground flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" />AM Coaching Notes ({formatActorName('AM')})</p>
                                                                 <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{amCoachingNotes}</p>
                                                             </div>
                                                         )}
@@ -1233,9 +1234,9 @@ function OneOnOnePage({ role }: { role: Role }) {
                 </div>
                 <div className="border-t p-3 py-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-5 w-5" />
+                    <Calendar className="h-5 w-5 text-primary" />
                     <span>{format(new Date(meeting.date), 'MM/dd/yy')}</span>
-                    <Clock className="h-5 w-5" />
+                    <Clock className="h-5 w-5 text-primary" />
                     <span>{formatTime(meeting.time)}</span>
                   </div>
                 </div>
