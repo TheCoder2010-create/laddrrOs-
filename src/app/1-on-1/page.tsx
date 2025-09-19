@@ -139,7 +139,7 @@ function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: 
                   !date && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-blue-500" />
                 {date ? format(date, "PPP") : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
@@ -510,9 +510,9 @@ function EscalationActionWidget({ item, onUpdate, role }: { item: OneOnOneHistor
                              <Label>Final Action Required</Label>
                              <p className="text-sm text-muted-foreground">The employee remains dissatisfied. Select a final action to formally close this case.</p>
                              <div className="flex flex-wrap gap-2">
-                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
-                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
-                                 <Button variant="destructive" onClick={() => setFinalAction('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Ombudsman')}><UserX className="mr-2 text-gray-500" /> Assign to Ombudsman</Button>
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Grievance Office')}><UserPlus className="mr-2 text-gray-500" /> Assign to Grievance Office</Button>
+                                 <Button variant="destructive" onClick={() => setFinalAction('Logged Dissatisfaction & Closed')}><FileText className="mr-2 text-gray-500" /> Log & Close</Button>
                              </div>
                          </div>
                     ) : (
@@ -762,7 +762,7 @@ function HistorySection({ role }: { role: Role }) {
                                     <div className="space-y-4">
                                         <div className="bg-muted/50 p-4 rounded-lg">
                                             <div className="flex justify-between items-center mb-2">
-                                                <h4 className="font-semibold text-lg flex items-center gap-2 text-primary"><Bot />AI Analysis & Coaching Report</h4>
+                                                <h4 className="font-semibold text-lg flex items-center gap-2 text-primary"><Bot className="text-primary"/>AI Analysis & Coaching Report</h4>
                                                 <span 
                                                     className="text-xs text-muted-foreground font-mono cursor-text"
                                                     onClick={(e) => e.stopPropagation()}
@@ -835,7 +835,7 @@ function HistorySection({ role }: { role: Role }) {
                                                                     <p className="text-sm text-muted-foreground mt-1">{rec.recommendation}</p>
                                                                     {rec.example && (
                                                                         <div className="mt-2 p-2 bg-muted/50 rounded-md border-l-2 border-primary">
-                                                                            <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4" /> Example</p>
+                                                                            <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4 text-primary" /> Example</p>
                                                                             <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
                                                                         </div>
                                                                     )}
@@ -896,10 +896,10 @@ function HistorySection({ role }: { role: Role }) {
                                     <h4 className="font-semibold text-foreground">Action Items</h4>
                                     <div className="mt-2 space-y-4">
                                       {supervisorActionItems.length > 0 && (
-                                          <div className="space-y-2" key={`${item.id}-supervisor-items`}>
+                                          <div key={`${item.id}-supervisor-items`}>
                                               <h5 className="font-medium">{formatActorName('Supervisor')}</h5>
                                               {supervisorActionItems.map(ai => {
-                                                  const isOwner = ai.owner === 'Supervisor' && isSupervisorInvolved;
+                                                  const isOwner = isSupervisorInvolved;
                                                   return (
                                                       <div key={ai.id} className="flex items-center gap-3">
                                                           <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
@@ -913,10 +913,10 @@ function HistorySection({ role }: { role: Role }) {
                                           </div>
                                       )}
                                       {employeeActionItems.length > 0 && (
-                                          <div className="space-y-2" key={`${item.id}-employee-items`}>
+                                          <div key={`${item.id}-employee-items`}>
                                               <h5 className="font-medium">{formatActorName('Employee')}</h5>
                                               {employeeActionItems.map(ai => {
-                                                  const isOwner = ai.owner === 'Employee' && isEmployee;
+                                                  const isOwner = isEmployee;
                                                   return (
                                                       <div key={ai.id} className="flex items-center gap-3">
                                                           <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
@@ -934,7 +934,7 @@ function HistorySection({ role }: { role: Role }) {
                                   
                                   {displayedMissedSignals.length > 0 && (
                                        <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
-                                          <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle />Missed Signals</h4>
+                                          <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle className="text-yellow-500"/>Missed Signals</h4>
                                            <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
                                               {displayedMissedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
                                           </ul>
@@ -1175,7 +1175,7 @@ function OneOnOnePage({ role }: { role: Role }) {
             <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
-                  <PlusCircle className="mr-2" />
+                  <PlusCircle className="mr-2 text-green-300" />
                   Schedule New Meeting
                 </Button>
               </DialogTrigger>
@@ -1287,5 +1287,7 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
 
     
