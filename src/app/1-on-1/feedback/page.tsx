@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useEffect, useRef, ChangeEvent } from 'react';
@@ -28,6 +27,7 @@ import { useRole } from '@/hooks/use-role';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { formatActorName } from '@/lib/role-mapping';
 
 // Define meeting type locally as it's not exported from the main page
 interface Meeting {
@@ -245,6 +245,9 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
   const displayedMissedSignals = analysisResult?.missedSignals?.filter(
       signal => signal !== analysisResult.criticalCoachingInsight?.summary
   ) || [];
+
+  const employeeActionItems = analysisResult?.actionItems.filter(item => item.owner === 'Employee') || [];
+  const supervisorActionItems = analysisResult?.actionItems.filter(item => item.owner === 'Supervisor') || [];
 
   return (
     <div className="p-4 md:p-8">
@@ -513,10 +516,35 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                     </div>
 
                     <div>
-                        <h4 className="font-semibold text-foreground">Action Items</h4>
-                        <ul className="list-disc pl-5 mt-2 space-y-1">
-                            {analysisResult.actionItems.map((item, i) => <li key={i}><strong>{item.owner}:</strong> {item.task} {item.deadline && `(by ${item.deadline})`}</li>)}
-                        </ul>
+                      <h4 className="font-semibold text-foreground">Action Items</h4>
+                      <div className="mt-2 space-y-4">
+                        {supervisorActionItems.length > 0 && (
+                            <div className="space-y-2">
+                                <h5 className="font-medium">{formatActorName('Supervisor')}</h5>
+                                {supervisorActionItems.map(item => (
+                                    <div key={item.id} className="flex items-center gap-3">
+                                        <Checkbox id={`item-${item.id}`} disabled />
+                                        <label htmlFor={`item-${item.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                            {item.task}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {employeeActionItems.length > 0 && (
+                            <div className="space-y-2">
+                                <h5 className="font-medium">{formatActorName('Employee')}</h5>
+                                {employeeActionItems.map(item => (
+                                    <div key={item.id} className="flex items-center gap-3">
+                                        <Checkbox id={`item-${item.id}`} disabled />
+                                        <label htmlFor={`item-${item.id}`} className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                            {item.task}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                      </div>
                     </div>
                                         
                     {displayedMissedSignals.length > 0 && (
@@ -613,5 +641,3 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
-
-    

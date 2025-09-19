@@ -1,5 +1,3 @@
-
-
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -9,7 +7,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
-import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
+import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn, ActionItem } from '@/ai/schemas/one-on-one-schemas';
 
 // Helper function to generate a new ID format
 const generateTrackingId = () => `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -40,12 +38,6 @@ export type FeedbackStatus =
   | 'Closed'
   | 'Retaliation Claim'; // New status for child cases
 
-export interface ActionItem {
-    id: string;
-    text: string;
-    status: 'pending' | 'completed';
-    owner: Role | string;
-}
 
 export interface Attachment {
     name: string;
@@ -184,6 +176,29 @@ export async function updateOneOnOneHistoryItem(updatedItem: OneOnOneHistoryItem
         allHistory[index] = updatedItem;
         saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
     }
+}
+
+export async function toggleActionItemStatus(historyId: string, actionItemId: string): Promise<void> {
+    const allHistory = await getOneOnOneHistory();
+    const historyIndex = allHistory.findIndex(h => h.id === historyId);
+    if (historyIndex === -1) return;
+
+    const item = allHistory[historyIndex];
+    if (!item.analysis.actionItems) return;
+
+    const actionItemIndex = item.analysis.actionItems.findIndex(a => a.id === actionItemId);
+    if (actionItemIndex === -1) return;
+
+    const actionItem = item.analysis.actionItems[actionItemIndex];
+    if (actionItem.status === 'pending') {
+        actionItem.status = 'completed';
+        actionItem.completedAt = new Date().toISOString();
+    } else {
+        actionItem.status = 'pending';
+        actionItem.completedAt = undefined;
+    }
+
+    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
 export async function submitSupervisorInsightResponse(historyId: string, response: string): Promise<void> {
@@ -755,27 +770,6 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
         details: resolution,
         isPublic: true,
     });
-
-    saveFeedbackToStorage(allFeedback);
-}
-
-
-/**
- * Toggles the status of a specific action item within a feedback object.
- */
-export async function toggleActionItemStatus(trackingId: string, actionItemId: string): Promise<void> {
-    const allFeedback = getFeedbackFromStorage();
-    const feedbackIndex = allFeedback.findIndex(f => f.trackingId === trackingId);
-    if (feedbackIndex === -1) return;
-
-    const feedback = allFeedback[feedbackIndex];
-    if (!feedback.actionItems) return;
-
-    const actionItemIndex = feedback.actionItems.findIndex(a => a.id === actionItemId);
-    if (actionItemIndex === -1) return;
-
-    const currentStatus = feedback.actionItems[actionItemIndex].status;
-    feedback.actionItems[actionItemIndex].status = currentStatus === 'pending' ? 'completed' : 'pending';
 
     saveFeedbackToStorage(allFeedback);
 }

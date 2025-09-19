@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -52,7 +51,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
+import type { CriticalCoachingInsight, CoachingRecommendation, ActionItem } from '@/ai/schemas/one-on-one-schemas';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const getMeetingDataForRole = (role: Role) => {
@@ -203,8 +202,8 @@ function ToDoSection({ role }: { role: Role }) {
     }, [fetchToDos]);
 
     const handleToggleActionItem = async (trackingId: string, actionItemId: string) => {
-        await toggleActionItemStatus(trackingId, actionItemId);
-        fetchToDos(); // Re-fetch to update UI
+        // This function is now a placeholder as action items are managed within the 1-on-1 history item
+        console.log("Toggling action item... this should be handled in the main history section now.");
     };
 
     const handleMarkAsCompleted = async (trackingId: string) => {
@@ -238,18 +237,7 @@ function ToDoSection({ role }: { role: Role }) {
                             <div key={item.trackingId} className="border rounded-lg p-4">
                                 <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
                                 <div className="space-y-2 mt-3">
-                                    {item.actionItems?.map(action => (
-                                        <div key={action.id} className="flex items-center space-x-3">
-                                            <Checkbox 
-                                                id={`action-${action.id}`} 
-                                                checked={action.status === 'completed'}
-                                                onCheckedChange={() => handleToggleActionItem(item.trackingId, action.id)}
-                                            />
-                                            <label htmlFor={`action-${action.id}`} className={cn("text-sm leading-none", action.status === 'completed' && "line-through text-muted-foreground")}>
-                                                ({formatActorName(action.owner)}) {action.text}
-                                            </label>
-                                        </div>
-                                    ))}
+                                    {/* Action items are now displayed in the history section */}
                                 </div>
                                 {allItemsCompleted && (
                                     <div className="mt-4 pt-4 border-t">
@@ -599,6 +587,11 @@ function HistorySection({ role }: { role: Role }) {
         }
     }, [fetchHistory]);
 
+    const handleToggleActionItem = async (historyId: string, actionItemId: string) => {
+        await toggleActionItemStatus(historyId, actionItemId);
+        fetchHistory();
+    };
+
     const handleAddressInsightSubmit = async (itemToUpdate: OneOnOneHistoryItem) => {
         if (!supervisorResponse) return;
         setIsSubmittingResponse(true);
@@ -704,6 +697,11 @@ function HistorySection({ role }: { role: Role }) {
                     const displayedMissedSignals = analysisResult?.missedSignals?.filter(
                         signal => signal !== analysisResult.criticalCoachingInsight?.summary
                     ) || [];
+                    
+                    const pendingActionItemsCount = item.analysis.actionItems?.filter(ai => ai.status === 'pending').length || 0;
+                    const employeeActionItems = analysisResult.actionItems?.filter(ai => ai.owner === 'Employee') || [];
+                    const supervisorActionItems = analysisResult.actionItems?.filter(ai => ai.owner === 'Supervisor') || [];
+
 
                     const getStatusBadge = () => {
                         if (!insight) return null;
@@ -750,6 +748,9 @@ function HistorySection({ role }: { role: Role }) {
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-4 mr-2">
+                                        {pendingActionItemsCount > 0 && (
+                                            <Badge variant="secondary">{pendingActionItemsCount} Action Item{pendingActionItemsCount > 1 ? 's' : ''}</Badge>
+                                        )}
                                         {getStatusBadge()}
                                     </div>
                                 </div>
@@ -842,39 +843,6 @@ function HistorySection({ role }: { role: Role }) {
                                                         </div>
                                                     </div>
                                                 )}
-
-
-                                                <div>
-                                                    <h4 className="font-semibold text-foreground">Action Items</h4>
-                                                    <ul className="list-disc pl-5 mt-2 space-y-1">
-                                                        {analysisResult.actionItems.map((item, i) => <li key={i}><strong>{item.owner}:</strong> {item.task} {item.deadline && `(by ${item.deadline})`}</li>)}
-                                                    </ul>
-                                                </div>
-                                                
-                                                {displayedMissedSignals.length > 0 && (
-                                                     <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
-                                                        <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle />Missed Signals</h4>
-                                                         <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
-                                                            {displayedMissedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
-                                                        </ul>
-                                                    </div>
-                                                )}
-
-                                                {analysisResult.dataHandling && (
-                                                    <div className="p-3 rounded-md bg-muted/50 border mt-4 text-xs text-muted-foreground">
-                                                        <h4 className="font-semibold text-foreground flex items-center gap-2 mb-2"><DatabaseZap className="h-4 w-4" /> Data Handling</h4>
-                                                        <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                                            <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'PPP p')}</p>
-                                                            {analysisResult.dataHandling.recordingDeleted && (
-                                                                <>
-                                                                    <p className="flex items-center gap-1.5"><Timer className="h-3 w-3" /><strong>Session Duration:</strong> {analysisResult.dataHandling.deletionTimestamp}</p>
-                                                                    <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'PPP p')}</p>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-
                                             </div>
                                         </div>
                                     </div>
@@ -921,6 +889,66 @@ function HistorySection({ role }: { role: Role }) {
                                         </CardContent>
                                      </Card>
                                 )}
+
+                                <div className="space-y-4">
+                                  <div>
+                                    <h4 className="font-semibold text-foreground">Action Items</h4>
+                                    <div className="mt-2 space-y-4">
+                                      {supervisorActionItems.length > 0 && (
+                                          <div className="space-y-2">
+                                              <h5 className="font-medium">{formatActorName('Supervisor')}</h5>
+                                              {supervisorActionItems.map(ai => (
+                                                  <div key={ai.id} className="flex items-center gap-3">
+                                                      <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} />
+                                                      <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
+                                                          {ai.task}
+                                                      </label>
+                                                      {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      )}
+                                      {employeeActionItems.length > 0 && (
+                                          <div className="space-y-2">
+                                              <h5 className="font-medium">{formatActorName('Employee')}</h5>
+                                              {employeeActionItems.map(ai => (
+                                                  <div key={ai.id} className="flex items-center gap-3">
+                                                      <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} />
+                                                      <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
+                                                          {ai.task}
+                                                      </label>
+                                                      {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
+                                                  </div>
+                                              ))}
+                                          </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {displayedMissedSignals.length > 0 && (
+                                       <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
+                                          <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle />Missed Signals</h4>
+                                           <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
+                                              {displayedMissedSignals.map((signal, i) => <li key={i}>{signal}</li>)}
+                                          </ul>
+                                      </div>
+                                  )}
+
+                                  {analysisResult.dataHandling && (
+                                      <div className="p-3 rounded-md bg-muted/50 border mt-4 text-xs text-muted-foreground">
+                                          <h4 className="font-semibold text-foreground flex items-center gap-2 mb-2"><DatabaseZap className="h-4 w-4" /> Data Handling</h4>
+                                          <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                              <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'PPP p')}</p>
+                                              {analysisResult.dataHandling.recordingDeleted && (
+                                                  <>
+                                                      <p className="flex items-center gap-1.5"><Timer className="h-3 w-3" /><strong>Session Duration:</strong> {analysisResult.dataHandling.deletionTimestamp}</p>
+                                                      <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'PPP p')}</p>
+                                                  </>
+                                              )}
+                                          </div>
+                                      </div>
+                                  )}
+                                </div>
                                 
                                 {insight && (
                                     <Card className="mt-4">
@@ -1219,7 +1247,6 @@ function OneOnOnePage({ role }: { role: Role }) {
         )}
       </div>
       
-      <ToDoSection role={role} />
       <HistorySection role={role} />
     </div>
   );

@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Zod schemas for the 1-on-1 analysis feature.
  * This file is kept separate to allow its non-async exports (the schemas)
@@ -126,6 +125,18 @@ const CoachingImpactAnalysisSchema = z.object({
 
 export type CoachingImpactAnalysis = z.infer<typeof CoachingImpactAnalysisSchema>;
 
+
+export const ActionItemSchema = z.object({
+  id: z.string().describe("A unique identifier for this action item. The AI should not generate this; it's added post-analysis."),
+  owner: z.enum(["Employee", "Supervisor"]).describe("The owner of the action item."),
+  task: z.string().describe("The description of the action item task."),
+  status: z.enum(["pending", "completed"]).default("pending").describe("The current status of the action item."),
+  completedAt: z.string().optional().describe("The ISO 8601 timestamp when the item was completed."),
+});
+
+export type ActionItem = z.infer<typeof ActionItemSchema>;
+
+
 // Zod schema for the new, comprehensive structured output from the AI
 export const AnalyzeOneOnOneOutputSchema = z.object({
   supervisorSummary: z.string().describe("A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback."),
@@ -143,11 +154,7 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
     example: z.string().describe("A supporting quote or example."),
   })).describe("A list of 2-3 observed strengths of the supervisor during the session."),
   coachingRecommendations: z.array(CoachingRecommendationSchema).describe("A list of 2-3 structured coaching recommendations for the supervisor, including specific learning resources."),
-  actionItems: z.array(z.object({
-    owner: z.enum(["Employee", "Supervisor"]),
-    task: z.string(),
-    deadline: z.string().optional(),
-  })).describe("A list of clear, actionable items for the employee or supervisor, including deadlines if mentioned."),
+  actionItems: z.array(ActionItemSchema).describe("A list of clear, actionable items for the employee or supervisor."),
   coachingImpactAnalysis: z.array(CoachingImpactAnalysisSchema).optional().describe("A list of analyses, one for each active development goal provided."),
   missedSignals: z.array(z.string()).optional().describe("A list of subtle signals that the supervisor failed to explore."),
   criticalCoachingInsight: CriticalCoachingInsightSchema.optional().describe("An insight generated ONLY if an unaddressed red flag is present."),
@@ -172,5 +179,3 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
 
 export type AnalyzeOneOnOneOutput = z.infer<typeof AnalyzeOneOnOneOutputSchema>;
 export type AuditEvent = z.infer<typeof AuditEventSchema>;
-
-    
