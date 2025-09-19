@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow for generating a pre-1-on-1 briefing packet for supervisors.
@@ -8,7 +9,7 @@
 import { ai } from '@/ai/genkit';
 import { BriefingPacketInputSchema, BriefingPacketOutputSchema, type BriefingPacketInput, type BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
 import { getOneOnOneHistory, getActiveCoachingPlansForSupervisor } from '@/services/feedback-service';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 export async function generateBriefingPacket(input: BriefingPacketInput): Promise<BriefingPacketOutput> {
     // 1. Fetch all relevant data
@@ -98,10 +99,10 @@ const prompt = ai.definePrompt({
 
 Based on all the provided context, generate the following JSON output:
 
-1.  **`keyDiscussionPoints`**: A bulleted list of 2-3 key themes or recurring topics from past sessions. What are the most important things to follow up on?
-2.  **`outstandingActionItems`**: A bulleted list of any critical unresolved issues, primarily focusing on the "Open Critical Insights". If there are none, state that all critical items are resolved.
-3.  **`coachingOpportunities`**: A bulleted list suggesting 1-2 ways the supervisor can practice their "Active Coaching Goals" in this upcoming meeting. Be specific. For example, if their goal is "Active Listening", suggest they try paraphrasing the employee's concerns.
-4.  **`suggestedQuestions`**: A bulleted list of 3-4 insightful, open-ended questions the supervisor can ask to facilitate a productive conversation. These should be inspired by the past issues and goals. Examples: "How are you feeling about [past issue] now?", "What's one thing we could do to make progress on [opportunity]?", "What's been most energizing for you lately?".
+1.  **keyDiscussionPoints**: A bulleted list of 2-3 key themes or recurring topics from past sessions. What are the most important things to follow up on?
+2.  **outstandingActionItems**: A bulleted list of any critical unresolved issues, primarily focusing on the "Open Critical Insights". If there are none, state that all critical items are resolved.
+3.  **coachingOpportunities**: A bulleted list suggesting 1-2 ways the supervisor can practice their "Active Coaching Goals" in this upcoming meeting. Be specific. For example, if their goal is "Active Listening", suggest they try paraphrasing the employee's concerns.
+4.  **suggestedQuestions**: A bulleted list of 3-4 insightful, open-ended questions the supervisor can ask to facilitate a productive conversation. These should be inspired by the past issues and goals. Examples: "How are you feeling about [past issue] now?", "What's one thing we could do to make progress on [opportunity]?", "What's been most energizing for you lately?".
 `,
 });
 
