@@ -10,7 +10,7 @@ import RoleSelection from '@/components/role-selection';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote, CheckCircle2, XCircle, ChevronsRight, User as UserIcon } from 'lucide-react';
+import { PlusCircle, Calendar, Clock, Video, CalendarCheck, CalendarX, History, AlertTriangle, Send, Loader2, CheckCircle, MessageCircleQuestion, Lightbulb, BrainCircuit, ShieldCheck, TrendingDown, EyeOff, UserCheck, Star, Repeat, MessageSquare, Briefcase, UserX, UserPlus, FileText, Bot, BarChart, Zap, ShieldAlert, DatabaseZap, Timer, ListTodo, ThumbsUp, ThumbsDown, BookOpen, Mic as MicIcon, Podcast, Newspaper, GraduationCap, MessageSquareQuote, CheckCircle2, XCircle, ChevronsRight, User as UserIcon, SquareStack } from 'lucide-react';
 import { format, formatDistanceToNow, addHours } from 'date-fns';
 import {
   Dialog,
@@ -54,7 +54,10 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { CriticalCoachingInsight, CoachingRecommendation, ActionItem } from '@/ai/schemas/one-on-one-schemas';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { generateBriefingPacket } from '@/ai/flows/generate-briefing-packet-flow';
+import type { BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const getMeetingDataForRole = (role: Role) => {
     let currentUser = roleUserMapping[role as keyof typeof roleUserMapping];
@@ -103,6 +106,102 @@ const getMeetingDataForRole = (role: Role) => {
 };
 
 type Meeting = ReturnType<typeof getMeetingDataForRole>['meetings'][0];
+
+function BriefingPacketDialog({ meeting, supervisor }: { meeting: Meeting; supervisor: string; }) {
+    const [isLoading, setIsLoading] = useState(true);
+    const [packet, setPacket] = useState<BriefingPacketOutput | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleOpenChange = (open: boolean) => {
+        setIsOpen(open);
+        if (open && !packet) {
+            // Trigger generation when the dialog opens
+            generatePacket();
+        }
+    };
+
+    const generatePacket = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await generateBriefingPacket({
+                supervisorName: supervisor,
+                employeeName: meeting.with,
+            });
+            setPacket(result);
+        } catch (e) {
+            console.error("Failed to generate briefing packet", e);
+            setError("Could not generate the briefing packet at this time. Please try again later.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [supervisor, meeting.with]);
+
+    const renderList = (items: string[]) => (
+        <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+            {items.map((item, index) => <li key={index}>{item}</li>)}
+        </ul>
+    );
+
+    return (
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <SquareStack className="h-5 w-5 text-purple-500" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <SquareStack className="h-6 w-6 text-purple-500" /> Pre-1-on-1 Briefing Packet
+                    </DialogTitle>
+                    <DialogDescription>
+                        AI-generated summary for your upcoming meeting with {meeting.with}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 max-h-[70vh] overflow-y-auto pr-2 space-y-6">
+                    {isLoading && (
+                        <div className="flex flex-col items-center justify-center gap-4 py-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="text-muted-foreground">Generating your briefing packet...</p>
+                        </div>
+                    )}
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    {packet && (
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-semibold text-foreground mb-2">Key Discussion Points</h4>
+                                {renderList(packet.keyDiscussionPoints)}
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground mb-2">Outstanding Action Items</h4>
+                                {renderList(packet.outstandingActionItems)}
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground mb-2">Coaching Opportunities</h4>
+                                {renderList(packet.coachingOpportunities)}
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground mb-2">Suggested Questions</h4>
+                                {renderList(packet.suggestedQuestions)}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function ScheduleMeetingDialog({ meetingToEdit, onSchedule }: { meetingToEdit?: Meeting, onSchedule: (details: any) => void }) {
   const [date, setDate] = useState<Date | undefined>(meetingToEdit?.date);
@@ -1229,6 +1328,7 @@ function OneOnOnePage({ role }: { role: Role }) {
                     <span>{format(new Date(meeting.date), 'MM/dd/yy')}</span>
                     <Clock className="h-5 w-5 text-primary" />
                     <span>{formatTime(meeting.time)}</span>
+                    <BriefingPacketDialog meeting={meeting} supervisor={supervisor} />
                   </div>
                 </div>
               </div>
