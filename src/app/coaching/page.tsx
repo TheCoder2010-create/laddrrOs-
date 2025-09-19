@@ -36,7 +36,7 @@ const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) 
 
 function MyDevelopmentWidget() {
     const { role } = useRole();
-    const [recommendations, setRecommendations<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
+    const [recommendations, setRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
@@ -486,7 +486,7 @@ function ManagerAcknowledgementWidget({ item, rec, onUpdate }: { item: OneOnOneH
 }
 
 function TeamDevelopmentWidget({ role }: { role: Role }) {
-    const [teamActions, setTeamActions]<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
+    const [teamActions, setTeamActions] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
