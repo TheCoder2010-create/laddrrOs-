@@ -895,7 +895,7 @@ function HistorySection({ role }: { role: Role }) {
                                     <h4 className="font-semibold text-foreground">Action Items</h4>
                                     <div className="mt-2 space-y-4">
                                       {supervisorActionItems.length > 0 && (
-                                          <div className="space-y-2">
+                                          <div className="space-y-2" key={`${item.id}-supervisor-items`}>
                                               <h5 className="font-medium">{formatActorName('Supervisor')}</h5>
                                               {supervisorActionItems.map(ai => (
                                                   <div key={ai.id} className="flex items-center gap-3">
@@ -909,7 +909,7 @@ function HistorySection({ role }: { role: Role }) {
                                           </div>
                                       )}
                                       {employeeActionItems.length > 0 && (
-                                          <div className="space-y-2">
+                                          <div className="space-y-2" key={`${item.id}-employee-items`}>
                                               <h5 className="font-medium">{formatActorName('Employee')}</h5>
                                               {employeeActionItems.map(ai => (
                                                   <div key={ai.id} className="flex items-center gap-3">
@@ -1247,6 +1247,8 @@ function OneOnOnePage({ role }: { role: Role }) {
         )}
       </div>
       
+      <ToDoSection role={role} />
+
       <HistorySection role={role} />
     </div>
   );
