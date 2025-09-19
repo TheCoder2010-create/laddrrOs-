@@ -469,7 +469,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                         </div>
                     )}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="p-3 rounded-md bg-background/50 border">
                             <h4 className="font-semibold text-foreground flex items-center gap-2"><Star className="text-yellow-400"/> Leadership Score</h4>
                             <p className="text-2xl font-bold">{analysisResult.leadershipScore}/10</p>
@@ -478,6 +478,20 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                             <h4 className="font-semibold text-foreground flex items-center gap-2"><BarChart className="text-green-500"/> Effectiveness Score</h4>
                             <p className="text-2xl font-bold">{analysisResult.effectivenessScore}/10</p>
                         </div>
+                         {analysisResult.dataHandling && (
+                            <div className="p-3 rounded-md bg-background/50 border">
+                                <h4 className="font-semibold text-foreground flex items-center gap-2"><DatabaseZap className="h-4 w-4 text-muted-foreground" /> Data Handling</h4>
+                                <div className="space-y-1 mt-2 text-xs text-muted-foreground">
+                                    <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'PPp')}</p>
+                                    {analysisResult.dataHandling.recordingDeleted && finalRecordingDuration > 0 && (
+                                        <p className="flex items-center gap-1.5"><Timer className="h-3 w-3" /><strong>Duration:</strong> {formatRecordingTime(finalRecordingDuration)}</p>
+                                    )}
+                                     {analysisResult.dataHandling.recordingDeleted && (
+                                        <p className="flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-success" /><strong>Media Deleted:</strong> Yes</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {analysisResult.coachingImpactAnalysis && analysisResult.coachingImpactAnalysis.length > 0 && (
@@ -567,21 +581,6 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                                 <Button variant="destructive" asChild>
                                     <Link href="/1-on-1">Address Insight in Session History</Link>
                                 </Button>
-                            </div>
-                        </div>
-                    )}
-
-                    {analysisResult.dataHandling && (
-                        <div className="p-3 rounded-md bg-muted/50 border mt-4 text-xs text-muted-foreground">
-                            <h4 className="font-semibold text-foreground flex items-center gap-2 mb-2"><DatabaseZap className="h-4 w-4" /> Data Handling</h4>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Analyzed:</strong> {format(new Date(analysisResult.dataHandling.analysisTimestamp), 'PPP p')}</p>
-                                {analysisResult.dataHandling.recordingDeleted && (
-                                    <>
-                                        {finalRecordingDuration > 0 && <p className="flex items-center gap-1.5"><Timer className="h-3 w-3" /><strong>Session Duration:</strong> {formatRecordingTime(finalRecordingDuration)}</p>}
-                                        <p className="flex items-center gap-1.5"><Clock className="h-3 w-3" /><strong>Recording Deleted:</strong> {format(new Date(analysisResult.dataHandling.deletionTimestamp), 'PPP p')}</p>
-                                    </>
-                                )}
                             </div>
                         </div>
                     )}
