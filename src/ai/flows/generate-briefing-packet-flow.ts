@@ -122,9 +122,9 @@ const prompt = ai.definePrompt({
 
 Based on the context, generate a JSON output SPECIFICALLY for the '{{{viewerRole}}}'.
 
-**1. actionItemAnalysis**: Analyze all past action items. What is the ratio of supervisor vs. employee tasks? What is the completion rate? Are there patterns in the types of tasks assigned? Provide a brief, neutral analysis.
+**1. actionItemAnalysis**: Analyze all past actionItems. What is the ratio of supervisor vs. employee tasks? What is the completion rate? Are there patterns in the types of tasks assigned? Provide a brief, neutral analysis.
 
-{{#if (eq viewerRole "Employee")}}
+{{#if isEmployeeView}}
 **2. talkingPoints**: For the EMPLOYEE. Generate a bulleted list of 2-3 forward-looking talking points they can bring to the meeting. Focus on their progress, recent achievements based on feedback, and potential growth areas they might want to discuss. Frame this positively.
 
 **3. employeeSummary**: For the EMPLOYEE. A very brief, encouraging summary of their journey based on the provided session history.
@@ -147,12 +147,19 @@ const generateBriefingPacketFlow = ai.defineFlow(
     outputSchema: BriefingPacketOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const isEmployeeView = input.viewerRole === 'Employee';
+
+    // Augment the input with the boolean flag for the prompt
+    const promptInput = {
+      ...input,
+      isEmployeeView,
+    };
+    
+    const { output } = await prompt(promptInput);
+
     if (!output) {
       throw new Error("AI analysis failed to produce a briefing packet.");
     }
     return output;
   }
 );
-
-    
