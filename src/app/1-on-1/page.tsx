@@ -854,7 +854,7 @@ function HistorySection({ role }: { role: Role }) {
                                      <Card>
                                         <CardHeader>
                                             <CardTitle className="font-semibold text-foreground flex items-center gap-2 text-lg">
-                                                <EyeOff className="h-5 w-5 text-muted-foreground" /> Employee View
+                                                <UserIcon className="h-5 w-5 text-muted-foreground" /> Summary
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
@@ -933,7 +933,7 @@ function HistorySection({ role }: { role: Role }) {
                                     </div>
                                   </div>
                                   
-                                  {displayedMissedSignals.length > 0 && (
+                                  {(isSupervisorInvolved || isManagerialRole) && displayedMissedSignals.length > 0 && (
                                        <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
                                           <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle className="text-yellow-500"/>Missed Signals</h4>
                                            <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
@@ -1284,3 +1284,6 @@ export default function Home() {
 
     
 
+
+
+    
