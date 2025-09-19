@@ -42,18 +42,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
 
-      // Action items count
-      let totalActionItems = 0;
-      
-      // Active To-Do lists
-      totalActionItems += feedback.filter(f => {
-         const isAssigned = f.supervisor === currentUserName;
-         const isToDo = f.status === 'To-Do';
-         return isAssigned && isToDo;
-      }).length;
-
-      // Escalated 1-on-1 insights
-      totalActionItems += history.filter(h => {
+      // Action items count (only escalations)
+      let totalActionItems = history.filter(h => {
           const insight = h.analysis.criticalCoachingInsight;
           if (!insight || insight.status === 'resolved') return false;
           
@@ -211,7 +201,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
-          {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
+          {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">

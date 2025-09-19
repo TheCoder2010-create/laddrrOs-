@@ -46,13 +46,13 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus, AuditEvent } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus, AuditEvent, submitAmCoachingNotes, submitAmDirectResponse, submitManagerResolution, submitHrResolution, submitFinalHrDecision } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
+import type { CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const getMeetingDataForRole = (role: Role) => {
@@ -352,6 +352,201 @@ function InsightAuditTrail({ trail }: { trail: AuditEvent[] }) {
     );
 }
 
+function EscalationActionWidget({ item, onUpdate, role }: { item: OneOnOneHistoryItem, onUpdate: () => void, role: Role }) {
+    const insight = item.analysis.criticalCoachingInsight as CriticalCoachingInsight;
+    const { toast } = useToast();
+
+    // State for AM actions
+    const [amAction, setAmAction] = useState<'coach' | 'address' | null>(null);
+    const [amNotes, setAmNotes] = useState('');
+    const [isSubmittingAm, setIsSubmittingAm] = useState(false);
+    
+    // State for Manager actions
+    const [managerNotes, setManagerNotes] = useState('');
+    const [isSubmittingManager, setIsSubmittingManager] = useState(false);
+
+    // State for HR actions
+    const [hrNotes, setHrNotes] = useState('');
+    const [isSubmittingHr, setIsSubmittingHr] = useState(false);
+    const [finalAction, setFinalAction] = useState<string | null>(null);
+    const [finalActionNotes, setFinalActionNotes] = useState('');
+    const [isSubmittingFinal, setIsSubmittingFinal] = useState(false);
+
+
+    const handleAmSubmit = async () => {
+        if (!amNotes || !amAction) return;
+        setIsSubmittingAm(true);
+        try {
+            if (amAction === 'coach') {
+                await submitAmCoachingNotes(item.id, role, amNotes);
+                toast({ title: "Coaching Notes Submitted" });
+            } else {
+                await submitAmDirectResponse(item.id, role, amNotes);
+                toast({ title: "Response Submitted to Employee" });
+            }
+            onUpdate();
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingAm(false);
+            setAmAction(null);
+            setAmNotes('');
+        }
+    };
+    
+    const handleManagerSubmit = async () => {
+        if (!managerNotes) return;
+        setIsSubmittingManager(true);
+        try {
+            await submitManagerResolution(item.id, role, managerNotes);
+            toast({ title: "Resolution Submitted to Employee" });
+            onUpdate();
+        } catch(e) {
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingManager(false);
+        }
+    };
+
+    const handleHrSubmit = async () => {
+        if (!hrNotes) return;
+        setIsSubmittingHr(true);
+        try {
+            await submitHrResolution(item.id, role, hrNotes);
+            toast({ title: "HR Resolution Submitted" });
+            onUpdate();
+        } catch(e) {
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingHr(false);
+        }
+    };
+    
+    const handleFinalHrDecision = async () => {
+        if (!finalAction || !finalActionNotes) return;
+        setIsSubmittingFinal(true);
+        try {
+            await submitFinalHrDecision(item.id, role, finalAction, finalActionNotes);
+            toast({ title: "Final Action Logged", description: "The case is now closed." });
+            onUpdate();
+        } catch(e) {
+             toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmittingFinal(false);
+        }
+    };
+
+
+    const isActionableForRole = () => {
+        if (!role || !insight) return false;
+        const finalDispositionEvent = insight.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
+        if (finalDispositionEvent) return false;
+
+        return (role === 'AM' && insight.status === 'pending_am_review') ||
+               (role === 'Manager' && insight.status === 'pending_manager_review') ||
+               (role === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action'));
+    };
+
+    if (!isActionableForRole()) return null;
+
+    return (
+        <Card className="mt-4">
+            <CardHeader className={cn(
+                role === 'AM' && 'bg-orange-500/10',
+                role === 'Manager' && 'bg-red-700/10',
+                role === 'HR Head' && 'bg-black/10 dark:bg-gray-800/50'
+            )}>
+                <CardTitle className={cn(
+                    "font-semibold text-lg flex items-center gap-2",
+                    role === 'AM' && 'text-orange-700 dark:text-orange-400',
+                    role === 'Manager' && 'text-red-800 dark:text-red-500',
+                    role === 'HR Head' && 'text-black dark:text-white'
+                )}>
+                    <AlertTriangle className="h-5 w-5" /> Your Action Required
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+                {/* AM Action Widget */}
+                {role === 'AM' && insight.status === 'pending_am_review' && (
+                    !amAction ? (
+                        <div className="flex flex-wrap gap-4">
+                            <Button variant="secondary" className="bg-yellow-400/80 text-yellow-900 hover:bg-yellow-400/90" onClick={() => setAmAction('coach')}>
+                                <BrainCircuit className="mr-2 h-4 w-4" /> Coach Supervisor
+                            </Button>
+                            <Button onClick={() => setAmAction('address')} className="bg-blue-600 text-white hover:bg-blue-700">
+                                <ChevronsRight className="mr-2 h-4 w-4" /> Address Employee
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <Label htmlFor="am-notes">{amAction === 'coach' ? 'Coaching Notes for Supervisor' : 'Direct Response to Employee'}</Label>
+                            <Textarea id="am-notes" value={amNotes} onChange={(e) => setAmNotes(e.target.value)} rows={4} />
+                            <div className="flex gap-2">
+                                <Button onClick={handleAmSubmit} disabled={isSubmittingAm || !amNotes}>
+                                    {isSubmittingAm && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} Submit
+                                </Button>
+                                <Button variant="ghost" onClick={() => setAmAction(null)}>Cancel</Button>
+                            </div>
+                        </div>
+                    )
+                )}
+
+                {/* Manager Action Widget */}
+                {role === 'Manager' && insight.status === 'pending_manager_review' && (
+                    <div className="space-y-3">
+                        <Label htmlFor="manager-notes">Your Resolution</Label>
+                         <p className="text-sm text-muted-foreground">Document the actions you will take. This will be sent to the employee for final acknowledgement.</p>
+                        <Textarea id="manager-notes" value={managerNotes} onChange={(e) => setManagerNotes(e.target.value)} rows={4} />
+                        <Button variant="destructive" onClick={handleManagerSubmit} disabled={isSubmittingManager || !managerNotes}>
+                            {isSubmittingManager && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} Submit to Employee
+                        </Button>
+                    </div>
+                )}
+                
+                {/* HR Head Action Widgets */}
+                {role === 'HR Head' && insight.status === 'pending_hr_review' && (
+                     <div className="space-y-3">
+                        <Label htmlFor="hr-notes">Final HR Resolution</Label>
+                        <p className="text-sm text-muted-foreground">Document your final actions. The employee will be asked for a final acknowledgement.</p>
+                        <Textarea id="hr-notes" value={hrNotes} onChange={(e) => setHrNotes(e.target.value)} rows={4} />
+                        <Button className="bg-black text-white hover:bg-black/80" onClick={handleHrSubmit} disabled={isSubmittingHr || !hrNotes}>
+                           {isSubmittingHr && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} Submit Final Resolution
+                        </Button>
+                    </div>
+                )}
+
+                {role === 'HR Head' && insight.status === 'pending_final_hr_action' && (
+                    !finalAction ? (
+                         <div className="space-y-3">
+                             <Label>Final Action Required</Label>
+                             <p className="text-sm text-muted-foreground">The employee remains dissatisfied. Select a final action to formally close this case.</p>
+                             <div className="flex flex-wrap gap-2">
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Ombudsman')}><UserX className="mr-2" /> Assign to Ombudsman</Button>
+                                 <Button variant="secondary" onClick={() => setFinalAction('Assigned to Grievance Office')}><UserPlus className="mr-2" /> Assign to Grievance Office</Button>
+                                 <Button variant="destructive" onClick={() => setFinalAction('Logged Dissatisfaction & Closed')}><FileText className="mr-2" /> Log & Close</Button>
+                             </div>
+                         </div>
+                    ) : (
+                        <div className="space-y-3">
+                           <p className="font-medium">Action: <span className="text-primary">{finalAction}</span></p>
+                            <Label htmlFor="final-notes">Reasoning / Notes</Label>
+                            <Textarea id="final-notes" value={finalActionNotes} onChange={(e) => setFinalActionNotes(e.target.value)} rows={4} placeholder="Provide justification..." />
+                            <div className="flex gap-2">
+                                <Button className="bg-black text-white hover:bg-black/80" onClick={handleFinalHrDecision} disabled={isSubmittingFinal || !finalActionNotes}>
+                                   {isSubmittingFinal && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} Submit Final Action
+                                </Button>
+                                <Button variant="ghost" onClick={() => setFinalAction(null)}>Cancel</Button>
+                            </div>
+                        </div>
+                    )
+                )}
+
+            </CardContent>
+        </Card>
+    );
+}
+
+
 function HistorySection({ role }: { role: Role }) {
     const [history, setHistory] = useState<OneOnOneHistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -372,11 +567,16 @@ function HistorySection({ role }: { role: Role }) {
         const historyData = await getOneOnOneHistory();
         
         const currentUser = roleUserMapping[role];
+        let userHistory: OneOnOneHistoryItem[] = [];
         
-        const userHistory = historyData.filter(item => {
-             // Show if user is direct participant (supervisor or employee)
-             return item.supervisorName === currentUser.name || item.employeeName === currentUser.name;
-        });
+        if (role === 'Employee' || role === 'Team Lead') {
+             userHistory = historyData.filter(item => {
+                 return item.supervisorName === currentUser.name || item.employeeName === currentUser.name;
+            });
+        } else {
+             // Managers and above see all history
+             userHistory = historyData;
+        }
         
         setHistory(userHistory.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setIsLoading(false);
@@ -457,11 +657,12 @@ function HistorySection({ role }: { role: Role }) {
                     const insightStatus = insight?.status;
                     const currentUserName = roleUserMapping[role].name;
                     
-                    const isSupervisor = currentUserName === item.supervisorName;
+                    const isSupervisorInvolved = currentUserName === item.supervisorName;
                     const isEmployee = currentUserName === item.employeeName;
+                    const isManagerialRole = ['AM', 'Manager', 'HR Head'].includes(role);
 
-                    const canSupervisorAct = isSupervisor && insightStatus === 'open';
-                    const canSupervisorRetry = isSupervisor && insightStatus === 'pending_supervisor_retry';
+                    const canSupervisorAct = isSupervisorInvolved && insightStatus === 'open';
+                    const canSupervisorRetry = isSupervisorInvolved && insightStatus === 'pending_supervisor_retry';
                     const finalDecisionEvent = insight?.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
                     const amCoachingNotes = item.analysis.criticalCoachingInsight?.auditTrail?.find(e => e.event === 'AM Coaching Notes')?.details;
 
@@ -488,7 +689,7 @@ function HistorySection({ role }: { role: Role }) {
                              case 'pending_supervisor_retry':
                                 return <Badge className="bg-purple-500 text-white flex items-center gap-1.5"><Repeat className="h-3 w-3" />Retry Required</Badge>;
                             case 'pending_am_review':
-                                return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />Escalated to AM</Badge>;
+                                return <Badge className="bg-orange-500 text-white flex items-center gap-1.5"><AlertTriangle className="h-3 w-3" />AM Review</Badge>;
                             case 'pending_manager_review':
                                 return <Badge className="bg-red-700 text-white flex items-center gap-1.5"><Briefcase className="h-3 w-3" />Manager Review</Badge>;
                             case 'pending_hr_review':
@@ -507,7 +708,7 @@ function HistorySection({ role }: { role: Role }) {
                                 <div className="flex justify-between items-center w-full">
                                     <div className="text-left">
                                         <p className="font-medium">
-                                            1-on-1 with {isSupervisor ? item.employeeName : item.supervisorName}
+                                            1-on-1: {item.supervisorName} & {item.employeeName}
                                         </p>
                                         <p className="text-sm text-muted-foreground font-normal">
                                             {format(new Date(item.date), 'PPP')} ({formatDistanceToNow(new Date(item.date), { addSuffix: true })})
@@ -520,7 +721,7 @@ function HistorySection({ role }: { role: Role }) {
                             </AccordionTrigger>
                             <AccordionContent className="space-y-6 pt-2 px-4 pb-4">
                                 
-                                {isSupervisor && (
+                                {(isSupervisorInvolved || isManagerialRole) && (
                                     <div className="space-y-4">
                                         <div className="bg-muted/50 p-4 rounded-lg">
                                             <div className="flex justify-between items-center mb-2">
@@ -743,6 +944,7 @@ function HistorySection({ role }: { role: Role }) {
                                                                 )}
                                                              </div>
                                                         )}
+                                                         {isManagerialRole && <EscalationActionWidget item={item} onUpdate={fetchHistory} role={role} />}
                                                     </div>
                                                 </CardContent>
                                             </Card>
