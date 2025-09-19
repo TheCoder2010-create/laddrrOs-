@@ -42,28 +42,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
 
-      // Action items count
+      // Action items count (now for non-1-on-1 items, so it's 0 for now)
       let totalActionItems = 0;
-      
-      // Active To-Do lists
-      totalActionItems += feedback.filter(f => {
-         const isAssigned = f.supervisor === currentUserName;
-         const isToDo = f.status === 'To-Do';
-         return isAssigned && isToDo;
-      }).length;
-
-      // Escalated 1-on-1 insights
-      totalActionItems += history.filter(h => {
-          const insight = h.analysis.criticalCoachingInsight;
-          if (!insight || insight.status === 'resolved') return false;
-          
-          const isAmMatch = currentRole === 'AM' && insight.status === 'pending_am_review';
-          const isManagerMatch = currentRole === 'Manager' && insight.status === 'pending_manager_review';
-          const isHrMatch = currentRole === 'HR Head' && (insight.status === 'pending_hr_review' || insight.status === 'pending_final_hr_action');
-
-          return isAmMatch || isManagerMatch || isHrMatch;
-      }).length;
-
       setActionItemCount(totalActionItems);
 
 
@@ -143,7 +123,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
-
+  
   const assigneeMenuItems = [
     { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
   ]
@@ -211,7 +191,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
-          {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM' || currentRole === 'Team Lead') && assigneeMenuItems.map(renderMenuItem)}
+          {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
