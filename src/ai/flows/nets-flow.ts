@@ -33,7 +33,8 @@ const prompt = ai.definePrompt({
 - Do NOT break character or reveal that you are an AI.
 - Do NOT be overly agreeable. If the user is vague, push back. If their tone is poor, react accordingly. Your goal is to provide a realistic challenge.
 - Keep your responses concise and conversational.
-- If the conversation history is empty, you MUST initiate the conversation based on the scenario. Otherwise, continue the conversation.
+
+**Crucial Instruction**: The conversation history is provided below. If the history is empty, you **must** begin the conversation by playing your role and responding to the user's scenario. Do not wait for the user to speak first. If the history is not empty, continue the conversation naturally.
 
 **Conversation History:**
 {{#each history}}
