@@ -140,7 +140,7 @@ function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Me
         } finally {
             setIsLoading(false);
         }
-    }, [supervisor, meeting.with, viewerRole]);
+    }, [supervisor, meeting.with, viewerRole, packet]);
 
     const renderList = (items?: string[]) => {
         if (!items || items.length === 0) {
@@ -356,8 +356,8 @@ function ToDoSection({ role }: { role: Role }) {
         return <Skeleton className="h-24 w-full mt-8" />;
     }
 
-    if (!['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role)) {
-        return null; // Only show for supervisors
+    if (!['Team Lead', 'AM', 'Manager', 'HR Head'].includes(role) || toDoItems.length === 0) {
+        return null; // Only show for supervisors if there are items
     }
 
     return (
@@ -366,34 +366,24 @@ function ToDoSection({ role }: { role: Role }) {
                 <ListTodo className="h-5 w-5 text-primary" />
                 To-Do
             </h2>
-            {toDoItems.length > 0 ? (
-                <div className="space-y-4">
-                    {toDoItems.map(item => {
-                        const allItemsCompleted = item.actionItems?.every(action => action.status === 'completed');
-                        return (
-                            <div key={item.trackingId} className="border rounded-lg p-4">
-                                <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
-                                <div className="space-y-2 mt-3">
-                                    {/* Action items are now displayed in the history section */}
-                                </div>
-                                {allItemsCompleted && (
-                                    <div className="mt-4 pt-4 border-t">
-                                        <Button variant="success" onClick={() => handleMarkAsCompleted(item.trackingId)}>Mark as Completed</Button>
-                                    </div>
-                                )}
+            <div className="space-y-4">
+                {toDoItems.map(item => {
+                    const allItemsCompleted = item.actionItems?.every(action => action.status === 'completed');
+                    return (
+                        <div key={item.trackingId} className="border rounded-lg p-4">
+                            <h3 className="font-medium">From 1-on-1 with {item.employee} on {format(new Date(item.submittedAt), 'PPP')}</h3>
+                            <div className="space-y-2 mt-3">
+                                {/* Action items are now displayed in the history section */}
                             </div>
-                        )
-                    })}
-                </div>
-            ) : (
-                <div className="mt-4 text-center py-12 border-2 border-dashed rounded-lg">
-                    <ListTodo className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold text-foreground">No Action Items</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Action items from your 1-on-1 sessions will appear here.
-                    </p>
-                </div>
-            )}
+                            {allItemsCompleted && (
+                                <div className="mt-4 pt-4 border-t">
+                                    <Button variant="success" onClick={() => handleMarkAsCompleted(item.trackingId)}>Mark as Completed</Button>
+                                </div>
+                            )}
+                        </div>
+                    )
+                })}
+            </div>
         </div>
     );
 }
@@ -415,7 +405,7 @@ function SlaTimer({ expiryTimestamp }: { expiryTimestamp: number }) {
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -688,7 +678,6 @@ function HistorySection({ role }: { role: Role }) {
     const [isSubmittingRetry, setIsSubmittingRetry] = useState(false);
 
     // State for employee acknowledgement
-    const [acknowledgingInsightId, setAcknowledgingInsightId] = useState<string | null>(null);
     const [employeeAcknowledgement, setEmployeeAcknowledgement] = useState('');
     const [acknowledgementComments, setAcknowledgementComments] = useState('');
     const [isSubmittingAck, setIsSubmittingAck] = useState(false);
@@ -774,7 +763,6 @@ function HistorySection({ role }: { role: Role }) {
             await submitEmployeeAcknowledgement(itemToUpdate.id, employeeAcknowledgement, acknowledgementComments, previousStatus);
             setEmployeeAcknowledgement("");
             setAcknowledgementComments("");
-            setAcknowledgingInsightId(null);
             
             if (employeeAcknowledgement === "The concern was fully addressed to my satisfaction.") {
                  toast({ title: "Acknowledgement Submitted", description: "Thank you for your feedback. This insight is now resolved." });
@@ -1415,5 +1403,7 @@ export default function Home() {
     </DashboardLayout>
   );
 }
+
+    
 
     
