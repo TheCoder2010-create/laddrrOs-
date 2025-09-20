@@ -48,3 +48,12 @@ export const NetsSuggestionOutputSchema = z.object({
     suggestedScenario: z.string().describe("A concise, one-sentence practice scenario suggested by the AI based on user's history."),
 });
 export type NetsSuggestionOutput = z.infer<typeof NetsSuggestionOutputSchema>;
+
+
+// Schemas for the mid-simulation nudge feature
+export const NetsNudgeOutputSchema = z.object({
+    nudge: z.string().describe("A single, actionable coaching nudge for the user based on the conversation so far."),
+});
+export type NetsNudgeOutput = z.infer<typeof NetsNudgeOutputSchema>;
+
+    

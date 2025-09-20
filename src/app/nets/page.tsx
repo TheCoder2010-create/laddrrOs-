@@ -22,6 +22,7 @@ import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 import { roleUserMapping } from '@/lib/role-mapping';
 import Link from 'next/link';
 import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
+import { generateNetsNudge } from '@/ai/flows/generate-nets-nudge-flow';
 
 const difficulties = [
     { value: "friendly", label: "Friendly" },
@@ -47,6 +48,7 @@ function SimulationArena({
     onExit: () => void
 }) {
     const [isPending, startTransition] = useTransition();
+    const [isGettingNudge, startNudgeTransition] = useTransition();
     const [messages, setMessages] = useState<NetsMessage[]>([]);
     const [userInput, setUserInput] = useState('');
     const { toast } = useToast();
@@ -121,6 +123,26 @@ function SimulationArena({
             }
         }
     };
+    
+    const handleGetNudge = () => {
+        startNudgeTransition(async () => {
+            try {
+                const input: NetsConversationInput = {
+                    ...initialConfig,
+                    history: messages.filter(m => m.role !== 'system'),
+                };
+                const result = await generateNetsNudge(input);
+                toast({
+                    title: "Coach's Nudge",
+                    description: result.nudge,
+                    duration: 8000,
+                });
+            } catch (error) {
+                console.error("Failed to get nudge", error);
+                toast({ variant: 'destructive', title: "Nudge Failed", description: "Could not get a hint at this time." });
+            }
+        });
+    };
 
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-2xl shadow-primary/10">
@@ -164,12 +186,15 @@ function SimulationArena({
             </CardContent>
             <CardFooter>
                  <div className="flex w-full items-center gap-2 relative">
+                    <Button variant="ghost" size="icon" onClick={handleGetNudge} disabled={isGettingNudge || isPending} className="absolute left-2 top-1/2 -translate-y-1/2">
+                         {isGettingNudge ? <Loader2 className="animate-spin text-yellow-400" /> : <Lightbulb className="text-yellow-400" />}
+                    </Button>
                     <Textarea
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Type your response here..."
-                        className="pr-12"
+                        className="pl-14 pr-12"
                         rows={1}
                         disabled={isPending}
                     />
@@ -234,7 +259,7 @@ function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => v
     if (!selectedPersona) {
         return (
              <div className="w-full max-w-3xl mx-auto">
-                 <div className="mb-8 flex justify-between items-center">
+                <div className="mb-8 flex justify-between items-center">
                     <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
                         <MagicWandIcon className="h-8 w-8 text-primary" />
                          Nets – Conversation Arena
@@ -350,3 +375,5 @@ export default function NetsPage() {
         </DashboardLayout>
     );
 }
+
+    
