@@ -12,8 +12,8 @@ export const NetsMessageSchema = z.object({
 export type NetsMessage = z.infer<typeof NetsMessageSchema>;
 
 export const NetsInitialInputSchema = z.object({
-  scenario: z.string().describe("The high-level scenario for the conversation, e.g., 'Give tough feedback'."),
-  persona: z.string().describe("The persona the AI should adopt, e.g., 'Challenging Manager'."),
+  scenario: z.string().describe("The user-defined scenario for the conversation."),
+  persona: z.string().describe("The persona the AI should adopt, e.g., 'Team Lead'."),
   difficulty: z.string().describe("The difficulty level of the conversation, e.g., 'Strict'."),
 });
 export type NetsInitialInput = z.infer<typeof NetsInitialInputSchema>;

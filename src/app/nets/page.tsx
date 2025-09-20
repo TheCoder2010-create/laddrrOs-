@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
+import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,30 +11,15 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Send, Loader2, ChevronsRight, CornerDownLeft, Sparkles, SlidersHorizontal, ArrowLeft } from 'lucide-react';
+import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { runNetsConversation, type NetsConversationInput, type NetsMessage, type NetsInitialInput } from '@/ai/flows/nets-flow';
+import { runNetsConversation } from '@/ai/flows/nets-flow';
+import type { NetsConversationInput, NetsMessage, NetsInitialInput } from '@/ai/schemas/nets-schemas';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
-
-
-const scenarios = [
-    { value: "tough_feedback", label: "Give tough feedback to a direct report" },
-    { value: "ask_for_raise", label: "Ask for a promotion or raise" },
-    { value: "conflict_resolution", label: "Resolve a conflict with a peer" },
-    { value: "performance_review", label: "Conduct a performance review" },
-    { value: "interview_practice", label: "Practice for a job interview" },
-];
-
-const personas = [
-    { value: "supportive", label: "Supportive Colleague" },
-    { value: "challenging", label: "Challenging Manager" },
-    { value: "distracted", label: "Distracted Peer" },
-    { value: "hostile", label: "Hostile Client" },
-    { value: "neutral_hr", label: "Neutral HR Representative" },
-];
+import { roleUserMapping } from '@/lib/role-mapping';
 
 const difficulties = [
     { value: "friendly", label: "Friendly" },
@@ -41,6 +27,15 @@ const difficulties = [
     { value: "strict", label: "Strict / Defensive" },
     { value: "aggressive", label: "Aggressive" },
 ];
+
+const personaIcons: Record<string, React.ElementType> = {
+    'Team Lead': Users,
+    'AM': UserCog,
+    'Manager': Briefcase,
+    'HR Head': ShieldCheck,
+    'Employee': UserCheck,
+};
+
 
 function SimulationArena({
     initialConfig,
@@ -59,7 +54,7 @@ function SimulationArena({
         // Add the initial system message
         setMessages([{
             role: 'system',
-            content: `Simulation started. The AI is playing the role of a ${initialConfig.persona.toLowerCase()}. You can start the conversation.`
+            content: `Simulation started. The AI is playing the role of a ${initialConfig.persona}. You can start the conversation.`
         }]);
     }, [initialConfig]);
     
@@ -82,7 +77,7 @@ function SimulationArena({
             try {
                 const input: NetsConversationInput = {
                     ...initialConfig,
-                    history: currentMessages,
+                    history: currentMessages.filter(m => m.role !== 'system'), // Don't send system messages to AI
                 };
                 const aiResponse = await runNetsConversation(input);
                 setMessages(prev => [...prev, aiResponse]);
@@ -115,8 +110,8 @@ function SimulationArena({
                     <Button variant="ghost" onClick={onExit}><ArrowLeft className="mr-2" /> End Simulation</Button>
                 </div>
                 <CardDescription>
-                    You are in a simulation with a <span className="font-semibold text-primary">{initialConfig.persona.toLowerCase()}</span>.
-                    The scenario is: <span className="font-semibold text-primary">{scenarios.find(s => s.value === initialConfig.scenario)?.label}</span>.
+                    You are in a simulation with a <span className="font-semibold text-primary">{initialConfig.persona}</span>.
+                    The scenario is: <span className="font-semibold text-primary">{initialConfig.scenario}</span>.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -176,104 +171,127 @@ const Avatar = ({ icon }: { icon: React.ReactNode }) => (
 );
 
 
+function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void }) {
+    const { availableRoles } = useRole();
+    const [selectedPersona, setSelectedPersona] = useState<Role | null>(null);
+    const [scenario, setScenario] = useState('');
+    const [difficulty, setDifficulty] = useState('neutral');
+
+    const handleStart = () => {
+        if (!selectedPersona || !scenario) return;
+        onStart({
+            persona: selectedPersona,
+            scenario: scenario,
+            difficulty: difficulty,
+        });
+    };
+
+    if (!selectedPersona) {
+        return (
+            <Card className="w-full max-w-2xl mx-auto">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-3xl font-bold font-headline">
+                        <MagicWandIcon className="h-8 w-8 text-primary" />
+                         Nets – Conversation Arena
+                    </CardTitle>
+                    <CardDescription className="text-lg">
+                        Choose a persona to practice your conversation with.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {availableRoles.filter(r => r !== 'Anonymous').map(role => {
+                         const Icon = personaIcons[role] || Briefcase;
+                         return (
+                            <button
+                                key={role}
+                                onClick={() => setSelectedPersona(role)}
+                                className="flex flex-col items-center justify-center gap-2 p-4 border rounded-lg hover:bg-accent hover:border-primary transition-colors h-28"
+                            >
+                                <Icon className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
+                                <span className="font-semibold text-foreground">{role}</span>
+                            </button>
+                         )
+                    })}
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    const Icon = personaIcons[selectedPersona] || Briefcase;
+
+    return (
+        <Card className="w-full max-w-2xl mx-auto">
+            <CardHeader>
+                 <div className="flex items-start justify-between">
+                     <div className="space-y-1.5">
+                        <CardTitle className="flex items-center gap-2 text-3xl font-bold font-headline">
+                            <MagicWandIcon className="h-8 w-8 text-primary" />
+                             Configure Simulation
+                        </CardTitle>
+                        <CardDescription className="text-lg flex items-center gap-2">
+                             Practicing with: <Icon className="h-5 w-5 text-primary" /> <span className="font-bold text-primary">{selectedPersona}</span>
+                        </CardDescription>
+                    </div>
+                    <Button variant="ghost" onClick={() => setSelectedPersona(null)}>
+                        <ArrowLeft className="mr-2" /> Back
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-2">
+                <div className="space-y-2">
+                    <Label htmlFor="scenario">Describe the scenario to practice</Label>
+                    <Textarea 
+                        id="scenario" 
+                        placeholder="e.g., Giving tough feedback about missed deadlines to a good performer."
+                        rows={4}
+                        value={scenario}
+                        onChange={(e) => setScenario(e.target.value)}
+                    />
+                </div>
+                
+                <div className="space-y-2">
+                    <Label htmlFor="difficulty">Set Difficulty Level</Label>
+                    <Select value={difficulty} onValueChange={setDifficulty}>
+                        <SelectTrigger id="difficulty">
+                            <SelectValue placeholder="Select a difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {difficulties.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button className="w-full" size="lg" onClick={handleStart} disabled={!scenario}>
+                    Start Practice <ChevronsRight className="ml-2" />
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}
+
 export default function NetsPage() {
     const { role, setRole, isLoading: isRoleLoading } = useRole();
     const { toast } = useToast();
-    const [config, setConfig] = useState<NetsInitialInput>({
-        scenario: 'tough_feedback',
-        persona: 'challenging',
-        difficulty: 'neutral',
-    });
-    const [simulationStarted, setSimulationStarted] = useState(false);
+    const [config, setConfig] = useState<NetsInitialInput | null>(null);
     
     if (isRoleLoading || !role) {
         return <DashboardLayout role="Employee" onSwitchRole={() => {}}><Skeleton className="w-full h-screen" /></DashboardLayout>;
     }
-    
-    const handleConfigChange = <T extends keyof NetsInitialInput>(key: T, value: NetsInitialInput[T]) => {
-        setConfig(prev => ({ ...prev, [key]: value }));
-    };
 
-    const handleStartSimulation = () => {
-        setSimulationStarted(true);
+    const handleStartSimulation = (newConfig: NetsInitialInput) => {
+        setConfig(newConfig);
         toast({ title: "Simulation Started", description: "You are now in the conversation arena." });
     };
-
-    if (simulationStarted) {
-        return (
-            <DashboardLayout role={role} onSwitchRole={setRole}>
-                <div className="p-4 md:p-8">
-                    <SimulationArena initialConfig={config} onExit={() => setSimulationStarted(false)} />
-                </div>
-            </DashboardLayout>
-        );
-    }
     
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
             <div className="p-4 md:p-8">
-                 <Card className="w-full max-w-2xl mx-auto">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-3xl font-bold font-headline">
-                            <MagicWandIcon className="h-8 w-8 text-primary" />
-                             Nets – Conversation Arena
-                        </CardTitle>
-                        <CardDescription className="text-lg">
-                            Practice critical conversations in a safe, AI-powered environment.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 pt-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="scenario">Choose a Scenario</Label>
-                             <Select value={config.scenario} onValueChange={(value) => handleConfigChange('scenario', value)}>
-                                <SelectTrigger id="scenario">
-                                    <SelectValue placeholder="Select a conversation scenario" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {scenarios.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        <Alert>
-                            <SlidersHorizontal className="h-4 w-4" />
-                            <AlertTitle>Customize Your Simulation</AlertTitle>
-                            <AlertDescription>
-                                Set the persona and difficulty to tailor your practice session.
-                            </AlertDescription>
-                        </Alert>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="persona">AI Persona</Label>
-                                <Select value={config.persona} onValueChange={(value) => handleConfigChange('persona', value)}>
-                                    <SelectTrigger id="persona">
-                                        <SelectValue placeholder="Select a persona" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {personas.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="difficulty">Difficulty Level</Label>
-                                <Select value={config.difficulty} onValueChange={(value) => handleConfigChange('difficulty', value)}>
-                                    <SelectTrigger id="difficulty">
-                                        <SelectValue placeholder="Select a difficulty" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {difficulties.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full" size="lg" onClick={handleStartSimulation}>
-                            Start Simulation <ChevronsRight className="ml-2" />
-                        </Button>
-                    </CardFooter>
-                </Card>
+                 {config ? (
+                    <SimulationArena initialConfig={config} onExit={() => setConfig(null)} />
+                ) : (
+                    <SetupView onStart={handleStartSimulation} />
+                )}
             </div>
         </DashboardLayout>
     );

@@ -21,16 +21,16 @@ const prompt = ai.definePrompt({
   prompt: `You are an AI actor in a role-playing simulation designed to help users practice difficult conversations.
 
 **Your Persona:**
-- You are a {{persona}}.
+- You are playing the role of a {{persona}}.
 - Your demeanor should be {{difficulty}}.
 
 **The Scenario:**
-- The user is practicing the following scenario: "{{scenario}}".
+- The user wants to practice the following scenario they have described: "{{scenario}}".
 - The user initiated this conversation.
 
 **Your Task:**
-- Stay in character at all times.
-- Your responses should be realistic and reflect your assigned persona and difficulty.
+- Stay in character as the {{persona}} at all times.
+- Your responses should be realistic and reflect your assigned role and difficulty.
 - Do NOT break character or reveal that you are an AI.
 - Do NOT be overly agreeable. If the user is vague, push back. If their tone is poor, react accordingly. Your goal is to provide a realistic challenge.
 - Keep your responses concise and conversational.
@@ -54,6 +54,20 @@ const runNetsConversationFlow = ai.defineFlow(
     outputSchema: NetsMessageSchema,
   },
   async (input) => {
+    // Genkit's Handlebars implementation doesn't support complex helpers like 'eq'.
+    // We need to pre-process the history to make it directly usable by the template.
+    const processedHistory = input.history.map(msg => ({
+      isUser: msg.role === 'user',
+      isModel: msg.role === 'model',
+      content: msg.content,
+    }));
+    
+    const promptInput = {
+      ...input,
+      // The prompt now uses a different structure for history
+      history: processedHistory,
+    };
+
     const { output } = await prompt(input);
 
     if (!output) {
