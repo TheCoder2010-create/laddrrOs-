@@ -188,17 +188,17 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
 
     if (!selectedPersona) {
         return (
-            <Card className="w-full max-w-2xl mx-auto">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-3xl font-bold font-headline">
+             <div className="w-full max-w-3xl mx-auto text-center">
+                 <div className="mb-8">
+                    <h1 className="text-3xl font-bold font-headline flex items-center justify-center gap-2">
                         <MagicWandIcon className="h-8 w-8 text-primary" />
                          Nets – Conversation Arena
-                    </CardTitle>
-                    <CardDescription className="text-lg">
+                    </h1>
+                    <p className="text-lg text-muted-foreground mt-2">
                         Choose a persona to practice your conversation with.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    </p>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {availableRoles.filter(r => r !== 'Anonymous').map(role => {
                          const Icon = personaIcons[role] || Briefcase;
                          return (
@@ -212,8 +212,8 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
                             </button>
                          )
                     })}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         );
     }
     
@@ -271,7 +271,7 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
 }
 
 export default function NetsPage() {
-    const { role, setRole, isLoading: isRoleLoading } = useRole();
+    const { role, setRole, isLoading: isRoleLoading } } from '@/hooks/use-role';
     const { toast } = useToast();
     const [config, setConfig] = useState<NetsInitialInput | null>(null);
     
@@ -286,7 +286,7 @@ export default function NetsPage() {
     
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
-            <div className="p-4 md:p-8">
+            <div className="p-4 md:p-8 flex items-center justify-center">
                  {config ? (
                     <SimulationArena initialConfig={config} onExit={() => setConfig(null)} />
                 ) : (
@@ -296,3 +296,5 @@ export default function NetsPage() {
         </DashboardLayout>
     );
 }
+
+    
