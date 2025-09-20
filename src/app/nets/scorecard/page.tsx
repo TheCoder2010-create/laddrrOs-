@@ -7,7 +7,7 @@ import DashboardLayout from "@/components/dashboard-layout";
 import { useRole } from "@/hooks/use-role";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon, Bot, User, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon, Bot, User, ThumbsUp, ThumbsDown, Award, Sparkles, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import {
@@ -104,6 +104,13 @@ const chartConfig = {
     color: "hsl(var(--primary))",
   },
 } satisfies ChartConfig
+
+const badges = [
+    { title: "Clarity Champion", icon: Award, description: "Achieved a Clarity score of 9+ in a simulation." },
+    { title: "Empathy Explorer", icon: Sparkles, description: "Showed high levels of empathy in 3 consecutive sessions." },
+    { title: "5-Day Streak", icon: Activity, description: "Completed a simulation every day for 5 days." },
+    { title: "Assertiveness Ace", icon: ThumbsUp, description: "Scored 8.5+ in Assertiveness with a 'Strict' persona." },
+];
 
 function ScorecardPage() {
     const overallScores = scorecardData.map(d => d.scores.overall);
@@ -204,6 +211,29 @@ function ScorecardPage() {
                                     />
                                 </LineChart>
                             </ChartContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Award className="h-6 w-6 text-yellow-500" />
+                            Badges & Streaks
+                        </CardTitle>
+                        <CardDescription>
+                            Your achievements from practicing in the Nets arena.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {badges.map((badge, index) => (
+                                <div key={index} className="flex flex-col items-center text-center p-4 border rounded-lg bg-muted/50">
+                                    <badge.icon className="h-10 w-10 text-yellow-400 mb-2" />
+                                    <p className="font-semibold text-sm">{badge.title}</p>
+                                    <p className="text-xs text-muted-foreground">{badge.description}</p>
+                                </div>
+                            ))}
                         </div>
                     </CardContent>
                 </Card>
