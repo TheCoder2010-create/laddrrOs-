@@ -22,3 +22,29 @@ export const NetsConversationInputSchema = NetsInitialInputSchema.extend({
   history: z.array(NetsMessageSchema).describe("The conversation history so far."),
 });
 export type NetsConversationInput = z.infer<typeof NetsConversationInputSchema>;
+
+
+// Schemas for the scenario suggestion feature
+const PastIssueSchema = z.object({
+    employeeName: z.string(),
+    missedSignals: z.array(z.string()).optional(),
+    criticalInsightSummary: z.string().optional(),
+    coachingRecs: z.array(z.string()).optional(),
+});
+
+const CoachingGoalSchema = z.object({
+    area: z.string(),
+    resource: z.string(),
+});
+
+export const NetsSuggestionInputSchema = z.object({
+    supervisorName: z.string(),
+    pastIssues: z.array(PastIssueSchema),
+    coachingGoalsInProgress: z.array(CoachingGoalSchema),
+});
+export type NetsSuggestionInput = z.infer<typeof NetsSuggestionInputSchema>;
+
+export const NetsSuggestionOutputSchema = z.object({
+    suggestedScenario: z.string().describe("A concise, one-sentence practice scenario suggested by the AI based on user's history."),
+});
+export type NetsSuggestionOutput = z.infer<typeof NetsSuggestionOutputSchema>;

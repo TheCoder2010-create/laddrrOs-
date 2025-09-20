@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog } from 'lucide-react';
+import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { runNetsConversation } from '@/ai/flows/nets-flow';
@@ -21,6 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 import { roleUserMapping } from '@/lib/role-mapping';
 import Link from 'next/link';
+import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
 
 const difficulties = [
     { value: "friendly", label: "Friendly" },
@@ -193,11 +194,13 @@ const Avatar = ({ icon }: { icon: React.ReactNode }) => (
 );
 
 
-function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void }) {
+function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => void, role: Role }) {
     const { availableRoles } = useRole();
     const [selectedPersona, setSelectedPersona] = useState<Role | null>(null);
     const [scenario, setScenario] = useState('');
     const [difficulty, setDifficulty] = useState('neutral');
+    const [isSuggesting, startSuggestion] = useTransition();
+    const { toast } = useToast();
 
     const handleStart = () => {
         if (!selectedPersona || !scenario) return;
@@ -208,10 +211,30 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
         });
     };
 
+    const handleGetSuggestion = () => {
+        startSuggestion(async () => {
+            try {
+                const result = await generateNetsSuggestion({ forRole: role });
+                setScenario(result.suggestedScenario);
+                toast({
+                    title: "Scenario Suggested!",
+                    description: "A practice scenario has been generated for you based on your recent activity."
+                });
+            } catch (e) {
+                console.error("Failed to get suggestion", e);
+                toast({
+                    variant: "destructive",
+                    title: "Suggestion Failed",
+                    description: "Could not generate a suggestion at this time."
+                });
+            }
+        });
+    };
+
     if (!selectedPersona) {
         return (
              <div className="w-full max-w-3xl mx-auto">
-                 <div className="mb-8 text-center flex justify-between items-center">
+                 <div className="mb-8 flex justify-between items-center">
                     <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
                         <MagicWandIcon className="h-8 w-8 text-primary" />
                          Nets – Conversation Arena
@@ -264,7 +287,13 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
             </CardHeader>
             <CardContent className="space-y-6 pt-2">
                 <div className="space-y-2">
-                    <Label htmlFor="scenario">Describe the scenario to practice</Label>
+                    <div className="flex justify-between items-center">
+                        <Label htmlFor="scenario">Describe the scenario to practice</Label>
+                        <Button variant="ghost" size="sm" onClick={handleGetSuggestion} disabled={isSuggesting}>
+                            {isSuggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4 mr-2 text-yellow-400" />}
+                            Get Suggestion
+                        </Button>
+                    </div>
                     <Textarea 
                         id="scenario" 
                         placeholder="e.g., Giving tough feedback about missed deadlines to a good performer."
@@ -315,7 +344,7 @@ export default function NetsPage() {
                  {config ? (
                     <SimulationArena initialConfig={config} onExit={() => setConfig(null)} />
                 ) : (
-                    <SetupView onStart={handleStartSimulation} />
+                    <SetupView onStart={handleStartSimulation} role={role} />
                 )}
             </div>
         </DashboardLayout>
