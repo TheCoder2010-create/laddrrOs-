@@ -14,8 +14,8 @@ export async function runNetsConversation(input: NetsConversationInput): Promise
   return runNetsConversationFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'netsConversationPrompt',
+const continueConversationPrompt = ai.definePrompt({
+  name: 'netsContinueConversationPrompt',
   input: { schema: NetsConversationInputSchema },
   output: { schema: z.string().describe("The AI's response in the conversation.") },
   prompt: `You are an AI actor in a role-playing simulation designed to help users practice difficult conversations.
@@ -43,7 +43,30 @@ const prompt = ai.definePrompt({
   {{/if}}
 {{/each}}
 
-**Crucial Instruction**: Based on the history, provide your next response as the {{persona}}. If the history is empty, you **must** begin the conversation by playing your role and responding to the user's scenario. Do not wait for the user to speak first. If the history is not empty, continue the conversation naturally.`,
+Based on the history, provide your next response as the {{persona}}.`,
+});
+
+const startConversationPrompt = ai.definePrompt({
+  name: 'netsStartConversationPrompt',
+  input: { schema: z.object({ persona: z.string(), scenario: z.string(), difficulty: z.string() }) },
+  output: { schema: z.string().describe("The AI's first response in the conversation.") },
+  prompt: `You are an AI actor in a role-playing simulation. Your task is to start a conversation.
+
+**Your Persona:**
+- You are playing the role of a {{persona}}.
+- Your demeanor should be {{difficulty}}.
+
+**The Scenario:**
+- The user wants to practice the following scenario they have described: "{{scenario}}".
+
+**Your Task:**
+- Generate ONLY the first line of the conversation from your perspective as the {{persona}}.
+- Do NOT wait for the user to speak. Your response should be the opening statement.
+- Keep your response concise and conversational.
+
+For example, if the scenario is "giving feedback about missed deadlines," a good opening might be "Hi, thanks for joining. I wanted to chat about the recent project deadlines."
+
+Generate your opening line now.`
 });
 
 const runNetsConversationFlow = ai.defineFlow(
@@ -53,21 +76,32 @@ const runNetsConversationFlow = ai.defineFlow(
     outputSchema: NetsMessageSchema,
   },
   async (input) => {
-    // Genkit's Handlebars implementation doesn't support complex helpers like 'eq'.
-    // We need to pre-process the history to make it directly usable by the template.
-    const processedHistory = input.history.map(msg => ({
-      isUser: msg.role === 'user',
-      isModel: msg.role === 'model',
-      content: msg.content,
-    }));
+    let output: string | null = null;
     
-    const promptInput = {
-      ...input,
-      // The prompt now uses a different structure for history
-      history: processedHistory,
-    };
+    if (input.history.length === 0) {
+      // This is the first turn, the AI needs to start the conversation.
+      const { output: startOutput } = await startConversationPrompt({
+        persona: input.persona,
+        scenario: input.scenario,
+        difficulty: input.difficulty
+      });
+      output = startOutput;
+    } else {
+      // This is a subsequent turn, continue the conversation.
+      const processedHistory = input.history.map(msg => ({
+        isUser: msg.role === 'user',
+        isModel: msg.role === 'model',
+        content: msg.content,
+      }));
+      
+      const promptInput = {
+        ...input,
+        history: processedHistory,
+      };
 
-    const { output } = await prompt(promptInput);
+      const { output: continueOutput } = await continueConversationPrompt(promptInput);
+      output = continueOutput;
+    }
 
     if (!output) {
       throw new Error("The AI failed to generate a response for the simulation.");
