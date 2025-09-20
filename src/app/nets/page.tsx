@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
@@ -11,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb } from 'lucide-react';
+import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { runNetsConversation } from '@/ai/flows/nets-flow';
@@ -19,10 +18,13 @@ import type { NetsConversationInput, NetsMessage, NetsInitialInput } from '@/ai/
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
-import { roleUserMapping } from '@/lib/role-mapping';
+import { roleUserMapping, formatActorName } from '@/lib/role-mapping';
 import Link from 'next/link';
 import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
 import { generateNetsNudge } from '@/ai/flows/generate-nets-nudge-flow';
+import { completePracticeScenario, getPracticeScenariosForUser, AssignedPracticeScenario } from '@/services/feedback-service';
+import { formatDistanceToNow } from 'date-fns';
+
 
 const difficulties = [
     { value: "friendly", label: "Friendly" },
@@ -42,9 +44,11 @@ const personaIcons: Record<string, React.ElementType> = {
 
 function SimulationArena({
     initialConfig,
+    assignedScenarioId,
     onExit
 }: {
     initialConfig: NetsInitialInput,
+    assignedScenarioId?: string,
     onExit: () => void
 }) {
     const [isPending, startTransition] = useTransition();
@@ -53,6 +57,17 @@ function SimulationArena({
     const [userInput, setUserInput] = useState('');
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    const handleExit = () => {
+        if (assignedScenarioId) {
+            completePracticeScenario(assignedScenarioId);
+            toast({
+                title: "Assigned Practice Completed",
+                description: "This task has been marked as complete.",
+            });
+        }
+        onExit();
+    };
 
     useEffect(() => {
         // Add the initial system message and trigger the first AI response
@@ -152,7 +167,7 @@ function SimulationArena({
                         <MagicWandIcon className="h-6 w-6 text-primary" />
                         Conversation Arena
                     </CardTitle>
-                    <Button variant="ghost" onClick={onExit}><ArrowLeft className="mr-2" /> End Simulation</Button>
+                    <Button variant="ghost" onClick={handleExit}><ArrowLeft className="mr-2" /> End Simulation</Button>
                 </div>
                 <CardDescription>
                     You are in a simulation with a <span className="font-semibold text-primary">{initialConfig.persona}</span>.
@@ -219,7 +234,7 @@ const Avatar = ({ icon }: { icon: React.ReactNode }) => (
 );
 
 
-function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => void, role: Role }) {
+function SetupView({ onStart, role, assignedScenarios }: { onStart: (config: NetsInitialInput, assignedScenarioId?: string) => void, role: Role, assignedScenarios: AssignedPracticeScenario[] }) {
     const { availableRoles } = useRole();
     const [selectedPersona, setSelectedPersona] = useState<Role | null>(null);
     const [scenario, setScenario] = useState('');
@@ -227,13 +242,13 @@ function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => v
     const [isSuggesting, startSuggestion] = useTransition();
     const { toast } = useToast();
 
-    const handleStart = () => {
+    const handleStart = (assignedScenarioId?: string) => {
         if (!selectedPersona || !scenario) return;
         onStart({
             persona: selectedPersona,
             scenario: scenario,
             difficulty: difficulty,
-        });
+        }, assignedScenarioId);
     };
 
     const handleGetSuggestion = () => {
@@ -256,9 +271,18 @@ function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => v
         });
     };
 
+    const handleStartAssigned = (assigned: AssignedPracticeScenario) => {
+        // Pre-fill the setup for the assigned scenario
+        const assignedByRole = roleUserMapping[assigned.assignedBy].role;
+        setSelectedPersona(assignedByRole);
+        setScenario(assigned.scenario);
+        // Start simulation immediately
+        handleStart(assigned.id);
+    };
+
     if (!selectedPersona) {
         return (
-             <div className="w-full max-w-3xl mx-auto">
+             <div className="w-full max-w-4xl mx-auto">
                 <div className="mb-8 flex justify-between items-center">
                     <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
                         <MagicWandIcon className="h-8 w-8 text-primary" />
@@ -268,7 +292,37 @@ function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => v
                         <Link href="/nets/scorecard">Scorecard</Link>
                     </Button>
                 </div>
-                <p className="text-lg text-muted-foreground text-center mb-8">
+                
+                {assignedScenarios.length > 0 && (
+                    <div className="mb-10">
+                        <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                            <ClipboardEdit className="h-5 w-5 text-purple-500" />
+                            Assigned for Practice
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {assignedScenarios.map(s => (
+                                <Card key={s.id} className="bg-purple-500/5">
+                                    <CardHeader className="pb-3">
+                                        <CardDescription>
+                                            Assigned by {formatActorName(s.assignedBy)} {formatDistanceToNow(new Date(s.assignedAt), { addSuffix: true })}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="font-medium text-foreground-primary">{s.scenario}</p>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => handleStartAssigned(s)}>
+                                            <Play className="mr-2" /> Start Practice
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                <h2 className="text-xl font-semibold mb-3 text-center">Or, start your own session:</h2>
+                <p className="text-lg text-muted-foreground text-center mb-6">
                     Choose a persona to practice your conversation with.
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -278,7 +332,7 @@ function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => v
                             <button
                                 key={role}
                                 onClick={() => setSelectedPersona(role)}
-                                className="flex flex-col items-center justify-center gap-2 p-4 border rounded-lg hover:bg-accent hover:border-primary transition-colors h-28"
+                                className="group flex flex-col items-center justify-center gap-2 p-4 border rounded-lg hover:bg-accent hover:border-primary transition-colors h-28"
                             >
                                 <Icon className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
                                 <span className="font-semibold text-foreground">{role}</span>
@@ -341,7 +395,7 @@ function SetupView({ onStart, role }: { onStart: (config: NetsInitialInput) => v
                 </div>
             </CardContent>
             <CardFooter>
-                <Button className="w-full" size="lg" onClick={handleStart} disabled={!scenario}>
+                <Button className="w-full" size="lg" onClick={() => handleStart()} disabled={!scenario}>
                     Start Practice <ChevronsRight className="ml-2" />
                 </Button>
             </CardFooter>
@@ -353,27 +407,51 @@ export default function NetsPage() {
     const { role, setRole, isLoading: isRoleLoading } = useRole();
     const { toast } = useToast();
     const [config, setConfig] = useState<NetsInitialInput | null>(null);
+    const [assignedScenarioId, setAssignedScenarioId] = useState<string | undefined>();
+    const [assignedScenarios, setAssignedScenarios] = useState<AssignedPracticeScenario[]>([]);
+    
+    useEffect(() => {
+        if (!role) return;
+        const fetchAssigned = async () => {
+            const scenarios = await getPracticeScenariosForUser(role);
+            setAssignedScenarios(scenarios);
+        };
+        fetchAssigned();
+
+        window.addEventListener('feedbackUpdated', fetchAssigned);
+        return () => {
+            window.removeEventListener('feedbackUpdated', fetchAssigned);
+        };
+    }, [role]);
+
+    const handleStartSimulation = (newConfig: NetsInitialInput, scenarioId?: string) => {
+        setConfig(newConfig);
+        setAssignedScenarioId(scenarioId);
+        toast({ title: "Simulation Started", description: "The AI will begin the conversation." });
+    };
+
+    const handleExitSimulation = () => {
+        setConfig(null);
+        setAssignedScenarioId(undefined);
+    }
     
     if (isRoleLoading || !role) {
         return <DashboardLayout role="Employee" onSwitchRole={() => {}}><Skeleton className="w-full h-screen" /></DashboardLayout>;
     }
 
-    const handleStartSimulation = (newConfig: NetsInitialInput) => {
-        setConfig(newConfig);
-        toast({ title: "Simulation Started", description: "The AI will begin the conversation." });
-    };
-    
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
             <div className="p-4 md:p-8 flex items-center justify-center">
                  {config ? (
-                    <SimulationArena initialConfig={config} onExit={() => setConfig(null)} />
+                    <SimulationArena 
+                        initialConfig={config} 
+                        assignedScenarioId={assignedScenarioId} 
+                        onExit={handleExitSimulation} 
+                    />
                 ) : (
-                    <SetupView onStart={handleStartSimulation} role={role} />
+                    <SetupView onStart={handleStartSimulation} role={role} assignedScenarios={assignedScenarios} />
                 )}
             </div>
         </DashboardLayout>
     );
 }
-
-    

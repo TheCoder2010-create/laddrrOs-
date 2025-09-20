@@ -81,9 +81,21 @@ export interface OneOnOneHistoryItem {
     assignedTo?: Role[]; 
 }
 
+export interface AssignedPracticeScenario {
+    id: string;
+    assignedBy: Role;
+    assignedTo: Role;
+    scenario: string;
+    status: 'pending' | 'completed';
+    assignedAt: string;
+    completedAt?: string;
+}
+
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
 const CUSTOM_COACHING_PLANS_KEY = 'custom_coaching_plans_v1';
+const PRACTICE_SCENARIOS_KEY = 'practice_scenarios_v1';
+
 
 // ==========================================
 // Generic Storage Helpers
@@ -113,6 +125,39 @@ const saveToStorage = (key: string, data: any[]): void => {
     sessionStorage.setItem(key, JSON.stringify(data));
     window.dispatchEvent(new CustomEvent('feedbackUpdated'));
     window.dispatchEvent(new Event('storage')); // for wider compatibility
+}
+
+// ==========================================
+// Practice Scenario Service
+// ==========================================
+
+export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role, scenario: string): Promise<void> {
+    const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
+    const newScenario: AssignedPracticeScenario = {
+        id: uuidv4(),
+        assignedBy,
+        assignedTo,
+        scenario,
+        status: 'pending',
+        assignedAt: new Date().toISOString(),
+    };
+    allScenarios.unshift(newScenario);
+    saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
+}
+
+export async function getPracticeScenariosForUser(userRole: Role): Promise<AssignedPracticeScenario[]> {
+    const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
+    return allScenarios.filter(s => s.assignedTo === userRole && s.status === 'pending');
+}
+
+export async function completePracticeScenario(scenarioId: string): Promise<void> {
+    const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
+    const scenarioIndex = allScenarios.findIndex(s => s.id === scenarioId);
+    if (scenarioIndex !== -1) {
+        allScenarios[scenarioIndex].status = 'completed';
+        allScenarios[scenarioIndex].completedAt = new Date().toISOString();
+        saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
+    }
 }
 
 
