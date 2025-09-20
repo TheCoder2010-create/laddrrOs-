@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 import { roleUserMapping } from '@/lib/role-mapping';
+import Link from 'next/link';
 
 const difficulties = [
     { value: "friendly", label: "Friendly" },
@@ -51,12 +52,33 @@ function SimulationArena({
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Add the initial system message
-        setMessages([{
-            role: 'system',
-            content: `Simulation started. The AI is playing the role of a ${initialConfig.persona}. You can start the conversation.`
-        }]);
-    }, [initialConfig]);
+        // Add the initial system message and trigger the first AI response
+        const startSimulation = () => {
+            const initialSystemMessage: NetsMessage = {
+                role: 'system',
+                content: `Simulation started. The AI is playing the role of a ${initialConfig.persona}.`
+            };
+            const currentMessages = [initialSystemMessage];
+            setMessages(currentMessages);
+
+            startTransition(async () => {
+                try {
+                    const input: NetsConversationInput = {
+                        ...initialConfig,
+                        history: [], // History is empty for the first turn
+                    };
+                    const aiResponse = await runNetsConversation(input);
+                    setMessages(prev => [...prev, aiResponse]);
+                } catch (error) {
+                    console.error("AI simulation failed on start", error);
+                    toast({ variant: 'destructive', title: "Simulation Error", description: "The AI could not start the conversation. Please try again." });
+                    onExit(); // Exit if the start fails
+                }
+            });
+        };
+
+        startSimulation();
+    }, [initialConfig, onExit, toast]);
     
     useEffect(() => {
         // Scroll to bottom when new messages are added
@@ -129,7 +151,7 @@ function SimulationArena({
                             {msg.role === 'user' && <Avatar icon={<User />} />}
                         </div>
                     ))}
-                    {isPending && (
+                    {isPending && messages.length > 0 && (
                         <div className="flex items-start gap-3 justify-start">
                             <Avatar icon={<Bot className="text-primary" />} />
                             <div className="bg-muted rounded-lg px-4 py-3">
@@ -194,7 +216,9 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
                         <MagicWandIcon className="h-8 w-8 text-primary" />
                          Nets – Conversation Arena
                     </h1>
-                    <Button variant="outline">Scorecard</Button>
+                     <Button variant="outline" asChild>
+                        <Link href="/nets/scorecard">Scorecard</Link>
+                    </Button>
                 </div>
                 <p className="text-lg text-muted-foreground text-center mb-8">
                     Choose a persona to practice your conversation with.
@@ -251,7 +275,7 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
                 </div>
                 
                 <div className="space-y-2">
-                    <Label htmlFor="difficulty">Set Difficulty Level</Label>
+                    <Label htmlFor="difficulty">Set AI Demeanor</Label>
                     <Select value={difficulty} onValueChange={setDifficulty}>
                         <SelectTrigger id="difficulty">
                             <SelectValue placeholder="Select a difficulty" />
@@ -282,7 +306,7 @@ export default function NetsPage() {
 
     const handleStartSimulation = (newConfig: NetsInitialInput) => {
         setConfig(newConfig);
-        toast({ title: "Simulation Started", description: "You are now in the conversation arena." });
+        toast({ title: "Simulation Started", description: "The AI will begin the conversation." });
     };
     
     return (
@@ -297,5 +321,3 @@ export default function NetsPage() {
         </DashboardLayout>
     );
 }
-
-    
