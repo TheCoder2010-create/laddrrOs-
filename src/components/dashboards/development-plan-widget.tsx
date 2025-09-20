@@ -114,7 +114,6 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onO
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleSubmit} disabled={isSubmitting || !area || !resource || !startDate || !endDate}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Add to My Plan
