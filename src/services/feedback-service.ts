@@ -563,38 +563,28 @@ export async function addCustomCoachingPlan(actor: Role, data: { area: string; r
         checkIns: [],
     };
     
-    // We need a "dummy" 1-on-1 history item to attach this to.
-    // Let's find one or create one.
-    let supervisorHistory = allHistory.find(h => h.supervisorName === supervisorName);
-
-    if (supervisorHistory) {
-        // Add to the most recent 1-on-1's recommendations list.
-        supervisorHistory.analysis.coachingRecommendations.unshift(newCustomRecommendation);
-    } else {
-        // If no history exists, create a dummy entry.
-        const newHistoryItem: OneOnOneHistoryItem = {
-            id: generateTrackingId(),
-            supervisorName: supervisorName,
-            employeeName: "System", // Indicates a system-generated container
-            date: new Date().toISOString(),
-            analysis: {
-                supervisorSummary: "Container for custom development goals.",
-                employeeSummary: "",
-                leadershipScore: 0,
-                effectivenessScore: 0,
-                employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
-                strengthsObserved: [],
-                coachingRecommendations: [newCustomRecommendation],
-                actionItems: [],
-                legalDataCompliance: { piiOmitted: false, privacyRequest: false },
-                biasFairnessCheck: { flag: false },
-                localizationCompliance: { applied: false },
-            },
-            assignedTo: [],
-        };
-        allHistory.unshift(newHistoryItem);
-    }
-
+    const newHistoryItem: OneOnOneHistoryItem = {
+        id: generateTrackingId(),
+        supervisorName: supervisorName,
+        employeeName: "System", // Indicates a system-generated container
+        date: new Date().toISOString(),
+        analysis: {
+            supervisorSummary: "Container for custom development goals.",
+            employeeSummary: "",
+            leadershipScore: 0,
+            effectivenessScore: 0,
+            employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
+            strengthsObserved: [],
+            coachingRecommendations: [newCustomRecommendation],
+            actionItems: [],
+            legalDataCompliance: { piiOmitted: false, privacyRequest: false },
+            biasFairnessCheck: { flag: false },
+            localizationCompliance: { applied: false },
+        },
+        assignedTo: [],
+    };
+    allHistory.unshift(newHistoryItem);
+    
     saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
 }
 
@@ -739,6 +729,12 @@ export const saveFeedbackToStorage = (feedback: Feedback[]): void => {
 export async function getAllFeedback(): Promise<Feedback[]> {
   return getFeedbackFromStorage();
 }
+
+export async function getFeedbackById(trackingId: string): Promise<Feedback | null> {
+    const allFeedback = await getAllFeedback();
+    return allFeedback.find(f => f.trackingId === trackingId) || null;
+}
+
 
 export async function saveFeedback(feedback: Feedback[], append = false): Promise<void> {
     if (append) {

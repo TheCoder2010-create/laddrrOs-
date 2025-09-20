@@ -290,13 +290,20 @@ function MyDevelopmentWidget() {
                         >
                             {recommendations.map(({ historyItem, recommendation: rec }) => {
                                 const isActionable = rec.status === 'pending';
+                                const isCustomGoal = historyItem.employeeName === 'System';
+
                                 return (
                                 <AccordionItem value={rec.id} key={rec.id} className={cn(!isActionable && "bg-muted/30")}>
                                     <AccordionTrigger>
                                         <div className="flex justify-between items-center w-full">
                                             <div className="flex flex-col items-start text-left">
                                                 <p className="font-semibold">{rec.area}</p>
-                                                <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
+                                                {!isCustomGoal && (
+                                                    <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
+                                                )}
+                                                {isCustomGoal && (
+                                                    <p className="text-sm font-normal text-muted-foreground">Self-directed goal</p>
+                                                )}
                                             </div>
                                             <div className="mr-2">
                                                 {getStatusBadge(rec.status)}
@@ -307,7 +314,7 @@ function MyDevelopmentWidget() {
                                         <div className="p-3 bg-background/60 rounded-lg border space-y-3">
                                              <p className="text-sm text-muted-foreground">{rec.recommendation}</p>
 
-                                             {rec.example && (
+                                             {rec.example && rec.example !== "N/A (user-added goal)" && (
                                                 <div className="p-3 bg-muted/50 rounded-md border-l-4 border-primary">
                                                     <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1.5"><MessageSquareQuote className="h-4 w-4 text-primary" /> Example from Session</p>
                                                     <blockquote className="mt-1 text-sm italic text-primary/90">"{rec.example}"</blockquote>
@@ -339,7 +346,7 @@ function MyDevelopmentWidget() {
                                                     {rec.rejectionReason && (
                                                         <div className="mt-2 p-2 bg-muted/50 rounded-md">
                                                             <p className="text-xs font-semibold text-muted-foreground">Your Decline Reason:</p>
-                                                            <p className="text-sm text-foreground italic">"{rec.rejectionReason}"</p>
+                                                            <p className="text-sm text-foreground italic">"{rejectionReason}"</p>
                                                         </div>
                                                     )}
                                                 </div>
