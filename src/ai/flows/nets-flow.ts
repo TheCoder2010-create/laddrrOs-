@@ -37,9 +37,9 @@ const prompt = ai.definePrompt({
 
 **Conversation History:**
 {{#each history}}
-  {{#if (eq this.role "user")}}
+  {{#if this.isUser}}
     User: {{{this.content}}}
-  {{else if (eq this.role "model")}}
+  {{else if this.isModel}}
     You: {{{this.content}}}
   {{/if}}
 {{/each}}
@@ -68,7 +68,7 @@ const runNetsConversationFlow = ai.defineFlow(
       history: processedHistory,
     };
 
-    const { output } = await prompt(input);
+    const { output } = await prompt(promptInput);
 
     if (!output) {
       throw new Error("The AI failed to generate a response for the simulation.");
