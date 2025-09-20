@@ -59,7 +59,7 @@ function MyDevelopmentWidget() {
         if (!role) return;
         setIsLoading(true);
         const history = await getOneOnOneHistory();
-        const allRecs: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
+        const recsMap = new Map<string, { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }>();
         
         const currentUserName = role ? roleUserMapping[role].name : null;
         const statusesToFetch: CoachingRecommendation['status'][] = ['pending', 'declined', 'pending_am_review', 'pending_manager_acknowledgement'];
@@ -70,11 +70,17 @@ function MyDevelopmentWidget() {
                     // We only want to show actionable items or items that were just actioned (declined).
                     // Accepted items move to the other widget.
                     if (statusesToFetch.includes(rec.status)) {
-                         allRecs.push({ historyItem: item, recommendation: rec });
+                        // If we've already seen this rec, only keep the one from the most recent history item.
+                        const existing = recsMap.get(rec.id);
+                        if (!existing || new Date(item.date) > new Date(existing.historyItem.date)) {
+                            recsMap.set(rec.id, { historyItem: item, recommendation: rec });
+                        }
                     }
                 });
             }
         });
+
+        const allRecs = Array.from(recsMap.values());
 
         setRecommendations(allRecs.sort((a,b) => {
             const statusOrder = (status: CoachingRecommendation['status']) => {
@@ -493,7 +499,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
     const fetchTeamActions = useCallback(async () => {
         setIsLoading(true);
         const history = await getOneOnOneHistory();
-        const pendingActions: { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[] = [];
+        const actionsMap = new Map<string, { historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }>();
         
         const amActorName = roleUserMapping['AM']?.name;
 
@@ -503,17 +509,25 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
                     const amWasInvolved = rec.auditTrail?.some(e => e.actor === amActorName);
                     // AM sees items pending their review, or items they have already reviewed
                     if (rec.status === 'pending_am_review' || (amWasInvolved && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined' || rec.status === 'accepted'))) {
-                        pendingActions.push({ historyItem: item, recommendation: rec });
+                         const existing = actionsMap.get(rec.id);
+                        if (!existing || new Date(item.date) > new Date(existing.historyItem.date)) {
+                           actionsMap.set(rec.id, { historyItem: item, recommendation: rec });
+                        }
                     }
                 } else if (role === 'Manager') {
                      // Manager sees items pending their acknowledgement, or that they have already acknowledged (status becomes 'declined')
                     if (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined') {
-                        pendingActions.push({ historyItem: item, recommendation: rec });
+                        const existing = actionsMap.get(rec.id);
+                        if (!existing || new Date(item.date) > new Date(existing.historyItem.date)) {
+                           actionsMap.set(rec.id, { historyItem: item, recommendation: rec });
+                        }
                     }
                 }
             });
         });
         
+        const pendingActions = Array.from(actionsMap.values());
+
         setTeamActions(pendingActions.sort((a,b) => {
             const dateA = a.recommendation.auditTrail?.slice(-1)[0]?.timestamp;
             const dateB = b.recommendation.auditTrail?.slice(-1)[0]?.timestamp;
