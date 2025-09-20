@@ -188,16 +188,17 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
 
     if (!selectedPersona) {
         return (
-             <div className="w-full max-w-3xl mx-auto text-center">
-                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold font-headline flex items-center justify-center gap-2">
+             <div className="w-full max-w-3xl mx-auto">
+                 <div className="mb-8 text-center flex justify-between items-center">
+                    <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
                         <MagicWandIcon className="h-8 w-8 text-primary" />
                          Nets – Conversation Arena
                     </h1>
-                    <p className="text-lg text-muted-foreground mt-2">
-                        Choose a persona to practice your conversation with.
-                    </p>
+                    <Button variant="outline">Scorecard</Button>
                 </div>
+                <p className="text-lg text-muted-foreground text-center mb-8">
+                    Choose a persona to practice your conversation with.
+                </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {availableRoles.filter(r => r !== 'Anonymous').map(role => {
                          const Icon = personaIcons[role] || Briefcase;
@@ -296,3 +297,5 @@ export default function NetsPage() {
         </DashboardLayout>
     );
 }
+
+    
