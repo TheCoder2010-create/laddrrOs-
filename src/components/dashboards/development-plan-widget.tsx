@@ -76,19 +76,19 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onO
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="goal-area">Goal Area</Label>
-                        <Input id="goal-area" value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g., Public Speaking, Project Management" />
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="goal-area" className="text-right">Goal Area</Label>
+                        <Input id="goal-area" value={area} onChange={(e) => setArea(e.target.value)} className="col-span-3" />
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="goal-resource">Activity / Resource</Label>
-                        <Input id="goal-resource" value={resource} onChange={(e) => setResource(e.target.value)} placeholder="e.g., Read 'Crucial Conversations', Complete Udemy course" />
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="goal-resource" className="text-right">Activity</Label>
+                        <Input id="goal-resource" value={resource} onChange={(e) => setResource(e.target.value)} className="col-span-3" />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Start Date</Label>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Start Date</Label>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal col-span-3", !startDate && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
                           </Button>
@@ -98,11 +98,11 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onO
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="space-y-2">
-                       <Label>Tentative End Date</Label>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                       <Label className="text-right">End Date</Label>
                        <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal col-span-3", !endDate && "text-muted-foreground")}>
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
                           </Button>
