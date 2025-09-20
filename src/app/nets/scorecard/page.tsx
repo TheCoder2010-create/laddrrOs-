@@ -7,26 +7,34 @@ import DashboardLayout from "@/components/dashboard-layout";
 import { useRole } from "@/hooks/use-role";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import { LineChart, CartesianGrid, XAxis, Line, YAxis } from "recharts"
+
 
 // Placeholder data for past simulations
 const scorecardData = [
     {
         id: 1,
-        date: new Date(new Date().setDate(new Date().getDate() - 2)),
-        scenario: "Giving tough feedback about missed deadlines to a good performer.",
-        persona: "Team Lead",
-        difficulty: "Strict / Defensive",
+        date: new Date(new Date().setDate(new Date().getDate() - 15)),
+        scenario: "Addressing a conflict with a peer from another team.",
+        persona: "Employee",
+        difficulty: "Friendly",
         scores: {
-            clarity: 8.5,
-            empathy: 6.0,
-            assertiveness: 7.8,
-            overall: 7.4,
+            clarity: 7.0,
+            empathy: 8.5,
+            assertiveness: 6.5,
+            overall: 7.3,
         },
-        strengths: ["Opened the conversation clearly.", "Used 'I' statements effectively."],
-        gaps: ["Could have acknowledged their perspective more.", "Closing was a bit abrupt."],
+        strengths: ["Focused on shared goals.", "Listened without interrupting."],
+        gaps: ["Was slightly apologetic when stating needs.", "Didn't define a clear next step."],
     },
     {
         id: 2,
@@ -45,22 +53,38 @@ const scorecardData = [
     },
     {
         id: 3,
-        date: new Date(new Date().setDate(new Date().getDate() - 15)),
-        scenario: "Addressing a conflict with a peer from another team.",
-        persona: "Employee",
-        difficulty: "Friendly",
+        date: new Date(new Date().setDate(new Date().getDate() - 2)),
+        scenario: "Giving tough feedback about missed deadlines to a good performer.",
+        persona: "Team Lead",
+        difficulty: "Strict / Defensive",
         scores: {
-            clarity: 7.0,
-            empathy: 8.5,
-            assertiveness: 6.5,
-            overall: 7.3,
+            clarity: 8.5,
+            empathy: 6.0,
+            assertiveness: 7.8,
+            overall: 7.4,
         },
-        strengths: ["Focused on shared goals.", "Listened without interrupting."],
-        gaps: ["Was slightly apologetic when stating needs.", "Didn't define a clear next step."],
-    }
+        strengths: ["Opened the conversation clearly.", "Used 'I' statements effectively."],
+        gaps: ["Could have acknowledged their perspective more.", "Closing was a bit abrupt."],
+    },
 ];
 
+const chartData = scorecardData.map(entry => ({
+  date: format(entry.date, 'MMM d'),
+  overall: entry.scores.overall,
+})).reverse();
+
+const chartConfig = {
+  overall: {
+    label: "Overall Score",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig
+
 function ScorecardPage() {
+    const overallScores = scorecardData.map(d => d.scores.overall);
+    const averageScore = overallScores.reduce((a, b) => a + b, 0) / overallScores.length;
+    const bestScore = Math.max(...overallScores);
+
     return (
         <div className="p-4 md:p-8">
             <div className="flex justify-between items-center mb-8">
@@ -77,7 +101,78 @@ function ScorecardPage() {
             </div>
 
             <div className="space-y-6">
-                {scorecardData.map((entry) => (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <LineChartIcon className="h-6 w-6 text-primary" />
+                            Overall Performance Trend
+                        </CardTitle>
+                        <CardDescription>
+                            Your progress across all simulations over time.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                            <div className="p-3 rounded-md bg-muted">
+                                <p className="text-sm text-muted-foreground">Average Score</p>
+                                <p className="text-2xl font-bold">{averageScore.toFixed(1)}</p>
+                            </div>
+                            <div className="p-3 rounded-md bg-muted">
+                                <p className="text-sm text-muted-foreground">Best Score</p>
+                                <p className="text-2xl font-bold text-green-500">{bestScore.toFixed(1)}</p>
+                            </div>
+                            <div className="p-3 rounded-md bg-muted">
+                                <p className="text-sm text-muted-foreground">Simulations</p>
+                                <p className="text-2xl font-bold">{scorecardData.length}</p>
+                            </div>
+                        </div>
+                        <div className="h-[250px] w-full">
+                             <ChartContainer config={chartConfig} className="h-full w-full">
+                                <LineChart
+                                    accessibilityLayer
+                                    data={chartData}
+                                    margin={{
+                                    left: 12,
+                                    right: 12,
+                                    top: 12,
+                                    }}
+                                >
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        tickFormatter={(value) => value.slice(0, 3)}
+                                    />
+                                    <YAxis
+                                        domain={[0, 10]}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                    />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Line
+                                        dataKey="overall"
+                                        type="monotone"
+                                        stroke="var(--color-overall)"
+                                        strokeWidth={2}
+                                        dot={{
+                                            fill: "var(--color-overall)",
+                                        }}
+                                        activeDot={{
+                                            r: 6,
+                                        }}
+                                    />
+                                </LineChart>
+                            </ChartContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <h2 className="text-xl font-semibold pt-4">Simulation History</h2>
+
+                {scorecardData.slice().reverse().map((entry) => (
                     <Card key={entry.id} className="shadow-md hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start">
