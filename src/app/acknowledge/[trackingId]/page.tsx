@@ -59,7 +59,7 @@ export default function AcknowledgePage() {
                 </CardHeader>
                  <CardFooter className="flex justify-start">
                      <Button asChild variant="outline">
-                        <Link href="/action-items">
+                        <Link href="/messages">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
                         </Link>
                     </Button>

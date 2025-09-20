@@ -32,7 +32,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
   const currentUserName = currentUser.name;
   const pathname = usePathname();
-  const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
 
@@ -41,11 +40,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     try {
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
-
-      // Action items count (non-1-on-1 escalations)
-      let totalActionItems = 0;
-      setActionItemCount(totalActionItems);
-
 
       // Messages count (only non-1-on-1 items)
       let totalMessages = 0;
@@ -83,7 +77,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
     } catch (error) {
       console.error("Failed to fetch feedback counts", error);
-      setActionItemCount(0);
       setMessageCount(0);
       setCoachingCount(0);
     }
@@ -115,10 +108,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
   
-  const assigneeMenuItems = [
-    { href: '/action-items', icon: <ListTodo className="text-orange-500"/>, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
-  ]
-
   const renderMenuItem = (item: any) => (
      <SidebarMenuItem key={item.href}>
         <Link href={item.href} passHref>
@@ -182,7 +171,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
-          {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
