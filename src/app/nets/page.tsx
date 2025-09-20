@@ -271,7 +271,7 @@ function SetupView({ onStart }: { onStart: (config: NetsInitialInput) => void })
 }
 
 export default function NetsPage() {
-    const { role, setRole, isLoading: isRoleLoading } } from '@/hooks/use-role';
+    const { role, setRole, isLoading: isRoleLoading } = useRole();
     const { toast } = useToast();
     const [config, setConfig] = useState<NetsInitialInput | null>(null);
     
@@ -296,5 +296,3 @@ export default function NetsPage() {
         </DashboardLayout>
     );
 }
-
-    
