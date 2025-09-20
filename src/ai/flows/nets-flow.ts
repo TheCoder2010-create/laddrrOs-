@@ -34,8 +34,6 @@ const prompt = ai.definePrompt({
 - Do NOT be overly agreeable. If the user is vague, push back. If their tone is poor, react accordingly. Your goal is to provide a realistic challenge.
 - Keep your responses concise and conversational.
 
-**Crucial Instruction**: The conversation history is provided below. If the history is empty, you **must** begin the conversation by playing your role and responding to the user's scenario. Do not wait for the user to speak first. If the history is not empty, continue the conversation naturally.
-
 **Conversation History:**
 {{#each history}}
   {{#if this.isUser}}
@@ -45,7 +43,7 @@ const prompt = ai.definePrompt({
   {{/if}}
 {{/each}}
 
-Based on the history, provide your next response as the {{persona}}.`,
+**Crucial Instruction**: Based on the history, provide your next response as the {{persona}}. If the history is empty, you **must** begin the conversation by playing your role and responding to the user's scenario. Do not wait for the user to speak first. If the history is not empty, continue the conversation naturally.`,
 });
 
 const runNetsConversationFlow = ai.defineFlow(
