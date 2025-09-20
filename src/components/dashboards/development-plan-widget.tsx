@@ -46,6 +46,9 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onO
     const [resource, setResource] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>();
     const [endDate, setEndDate] = useState<Date | undefined>();
+    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
+
 
     const handleSubmit = async () => {
         if (!role || !area || !resource || !startDate || !endDate) {
@@ -84,39 +87,58 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onO
                         <Label htmlFor="goal-resource" className="text-right">Activity</Label>
                         <Input id="goal-resource" value={resource} onChange={(e) => setResource(e.target.value)} className="col-span-3" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label className="text-right">Start Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal col-span-3", !startDate && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {startDate ? format(startDate, "PPP") : <span>Pick a start date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                       <Label className="text-right">End Date</Label>
-                       <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal col-span-3", !endDate && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate ? format(endDate, "PPP") : <span>Pick an end date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} disabled={(date) => date < (startDate || new Date())} initialFocus />
-                        </PopoverContent>
-                      </Popover>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Start</Label>
+                          <Popover open={isStartDatePickerOpen} onOpenChange={setIsStartDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startDate ? format(startDate, "MM/dd/yy") : <span>Pick a date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar 
+                                    mode="single" 
+                                    selected={startDate} 
+                                    onSelect={(date) => {
+                                        setStartDate(date);
+                                        setIsStartDatePickerOpen(false);
+                                    }} 
+                                    initialFocus 
+                                />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                           <Label>End</Label>
+                           <Popover open={isEndDatePickerOpen} onOpenChange={setIsEndDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                              <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {endDate ? format(endDate, "MM/dd/yy") : <span>Pick a date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar 
+                                    mode="single" 
+                                    selected={endDate} 
+                                    onSelect={(date) => {
+                                        setEndDate(date);
+                                        setIsEndDatePickerOpen(false);
+                                    }} 
+                                    disabled={(date) => date < (startDate || new Date())} 
+                                    initialFocus 
+                                />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
                     <Button onClick={handleSubmit} disabled={isSubmitting || !area || !resource || !startDate || !endDate}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Add to My Plan
+                        Add
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -485,3 +507,5 @@ export default function DevelopmentPlanWidget() {
         </>
     );
 }
+
+    
