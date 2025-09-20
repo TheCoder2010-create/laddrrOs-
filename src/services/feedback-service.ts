@@ -83,6 +83,7 @@ export interface OneOnOneHistoryItem {
 
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
+const CUSTOM_COACHING_PLANS_KEY = 'custom_coaching_plans_v1';
 
 // ==========================================
 // Generic Storage Helpers
@@ -143,10 +144,12 @@ export async function getDeclinedCoachingAreasForSupervisor(supervisorName: stri
     return Array.from(declinedAreas);
 }
 
-export async function getActiveCoachingPlansForSupervisor(supervisorName: string): Promise<{ historyId: string, rec: CoachingRecommendation }[]> {
+export async function getActiveCoachingPlansForSupervisor(supervisorName: string): Promise<{ historyId: string | null, rec: CoachingRecommendation }[]> {
     const history = await getOneOnOneHistory();
-    const activePlans: { historyId: string, rec: CoachingRecommendation }[] = [];
-
+    const customPlans = getFromStorage<CoachingRecommendation>(CUSTOM_COACHING_PLANS_KEY);
+    const activePlans: { historyId: string | null, rec: CoachingRecommendation }[] = [];
+    
+    // Add plans from 1-on-1 history
     history.forEach(item => {
         if (item.supervisorName === supervisorName) {
             item.analysis.coachingRecommendations.forEach(rec => {
@@ -156,6 +159,14 @@ export async function getActiveCoachingPlansForSupervisor(supervisorName: string
             });
         }
     });
+
+    // Add custom self-directed plans
+    customPlans.forEach(rec => {
+        if (rec.status === 'accepted') { // Custom plans are 'accepted' by default
+             activePlans.push({ historyId: null, rec });
+        }
+    });
+
 
     return activePlans;
 }
@@ -467,13 +478,12 @@ export async function submitFinalHrDecision(historyId: string, actor: Role, deci
 }
 
 export async function updateCoachingRecommendationStatus(
-    historyId: string, 
     recommendationId: string, 
     status: 'accepted' | 'declined', 
-    data?: { reason?: string; startDate?: string; endDate?: string; }
+    data?: { historyId?: string; reason?: string; startDate?: string; endDate?: string; }
 ): Promise<void> {
     let allHistory = await getOneOnOneHistory();
-    const historyIndex = allHistory.findIndex(h => h.id === historyId);
+    const historyIndex = allHistory.findIndex(h => h.id === data?.historyId);
     if (historyIndex === -1) throw new Error("History item not found.");
     
     const item = allHistory[historyIndex];
@@ -539,7 +549,7 @@ export async function addCustomCoachingPlan(actor: Role, data: { area: string; r
     const supervisorName = roleUserMapping[actor]?.name;
     if (!supervisorName) throw new Error("Invalid actor role provided.");
 
-    const allHistory = await getOneOnOneHistory();
+    const allCustomPlans = getFromStorage<CoachingRecommendation>(CUSTOM_COACHING_PLANS_KEY);
 
     const newCustomRecommendation: CoachingRecommendation = {
         id: uuidv4(),
@@ -563,71 +573,67 @@ export async function addCustomCoachingPlan(actor: Role, data: { area: string; r
         checkIns: [],
     };
     
-    const newHistoryItem: OneOnOneHistoryItem = {
-        id: generateTrackingId(),
-        supervisorName: supervisorName,
-        employeeName: "System", // Indicates a system-generated container
-        date: new Date().toISOString(),
-        analysis: {
-            supervisorSummary: "Container for custom development goals.",
-            employeeSummary: "",
-            leadershipScore: 0,
-            effectivenessScore: 0,
-            employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
-            strengthsObserved: [],
-            coachingRecommendations: [newCustomRecommendation],
-            actionItems: [],
-            legalDataCompliance: { piiOmitted: false, privacyRequest: false },
-            biasFairnessCheck: { flag: false },
-            localizationCompliance: { applied: false },
-        },
-        assignedTo: [],
-    };
-    allHistory.unshift(newHistoryItem);
-    
-    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+    allCustomPlans.unshift(newCustomRecommendation);
+    saveToStorage(CUSTOM_COACHING_PLANS_KEY, allCustomPlans);
 }
 
 
-export async function updateCoachingProgress(historyId: string, recommendationId: string, progress: number): Promise<void> {
-    let allHistory = await getOneOnOneHistory();
-    const historyIndex = allHistory.findIndex(h => h.id === historyId);
-    if (historyIndex === -1) throw new Error("History item not found.");
-    
-    const item = allHistory[historyIndex];
-    const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
-    if (recIndex === -1) throw new Error("Coaching recommendation not found.");
-    
-    const recommendation = item.analysis.coachingRecommendations[recIndex];
-    recommendation.progress = progress;
-    
-    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
-}
+export async function updateCoachingProgress(historyId: string | null, recommendationId: string, progress: number): Promise<void> {
+    if (historyId) {
+        // It's a recommendation from a 1-on-1
+        let allHistory = await getOneOnOneHistory();
+        const historyIndex = allHistory.findIndex(h => h.id === historyId);
+        if (historyIndex === -1) throw new Error("History item not found.");
+        
+        const item = allHistory[historyIndex];
+        const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
+        if (recIndex === -1) throw new Error("Coaching recommendation not found.");
+        
+        const recommendation = item.analysis.coachingRecommendations[recIndex];
+        recommendation.progress = progress;
+        
+        saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+    } else {
+        // It's a custom plan
+        let allCustomPlans = getFromStorage<CoachingRecommendation>(CUSTOM_COACHING_PLANS_KEY);
+        const recIndex = allCustomPlans.findIndex(rec => rec.id === recommendationId);
+        if (recIndex === -1) throw new Error("Custom coaching plan not found.");
 
-export async function addCoachingCheckIn(historyId: string, recommendationId: string, notes: string): Promise<void> {
-    let allHistory = await getOneOnOneHistory();
-    const historyIndex = allHistory.findIndex(h => h.id === historyId);
-    if (historyIndex === -1) throw new Error("History item not found.");
-
-    const item = allHistory[historyIndex];
-    const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
-    if (recIndex === -1) throw new Error("Coaching recommendation not found.");
-
-    const recommendation = item.analysis.coachingRecommendations[recIndex];
-    
-    if (!recommendation.checkIns) {
-        recommendation.checkIns = [];
+        allCustomPlans[recIndex].progress = progress;
+        saveToStorage(CUSTOM_COACHING_PLANS_KEY, allCustomPlans);
     }
+}
 
-    const newCheckIn: CheckIn = {
+export async function addCoachingCheckIn(historyId: string | null, recommendationId: string, notes: string): Promise<void> {
+     const newCheckIn: CheckIn = {
         id: uuidv4(),
         date: new Date().toISOString(),
         notes: notes,
     };
 
-    recommendation.checkIns.push(newCheckIn);
+    if (historyId) {
+        let allHistory = await getOneOnOneHistory();
+        const historyIndex = allHistory.findIndex(h => h.id === historyId);
+        if (historyIndex === -1) throw new Error("History item not found.");
 
-    saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+        const item = allHistory[historyIndex];
+        const recIndex = item.analysis.coachingRecommendations.findIndex(rec => rec.id === recommendationId);
+        if (recIndex === -1) throw new Error("Coaching recommendation not found.");
+
+        const recommendation = item.analysis.coachingRecommendations[recIndex];
+        if (!recommendation.checkIns) recommendation.checkIns = [];
+        recommendation.checkIns.push(newCheckIn);
+        saveToStorage(ONE_ON_ONE_HISTORY_KEY, allHistory);
+    } else {
+        let allCustomPlans = getFromStorage<CoachingRecommendation>(CUSTOM_COACHING_PLANS_KEY);
+        const recIndex = allCustomPlans.findIndex(rec => rec.id === recommendationId);
+        if (recIndex === -1) throw new Error("Custom coaching plan not found.");
+        
+        const recommendation = allCustomPlans[recIndex];
+        if (!recommendation.checkIns) recommendation.checkIns = [];
+        recommendation.checkIns.push(newCheckIn);
+        saveToStorage(CUSTOM_COACHING_PLANS_KEY, allCustomPlans);
+    }
 }
 
 

@@ -36,14 +36,14 @@ const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) 
 
 function MyDevelopmentWidget() {
     const { role } = useRole();
-    const [recommendations, setRecommendations] = useState<{ historyItem: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
+    const [recommendations, setRecommendations] = useState<{ historyItem?: OneOnOneHistoryItem; recommendation: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     const [openAccordionItem, setOpenAccordionItem] = useState<string | undefined>(undefined);
 
 
     // State for Decline Dialog
-    const [decliningRec, setDecliningRec] = useState<{ historyId: string; recommendation: CoachingRecommendation } | null>(null);
+    const [decliningRec, setDecliningRec] = useState<{ historyId?: string; recommendation: CoachingRecommendation } | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [isSubmittingDecline, setIsSubmittingDecline] = useState(false);
 
@@ -113,9 +113,9 @@ function MyDevelopmentWidget() {
         };
     }, [fetchRecommendations]);
 
-    const handleCoachingRecAction = async (historyId: string, recommendationId: string, status: 'accepted' | 'declined', data?: { reason?: string; startDate?: string; endDate?: string; }) => {
+    const handleCoachingRecAction = async (recommendationId: string, status: 'accepted' | 'declined', data?: { historyId?: string, reason?: string; startDate?: string; endDate?: string; }) => {
         try {
-            await updateCoachingRecommendationStatus(historyId, recommendationId, status, data);
+            await updateCoachingRecommendationStatus(recommendationId, status, data);
             toast({
                 title: `Recommendation ${status}`,
                 description: `The coaching recommendation has been updated.`,
@@ -130,7 +130,7 @@ function MyDevelopmentWidget() {
     const handleDeclineSubmit = () => {
         if (!decliningRec || !rejectionReason) return;
         setIsSubmittingDecline(true);
-        handleCoachingRecAction(decliningRec.historyId, decliningRec.recommendation.id, 'declined', { reason: rejectionReason }).finally(() => {
+        handleCoachingRecAction(decliningRec.recommendation.id, 'declined', { historyId: decliningRec.historyId, reason: rejectionReason }).finally(() => {
             setIsSubmittingDecline(false);
             setDecliningRec(null);
             setRejectionReason('');
@@ -140,7 +140,8 @@ function MyDevelopmentWidget() {
     const handleAcceptSubmit = () => {
         if (!acceptingRec || !startDate || !endDate) return;
         setIsSubmittingAccept(true);
-        handleCoachingRecAction(acceptingRec.historyId, acceptingRec.recommendationId, 'accepted', { 
+        handleCoachingRecAction(acceptingRec.recommendationId, 'accepted', { 
+            historyId: acceptingRec.historyId,
             startDate: startDate.toISOString(), 
             endDate: endDate.toISOString() 
         }).finally(() => {
@@ -290,19 +291,15 @@ function MyDevelopmentWidget() {
                         >
                             {recommendations.map(({ historyItem, recommendation: rec }) => {
                                 const isActionable = rec.status === 'pending';
-                                const isCustomGoal = historyItem.employeeName === 'System';
-
+                                
                                 return (
                                 <AccordionItem value={rec.id} key={rec.id} className={cn(!isActionable && "bg-muted/30")}>
                                     <AccordionTrigger>
                                         <div className="flex justify-between items-center w-full">
                                             <div className="flex flex-col items-start text-left">
                                                 <p className="font-semibold">{rec.area}</p>
-                                                {!isCustomGoal && (
+                                                {historyItem && (
                                                     <p className="text-sm font-normal text-muted-foreground">From 1-on-1 with {historyItem.employeeName} on {format(new Date(historyItem.date), 'PPP')}</p>
-                                                )}
-                                                {isCustomGoal && (
-                                                    <p className="text-sm font-normal text-muted-foreground">Self-directed goal</p>
                                                 )}
                                             </div>
                                             <div className="mr-2">
@@ -329,7 +326,7 @@ function MyDevelopmentWidget() {
                                                 <p className="text-xs text-muted-foreground italic">AI Justification: "{rec.justification}"</p>
                                             </div>
 
-                                             {isActionable && (
+                                             {isActionable && historyItem && (
                                                  <div className="flex gap-2 mt-4 pt-4 border-t">
                                                     <Button size="sm" variant="success" onClick={() => setAcceptingRec({ historyId: historyItem.id, recommendationId: rec.id })}>
                                                         <ThumbsUp className="mr-2 h-4 w-4" /> Accept

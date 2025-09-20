@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getOneOnOneHistory, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn, addCustomCoachingPlan } from '@/services/feedback-service';
+import { getActiveCoachingPlansForSupervisor, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn, addCustomCoachingPlan } from '@/services/feedback-service';
 import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
 import { useRole } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
@@ -174,7 +174,7 @@ function GoalFeedbackDialog({
     }, [open]);
 
     const handleSubmit = async () => {
-        if (!rec || !historyId || !situation) return;
+        if (!rec || !situation) return;
         setIsSubmitting(true);
         setError(null);
         setAiFeedback(null);
@@ -263,35 +263,29 @@ function GoalFeedbackDialog({
 export default function DevelopmentPlanWidget() {
     const { role } = useRole();
     const { toast } = useToast();
-    const [activePlans, setActivePlans] = useState<{ historyId: string; rec: CoachingRecommendation }[]>([]);
+    const [activePlans, setActivePlans] = useState<{ historyId: string | null; rec: CoachingRecommendation }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isPending, startTransition] = useTransition();
     
-    const [checkInRec, setCheckInRec] = useState<{ historyId: string, rec: CoachingRecommendation, newProgress: number } | null>(null);
+    const [checkInRec, setCheckInRec] = useState<{ historyId: string | null, rec: CoachingRecommendation, newProgress: number } | null>(null);
     const [checkInNotes, setCheckInNotes] = useState('');
     const [isSubmittingCheckIn, setIsSubmittingCheckIn] = useState(false);
 
     const [historyInView, setHistoryInView] = useState<CoachingRecommendation | null>(null);
     const [isAddPlanDialogOpen, setIsAddPlanDialogOpen] = useState(false);
     
-    const [feedbackGoal, setFeedbackGoal] = useState<{ historyId: string, rec: CoachingRecommendation } | null>(null);
+    const [feedbackGoal, setFeedbackGoal] = useState<{ historyId: string | null, rec: CoachingRecommendation } | null>(null);
 
     const fetchActivePlans = useCallback(async () => {
         if (!role) return;
         setIsLoading(true);
-        const history = await getOneOnOneHistory();
-        const plans: { historyId: string; rec: CoachingRecommendation }[] = [];
         const currentUserName = role ? roleUserMapping[role].name : null;
+        if (!currentUserName) {
+            setIsLoading(false);
+            return;
+        }
 
-        history.forEach(item => {
-            if (item.supervisorName === currentUserName) {
-                item.analysis.coachingRecommendations.forEach(rec => {
-                    if (rec.status === 'accepted' && (rec.progress ?? 0) < 100) {
-                        plans.push({ historyId: item.id, rec });
-                    }
-                });
-            }
-        });
+        const plans = await getActiveCoachingPlansForSupervisor(currentUserName);
         setActivePlans(plans.sort((a, b) => new Date(a.rec.startDate || 0).getTime() - new Date(b.rec.startDate || 0).getTime()));
         setIsLoading(false);
     }, [role]);
@@ -307,8 +301,8 @@ export default function DevelopmentPlanWidget() {
         };
     }, [fetchActivePlans]);
 
-    const debouncedProgressUpdate = useDebouncedCallback((historyId: string, recId: string, newProgress: number) => {
-        const plan = activePlans.find(p => p.historyId === historyId && p.rec.id === recId);
+    const debouncedProgressUpdate = useDebouncedCallback((historyId: string | null, recId: string, newProgress: number) => {
+        const plan = activePlans.find(p => p.rec.id === recId);
         if (plan) {
             // Only trigger check-in if progress has increased
             if (newProgress > (plan.rec.progress ?? 0)) {
