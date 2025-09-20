@@ -26,7 +26,6 @@ const prompt = ai.definePrompt({
 
 **The Scenario:**
 - The user wants to practice the following scenario they have described: "{{scenario}}".
-- The user initiated this conversation.
 
 **Your Task:**
 - Stay in character as the {{persona}} at all times.
@@ -34,6 +33,7 @@ const prompt = ai.definePrompt({
 - Do NOT break character or reveal that you are an AI.
 - Do NOT be overly agreeable. If the user is vague, push back. If their tone is poor, react accordingly. Your goal is to provide a realistic challenge.
 - Keep your responses concise and conversational.
+- If the conversation history is empty, you MUST initiate the conversation based on the scenario. Otherwise, continue the conversation.
 
 **Conversation History:**
 {{#each history}}
