@@ -17,6 +17,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { LineChart, CartesianGrid, XAxis, Line, YAxis } from "recharts"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 // Placeholder data for past simulations
@@ -71,7 +72,8 @@ const scorecardData = [
 const chartData = scorecardData.map(entry => ({
   date: format(entry.date, 'MMM d'),
   overall: entry.scores.overall,
-})).reverse();
+})).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
 
 const chartConfig = {
   overall: {
@@ -146,7 +148,7 @@ function ScorecardPage() {
                                         tickFormatter={(value) => value.slice(0, 3)}
                                     />
                                     <YAxis
-                                        domain={[0, 10]}
+                                        domain={[Math.min(...overallScores) - 1, 10]}
                                         tickLine={false}
                                         axisLine={false}
                                         tickMargin={8}
@@ -170,63 +172,68 @@ function ScorecardPage() {
                     </CardContent>
                 </Card>
 
-                <h2 className="text-xl font-semibold pt-4">Simulation History</h2>
-
-                {scorecardData.slice().reverse().map((entry) => (
-                    <Card key={entry.id} className="shadow-md hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <CardTitle className="text-xl">{entry.scenario}</CardTitle>
-                                    <CardDescription>
-                                        Practiced with a <span className="font-semibold text-primary">{entry.persona}</span> on {format(entry.date, 'PPP')}
-                                    </CardDescription>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <Badge variant="secondary">{entry.difficulty}</Badge>
-                                    <div className="flex items-center gap-2 text-2xl font-bold text-secondary">
-                                        <Star className="h-6 w-6 fill-secondary" />
-                                        <span>{entry.scores.overall.toFixed(1)}</span>
+                <div className="space-y-4">
+                    <h2 className="text-xl font-semibold pt-4">Simulation History</h2>
+                    <Accordion type="single" collapsible className="w-full space-y-2">
+                        {scorecardData.slice().reverse().map((entry) => (
+                            <AccordionItem value={`item-${entry.id}`} key={entry.id} className="border rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow">
+                                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                                     <div className="flex justify-between items-center w-full">
+                                        <div className="text-left">
+                                            <p className="font-semibold text-foreground">{entry.scenario}</p>
+                                            <p className="text-sm text-muted-foreground font-normal">
+                                                vs. {entry.persona} on {format(entry.date, 'PPP')}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-4 pr-2">
+                                            <div className="flex items-center gap-2 text-xl font-bold text-secondary">
+                                                <Star className="h-5 w-5 fill-secondary" />
+                                                <span>{entry.scores.overall.toFixed(1)}</span>
+                                            </div>
+                                             <Badge variant="secondary">{entry.difficulty}</Badge>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                                <div className="p-3 rounded-md bg-muted">
-                                    <p className="text-sm text-muted-foreground">Clarity</p>
-                                    <p className="text-lg font-semibold">{entry.scores.clarity.toFixed(1)}</p>
-                                </div>
-                                <div className="p-3 rounded-md bg-muted">
-                                    <p className="text-sm text-muted-foreground">Empathy</p>
-                                    <p className="text-lg font-semibold">{entry.scores.empathy.toFixed(1)}</p>
-                                </div>
-                                <div className="p-3 rounded-md bg-muted">
-                                    <p className="text-sm text-muted-foreground">Assertiveness</p>
-                                    <p className="text-lg font-semibold">{entry.scores.assertiveness.toFixed(1)}</p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold flex items-center gap-2 text-green-600 dark:text-green-400">
-                                        <TrendingUp /> Strengths
-                                    </h4>
-                                    <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-                                        {entry.strengths.map((s, i) => <li key={i}>{s}</li>)}
-                                    </ul>
-                                </div>
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
-                                        <TrendingDown /> Areas for Improvement
-                                    </h4>
-                                    <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-                                        {entry.gaps.map((g, i) => <li key={i}>{g}</li>)}
-                                    </ul>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 pt-0">
+                                    <div className="space-y-4 border-t pt-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                                            <div className="p-2 rounded-md bg-muted">
+                                                <p className="text-xs text-muted-foreground">Clarity</p>
+                                                <p className="text-md font-semibold">{entry.scores.clarity.toFixed(1)}</p>
+                                            </div>
+                                            <div className="p-2 rounded-md bg-muted">
+                                                <p className="text-xs text-muted-foreground">Empathy</p>
+                                                <p className="text-md font-semibold">{entry.scores.empathy.toFixed(1)}</p>
+                                            </div>
+                                            <div className="p-2 rounded-md bg-muted">
+                                                <p className="text-xs text-muted-foreground">Assertiveness</p>
+                                                <p className="text-md font-semibold">{entry.scores.assertiveness.toFixed(1)}</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                                            <div className="space-y-2">
+                                                <h4 className="font-semibold flex items-center gap-2 text-green-600 dark:text-green-400">
+                                                    <TrendingUp /> Strengths
+                                                </h4>
+                                                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                    {entry.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                                                </ul>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h4 className="font-semibold flex items-center gap-2 text-yellow-600 dark:text-yellow-400">
+                                                    <TrendingDown /> Areas for Improvement
+                                                </h4>
+                                                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                    {entry.gaps.map((g, i) => <li key={i}>{g}</li>)}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </div>
             </div>
         </div>
     );
