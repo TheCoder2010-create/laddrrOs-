@@ -7,7 +7,7 @@ import DashboardLayout from "@/components/dashboard-layout";
 import { useRole } from "@/hooks/use-role";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon } from "lucide-react";
+import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon, Bot, User, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import {
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/chart"
 import { LineChart, CartesianGrid, XAxis, Line, YAxis } from "recharts"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 
 // Placeholder data for past simulations
@@ -36,6 +38,16 @@ const scorecardData = [
         },
         strengths: ["Focused on shared goals.", "Listened without interrupting."],
         gaps: ["Was slightly apologetic when stating needs.", "Didn't define a clear next step."],
+        conversation: [
+            { role: 'model', content: "Hey, got a minute? You wanted to chat about the Q3 project launch." },
+            { role: 'user', content: "Yeah, thanks for making time. I wanted to talk about the data integration part. It seems like our teams are not on the same page.", annotation: "Good, direct opening. Clearly states the topic.", type: 'positive' },
+            { role: 'model', content: "Oh? I thought we were aligned after the last sync. What's the issue?" },
+            { role: 'user', content: "Well, it's just that it feels like my team's requirements were kind of ignored. We need the data in a different format.", annotation: "The phrase 'it feels like' can weaken the statement. Try being more direct.", type: 'negative' },
+            { role: 'model', content: "Ignored is a strong word. We followed the spec that was approved. Changing the format now would cause significant delays." },
+            { role: 'user', content: "I understand that, and I'm sorry if it causes issues, but we can't proceed without it. It's a must-have for us.", annotation: "Apologizing here undermines your position. It's okay to state your team's needs firmly.", type: 'negative' },
+            { role: 'model', content: "This is the first I'm hearing of it being a 'must-have'. Why wasn't this in the initial spec?" },
+            { role: 'user', content: "You're right, it should have been clearer from our side. Let's work together to find a solution that minimizes delay but still gets us what we need. How about we whiteboard a few options this afternoon?", annotation: "Excellent pivot. Takes ownership and proposes a collaborative next step.", type: 'positive' }
+        ]
     },
     {
         id: 2,
@@ -51,6 +63,11 @@ const scorecardData = [
         },
         strengths: ["Provided specific examples of accomplishments.", "Maintained a professional tone throughout."],
         gaps: ["Could have prepared a response for budget constraints."],
+        conversation: [
+            { role: 'model', content: "Hi, come on in. What's on your mind?" },
+            { role: 'user', content: "Thanks for meeting. Based on my work leading the Project Phoenix launch and the resulting 15% efficiency gain, I'd like to be considered for a promotion to Senior Developer and discuss a corresponding salary adjustment.", annotation: "Perfect opening. Confident, data-backed, and clearly states the desired outcome.", type: 'positive' },
+            { role: 'model', content: "I agree, your work on Phoenix was outstanding. The official promotion cycle is in Q4, but let's talk about what that would look like." }
+        ]
     },
     {
         id: 3,
@@ -66,6 +83,12 @@ const scorecardData = [
         },
         strengths: ["Opened the conversation clearly.", "Used 'I' statements effectively."],
         gaps: ["Could have acknowledged their perspective more.", "Closing was a bit abrupt."],
+        conversation: [
+            { role: 'model', content: "What's up? You scheduled this meeting." },
+            { role: 'user', content: "Thanks for joining. I wanted to talk about the deadlines for the past two sprints. I've noticed you've missed them, which is unusual for you. I want to understand what's going on and how I can help.", annotation: "Good use of a SOFT start: Specific, Objective, Feeling, and Thought.", type: 'positive'},
+            { role: 'model', content: "I've been swamped. Everyone has. The workload is insane right now."},
+            { role: 'user', content: "The workload is high, I agree. But the missed deadlines are impacting the rest of the team's ability to move forward. We need to find a way to ensure your tasks are completed on time.", annotation: "This could be perceived as dismissive. Try acknowledging their point more directly before stating the impact.", type: 'negative'}
+        ]
     },
 ];
 
@@ -86,6 +109,19 @@ function ScorecardPage() {
     const overallScores = scorecardData.map(d => d.scores.overall);
     const averageScore = overallScores.reduce((a, b) => a + b, 0) / overallScores.length;
     const bestScore = Math.max(...overallScores);
+
+    const Annotation = ({ text, type }: { text: string; type: 'positive' | 'negative' }) => {
+        const Icon = type === 'positive' ? ThumbsUp : ThumbsDown;
+        const colorClass = type === 'positive' ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400';
+        const bgClass = type === 'positive' ? 'bg-green-500/10' : 'bg-yellow-500/10';
+
+        return (
+            <div className={cn("mt-1.5 flex items-start gap-2 p-2 rounded-md text-xs", colorClass, bgClass)}>
+                <Icon className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <p className="flex-1">{text}</p>
+            </div>
+        );
+    };
 
     return (
         <div className="p-4 md:p-8">
@@ -195,7 +231,7 @@ function ScorecardPage() {
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="p-4 pt-0">
-                                    <div className="space-y-4 border-t pt-4">
+                                    <div className="space-y-6 border-t pt-4">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                                             <div className="p-2 rounded-md bg-muted">
                                                 <p className="text-xs text-muted-foreground">Clarity</p>
@@ -227,6 +263,43 @@ function ScorecardPage() {
                                                     {entry.gaps.map((g, i) => <li key={i}>{g}</li>)}
                                                 </ul>
                                             </div>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="font-semibold text-foreground mb-3">Simulation Replay</h4>
+                                            <ScrollArea className="h-[300px] w-full border rounded-lg p-4 space-y-4 bg-muted/30">
+                                                {entry.conversation.map((msg, index) => (
+                                                    <div key={index} className="space-y-2">
+                                                        <div className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                                                            {msg.role === 'model' && (
+                                                                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                                                                    <Bot className="text-secondary-foreground" />
+                                                                </div>
+                                                            )}
+                                                            <div className={cn(
+                                                                "max-w-[85%] rounded-lg px-4 py-2 text-sm",
+                                                                msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-background border'
+                                                            )}>
+                                                                <p className="whitespace-pre-wrap">{msg.content}</p>
+                                                            </div>
+                                                            {msg.role === 'user' && (
+                                                                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                                                    <User className="text-muted-foreground" />
+                                                                </div>
+                                                             )}
+                                                        </div>
+                                                        {msg.annotation && msg.type && (
+                                                            <div className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                                                                {msg.role === 'model' && <div className="w-8 flex-shrink-0" />}
+                                                                <div className="w-[85%]">
+                                                                    <Annotation text={msg.annotation} type={msg.type} />
+                                                                </div>
+                                                                {msg.role === 'user' && <div className="w-8 flex-shrink-0" />}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </ScrollArea>
                                         </div>
                                     </div>
                                 </AccordionContent>
