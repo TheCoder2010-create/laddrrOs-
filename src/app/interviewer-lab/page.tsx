@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -16,8 +17,9 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send } from 'lucide-react';
+import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info } from 'lucide-react';
 import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination } from '@/services/interviewer-lab-service';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const { role } = useRole();
@@ -82,7 +84,22 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="target-role">Target Interview Level</Label>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor="target-role">Target Interview Level</Label>
+                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="max-w-xs">
+                                        This defines the type of candidate the nominee will be trained to interview (e.g., training to interview a Manager requires different skills than for an IC).
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
                         <Select onValueChange={setTargetRole} value={targetRole || ''}>
                             <SelectTrigger id="target-role">
                                 <SelectValue placeholder="Select the target level" />
@@ -310,5 +327,3 @@ export default function InterviewerLabPage() {
         </DashboardLayout>
     );
 }
-
-    
