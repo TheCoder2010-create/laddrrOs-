@@ -204,11 +204,7 @@ function SimulationArena({
                     ...initialConfig,
                     history: messages.filter(m => m.role !== 'system'),
                 };
-                const analysisResult = await analyzeNetsConversation(analysisInput);
-                
-                if (assignedScenarioId) {
-                    await completePracticeScenario(assignedScenarioId, analysisResult);
-                }
+                const analysisResult = await completePracticeScenario(analysisInput, assignedScenarioId);
                 
                 toast({
                     title: "Simulation Complete!",
@@ -321,8 +317,7 @@ function SimulationArena({
             <CardHeader>
                  <div className="flex justify-between items-center">
                     <CardTitle className="flex items-center gap-2 text-2xl">
-                        <MagicWandIcon className="h-6 w-6 text-primary" />
-                        Conversation Arena
+                        Practice Arena
                     </CardTitle>
                      <Button variant="ghost" onClick={handleExit} disabled={isAnalyzing}>
                         {isAnalyzing ? (
@@ -454,9 +449,8 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
         return (
              <div className="w-full max-w-4xl mx-auto">
                 <div className="mb-8 flex justify-between items-center">
-                    <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-                        <MagicWandIcon className="h-8 w-8 text-primary" />
-                         Nets – Conversation Arena
+                    <h1 className="text-3xl font-bold font-headline">
+                         Nets – Practice Arena
                     </h1>
                      <div className="flex items-center gap-2">
                          <Button variant="outline" asChild>
@@ -526,7 +520,6 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                  <div className="flex items-start justify-between">
                      <div className="space-y-1.5">
                         <CardTitle className="flex items-center gap-2 text-3xl font-bold font-headline">
-                            <MagicWandIcon className="h-8 w-8 text-primary" />
                              Configure Simulation
                         </CardTitle>
                         <CardDescription className="text-lg flex items-center gap-2">
