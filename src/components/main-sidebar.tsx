@@ -106,7 +106,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/1-on-1', icon: <CheckSquare className="text-green-500"/>, label: '1-on-1' },
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    ...(currentRole === 'Manager' ? [{ href: '/managers-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Manager's Lab" }] : []),
+    ...(currentRole === 'Manager' ? [{ href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
     { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
   
