@@ -79,13 +79,23 @@ const runNetsConversationFlow = ai.defineFlow(
     let output: string | null = null;
     
     if (input.history.length === 0) {
-      // This is the first turn, the AI needs to start the conversation.
-      const { output: startOutput } = await startConversationPrompt({
-        persona: input.persona,
-        scenario: input.scenario,
-        difficulty: input.difficulty
-      });
-      output = startOutput;
+      // This is the first turn. Try a few times to get an initial response.
+      for (let i = 0; i < 3; i++) {
+        const { output: startOutput } = await startConversationPrompt({
+          persona: input.persona,
+          scenario: input.scenario,
+          difficulty: input.difficulty
+        });
+        if (startOutput) {
+          output = startOutput;
+          break;
+        }
+      }
+      // If the AI still fails, use a fallback.
+      if (!output) {
+        console.warn("AI failed to generate initial response after retries. Using fallback.");
+        output = `Hi, you wanted to chat about: "${input.scenario}"?`;
+      }
     } else {
       // This is a subsequent turn, continue the conversation.
       const processedHistory = input.history.map(msg => ({
