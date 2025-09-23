@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
@@ -12,17 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit, Edit, FileClock, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { runNetsConversation } from '@/ai/flows/nets-flow';
 import type { NetsConversationInput, NetsMessage, NetsInitialInput, NetsAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 import { roleUserMapping, formatActorName } from '@/lib/role-mapping';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
-import { generateNetsNudge } from '@/ai/flows/generate-nets-nudge-flow';
 import { completePracticeScenario, getPracticeScenariosForUser, AssignedPracticeScenario, assignPracticeScenario } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -37,6 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import SimulationArena from '@/components/simulation-arena';
 
 
 const difficulties = [
@@ -52,6 +50,7 @@ const personaIcons: Record<string, React.ElementType> = {
     'Manager': Briefcase,
     'HR Head': ShieldCheck,
     'Employee': UserCheck,
+    'Candidate': User,
 };
 
 
@@ -214,226 +213,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
     );
 }
 
-function SimulationArena({
-    initialConfig,
-    assignedScenarioId,
-    onExit
-}: {
-    initialConfig: NetsInitialInput,
-    assignedScenarioId?: string,
-    onExit: (analysis?: NetsAnalysisOutput) => void
-}) {
-    const [isPending, startTransition] = useTransition();
-    const [isGettingNudge, startNudgeTransition] = useTransition();
-    const [isAnalyzing, startAnalysis] = useTransition();
-    const [messages, setMessages] = useState<NetsMessage[]>([]);
-    const [userInput, setUserInput] = useState('');
-    const { toast } = useToast();
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const router = useRouter();
-
-
-    const handleExit = () => {
-        startAnalysis(async () => {
-            try {
-                const analysisInput: NetsConversationInput = {
-                    ...initialConfig,
-                    history: messages.filter(m => m.role !== 'system'),
-                };
-                const analysisResult = await completePracticeScenario(analysisInput, assignedScenarioId);
-                
-                toast({
-                    title: "Simulation Complete!",
-                    description: "Your scorecard has been updated with the results.",
-                });
-
-                onExit(analysisResult);
-
-            } catch(e) {
-                console.error("Failed to analyze conversation", e);
-                toast({ variant: 'destructive', title: "Analysis Failed", description: "Could not generate a scorecard for this session." });
-                onExit(); // Exit without analysis
-            }
-        });
-    };
-
-    useEffect(() => {
-        // Add the initial system message and trigger the first AI response
-        const startSimulation = () => {
-            const initialSystemMessage: NetsMessage = {
-                role: 'system',
-                content: `Simulation started. The AI is playing the role of a ${initialConfig.persona}.`
-            };
-            const currentMessages = [initialSystemMessage];
-            setMessages(currentMessages);
-
-            startTransition(async () => {
-                try {
-                    const input: NetsConversationInput = {
-                        ...initialConfig,
-                        history: [], // History is empty for the first turn
-                    };
-                    const aiResponse = await runNetsConversation(input);
-                    setMessages(prev => [...prev, aiResponse]);
-                } catch (error) {
-                    console.error("AI simulation failed on start", error);
-                    toast({ variant: 'destructive', title: "Simulation Error", description: "The AI could not start the conversation. Please try again." });
-                    onExit(); // Exit if the start fails
-                }
-            });
-        };
-
-        startSimulation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [initialConfig, toast]);
-    
-    useEffect(() => {
-        // Scroll to bottom when new messages are added
-        if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-        }
-    }, [messages]);
-
-    const handleSendMessage = () => {
-        if (!userInput.trim()) return;
-
-        const newUserMessage: NetsMessage = { role: 'user', content: userInput };
-        const currentMessages = [...messages, newUserMessage];
-        setMessages(currentMessages);
-        setUserInput('');
-
-        startTransition(async () => {
-            try {
-                const input: NetsConversationInput = {
-                    ...initialConfig,
-                    history: currentMessages.filter(m => m.role !== 'system'), // Don't send system messages to AI
-                };
-                const aiResponse = await runNetsConversation(input);
-                setMessages(prev => [...prev, aiResponse]);
-            } catch (error) {
-                console.error("AI simulation failed", error);
-                toast({ variant: 'destructive', title: "Simulation Error", description: "The AI could not respond. Please try again." });
-                // Remove the user message that failed to get a response
-                setMessages(prev => prev.slice(0, -1));
-            }
-        });
-    };
-    
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (!isPending) {
-                handleSendMessage();
-            }
-        }
-    };
-    
-    const handleGetNudge = () => {
-        startNudgeTransition(async () => {
-            try {
-                const input: NetsConversationInput = {
-                    ...initialConfig,
-                    history: messages.filter(m => m.role !== 'system'),
-                };
-                const result = await generateNetsNudge(input);
-                toast({
-                    title: "Coach's Nudge",
-                    description: result.nudge,
-                    duration: 8000,
-                });
-            } catch (error) {
-                console.error("Failed to get nudge", error);
-                toast({ variant: 'destructive', title: "Nudge Failed", description: "Could not get a hint at this time." });
-            }
-        });
-    };
-
-    return (
-        <Card className="w-full max-w-4xl mx-auto shadow-2xl shadow-primary/10">
-            <CardHeader>
-                 <div className="flex justify-between items-center">
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                        Practice Arena
-                    </CardTitle>
-                     <Button variant="ghost" onClick={handleExit} disabled={isAnalyzing}>
-                        {isAnalyzing ? (
-                            <>
-                                <Loader2 className="mr-2 animate-spin" /> Analyzing...
-                            </>
-                        ) : (
-                            <>
-                                <ArrowLeft className="mr-2" /> End & Analyze
-                            </>
-                        )}
-                    </Button>
-                </div>
-                <CardDescription>
-                    You are in a simulation with a <span className="font-semibold text-primary">{initialConfig.persona}</span>.
-                    The scenario is: <span className="font-semibold text-primary">{initialConfig.scenario}</span>.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-[50vh] w-full border rounded-lg p-4 space-y-4" ref={scrollAreaRef}>
-                    {messages.map((msg, index) => (
-                        <div key={index} className={cn("flex items-start gap-3", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                             {msg.role === 'model' && <Avatar icon={<Bot className="text-primary" />} />}
-                             {msg.role === 'system' ? (
-                                <div className="text-center text-xs text-muted-foreground italic w-full py-4">{msg.content}</div>
-                             ) : (
-                                <div className={cn("max-w-[75%] rounded-lg px-4 py-2", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted')}>
-                                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                </div>
-                             )}
-                            {msg.role === 'user' && <Avatar icon={<User />} />}
-                        </div>
-                    ))}
-                    {isPending && messages.length > 0 && (
-                        <div className="flex items-start gap-3 justify-start">
-                            <Avatar icon={<Bot className="text-primary" />} />
-                            <div className="bg-muted rounded-lg px-4 py-3">
-                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                            </div>
-                        </div>
-                    )}
-                </ScrollArea>
-            </CardContent>
-            <CardFooter>
-                 <div className="flex w-full items-center gap-2 relative">
-                    <Button variant="ghost" size="icon" onClick={handleGetNudge} disabled={isGettingNudge || isPending} className="absolute left-2 top-1/2 -translate-y-1/2">
-                         {isGettingNudge ? <Loader2 className="animate-spin text-yellow-400" /> : <Lightbulb className="text-yellow-400" />}
-                    </Button>
-                    <Textarea
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type your response here..."
-                        className="pl-14 pr-12"
-                        rows={1}
-                        disabled={isPending}
-                    />
-                    <Button
-                        size="icon"
-                        onClick={handleSendMessage}
-                        disabled={isPending || !userInput.trim()}
-                        className="absolute right-2"
-                    >
-                        <Send />
-                    </Button>
-                </div>
-            </CardFooter>
-        </Card>
-    );
-}
-
-const Avatar = ({ icon }: { icon: React.ReactNode }) => (
-    <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-        {icon}
-    </div>
-);
-
-
 function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (config: NetsInitialInput, assignedScenarioId?: string) => void, role: Role, assignedScenarios: AssignedPracticeScenario[], onAssign: () => void }) {
-    const { availableRoles } = useRole();
     const [selectedPersona, setSelectedPersona] = useState<Role | null>(null);
     const [scenario, setScenario] = useState('');
     const [difficulty, setDifficulty] = useState('neutral');
@@ -500,16 +280,18 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                     Choose a persona to practice your conversation with.
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {availableRoles.filter(r => r !== 'Anonymous').map(role => {
-                         const Icon = personaIcons[role] || Briefcase;
+                    {availableRoles.filter(r => r !== 'Anonymous').map(r => {
+                         const roleDetails = roleUserMapping[r] || { name: r, fallback: r.substring(0,1), imageHint: 'person', role: r };
+                         const Icon = personaIcons[r] || Briefcase;
                          return (
                             <button
-                                key={role}
-                                onClick={() => setSelectedPersona(role)}
+                                key={r}
+                                onClick={() => setSelectedPersona(r)}
                                 className="group flex flex-col items-center justify-center gap-2 py-4 transition-transform duration-200 ease-in-out hover:scale-110 hover:-translate-y-1"
                             >
                                 <Icon className="h-10 w-10 text-muted-foreground transition-colors group-hover:text-primary" />
-                                <span className="font-semibold text-foreground">{role}</span>
+                                <span className="font-semibold text-foreground">{roleDetails.name}</span>
+                                <span className="text-sm text-muted-foreground">({r})</span>
                             </button>
                          )
                     })}
@@ -612,6 +394,7 @@ export default function NetsPage() {
     const [config, setConfig] = useState<NetsInitialInput | null>(null);
     const [assignedScenarioId, setAssignedScenarioId] = useState<string | undefined>();
     const [assignedScenarios, setAssignedScenarios] = useState<AssignedPracticeScenario[]>([]);
+    const [isAnalyzing, startAnalysis] = useTransition();
     
     const fetchAssignedScenarios = useCallback(async () => {
         if (!role) return;
@@ -634,15 +417,37 @@ export default function NetsPage() {
         toast({ title: "Simulation Started", description: "The AI will begin the conversation." });
     };
 
-    const handleExitSimulation = (analysis?: NetsAnalysisOutput) => {
-        setConfig(null);
-        setAssignedScenarioId(undefined);
-        fetchAssignedScenarios(); // Re-fetch in case a scenario was completed
-        if (analysis) {
-             // After analysis, redirect to the scorecard to show the new result
-            router.push('/nets/scorecard');
+    const handleExitSimulation = (messages?: NetsMessage[]) => {
+        if (!messages || messages.length === 0) {
+            setConfig(null); // Just exit if there's no conversation
+            return;
         }
-    }
+
+        startAnalysis(async () => {
+            try {
+                const analysisInput: NetsConversationInput = {
+                    ...config!,
+                    history: messages,
+                };
+                await completePracticeScenario(analysisInput, assignedScenarioId);
+                
+                toast({
+                    title: "Simulation Complete!",
+                    description: "Your scorecard has been updated with the results.",
+                });
+
+                setConfig(null);
+                setAssignedScenarioId(undefined);
+                fetchAssignedScenarios();
+                router.push('/nets/scorecard');
+
+            } catch(e) {
+                console.error("Failed to analyze conversation", e);
+                toast({ variant: 'destructive', title: "Analysis Failed", description: "Could not generate a scorecard for this session." });
+                setConfig(null);
+            }
+        });
+    };
     
     if (isRoleLoading || !role) {
         return <DashboardLayout role="Employee" onSwitchRole={() => {}}><Skeleton className="w-full h-screen" /></DashboardLayout>;
@@ -654,7 +459,6 @@ export default function NetsPage() {
                  {config ? (
                     <SimulationArena 
                         initialConfig={config} 
-                        assignedScenarioId={assignedScenarioId} 
                         onExit={handleExitSimulation} 
                     />
                 ) : (

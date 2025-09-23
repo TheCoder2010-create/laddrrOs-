@@ -18,8 +18,13 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen } from 'lucide-react';
-import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule } from '@/services/interviewer-lab-service';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment } from '@/services/interviewer-lab-service';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { NetsInitialInput, NetsAnalysisOutput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
+import SimulationArena from '@/components/simulation-arena';
+import { analyzeInterview } from '@/ai/flows/analyze-interview-flow';
+import type { InterviewerConversationInput } from '@/ai/schemas/interviewer-lab-schemas';
+
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const { role } = useRole();
@@ -94,7 +99,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p className="max-w-xs">
-                                        This defines the type of candidate the nominee will be trained to interview (e.g., training to interview a Manager requires different skills than for an IC).
+                                        This defines the type of candidate the nominee is being trained to interview (e.g., training to interview a Manager requires different skills than for an IC).
                                     </p>
                                 </TooltipContent>
                             </Tooltip>
@@ -124,10 +129,46 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
-function LearnerView({ initialNomination }: { initialNomination: Nomination }) {
+function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomination, onUpdate: () => void }) {
     const { toast } = useToast();
     const [nomination, setNomination] = useState(initialNomination);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [config, setConfig] = useState<NetsInitialInput | null>(null);
+
+    const handleStartPreAssessment = () => {
+        setConfig({
+            persona: 'Candidate', // The AI plays a generic candidate
+            scenario: `This is a pre-assessment mock interview for an interviewer. I am the interviewer, and you are the candidate. Please answer my questions as a candidate would.`,
+            difficulty: 'neutral',
+        });
+    };
+
+    const handleExitSimulation = async (messages?: { role: 'user' | 'model', content: string }[]) => {
+        if (!messages || messages.length === 0) {
+            setConfig(null); // Just exit if there's no conversation
+            return;
+        }
+
+        const transcript = messages.map(m => `${m.role === 'user' ? 'Interviewer' : 'Candidate'}: ${m.content}`).join('\n');
+        
+        try {
+            const analysisInput: InterviewerConversationInput = { transcript };
+            const analysisResult = await analyzeInterview(analysisInput);
+            
+            await savePreAssessment(nomination.id, analysisResult);
+
+            toast({
+                title: "Pre-Assessment Complete!",
+                description: "Your baseline score has been saved. You can now begin your training modules.",
+            });
+            onUpdate(); // Notify parent to re-fetch and update the view
+        } catch (e) {
+            console.error("Failed to analyze interview", e);
+            toast({ variant: 'destructive', title: "Analysis Failed", description: "Could not generate a score for this session." });
+        } finally {
+            setConfig(null);
+        }
+    };
 
     const handleCompleteModule = async (moduleId: string) => {
         setIsSubmitting(true);
@@ -144,6 +185,18 @@ function LearnerView({ initialNomination }: { initialNomination: Nomination }) {
     };
 
     const allModulesCompleted = nomination.modulesCompleted === nomination.modulesTotal;
+
+    if (config) {
+        return (
+            <div className="p-4 md:p-8 flex items-center justify-center">
+                 <SimulationArena 
+                    initialConfig={config} 
+                    onExit={handleExitSimulation} 
+                    arenaTitle="Pre-Assessment Mock Interview"
+                />
+            </div>
+        )
+    }
 
     return (
         <div className="p-4 md:p-8 space-y-6">
@@ -170,7 +223,7 @@ function LearnerView({ initialNomination }: { initialNomination: Nomination }) {
                         <div className="border-2 border-dashed rounded-lg p-8 text-center bg-card">
                             <h3 className="text-xl font-semibold">Start Your Journey</h3>
                             <p className="text-muted-foreground mt-2">Your first step is to complete a baseline mock interview. This helps us tailor your learning path.</p>
-                            <Button className="mt-6">Begin Pre-Assessment</Button>
+                            <Button className="mt-6" onClick={handleStartPreAssessment}>Begin Pre-Assessment</Button>
                         </div>
                     )}
                     
@@ -217,7 +270,7 @@ function LearnerView({ initialNomination }: { initialNomination: Nomination }) {
                  </div>
             )}
             
-            {allModulesCompleted && (
+            {allModulesCompleted && nomination.status !== 'Certified' && (
                 <Card className="border-primary/50">
                     <CardHeader className="text-center">
                         <CardTitle>Training Complete!</CardTitle>
@@ -331,7 +384,7 @@ function ManagerView() {
                                             <div className="text-sm text-muted-foreground">{roleUserMapping[n.nominee]?.role || ''}</div>
                                         </TableCell>
                                         <TableCell>{n.targetInterviewRole}</TableCell>
-                                        <TableCell>{n.scorePre ?? '—'}</TableCell>
+                                        <TableCell>{n.scorePre ? n.scorePre.toFixed(0) : '—'}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <span>{n.modulesCompleted}/{n.modulesTotal}</span>
@@ -365,7 +418,7 @@ export default function InterviewerLabPage() {
     const [nomination, setNomination] = useState<Nomination | null>(null);
     const [isCheckingNomination, setIsCheckingNomination] = useState(true);
 
-    useEffect(() => {
+    const fetchNominationData = useCallback(() => {
         if (!role) return;
         setIsCheckingNomination(true);
         getNominationForUser(role).then(userNomination => {
@@ -373,6 +426,10 @@ export default function InterviewerLabPage() {
             setIsCheckingNomination(false);
         });
     }, [role]);
+
+    useEffect(() => {
+        fetchNominationData();
+    }, [fetchNominationData]);
 
     const isLoading = isRoleLoading || isCheckingNomination;
 
@@ -394,7 +451,7 @@ export default function InterviewerLabPage() {
     } else if (nomination) {
         return (
             <DashboardLayout role={role} onSwitchRole={setRole}>
-                <LearnerView initialNomination={nomination} />
+                <LearnerView initialNomination={nomination} onUpdate={fetchNominationData} />
             </DashboardLayout>
         );
     }

@@ -76,3 +76,7 @@ export const NetsAnalysisOutputSchema = z.object({
     annotatedConversation: z.array(AnnotatedMessageSchema),
 });
 export type NetsAnalysisOutput = z.infer<typeof NetsAnalysisOutputSchema>;
+
+// The schemas for the Interviewer Lab are structurally identical to the Nets analysis output,
+// so we can reuse them or alias them for clarity if needed. For now, we'll just be aware of this.
+export type InterviewerAnalysisOutput = z.infer<typeof NetsAnalysisOutputSchema>;
