@@ -430,9 +430,29 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                         {availableRolesForAssignment.includes(role) && <AssignPracticeDialog onAssign={onAssign} />}
                      </div>
                 </div>
+
+                <h2 className="text-xl font-semibold mb-3 text-center">Start a new session:</h2>
+                <p className="text-lg text-muted-foreground text-center mb-6">
+                    Choose a persona to practice your conversation with.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {availableRoles.filter(r => r !== 'Anonymous').map(role => {
+                         const Icon = personaIcons[role] || Briefcase;
+                         return (
+                            <button
+                                key={role}
+                                onClick={() => setSelectedPersona(role)}
+                                className="group flex flex-col items-center justify-center gap-2 p-4 border rounded-lg hover:bg-accent hover:border-primary transition-colors h-28"
+                            >
+                                <Icon className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
+                                <span className="font-semibold text-foreground">{role}</span>
+                            </button>
+                         )
+                    })}
+                </div>
                 
                 {assignedScenarios.length > 0 && (
-                    <div className="mb-10">
+                    <div className="mt-12">
                         <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
                             <ClipboardEdit className="h-5 w-5 text-purple-500" />
                             Assigned for Practice
@@ -459,26 +479,6 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                         </div>
                     </div>
                 )}
-                
-                <h2 className="text-xl font-semibold mb-3 text-center">Or, start your own session:</h2>
-                <p className="text-lg text-muted-foreground text-center mb-6">
-                    Choose a persona to practice your conversation with.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {availableRoles.filter(r => r !== 'Anonymous').map(role => {
-                         const Icon = personaIcons[role] || Briefcase;
-                         return (
-                            <button
-                                key={role}
-                                onClick={() => setSelectedPersona(role)}
-                                className="group flex flex-col items-center justify-center gap-2 p-4 border rounded-lg hover:bg-accent hover:border-primary transition-colors h-28"
-                            >
-                                <Icon className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
-                                <span className="font-semibold text-foreground">{role}</span>
-                            </button>
-                         )
-                    })}
-                </div>
             </div>
         );
     }
