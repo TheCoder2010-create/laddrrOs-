@@ -496,7 +496,6 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                      </div>
                 </div>
 
-                <h2 className="text-xl font-semibold mb-3 text-center">Start a new session:</h2>
                 <p className="text-lg text-muted-foreground text-center mb-6">
                     Choose a persona to practice your conversation with.
                 </p>
