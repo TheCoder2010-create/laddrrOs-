@@ -10,7 +10,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { NetsConversationInputSchema, NetsMessageSchema, type NetsConversationInput } from '@/ai/schemas/nets-schemas';
 
-export async function runNetsConversation(input: NetsConversationInput): Promise<z.infer<typeof NetsMessageSchema>> {
+export async function runNetsConversation(input: z.infer<typeof NetsConversationInputSchema>): Promise<z.infer<typeof NetsMessageSchema>> {
   return runNetsConversationFlow(input);
 }
 
@@ -76,22 +76,21 @@ const runNetsConversationFlow = ai.defineFlow(
     inputSchema: NetsConversationInputSchema,
   },
   async (input) => {
-    let output: string | null = null;
+    let outputText: string;
     
     if (input.history.length === 0) {
-      // This is the first turn. Try to get an initial response.
+      // First turn: Use startConversationPrompt
       const { output: startOutput } = await startConversationPrompt({
         persona: input.persona,
         scenario: input.scenario,
         difficulty: input.difficulty
       });
-
-      // If the AI fails for any reason (e.g., returns null), use a safe fallback.
-      // This prevents the schema validation error.
-      output = startOutput || `Hi, you wanted to chat about: "${input.scenario}"?`;
+      
+      // Definitive fallback to prevent null values.
+      outputText = startOutput || `Hi, you wanted to chat about: "${input.scenario}"?`;
 
     } else {
-      // This is a subsequent turn, continue the conversation.
+      // Subsequent turns: Use continueConversationPrompt
       const processedHistory = input.history.map(msg => ({
         isUser: msg.role === 'user',
         isModel: msg.role === 'model',
@@ -104,18 +103,14 @@ const runNetsConversationFlow = ai.defineFlow(
       };
 
       const { output: continueOutput } = await continueConversationPrompt(promptInput);
-      output = continueOutput;
-    }
-
-    if (!output) {
-      // This is a secondary fallback in case the continuation prompt also fails.
-      console.error("The AI failed to generate a response for the simulation. Using a generic fallback.");
-      output = "I'm sorry, I'm not sure how to respond to that. Could you try rephrasing?";
+      
+      // Definitive fallback for continuation as well.
+      outputText = continueOutput || "I'm not sure how to respond to that. Could you try rephrasing?";
     }
     
     return {
       role: 'model',
-      content: output,
+      content: outputText,
     };
   }
 );
