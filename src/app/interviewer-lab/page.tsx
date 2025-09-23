@@ -17,8 +17,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info } from 'lucide-react';
-import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination } from '@/services/interviewer-lab-service';
+import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen } from 'lucide-react';
+import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
@@ -124,9 +124,29 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
-function LearnerView({ nomination }: { nomination: Nomination }) {
+function LearnerView({ initialNomination }: { initialNomination: Nomination }) {
+    const { toast } = useToast();
+    const [nomination, setNomination] = useState(initialNomination);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleCompleteModule = async (moduleId: string) => {
+        setIsSubmitting(true);
+        try {
+            const updatedNomination = await completeModule(nomination.id, moduleId);
+            setNomination(updatedNomination);
+            toast({ title: "Module Completed!", description: "Your progress has been updated."});
+        } catch (error) {
+            console.error("Failed to complete module", error);
+            toast({ variant: 'destructive', title: "Update Failed"});
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const allModulesCompleted = nomination.modulesCompleted === nomination.modulesTotal;
+
     return (
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-8 space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="text-3xl font-bold font-headline flex items-center gap-3">
@@ -134,25 +154,83 @@ function LearnerView({ nomination }: { nomination: Nomination }) {
                         My Interviewer Lab
                     </CardTitle>
                     <CardDescription className="text-lg text-muted-foreground">
-                        You've been nominated for Laddrr's Interviewer Coaching Program.
+                        You've been nominated for Laddrr's Interviewer Coaching Program. Complete the modules below to unlock your certification.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                        <h3 className="text-xl font-semibold">Training Track Coming Soon!</h3>
-                        <p className="text-muted-foreground mt-2">This is where your training modules will appear. After completing your pre-assessment, you'll unlock your learning path here.</p>
-                        {nomination.status === 'Pre-assessment pending' && (
-                             <Button className="mt-6">Begin Pre-Assessment</Button>
-                        )}
-                         {nomination.status === 'In Progress' && (
-                             <div className="mt-4">
-                                <p className="text-green-500 font-semibold">Pre-assessment completed!</p>
-                                <p>Score: {nomination.scorePre}</p>
-                            </div>
-                        )}
+                <CardContent className="space-y-4">
+                     <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium">Progress:</span>
+                        <Progress value={(nomination.modulesCompleted / nomination.modulesTotal) * 100} className="w-full max-w-sm" />
+                        <span className="text-sm font-medium text-muted-foreground">
+                            {nomination.modulesCompleted} / {nomination.modulesTotal}
+                        </span>
                     </div>
+
+                    {nomination.status === 'Pre-assessment pending' && (
+                        <div className="border-2 border-dashed rounded-lg p-8 text-center bg-card">
+                            <h3 className="text-xl font-semibold">Start Your Journey</h3>
+                            <p className="text-muted-foreground mt-2">Your first step is to complete a baseline mock interview. This helps us tailor your learning path.</p>
+                            <Button className="mt-6">Begin Pre-Assessment</Button>
+                        </div>
+                    )}
+                    
                 </CardContent>
             </Card>
+
+             {nomination.status !== 'Pre-assessment pending' && (
+                 <div className="space-y-4">
+                    {nomination.modules.map((module, index) => (
+                        <Card key={module.id} className={module.isCompleted ? 'bg-green-500/5 border-green-500/20' : 'bg-card'}>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div className="space-y-1.5">
+                                    <CardTitle className="flex items-center gap-3">
+                                        <BookOpen className="h-5 w-5 text-primary" />
+                                        Module {index + 1}: {module.title}
+                                    </CardTitle>
+                                    <CardDescription>{module.description}</CardDescription>
+                                </div>
+                                {module.isCompleted ? (
+                                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold">
+                                        <CheckCircle className="h-5 w-5" /> Completed
+                                    </div>
+                                ) : (
+                                    <Button size="sm" onClick={() => handleCompleteModule(module.id)} disabled={isSubmitting}>
+                                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Mark as Complete'}
+                                    </Button>
+                                )}
+                            </CardHeader>
+                             {!module.isCompleted && (
+                                <CardContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground p-4 border rounded-lg bg-muted/30">
+                                        <p>{module.content}</p>
+                                        <h4>Key Takeaways</h4>
+                                        <ul>
+                                            <li>This is placeholder content for the key takeaways.</li>
+                                            <li>Each module will contain specific learning points and examples.</li>
+                                            <li>Quizzes and reflection exercises can be added here.</li>
+                                        </ul>
+                                    </div>
+                                </CardContent>
+                            )}
+                        </Card>
+                    ))}
+                 </div>
+            )}
+            
+            {allModulesCompleted && (
+                <Card className="border-primary/50">
+                    <CardHeader className="text-center">
+                        <CardTitle>Training Complete!</CardTitle>
+                        <CardDescription>You've completed all the training modules. It's time for your final assessment to get certified.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                        <Button size="lg" className="bg-primary hover:bg-primary/90">
+                           Begin Post-Assessment
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
         </div>
     );
 }
@@ -289,6 +367,7 @@ export default function InterviewerLabPage() {
 
     useEffect(() => {
         if (!role) return;
+        setIsCheckingNomination(true);
         getNominationForUser(role).then(userNomination => {
             setNomination(userNomination);
             setIsCheckingNomination(false);
@@ -315,7 +394,7 @@ export default function InterviewerLabPage() {
     } else if (nomination) {
         return (
             <DashboardLayout role={role} onSwitchRole={setRole}>
-                <LearnerView nomination={nomination} />
+                <LearnerView initialNomination={nomination} />
             </DashboardLayout>
         );
     }
