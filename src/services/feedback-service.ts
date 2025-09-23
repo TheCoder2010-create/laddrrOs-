@@ -102,13 +102,73 @@ const PRACTICE_SCENARIOS_KEY = 'practice_scenarios_v1';
 
 
 // ==========================================
+// Mock Data for Scorecard
+// ==========================================
+const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
+    const now = new Date();
+    return [
+        {
+            id: 'mock-score-1',
+            assignedBy: 'AM',
+            assignedTo: 'Team Lead',
+            scenario: 'Practice giving corrective feedback to a high-performer about their recent communication style.',
+            persona: 'Employee',
+            status: 'completed',
+            assignedAt: new Date(now.setDate(now.getDate() - 5)).toISOString(),
+            completedAt: new Date(now.setDate(now.getDate() - 4)).toISOString(),
+            analysis: {
+                scores: { clarity: 8.5, empathy: 7.0, assertiveness: 9.0, overall: 8.2 },
+                strengths: ["You started the conversation clearly and directly.", "Good use of 'I' statements to own your perspective."],
+                gaps: ["Could have acknowledged their point of view before restating the goal.", "The closing felt a bit abrupt."],
+                annotatedConversation: [
+                    { role: 'model', content: "Hey, you wanted to chat?" },
+                    { role: 'user', content: "Yes, I wanted to discuss some feedback regarding your communication in team meetings.", annotation: "Great start. This is clear and sets the stage without being alarming.", type: 'positive' },
+                    { role: 'model', content: "Oh? I thought I was being clear. What's the issue?" },
+                    { role: 'user', content: "You need to be less dismissive of others' ideas.", annotation: "This could be perceived as an attack. Try framing it from your perspective, e.g., 'I've noticed that when others share ideas, the conversation sometimes moves on before we can fully explore them.'", type: 'negative' }
+                ]
+            }
+        },
+        {
+            id: 'mock-score-2',
+            assignedBy: 'Team Lead',
+            assignedTo: 'Employee',
+            scenario: 'Negotiating a deadline extension for the Q3 project.',
+            persona: 'Manager',
+            status: 'completed',
+            assignedAt: new Date(now.setDate(now.getDate() - 2)).toISOString(),
+            completedAt: new Date(now.setDate(now.getDate() - 1)).toISOString(),
+            analysis: {
+                scores: { clarity: 7.0, empathy: 8.0, assertiveness: 6.5, overall: 7.2 },
+                strengths: ["Excellent job explaining the 'why' behind the delay.", "You remained calm and professional throughout."],
+                gaps: ["A specific proposed new deadline would have been more assertive.", "You agreed to the first counter-offer without exploring other options."],
+                annotatedConversation: [
+                    { role: 'model', content: "We really can't move that deadline, it will impact the whole roadmap." },
+                    { role: 'user', content: "I understand it's difficult, and I appreciate the pressure we're under.", annotation: "Good empathy. This validates their concern before you present your own.", type: 'positive' }
+                ]
+            }
+        }
+    ];
+};
+
+
+// ==========================================
 // Generic Storage Helpers
 // ==========================================
 
 const getFromStorage = <T>(key: string): T[] => {
     if (typeof window === 'undefined') return [];
     const json = sessionStorage.getItem(key);
-    if (!json) return [];
+    
+    if (!json) {
+        // If this is the first time loading the practice scenarios, inject mock data.
+        if (key === PRACTICE_SCENARIOS_KEY) {
+            const mockData = getMockPracticeScenarios() as T[];
+            saveToStorage(key, mockData);
+            return mockData;
+        }
+        return [];
+    }
+
     try {
         const data = JSON.parse(json) as any[];
         // Basic data migration/validation
@@ -577,7 +637,7 @@ export async function updateCoachingRecommendationStatus(
         const notification: Feedback = {
             trackingId: generateTrackingId(),
             subject: `Development Plan Started by ${supervisorName}`,
-            message: `${supervisorName} has accepted a coaching recommendation and started a new development plan for the area: "${recommendation.area}".\n\n**Recommendation:** ${recommendation.recommendation}\n**Resource:** ${recommendation.type} - "${recommendation.resource}"\n**Timeline:** ${data?.startDate ? new Date(data.startDate).toLocaleDateString() : 'N/A'} to ${data?.endDate ? new Date(data.endDate).toLocaleDateString() : 'N/A'}.`,
+            message: `${supervisorName} has accepted a coaching recommendation and started a new development plan for the area: "${recommendation.area}".\n\n**Recommendation:** ${recommendation.recommendation}\n**Resource:** ${recommendation.type} - "${recommendation.resource}"\n**Timeline:** ${data?.startDate ? new Date(data.startDate).toLocaleDateString() : 'N/A'} to ${data?.endDate ? new Date(data.endDate).toLocaleDateString() : 'NA'}.`,
             submittedAt: new Date(),
             criticality: 'Low',
             status: 'Pending Acknowledgement',
