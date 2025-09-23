@@ -80,34 +80,13 @@ const runNetsConversationFlow = ai.defineFlow(
   async (input) => {
     let outputText: string;
     
+    // MOCK RESPONSE LOGIC
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     if (input.history.length === 0) {
-      // First turn: Use startConversationPrompt
-      const { output: startOutput } = await startConversationPrompt({
-        persona: input.persona,
-        scenario: input.scenario,
-        difficulty: input.difficulty
-      });
-      
-      // Definitive fallback to prevent null values, as instructed.
-      outputText = startOutput || `Hi, you wanted to chat about: "${input.scenario}"? Let's begin.`;
-
+      outputText = `(Mock AI): Hello. I am playing the role of a ${input.persona}. Let's begin the scenario: "${input.scenario}".`;
     } else {
-      // Subsequent turns: Use continueConversationPrompt
-      const processedHistory = input.history.map(msg => ({
-        isUser: msg.role === 'user',
-        isModel: msg.role === 'model',
-        content: msg.content,
-      }));
-      
-      const promptInput = {
-        ...input,
-        history: processedHistory,
-      };
-
-      const { output: continueOutput } = await continueConversationPrompt(promptInput);
-      
-      // Definitive fallback for continuation as well, as instructed.
-      outputText = continueOutput || "I'm not sure how to respond to that. Can you please rephrase?";
+      const lastUserMessage = input.history[input.history.length - 1]?.content || "your last statement";
+      outputText = `(Mock AI): I acknowledge you said: "${lastUserMessage}". This is a mock response. Please continue.`;
     }
     
     return {
