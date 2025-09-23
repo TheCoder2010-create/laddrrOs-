@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn, ActionItem } from '@/ai/schemas/one-on-one-schemas';
-import type { NetsAnalysisOutput } from '@/ai/schemas/nets-schemas';
+import type { NetsConversationInput, NetsAnalysisOutput } from '@/ai/schemas/nets-schemas';
 
 
 // Helper function to generate a new ID format
@@ -91,6 +91,7 @@ export interface AssignedPracticeScenario {
     persona: Role;
     status: 'pending' | 'completed';
     assignedAt: string;
+    dueDate: string;
     completedAt?: string;
     analysis?: NetsAnalysisOutput;
 }
@@ -106,16 +107,25 @@ const PRACTICE_SCENARIOS_KEY = 'practice_scenarios_v1';
 // ==========================================
 const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
     const now = new Date();
+    const dueDate1 = new Date(now.setDate(now.getDate() - 10));
+    const assignedAt1 = new Date(new Date(dueDate1).setDate(dueDate1.getDate() - 5));
+    const completedAt1 = new Date(new Date(dueDate1).setDate(dueDate1.getDate() + 1));
+    
+    const dueDate2 = new Date(now.setDate(now.getDate() - 2));
+    const assignedAt2 = new Date(new Date(dueDate2).setDate(dueDate2.getDate() - 5));
+    const completedAt2 = new Date(new Date(dueDate2).setDate(dueDate2.getDate() + 1));
+
     return [
         {
             id: 'mock-score-1',
-            assignedBy: 'Team Lead', // Assigned BY Team Lead
-            assignedTo: 'Employee',   // Assigned TO Employee
+            assignedBy: 'Team Lead',
+            assignedTo: 'Employee',
             scenario: 'Practice giving corrective feedback to a high-performer about their communication style.',
             persona: 'Employee',
             status: 'completed',
-            assignedAt: new Date(now.setDate(now.getDate() - 5)).toISOString(),
-            completedAt: new Date(now.setDate(now.getDate() - 4)).toISOString(),
+            assignedAt: assignedAt1.toISOString(),
+            dueDate: dueDate1.toISOString(),
+            completedAt: completedAt1.toISOString(),
             analysis: {
                 scores: { clarity: 8.5, empathy: 7.0, assertiveness: 9.0, overall: 8.2 },
                 strengths: ["You started the conversation clearly and directly.", "Good use of 'I' statements to own your perspective."],
@@ -130,13 +140,14 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
         },
         {
             id: 'mock-score-2',
-            assignedBy: 'AM',        // Assigned BY AM
-            assignedTo: 'Team Lead',  // Assigned TO Team Lead
+            assignedBy: 'AM',
+            assignedTo: 'Team Lead',
             scenario: 'Negotiating a deadline extension for the Q3 project with a senior manager.',
             persona: 'Manager',
             status: 'completed',
-            assignedAt: new Date(now.setDate(now.getDate() - 2)).toISOString(),
-            completedAt: new Date(now.setDate(now.getDate() - 1)).toISOString(),
+            assignedAt: assignedAt2.toISOString(),
+            dueDate: dueDate2.toISOString(),
+            completedAt: completedAt2.toISOString(),
             analysis: {
                 scores: { clarity: 7.0, empathy: 8.0, assertiveness: 6.5, overall: 7.2 },
                 strengths: ["Excellent job explaining the 'why' behind the delay.", "You remained calm and professional throughout."],
@@ -195,7 +206,7 @@ const saveToStorage = (key: string, data: any[]): void => {
 // Practice Scenario Service
 // ==========================================
 
-export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role, scenario: string, persona: Role): Promise<void> {
+export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role, scenario: string, persona: Role, dueDate: Date): Promise<void> {
     const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
     const newScenario: AssignedPracticeScenario = {
         id: uuidv4(),
@@ -205,6 +216,7 @@ export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role,
         persona,
         status: 'pending',
         assignedAt: new Date().toISOString(),
+        dueDate: dueDate.toISOString(),
     };
     allScenarios.unshift(newScenario);
     saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
@@ -226,15 +238,23 @@ export async function getPracticeScenariosAssignedByMe(assignerRole: Role): Prom
 }
 
 
-export async function completePracticeScenario(scenarioId: string, analysis: NetsAnalysisOutput): Promise<void> {
-    const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
-    const scenarioIndex = allScenarios.findIndex(s => s.id === scenarioId);
-    if (scenarioIndex !== -1) {
-        allScenarios[scenarioIndex].status = 'completed';
-        allScenarios[scenarioIndex].completedAt = new Date().toISOString();
-        allScenarios[scenarioIndex].analysis = analysis;
-        saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
+export async function completePracticeScenario(input: NetsConversationInput, assignedScenarioId?: string): Promise<NetsAnalysisOutput> {
+    const { analyzeNetsConversation } = await import('@/ai/flows/analyze-nets-conversation-flow');
+    const analysis = await analyzeNetsConversation(input);
+
+    if (assignedScenarioId) {
+        const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
+        const scenarioIndex = allScenarios.findIndex(s => s.id === assignedScenarioId);
+        
+        if (scenarioIndex !== -1) {
+            allScenarios[scenarioIndex].status = 'completed';
+            allScenarios[scenarioIndex].completedAt = new Date().toISOString();
+            allScenarios[scenarioIndex].analysis = analysis;
+            saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
+        }
     }
+    
+    return analysis;
 }
 
 

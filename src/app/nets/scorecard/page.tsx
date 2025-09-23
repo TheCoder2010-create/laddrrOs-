@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,7 +7,7 @@ import DashboardLayout from "@/components/dashboard-layout";
 import { useRole, availableRolesForAssignment } from "@/hooks/use-role";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon, Bot, User, ThumbsUp, ThumbsDown, Award, Sparkles, Activity, FileClock, ClipboardList } from "lucide-react";
+import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon, Bot, User, ThumbsUp, ThumbsDown, Award, Sparkles, Activity, FileClock, ClipboardList, CalendarCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -382,7 +381,10 @@ const AssignedScoresTab = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-sm font-medium">{s.scenario}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Persona: {s.persona}</p>
+                                    <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                                        <p>Persona: {s.persona}</p>
+                                        <p className="flex items-center gap-1.5"><CalendarCheck className="h-3 w-3" /> Complete by: {format(new Date(s.dueDate), 'PPP')}</p>
+                                    </div>
                                 </CardContent>
                             </Card>
                          ))}

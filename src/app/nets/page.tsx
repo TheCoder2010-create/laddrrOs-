@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit, Edit, FileClock } from 'lucide-react';
+import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit, Edit, FileClock, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { runNetsConversation } from '@/ai/flows/nets-flow';
@@ -24,7 +24,7 @@ import { useRouter } from 'next/navigation';
 import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
 import { generateNetsNudge } from '@/ai/flows/generate-nets-nudge-flow';
 import { completePracticeScenario, getPracticeScenariosForUser, AssignedPracticeScenario, assignPracticeScenario } from '@/services/feedback-service';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 
 const difficulties = [
@@ -59,6 +61,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
     const [selectedUser, setSelectedUser] = useState<Role | null>(null);
     const [scenario, setScenario] = useState('');
     const [persona, setPersona] = useState<Role | null>(null);
+    const [dueDate, setDueDate] = useState<Date | undefined>();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -66,7 +69,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
     const assignableUsers = Object.keys(roleUserMapping).filter(r => ['Team Lead', 'Employee'].includes(r)) as Role[];
 
     const handleSubmit = async () => {
-        if (!role || !selectedUser || !scenario || !persona) {
+        if (!role || !selectedUser || !scenario || !persona || !dueDate) {
             toast({
                 variant: 'destructive',
                 title: "Missing Information",
@@ -77,7 +80,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
 
         setIsSubmitting(true);
         try {
-            await assignPracticeScenario(role, selectedUser, scenario, persona);
+            await assignPracticeScenario(role, selectedUser, scenario, persona, dueDate);
             toast({
                 title: "Practice Scenario Assigned!",
                 description: `${roleUserMapping[selectedUser].name} has been assigned a new practice scenario.`
@@ -86,6 +89,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
             setSelectedUser(null);
             setScenario('');
             setPersona(null);
+            setDueDate(undefined);
             setIsOpen(false);
             onAssign(); // Notify parent to re-fetch
         } catch (error) {
@@ -163,12 +167,40 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
                     </Select>
                   </div>
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="assign-date" className="text-right">Complete By</Label>
+                  <div className="col-span-3">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="assign-date"
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !dueDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={dueDate}
+                          onSelect={setDueDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+              </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="ghost">Cancel</Button>
             </DialogClose>
-            <Button onClick={handleSubmit} disabled={isSubmitting || !selectedUser || !scenario || !persona}>
+            <Button onClick={handleSubmit} disabled={isSubmitting || !selectedUser || !scenario || !persona || !dueDate}>
                 {isSubmitting ? <Loader2 className="mr-2 animate-spin" /> : <Send className="mr-2" />}
                 Assign Scenario
             </Button>
