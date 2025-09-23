@@ -111,23 +111,25 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                  <Label htmlFor="assign-user">Assign To</Label>
-                  <Select
-                      value={selectedUser ?? ''}
-                      onValueChange={(value) => setSelectedUser(value as Role)}
-                  >
-                      <SelectTrigger id="assign-user">
-                          <SelectValue placeholder="Select a team member" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          {availableRolesForAssignment.map(memberRole => (
-                              <SelectItem key={memberRole} value={memberRole}>
-                                  {roleUserMapping[memberRole].name} - ({memberRole})
-                              </SelectItem>
-                          ))}
-                      </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="assign-user" className="text-right">Assign To</Label>
+                  <div className="col-span-3">
+                    <Select
+                        value={selectedUser ?? ''}
+                        onValueChange={(value) => setSelectedUser(value as Role)}
+                    >
+                        <SelectTrigger id="assign-user">
+                            <SelectValue placeholder="Select a team member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableRolesForAssignment.map(memberRole => (
+                                <SelectItem key={memberRole} value={memberRole}>
+                                    {roleUserMapping[memberRole].name} - ({memberRole})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </div>
               </div>
               <div className="space-y-2">
                   <Label htmlFor="assign-scenario">Scenario to Practice</Label>
@@ -139,21 +141,23 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
                       onChange={(e) => setScenario(e.target.value)}
                   />
               </div>
-              <div className="space-y-2">
-                  <Label htmlFor="assign-persona">Practice Persona</Label>
-                  <Select
-                      value={persona ?? ''}
-                      onValueChange={(value) => setPersona(value as Role)}
-                  >
-                      <SelectTrigger id="assign-persona">
-                          <SelectValue placeholder="Select the AI persona" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          {Object.keys(personaIcons).map(p => (
-                             <SelectItem key={p} value={p}>{p}</SelectItem>
-                          ))}
-                      </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="assign-persona" className="text-right">Persona</Label>
+                   <div className="col-span-3">
+                    <Select
+                        value={persona ?? ''}
+                        onValueChange={(value) => setPersona(value as Role)}
+                    >
+                        <SelectTrigger id="assign-persona">
+                            <SelectValue placeholder="Select the AI persona" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Object.keys(personaIcons).map(p => (
+                               <SelectItem key={p} value={p}>{p}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </div>
               </div>
           </div>
           <DialogFooter>
