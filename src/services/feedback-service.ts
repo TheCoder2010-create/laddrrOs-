@@ -86,6 +86,7 @@ export interface AssignedPracticeScenario {
     assignedBy: Role;
     assignedTo: Role;
     scenario: string;
+    persona: string;
     status: 'pending' | 'completed';
     assignedAt: string;
     completedAt?: string;
@@ -131,13 +132,14 @@ const saveToStorage = (key: string, data: any[]): void => {
 // Practice Scenario Service
 // ==========================================
 
-export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role, scenario: string): Promise<void> {
+export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role, scenario: string, persona: Role): Promise<void> {
     const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
     const newScenario: AssignedPracticeScenario = {
         id: uuidv4(),
         assignedBy,
         assignedTo,
         scenario,
+        persona,
         status: 'pending',
         assignedAt: new Date().toISOString(),
     };

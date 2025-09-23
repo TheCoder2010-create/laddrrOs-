@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
 import type { Role } from '@/hooks/use-role';
-import { useRole } from '@/hooks/use-role';
+import { useRole, availableRolesForAssignment } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit } from 'lucide-react';
+import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { runNetsConversation } from '@/ai/flows/nets-flow';
@@ -22,8 +22,18 @@ import { roleUserMapping, formatActorName } from '@/lib/role-mapping';
 import Link from 'next/link';
 import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
 import { generateNetsNudge } from '@/ai/flows/generate-nets-nudge-flow';
-import { completePracticeScenario, getPracticeScenariosForUser, AssignedPracticeScenario } from '@/services/feedback-service';
+import { completePracticeScenario, getPracticeScenariosForUser, AssignedPracticeScenario, assignPracticeScenario } from '@/services/feedback-service';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 
 const difficulties = [
@@ -41,6 +51,124 @@ const personaIcons: Record<string, React.ElementType> = {
     'Employee': UserCheck,
 };
 
+
+function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [selectedUser, setSelectedUser] = useState<Role | null>(null);
+    const [scenario, setScenario] = useState('');
+    const [persona, setPersona] = useState<Role | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!role || !selectedUser || !scenario || !persona) {
+            toast({
+                variant: 'destructive',
+                title: "Missing Information",
+                description: "Please fill out all fields."
+            });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await assignPracticeScenario(role, selectedUser, scenario, persona);
+            toast({
+                title: "Practice Scenario Assigned!",
+                description: `${roleUserMapping[selectedUser].name} has been assigned a new practice scenario.`
+            });
+            // Reset form and close dialog
+            setSelectedUser(null);
+            setScenario('');
+            setPersona(null);
+            setIsOpen(false);
+            onAssign(); // Notify parent to re-fetch
+        } catch (error) {
+            console.error("Failed to assign practice scenario", error);
+            toast({ variant: 'destructive', title: "Assignment Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Edit className="mr-2 h-4 w-4" />
+            Assign
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardEdit className="text-primary" />
+              Assign Practice Scenario
+            </DialogTitle>
+            <DialogDescription>
+              Assign a specific conversation scenario to a team member for them to practice.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                  <Label htmlFor="assign-user">Assign To</Label>
+                  <Select
+                      value={selectedUser ?? ''}
+                      onValueChange={(value) => setSelectedUser(value as Role)}
+                  >
+                      <SelectTrigger id="assign-user">
+                          <SelectValue placeholder="Select a team member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {availableRolesForAssignment.map(memberRole => (
+                              <SelectItem key={memberRole} value={memberRole}>
+                                  {roleUserMapping[memberRole].name} - ({memberRole})
+                              </SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor="assign-scenario">Scenario to Practice</Label>
+                  <Textarea
+                      id="assign-scenario"
+                      placeholder="e.g., Practice delivering the Q3 project update to the leadership team..."
+                      rows={3}
+                      value={scenario}
+                      onChange={(e) => setScenario(e.target.value)}
+                  />
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor="assign-persona">Practice Persona</Label>
+                  <Select
+                      value={persona ?? ''}
+                      onValueChange={(value) => setPersona(value as Role)}
+                  >
+                      <SelectTrigger id="assign-persona">
+                          <SelectValue placeholder="Select the AI persona" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {Object.keys(personaIcons).map(p => (
+                             <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+              </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost">Cancel</Button>
+            </DialogClose>
+            <Button onClick={handleSubmit} disabled={isSubmitting || !selectedUser || !scenario || !persona}>
+                {isSubmitting ? <Loader2 className="mr-2 animate-spin" /> : <Send className="mr-2" />}
+                Assign Scenario
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+}
 
 function SimulationArena({
     initialConfig,
@@ -234,7 +362,7 @@ const Avatar = ({ icon }: { icon: React.ReactNode }) => (
 );
 
 
-function SetupView({ onStart, role, assignedScenarios }: { onStart: (config: NetsInitialInput, assignedScenarioId?: string) => void, role: Role, assignedScenarios: AssignedPracticeScenario[] }) {
+function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (config: NetsInitialInput, assignedScenarioId?: string) => void, role: Role, assignedScenarios: AssignedPracticeScenario[], onAssign: () => void }) {
     const { availableRoles } = useRole();
     const [selectedPersona, setSelectedPersona] = useState<Role | null>(null);
     const [scenario, setScenario] = useState('');
@@ -273,11 +401,14 @@ function SetupView({ onStart, role, assignedScenarios }: { onStart: (config: Net
 
     const handleStartAssigned = (assigned: AssignedPracticeScenario) => {
         // Pre-fill the setup for the assigned scenario
-        const assignedByRole = roleUserMapping[assigned.assignedBy].role;
-        setSelectedPersona(assignedByRole);
+        setSelectedPersona(assigned.persona as Role);
         setScenario(assigned.scenario);
         // Start simulation immediately
-        handleStart(assigned.id);
+        onStart({
+            persona: assigned.persona,
+            scenario: assigned.scenario,
+            difficulty: 'neutral', // default difficulty for assigned
+        }, assigned.id);
     };
 
     if (!selectedPersona) {
@@ -288,9 +419,12 @@ function SetupView({ onStart, role, assignedScenarios }: { onStart: (config: Net
                         <MagicWandIcon className="h-8 w-8 text-primary" />
                          Nets – Conversation Arena
                     </h1>
-                     <Button variant="outline" asChild>
-                        <Link href="/nets/scorecard">Scorecard</Link>
-                    </Button>
+                     <div className="flex items-center gap-2">
+                         <Button variant="outline" asChild>
+                            <Link href="/nets/scorecard">Scorecard</Link>
+                        </Button>
+                        {availableRolesForAssignment.includes(role) && <AssignPracticeDialog onAssign={onAssign} />}
+                     </div>
                 </div>
                 
                 {assignedScenarios.length > 0 && (
@@ -309,6 +443,7 @@ function SetupView({ onStart, role, assignedScenarios }: { onStart: (config: Net
                                     </CardHeader>
                                     <CardContent>
                                         <p className="font-medium text-foreground-primary">{s.scenario}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">Persona: {s.persona}</p>
                                     </CardContent>
                                     <CardFooter>
                                         <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => handleStartAssigned(s)}>
@@ -410,19 +545,20 @@ export default function NetsPage() {
     const [assignedScenarioId, setAssignedScenarioId] = useState<string | undefined>();
     const [assignedScenarios, setAssignedScenarios] = useState<AssignedPracticeScenario[]>([]);
     
-    useEffect(() => {
+    const fetchAssignedScenarios = useCallback(async () => {
         if (!role) return;
-        const fetchAssigned = async () => {
-            const scenarios = await getPracticeScenariosForUser(role);
-            setAssignedScenarios(scenarios);
-        };
-        fetchAssigned();
-
-        window.addEventListener('feedbackUpdated', fetchAssigned);
-        return () => {
-            window.removeEventListener('feedbackUpdated', fetchAssigned);
-        };
+        const scenarios = await getPracticeScenariosForUser(role);
+        setAssignedScenarios(scenarios);
     }, [role]);
+
+    useEffect(() => {
+        fetchAssignedScenarios();
+
+        window.addEventListener('feedbackUpdated', fetchAssignedScenarios);
+        return () => {
+            window.removeEventListener('feedbackUpdated', fetchAssignedScenarios);
+        };
+    }, [fetchAssignedScenarios]);
 
     const handleStartSimulation = (newConfig: NetsInitialInput, scenarioId?: string) => {
         setConfig(newConfig);
@@ -433,6 +569,7 @@ export default function NetsPage() {
     const handleExitSimulation = () => {
         setConfig(null);
         setAssignedScenarioId(undefined);
+        fetchAssignedScenarios(); // Re-fetch in case a scenario was completed
     }
     
     if (isRoleLoading || !role) {
@@ -449,7 +586,7 @@ export default function NetsPage() {
                         onExit={handleExitSimulation} 
                     />
                 ) : (
-                    <SetupView onStart={handleStartSimulation} role={role} assignedScenarios={assignedScenarios} />
+                    <SetupView onStart={handleStartSimulation} role={role} assignedScenarios={assignedScenarios} onAssign={fetchAssignedScenarios} />
                 )}
             </div>
         </DashboardLayout>

@@ -7,7 +7,7 @@ import { useToast } from './use-toast';
 export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Anonymous';
 
 export const availableRoles: Role[] = ['Employee', 'Team Lead', 'AM', 'Manager', 'HR Head'];
-export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM'];
+export const availableRolesForAssignment: Role[] = ['Manager', 'Team Lead', 'AM', 'Employee'];
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 
