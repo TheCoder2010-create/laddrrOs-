@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
 import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn, ActionItem } from '@/ai/schemas/one-on-one-schemas';
+import type { NetsAnalysisOutput } from '@/ai/schemas/nets-schemas';
+
 
 // Helper function to generate a new ID format
 const generateTrackingId = () => `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -90,6 +92,7 @@ export interface AssignedPracticeScenario {
     status: 'pending' | 'completed';
     assignedAt: string;
     completedAt?: string;
+    analysis?: NetsAnalysisOutput;
 }
 
 const FEEDBACK_KEY = 'accountability_feedback_v3';
@@ -152,12 +155,19 @@ export async function getPracticeScenariosForUser(userRole: Role): Promise<Assig
     return allScenarios.filter(s => s.assignedTo === userRole && s.status === 'pending');
 }
 
-export async function completePracticeScenario(scenarioId: string): Promise<void> {
+export async function getCompletedPracticeScenariosForUser(userRole: Role): Promise<AssignedPracticeScenario[]> {
+    const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
+    return allScenarios.filter(s => s.assignedTo === userRole && s.status === 'completed');
+}
+
+
+export async function completePracticeScenario(scenarioId: string, analysis: NetsAnalysisOutput): Promise<void> {
     const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
     const scenarioIndex = allScenarios.findIndex(s => s.id === scenarioId);
     if (scenarioIndex !== -1) {
         allScenarios[scenarioIndex].status = 'completed';
         allScenarios[scenarioIndex].completedAt = new Date().toISOString();
+        allScenarios[scenarioIndex].analysis = analysis;
         saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
     }
 }

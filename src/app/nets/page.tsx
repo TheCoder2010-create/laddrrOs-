@@ -10,19 +10,21 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit, Edit } from 'lucide-react';
+import { Bot, User, Send, Loader2, ChevronsRight, ArrowLeft, SlidersHorizontal, Briefcase, Users, UserCheck, ShieldCheck, UserCog, Lightbulb, Play, ClipboardEdit, Edit, FileClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { runNetsConversation } from '@/ai/flows/nets-flow';
-import type { NetsConversationInput, NetsMessage, NetsInitialInput } from '@/ai/schemas/nets-schemas';
+import type { NetsConversationInput, NetsMessage, NetsInitialInput, NetsAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MagicWandIcon } from '@/components/ui/magic-wand-icon';
 import { roleUserMapping, formatActorName } from '@/lib/role-mapping';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
 import { generateNetsNudge } from '@/ai/flows/generate-nets-nudge-flow';
 import { completePracticeScenario, getPracticeScenariosForUser, AssignedPracticeScenario, assignPracticeScenario } from '@/services/feedback-service';
+import { analyzeNetsConversation } from '@/ai/flows/analyze-nets-conversation-flow';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -181,24 +183,44 @@ function SimulationArena({
 }: {
     initialConfig: NetsInitialInput,
     assignedScenarioId?: string,
-    onExit: () => void
+    onExit: (analysis?: NetsAnalysisOutput) => void
 }) {
     const [isPending, startTransition] = useTransition();
     const [isGettingNudge, startNudgeTransition] = useTransition();
+    const [isAnalyzing, startAnalysis] = useTransition();
     const [messages, setMessages] = useState<NetsMessage[]>([]);
     const [userInput, setUserInput] = useState('');
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+
 
     const handleExit = () => {
-        if (assignedScenarioId) {
-            completePracticeScenario(assignedScenarioId);
-            toast({
-                title: "Assigned Practice Completed",
-                description: "This task has been marked as complete.",
-            });
-        }
-        onExit();
+        startAnalysis(async () => {
+            try {
+                const analysisInput: NetsConversationInput = {
+                    ...initialConfig,
+                    history: messages.filter(m => m.role !== 'system'),
+                };
+                const analysisResult = await analyzeNetsConversation(analysisInput);
+                
+                if (assignedScenarioId) {
+                    await completePracticeScenario(assignedScenarioId, analysisResult);
+                }
+                
+                toast({
+                    title: "Simulation Complete!",
+                    description: "Your scorecard has been updated with the results.",
+                });
+
+                onExit(analysisResult);
+
+            } catch(e) {
+                console.error("Failed to analyze conversation", e);
+                toast({ variant: 'destructive', title: "Analysis Failed", description: "Could not generate a scorecard for this session." });
+                onExit(); // Exit without analysis
+            }
+        });
     };
 
     useEffect(() => {
@@ -228,7 +250,8 @@ function SimulationArena({
         };
 
         startSimulation();
-    }, [initialConfig, onExit, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialConfig, toast]);
     
     useEffect(() => {
         // Scroll to bottom when new messages are added
@@ -299,7 +322,17 @@ function SimulationArena({
                         <MagicWandIcon className="h-6 w-6 text-primary" />
                         Conversation Arena
                     </CardTitle>
-                    <Button variant="ghost" onClick={handleExit}><ArrowLeft className="mr-2" /> End Simulation</Button>
+                     <Button variant="ghost" onClick={handleExit} disabled={isAnalyzing}>
+                        {isAnalyzing ? (
+                            <>
+                                <Loader2 className="mr-2 animate-spin" /> Analyzing...
+                            </>
+                        ) : (
+                            <>
+                                <ArrowLeft className="mr-2" /> End & Analyze
+                            </>
+                        )}
+                    </Button>
                 </div>
                 <CardDescription>
                     You are in a simulation with a <span className="font-semibold text-primary">{initialConfig.persona}</span>.
@@ -544,6 +577,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
 
 export default function NetsPage() {
     const { role, setRole, isLoading: isRoleLoading } = useRole();
+    const router = useRouter();
     const { toast } = useToast();
     const [config, setConfig] = useState<NetsInitialInput | null>(null);
     const [assignedScenarioId, setAssignedScenarioId] = useState<string | undefined>();
@@ -570,10 +604,14 @@ export default function NetsPage() {
         toast({ title: "Simulation Started", description: "The AI will begin the conversation." });
     };
 
-    const handleExitSimulation = () => {
+    const handleExitSimulation = (analysis?: NetsAnalysisOutput) => {
         setConfig(null);
         setAssignedScenarioId(undefined);
         fetchAssignedScenarios(); // Re-fetch in case a scenario was completed
+        if (analysis) {
+             // After analysis, redirect to the scorecard to show the new result
+            router.push('/nets/scorecard');
+        }
     }
     
     if (isRoleLoading || !role) {

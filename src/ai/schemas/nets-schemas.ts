@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Zod schemas for the "Nets" conversation simulation feature.
  */
@@ -56,4 +55,24 @@ export const NetsNudgeOutputSchema = z.object({
 });
 export type NetsNudgeOutput = z.infer<typeof NetsNudgeOutputSchema>;
 
-    
+
+// Schemas for post-simulation analysis
+const AnnotatedMessageSchema = NetsMessageSchema.extend({
+    annotation: z.string().optional().describe("A short, insightful piece of feedback on a user's message."),
+    type: z.enum(["positive", "negative"]).optional().describe("The type of feedback provided in the annotation."),
+});
+export type AnnotatedMessage = z.infer<typeof AnnotatedMessageSchema>;
+
+
+export const NetsAnalysisOutputSchema = z.object({
+    scores: z.object({
+        clarity: z.number().min(1.0).max(10.0),
+        empathy: z.number().min(1.0).max(10.0),
+        assertiveness: z.number().min(1.0).max(10.0),
+        overall: z.number().min(1.0).max(10.0),
+    }),
+    strengths: z.array(z.string()),
+    gaps: z.array(z.string()),
+    annotatedConversation: z.array(AnnotatedMessageSchema),
+});
+export type NetsAnalysisOutput = z.infer<typeof NetsAnalysisOutputSchema>;
