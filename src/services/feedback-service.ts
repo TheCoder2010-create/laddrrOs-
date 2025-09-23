@@ -88,7 +88,7 @@ export interface AssignedPracticeScenario {
     assignedBy: Role;
     assignedTo: Role;
     scenario: string;
-    persona: string;
+    persona: Role;
     status: 'pending' | 'completed';
     assignedAt: string;
     completedAt?: string;
@@ -109,9 +109,9 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
     return [
         {
             id: 'mock-score-1',
-            assignedBy: 'AM',
-            assignedTo: 'Team Lead',
-            scenario: 'Practice giving corrective feedback to a high-performer about their recent communication style.',
+            assignedBy: 'Team Lead', // Assigned BY Team Lead
+            assignedTo: 'Employee',   // Assigned TO Employee
+            scenario: 'Practice giving corrective feedback to a high-performer about their communication style.',
             persona: 'Employee',
             status: 'completed',
             assignedAt: new Date(now.setDate(now.getDate() - 5)).toISOString(),
@@ -130,9 +130,9 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
         },
         {
             id: 'mock-score-2',
-            assignedBy: 'Team Lead',
-            assignedTo: 'Employee',
-            scenario: 'Negotiating a deadline extension for the Q3 project.',
+            assignedBy: 'AM',        // Assigned BY AM
+            assignedTo: 'Team Lead',  // Assigned TO Team Lead
+            scenario: 'Negotiating a deadline extension for the Q3 project with a senior manager.',
             persona: 'Manager',
             status: 'completed',
             assignedAt: new Date(now.setDate(now.getDate() - 2)).toISOString(),
@@ -215,7 +215,7 @@ export async function getPracticeScenariosForUser(userRole: Role): Promise<Assig
     return allScenarios.filter(s => s.assignedTo === userRole && s.status === 'pending');
 }
 
-export async function getCompletedPracticeScenariosForUser(userRole: Role): Promise<AssignedPracticeScenario[]> {
+export function getCompletedPracticeScenariosForUser(userRole: Role): AssignedPracticeScenario[] {
     const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
     return allScenarios.filter(s => s.assignedTo === userRole && s.status === 'completed');
 }

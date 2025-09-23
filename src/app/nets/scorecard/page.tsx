@@ -172,16 +172,18 @@ const MyScoresTab = () => {
     const [completedScenarios, setCompletedScenarios] = useState<AssignedPracticeScenario[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchCompletedScenarios = useCallback(async () => {
+    const fetchCompletedScenarios = useCallback(() => {
         if (!role) return;
         setIsLoading(true);
-        const scenarios = await getCompletedPracticeScenariosForUser(role);
+        const scenarios = getCompletedPracticeScenariosForUser(role);
         setCompletedScenarios(scenarios.sort((a,b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime()));
         setIsLoading(false);
     }, [role]);
 
     useEffect(() => {
         fetchCompletedScenarios();
+        window.addEventListener('feedbackUpdated', fetchCompletedScenarios);
+        return () => window.removeEventListener('feedbackUpdated', fetchCompletedScenarios);
     }, [fetchCompletedScenarios]);
 
     const chartData = completedScenarios.map(entry => ({
@@ -340,6 +342,8 @@ const AssignedScoresTab = () => {
 
     useEffect(() => {
         fetchAssignedScenarios();
+        window.addEventListener('feedbackUpdated', fetchAssignedScenarios);
+        return () => window.removeEventListener('feedbackUpdated', fetchAssignedScenarios);
     }, [fetchAssignedScenarios]);
     
     if (isLoading) {
