@@ -18,6 +18,7 @@ import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSqu
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
+import { getNominationForUser } from '@/services/interviewer-lab-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
 
@@ -34,40 +35,33 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const pathname = usePathname();
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
+  const [isNominated, setIsNominated] = useState(false);
 
-  const fetchFeedbackCounts = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!currentRole) return;
     try {
+      // Fetch feedback counts
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
 
-      // Messages count (only non-1-on-1 items)
-      let totalMessages = 0;
-      totalMessages += feedback.filter(f => {
+      let totalMessages = feedback.filter(f => {
         const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
         if (!isAssignedToMe) return false;
-
         const isPendingAck = f.status === 'Pending Acknowledgement';
         const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
         return isPendingAck || isIdentifiedAck;
       }).length;
-      
       setMessageCount(totalMessages);
-      
-      // Coaching & Development Count
+
       let devCount = 0;
-      // My Development (pending recommendations for me)
       history.forEach(h => {
         if (h.supervisorName === currentUserName) {
           devCount += h.analysis.coachingRecommendations.filter(rec => rec.status === 'pending').length;
         }
       });
-
-      // Team Development (escalations for me to review)
       const recStatusesToCount: string[] = [];
       if (currentRole === 'AM') recStatusesToCount.push('pending_am_review');
       if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
-
       if (recStatusesToCount.length > 0) {
         history.forEach(h => {
             devCount += h.analysis.coachingRecommendations.filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
@@ -75,19 +69,24 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       setCoachingCount(devCount);
 
+      // Check nomination status
+      const nomination = await getNominationForUser(currentRole);
+      setIsNominated(!!nomination);
+
     } catch (error) {
-      console.error("Failed to fetch feedback counts", error);
+      console.error("Failed to fetch sidebar data", error);
       setMessageCount(0);
       setCoachingCount(0);
+      setIsNominated(false);
     }
   }, [currentRole, currentUserName]);
 
 
   useEffect(() => {
-    fetchFeedbackCounts();
+    fetchData();
 
     const handleDataUpdate = () => {
-        fetchFeedbackCounts();
+        fetchData();
     };
 
     window.addEventListener('storage', handleDataUpdate);
@@ -97,7 +96,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         window.removeEventListener('storage', handleDataUpdate);
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
     };
-  }, [fetchFeedbackCounts]);
+  }, [fetchData]);
 
   const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
 
@@ -106,7 +105,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/1-on-1', icon: <CheckSquare className="text-green-500"/>, label: '1-on-1' },
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    ...(currentRole === 'Manager' ? [{ href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
+    ...(currentRole === 'Manager' || isNominated ? [{ href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
     { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
   
