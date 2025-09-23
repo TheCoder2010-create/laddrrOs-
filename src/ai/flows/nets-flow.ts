@@ -72,8 +72,8 @@ Generate your opening line now.`
 const runNetsConversationFlow = ai.defineFlow(
   {
     name: 'runNetsConversationFlow',
-    inputSchema: NetsConversationInputSchema,
     outputSchema: NetsMessageSchema,
+    inputSchema: NetsConversationInputSchema,
   },
   async (input) => {
     let output: string | null = null;
