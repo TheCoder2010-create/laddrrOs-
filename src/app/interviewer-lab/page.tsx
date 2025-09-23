@@ -31,7 +31,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const [targetRole, setTargetRole] = useState<string | null>(null);
 
     const availableNominees: Role[] = ['Team Lead', 'AM', 'Employee'];
-    const targetRoles = ['IC', 'TL', 'Manager'];
+    const targetRoles = ['Entry Level', 'IC', 'TL', 'Manager'];
 
     const handleSubmit = async () => {
         if (!role || !nominee || !targetRole) {
