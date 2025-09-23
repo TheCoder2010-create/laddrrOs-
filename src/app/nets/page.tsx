@@ -24,7 +24,6 @@ import { useRouter } from 'next/navigation';
 import { generateNetsSuggestion } from '@/ai/flows/generate-nets-suggestion-flow';
 import { generateNetsNudge } from '@/ai/flows/generate-nets-nudge-flow';
 import { completePracticeScenario, getPracticeScenariosForUser, AssignedPracticeScenario, assignPracticeScenario } from '@/services/feedback-service';
-import { analyzeNetsConversation } from '@/ai/flows/analyze-nets-conversation-flow';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
@@ -62,6 +61,9 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
     const [persona, setPersona] = useState<Role | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+
+    // AMs and above can assign tasks to Team Leads and Employees
+    const assignableUsers = Object.keys(roleUserMapping).filter(r => ['Team Lead', 'Employee'].includes(r)) as Role[];
 
     const handleSubmit = async () => {
         if (!role || !selectedUser || !scenario || !persona) {
@@ -124,7 +126,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
                             <SelectValue placeholder="Select a team member" />
                         </SelectTrigger>
                         <SelectContent>
-                            {availableRolesForAssignment.map(memberRole => (
+                            {assignableUsers.map(memberRole => (
                                 <SelectItem key={memberRole} value={memberRole}>
                                     {roleUserMapping[memberRole].name} - ({memberRole})
                                 </SelectItem>
