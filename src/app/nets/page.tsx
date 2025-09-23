@@ -64,6 +64,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
     const [dueDate, setDueDate] = useState<Date | undefined>();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     // AMs and above can assign tasks to Team Leads and Employees
     const assignableUsers = Object.keys(roleUserMapping).filter(r => ['Team Lead', 'Employee'].includes(r)) as Role[];
@@ -170,7 +171,7 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
               <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="assign-date" className="text-right">Complete By</Label>
                   <div className="col-span-3">
-                    <Popover>
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           id="assign-date"
@@ -188,7 +189,10 @@ function AssignPracticeDialog({ onAssign }: { onAssign: () => void }) {
                         <Calendar
                           mode="single"
                           selected={dueDate}
-                          onSelect={setDueDate}
+                          onSelect={(date) => {
+                            setDueDate(date);
+                            setIsDatePickerOpen(false);
+                          }}
                           initialFocus
                         />
                       </PopoverContent>
