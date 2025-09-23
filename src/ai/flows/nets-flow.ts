@@ -33,6 +33,7 @@ const continueConversationPrompt = ai.definePrompt({
 - Do NOT break character or reveal that you are an AI.
 - Do NOT be overly agreeable. If the user is vague, push back. If their tone is poor, react accordingly. Your goal is to provide a realistic challenge.
 - Keep your responses concise and conversational.
+- You must always respond with a plain text string.
 
 **Conversation History:**
 {{#each history}}
@@ -63,6 +64,7 @@ const startConversationPrompt = ai.definePrompt({
 - Generate ONLY the first line of the conversation from your perspective as the {{persona}}.
 - Do NOT wait for the user to speak. Your response should be the opening statement.
 - Keep your response concise and conversational.
+- You must always respond with a plain text string.
 
 For example, if the scenario is "giving feedback about missed deadlines," a good opening might be "Hi, thanks for joining. I wanted to chat about the recent project deadlines."
 
@@ -86,8 +88,8 @@ const runNetsConversationFlow = ai.defineFlow(
         difficulty: input.difficulty
       });
       
-      // Definitive fallback to prevent null values.
-      outputText = startOutput || `Hi, you wanted to chat about: "${input.scenario}"?`;
+      // Definitive fallback to prevent null values, as instructed.
+      outputText = startOutput || `Hi, you wanted to chat about: "${input.scenario}"? Let's begin.`;
 
     } else {
       // Subsequent turns: Use continueConversationPrompt
@@ -104,8 +106,8 @@ const runNetsConversationFlow = ai.defineFlow(
 
       const { output: continueOutput } = await continueConversationPrompt(promptInput);
       
-      // Definitive fallback for continuation as well.
-      outputText = continueOutput || "I'm not sure how to respond to that. Could you try rephrasing?";
+      // Definitive fallback for continuation as well, as instructed.
+      outputText = continueOutput || "I'm not sure how to respond to that. Can you please rephrase?";
     }
     
     return {
