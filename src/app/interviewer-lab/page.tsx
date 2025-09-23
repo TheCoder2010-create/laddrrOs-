@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen } from 'lucide-react';
 import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment } from '@/services/interviewer-lab-service';
-import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NetsInitialInput, NetsAnalysisOutput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import SimulationArena from '@/components/simulation-arena';
 import { analyzeInterview } from '@/ai/flows/analyze-interview-flow';
@@ -418,7 +418,7 @@ export default function InterviewerLabPage() {
     const [nomination, setNomination] = useState<Nomination | null>(null);
     const [isCheckingNomination, setIsCheckingNomination] = useState(true);
 
-    const fetchNominationData = useCallback(() => {
+    const fetchNominationData = useCallback(async () => {
         if (!role) return;
         setIsCheckingNomination(true);
         getNominationForUser(role).then(userNomination => {
