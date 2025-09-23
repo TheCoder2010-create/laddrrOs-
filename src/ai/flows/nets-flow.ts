@@ -86,13 +86,10 @@ const runNetsConversationFlow = ai.defineFlow(
         difficulty: input.difficulty
       });
 
-      if (startOutput) {
-        output = startOutput;
-      } else {
-        // If the AI fails, use a safe fallback.
-        console.warn("AI failed to generate initial response. Using fallback.");
-        output = `Hi, you wanted to chat about: "${input.scenario}"?`;
-      }
+      // If the AI fails for any reason (e.g., returns null), use a safe fallback.
+      // This prevents the schema validation error.
+      output = startOutput || `Hi, you wanted to chat about: "${input.scenario}"?`;
+
     } else {
       // This is a subsequent turn, continue the conversation.
       const processedHistory = input.history.map(msg => ({
@@ -111,7 +108,9 @@ const runNetsConversationFlow = ai.defineFlow(
     }
 
     if (!output) {
-      throw new Error("The AI failed to generate a response for the simulation.");
+      // This is a secondary fallback in case the continuation prompt also fails.
+      console.error("The AI failed to generate a response for the simulation. Using a generic fallback.");
+      output = "I'm sorry, I'm not sure how to respond to that. Could you try rephrasing?";
     }
     
     return {
