@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,7 +8,7 @@ import DashboardLayout from "@/components/dashboard-layout";
 import { useRole, availableRolesForAssignment } from "@/hooks/use-role";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon, Bot, User, ThumbsUp, ThumbsDown, Award, Sparkles, Activity, FileClock } from "lucide-react";
+import { ArrowLeft, BarChart2, Star, TrendingUp, TrendingDown, Users, LineChart as LineChartIcon, Bot, User, ThumbsUp, ThumbsDown, Award, Sparkles, Activity, FileClock, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -20,7 +21,7 @@ import { LineChart, CartesianGrid, XAxis, Line, YAxis } from "recharts"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { getCompletedPracticeScenariosForUser, getCompletedPracticeScenariosAssignedByMe, AssignedPracticeScenario } from '@/services/feedback-service';
+import { getCompletedPracticeScenariosForUser, getPracticeScenariosAssignedByMe, AssignedPracticeScenario } from '@/services/feedback-service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { roleUserMapping } from '@/lib/role-mapping';
 import type { NetsAnalysisOutput } from '@/ai/schemas/nets-schemas';
@@ -332,8 +333,8 @@ const AssignedScoresTab = () => {
     const fetchAssignedScenarios = useCallback(async () => {
         if (!role || !availableRolesForAssignment.includes(role)) return;
         setIsLoading(true);
-        const scenarios = await getCompletedPracticeScenariosAssignedByMe(role);
-        setAssignedScenarios(scenarios.sort((a,b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime()));
+        const scenarios = await getPracticeScenariosAssignedByMe(role);
+        setAssignedScenarios(scenarios);
         setIsLoading(false);
     }, [role]);
 
@@ -345,7 +346,10 @@ const AssignedScoresTab = () => {
         return <Skeleton className="h-64 w-full" />
     }
 
-    const groupedByAssignee = assignedScenarios.reduce((acc, scenario) => {
+    const pendingScenarios = assignedScenarios.filter(s => s.status === 'pending');
+    const completedScenarios = assignedScenarios.filter(s => s.status === 'completed');
+
+    const groupedByAssignee = completedScenarios.reduce((acc, scenario) => {
         const key = scenario.assignedTo;
         if (!acc[key]) {
             acc[key] = [];
@@ -354,30 +358,50 @@ const AssignedScoresTab = () => {
         return acc;
     }, {} as Record<string, AssignedPracticeScenario[]>);
 
-    if (Object.keys(groupedByAssignee).length === 0) {
-        return (
-            <Card>
-                <CardContent className="text-center py-12">
-                    <p className="text-lg text-muted-foreground">No completed simulations found for your team.</p>
-                     <p className="mt-2 text-sm text-muted-foreground">When a team member completes an assigned practice, their results will appear here.</p>
-                </CardContent>
-            </Card>
-        );
-    }
-
     return (
-        <div className="space-y-6">
-            {Object.entries(groupedByAssignee).map(([assigneeRole, scenarios]) => (
-                <Card key={assigneeRole}>
+        <div className="space-y-8">
+            {pendingScenarios.length > 0 && (
+                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                           <User className="h-6 w-6 text-primary" /> Team Member: {roleUserMapping[assigneeRole as keyof typeof roleUserMapping]?.name || assigneeRole}
+                           <ClipboardList className="h-6 w-6 text-primary" /> Pending Assignments
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <SimulationAccordion scenarios={scenarios} />
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                         {pendingScenarios.map(s => (
+                            <Card key={s.id} className="bg-card-foreground/5">
+                                <CardHeader className="pb-2">
+                                     <CardDescription className="flex items-center justify-between text-xs">
+                                        <span>To: {roleUserMapping[s.assignedTo as keyof typeof roleUserMapping]?.name || s.assignedTo}</span>
+                                        <span>{formatDistanceToNow(new Date(s.assignedAt), { addSuffix: true })}</span>
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm font-medium">{s.scenario}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Persona: {s.persona}</p>
+                                </CardContent>
+                            </Card>
+                         ))}
                     </CardContent>
                 </Card>
+            )}
+
+            {Object.keys(groupedByAssignee).length === 0 && pendingScenarios.length === 0 && (
+                <Card>
+                    <CardContent className="text-center py-12">
+                        <p className="text-lg text-muted-foreground">No assigned practice scenarios found.</p>
+                        <p className="mt-2 text-sm text-muted-foreground">Assign a scenario from the Nets arena. Once completed, results will appear here.</p>
+                    </CardContent>
+                </Card>
+            )}
+            
+            {Object.entries(groupedByAssignee).map(([assigneeRole, scenarios]) => (
+                <div key={assigneeRole} className="space-y-4">
+                    <h2 className="text-xl font-semibold flex items-center gap-2 pt-4">
+                       <User className="h-5 w-5 text-primary" /> Completed by: {roleUserMapping[assigneeRole as keyof typeof roleUserMapping]?.name || assigneeRole}
+                    </h2>
+                    <SimulationAccordion scenarios={scenarios} />
+                </div>
             ))}
         </div>
     )

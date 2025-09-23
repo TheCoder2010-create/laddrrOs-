@@ -220,9 +220,9 @@ export async function getCompletedPracticeScenariosForUser(userRole: Role): Prom
     return allScenarios.filter(s => s.assignedTo === userRole && s.status === 'completed');
 }
 
-export async function getCompletedPracticeScenariosAssignedByMe(assignerRole: Role): Promise<AssignedPracticeScenario[]> {
+export async function getPracticeScenariosAssignedByMe(assignerRole: Role): Promise<AssignedPracticeScenario[]> {
     const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
-    return allScenarios.filter(s => s.assignedBy === assignerRole && s.status === 'completed');
+    return allScenarios.filter(s => s.assignedBy === assignerRole);
 }
 
 
