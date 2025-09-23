@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
 import type { Role } from '@/hooks/use-role';
-import { useRole, availableRolesForAssignment } from '@/hooks/use-role';
+import { useRole, availableRoles, availableRolesForAssignment } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -471,9 +471,9 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                             <button
                                 key={role}
                                 onClick={() => setSelectedPersona(role)}
-                                className="group flex flex-col items-center justify-center gap-2 p-4 border rounded-lg hover:bg-accent hover:border-primary transition-colors h-28"
+                                className="group flex flex-col items-center justify-center gap-2 py-4 transition-transform duration-200 ease-in-out hover:scale-110 hover:-translate-y-1"
                             >
-                                <Icon className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
+                                <Icon className="h-10 w-10 text-muted-foreground transition-colors group-hover:text-primary" />
                                 <span className="font-semibold text-foreground">{role}</span>
                             </button>
                          )
