@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -16,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send } from 'lucide-react';
-import { getNominationsForManager, nominateUser, type Nomination } from '@/services/interviewer-lab-service';
+import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination } from '@/services/interviewer-lab-service';
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const { role } = useRole();
@@ -309,3 +310,5 @@ export default function InterviewerLabPage() {
         </DashboardLayout>
     );
 }
+
+    
