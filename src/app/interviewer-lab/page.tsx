@@ -425,6 +425,105 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     );
 }
 
+function NominateDialog({ onNomination }: { onNomination: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [selectedNominee, setSelectedNominee] = useState('');
+    const [targetRole, setTargetRole] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleNominate = async () => {
+        if (!role || !selectedNominee || !targetRole) {
+            toast({ variant: 'destructive', title: 'Missing fields', description: 'Please select a nominee and target role.' });
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            await nominateUser(role, selectedNominee as Role, targetRole);
+            toast({ title: 'Nomination Submitted!', description: `${roleUserMapping[selectedNominee as Role]?.name} has been enrolled.` });
+            onNomination();
+        } catch (error) {
+            console.error("Failed to nominate user", error);
+            toast({ variant: 'destructive', title: 'Nomination Failed' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle className="mr-2" /> Nominate
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Nominate for Interviewer Training</DialogTitle>
+                    <DialogDescription>
+                        Enroll a team member in the Interviewer Coaching Program to improve their hiring skills.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="nominee">Select Nominee</Label>
+                        <Select onValueChange={setSelectedNominee}>
+                            <SelectTrigger id="nominee">
+                                <SelectValue placeholder="Select a team member" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.values(roleUserMapping).filter(user => user.role !== role && user.role !== 'HR Head' && user.role !== 'Anonymous').map(user => (
+                                    <SelectItem key={user.role} value={user.role}>
+                                        {user.name} ({user.role})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="target-role">Target Interview Role</Label>
+                        <TooltipProvider>
+                            <div className="flex items-center gap-2">
+                                <Select onValueChange={setTargetRole}>
+                                    <SelectTrigger id="target-role">
+                                        <SelectValue placeholder="Select target role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Individual Contributor">Individual Contributor</SelectItem>
+                                        <SelectItem value="Team Lead">Team Lead</SelectItem>
+                                        <SelectItem value="Manager">Manager</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="max-w-xs">
+                                            This defines the type of candidate the nominee is being trained to interview (e.g., training to interview a Manager requires different skills than for an IC).
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </TooltipProvider>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost">Cancel</Button>
+                    </DialogClose>
+                    <DialogClose asChild>
+                        <Button onClick={handleNominate} disabled={isSubmitting || !selectedNominee || !targetRole}>
+                            {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                            Submit Nomination
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function ManagerView() {
     const { role } = useRole();
     const [nominations, setNominations] = useState<Nomination[]>([]);
