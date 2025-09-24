@@ -257,11 +257,13 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         setNomination(initialNomination);
 
         // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
-        const firstUncompletedModule = initialNomination.modules.findIndex(m => !m.isCompleted);
-        setCurrentModuleIndex(firstUncompletedModule >= 0 ? firstUncompletedModule : 0);
+        const firstUncompletedModuleIndex = initialNomination.modules.findIndex(m => !m.isCompleted);
+        const newModuleIndex = firstUncompletedModuleIndex >= 0 ? firstUncompletedModuleIndex : initialNomination.modules.length - 1;
+        setCurrentModuleIndex(newModuleIndex);
         
-        const firstUncompletedLesson = initialNomination.modules[firstUncompletedModule]?.lessons.findIndex(l => !l.isCompleted);
-        setCurrentLessonIndex(firstUncompletedLesson >= 0 ? firstUncompletedLesson : 0);
+        const firstUncompletedLessonIndex = initialNomination.modules[newModuleIndex]?.lessons.findIndex(l => !l.isCompleted);
+        const newLessonIndex = firstUncompletedLessonIndex >= 0 ? firstUncompletedLessonIndex : 0;
+        setCurrentLessonIndex(newLessonIndex);
 
     }, [initialNomination]);
 

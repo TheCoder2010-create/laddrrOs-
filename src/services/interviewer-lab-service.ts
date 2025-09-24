@@ -136,7 +136,7 @@ const getInitialModules = (): TrainingModule[] => [
                 }
             },
             {
-                id: 'l1-3', title: 'Active Listening', type: 'reading', isCompleted: false,
+                id: 'l1-3', title: 'Active Listening', type: 'interactive', isCompleted: false,
                 script: "Good interviewers follow the 80/20 rule: the candidate should talk 80% of the time. Use reflective listening to paraphrase answers and confirm your understanding. Don't be afraid to use silence to allow the candidate to think.",
                 activity: { type: 'quiz_mcq', question: "A candidate gives a long-winded answer. What should you do?", options: ["Interrupt and finish their sentence for them", "Paraphrase their key points to confirm understanding", "Immediately skip to the next question"], correctAnswer: "Paraphrase their key points to confirm understanding" }
             }
@@ -154,7 +154,7 @@ const getInitialModules = (): TrainingModule[] => [
                 script: "The STAR method is a framework for answering behavioral questions:\n- Situation: Background of the story.\n- Task: The goal the candidate was trying to achieve.\n- Action: The specific steps they took.\n- Result: The outcome of their actions, with metrics if possible.",
                 activity: {
                     type: 'match_game', prompt: 'Match the statement to the STAR component:',
-                    items: [{ text: "I had to resolve a team conflict", category: "Task"}, { text: "I spoke with each party individually", category: "Action"}, { text: "Team collaboration improved by 20%", category: "Result"}],
+                    items: [{ text: "I had to resolve a conflict", category: "Task"}, { text: "I spoke with each party individually", category: "Action"}, { text: "Team collaboration improved by 20%", category: "Result"}],
                     categories: ["Situation", "Task", "Action", "Result"]
                 }
             },
@@ -166,7 +166,7 @@ const getInitialModules = (): TrainingModule[] => [
             {
                 id: 'l2-3', title: 'Evaluating STAR Answers', type: 'reading', isCompleted: false,
                 script: "Strong answers have clear, specific 'Action' steps taken by the candidate and measurable 'Results'. Weak answers are vague or miss the result entirely.",
-                activity: { type: 'quiz_mcq', question: "An AI candidate will give a STAR response. Rate it Good / Fair / Poor.", options: ["Good", "Fair", "Poor"], correctAnswer: "Good" } // Simplified for now
+                activity: { type: 'quiz_mcq', question: "A candidate says: 'I increased sales.' What is this response missing?", options: ["Situation and Task", "Action and Result", "A specific, measurable Result"], correctAnswer: "A specific, measurable Result" }
             },
             {
                 id: 'l2-4', title: 'Practice: Mock STAR Interview', type: 'practice', isCompleted: false,
@@ -200,7 +200,7 @@ const getInitialModules = (): TrainingModule[] => [
                 }
             },
             {
-                id: 'l3-4', title: 'Practice: Reflection', type: 'practice', isCompleted: false,
+                id: 'l3-4', title: 'Practice: Reflection', type: 'interactive', isCompleted: false,
                 script: "Bias is natural, but acknowledging it is the first step to mitigating it.",
                 activity: { type: 'journal', prompt: "Write down one bias you will consciously watch for in yourself during your next interview." }
             }
@@ -214,7 +214,7 @@ const getInitialModules = (): TrainingModule[] => [
         isCompleted: false,
         lessons: [
             {
-                id: 'l4-1', title: 'Prohibited vs. Legal Questions', type: 'reading', isCompleted: false,
+                id: 'l4-1', title: 'Prohibited vs. Legal Questions', type: 'interactive', isCompleted: false,
                 script: "Illegal questions relate to protected classes like family status, age, religion, or disability. Legal questions focus on the candidate's ability to perform essential job functions.",
                 activity: {
                     type: 'swipe_quiz', prompt: 'Is this question Legal or Illegal?',
@@ -273,7 +273,7 @@ const getInitialModules = (): TrainingModule[] => [
                 }
             },
             {
-                id: 'l6-3', title: 'Reflection and Growth', type: 'practice', isCompleted: false,
+                id: 'l6-3', title: 'Reflection and Growth', type: 'interactive', isCompleted: false,
                 script: "The best leaders reflect after each interview on what went well and what they could improve for next time. Continuous improvement is key.",
                 activity: { type: 'journal', prompt: "Write one thing you will do differently in your next real-world interview based on what you've learned in this program." }
             }
