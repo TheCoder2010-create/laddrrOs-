@@ -216,6 +216,7 @@ function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onCom
                 {lesson.type === 'video' && <Button onClick={() => onComplete()}>Continue</Button>}
                 {lesson.type === 'quiz' && <Button onClick={handleQuizSubmit} disabled={!selectedAnswer}>Submit Answer</Button>}
                 {lesson.type === 'interactive' && <Button onClick={() => onComplete()}>Continue</Button>}
+                {lesson.type === 'practice' && <Button onClick={() => onComplete()}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>}
             </CardFooter>
         </Card>
     );
@@ -267,6 +268,12 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
 
     const handleLessonComplete = async (result?: any) => {
         if (!currentLesson || !currentModule) return;
+
+        // If it's a practice lesson, start the simulation instead of completing it right away
+        if (currentLesson.type === 'practice') {
+            handleStartPractice(currentLesson);
+            return;
+        }
         
         await saveLessonResult(nomination.id, currentModule.id, currentLesson.id, result);
 
@@ -275,16 +282,9 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
             setCurrentLessonIndex(nextLessonIndex);
         } else {
             // This was the last lesson of the module.
-            // All non-practice lessons are done. Now find the practice one.
-            const practiceLesson = currentModule.lessons.find(l => l.type === 'practice');
-            if (practiceLesson && !practiceLesson.isCompleted) {
-                 handleStartPractice(practiceLesson);
-            } else {
-                // No practice lesson, or it's somehow already done. Complete the module.
-                await completeModule(nomination.id, currentModule.id);
-                toast({ title: `Module ${currentModuleIndex + 1} Complete!` });
-                onUpdate();
-            }
+            await completeModule(nomination.id, currentModule.id);
+            toast({ title: `Module ${currentModuleIndex + 1} Complete!` });
+            onUpdate();
         }
         onUpdate();
     };
@@ -311,11 +311,16 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
             } else if (currentPracticeLesson && currentModule) {
                 // This was a practice session for a module
                 await saveLessonResult(nomination.id, currentModule.id, currentPracticeLesson.id, analysisResult);
-                await completeModule(nomination.id, currentModule.id);
-                 toast({
-                    title: `Module ${currentModuleIndex+1} Complete!`,
-                    description: "Your progress has been updated.",
-                });
+                
+                // Check if this was the last lesson of the module to complete the module
+                const isLastLesson = currentModule.lessons[currentModule.lessons.length - 1].id === currentPracticeLesson.id;
+                if (isLastLesson) {
+                    await completeModule(nomination.id, currentModule.id);
+                    toast({
+                        title: `Module ${currentModuleIndex+1} Complete!`,
+                        description: "Your progress has been updated.",
+                    });
+                }
             }
 
             onUpdate(); // Notify parent to re-fetch and update the view
