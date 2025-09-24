@@ -6,7 +6,7 @@ import { useRole, Role } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon, Info } from 'lucide-react';
+import { MessageSquare, MessageCircleQuestion, AlertTriangle, CheckCircle, Loader2, ChevronsRight, User, Users, Briefcase, ShieldCheck, UserX, UserPlus, FileText, Zap, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, MessageSquareQuote, CheckSquare as CheckSquareIcon, Info, Archive } from 'lucide-react';
 import { getOneOnOneHistory, OneOnOneHistoryItem, submitEmployeeAcknowledgement, getAllFeedback, Feedback, resolveFeedback, submitEmployeeFeedbackAcknowledgement } from '@/services/feedback-service';
 import { roleUserMapping, formatActorName } from '@/lib/role-mapping';
 import { format } from 'date-fns';
@@ -122,11 +122,11 @@ function ConcernAcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUp
                     </div>
                     <div className="flex flex-wrap gap-2 pt-2">
                         <Button onClick={() => handleAcknowledge(true)} variant="success" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Accept Resolution
                         </Button>
                         <Button onClick={() => handleAcknowledge(false)} variant="destructive" disabled={isSubmitting}>
-                            {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             I'm Not Satisfied, Escalate
                         </Button>
                     </div>
@@ -137,33 +137,41 @@ function ConcernAcknowledgementWidget({ item, onUpdate }: { item: Feedback, onUp
 }
 
 function MessagesContent({ role }: { role: Role }) {
-  const [messages, setMessages] = useState<Feedback[]>([]);
+  const [activeMessages, setActiveMessages] = useState<Feedback[]>([]);
+  const [acknowledgedHistory, setAcknowledgedHistory] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
     setIsLoading(true);
     const feedback = await getAllFeedback();
     
-    const userMessages: Feedback[] = [];
+    const userActiveMessages: Feedback[] = [];
+    const userAcknowledgedHistory: Feedback[] = [];
 
-    // General notifications and identified concern acknowledgements
     feedback.forEach(item => {
         const isAssignedToMe = item.assignedTo?.includes(role);
-        // For general "for your info" notifications
+        
+        // Active "For Your Info" notifications
         if (item.status === 'Pending Acknowledgement' && isAssignedToMe) {
-            userMessages.push(item);
+            userActiveMessages.push(item);
         }
-        // For acknowledgements of identified concerns I submitted
+        
+        // Active "Acknowledge Concern" messages
         if (item.status === 'Pending Employee Acknowledgment' && item.submittedBy === role) {
-            userMessages.push(item);
+            userActiveMessages.push(item);
+        }
+
+        // Acknowledged History items
+        if (item.status === 'Closed' && item.assignedTo?.includes(role)) {
+            userAcknowledgedHistory.push(item);
         }
     });
 
-    userMessages.sort((a, b) => {
-        return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
-    });
+    userActiveMessages.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    userAcknowledgedHistory.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
-    setMessages(userMessages);
+    setActiveMessages(userActiveMessages);
+    setAcknowledgedHistory(userAcknowledgedHistory);
     setIsLoading(false);
   }, [role]);
 
@@ -181,7 +189,7 @@ function MessagesContent({ role }: { role: Role }) {
     };
   }, [fetchMessages]);
 
-  const hasMessages = messages.length > 0;
+  const hasActiveMessages = activeMessages.length > 0;
 
   const renderWidgets = (item: Feedback) => {
     if (item.status === 'Pending Acknowledgement') {
@@ -208,9 +216,9 @@ function MessagesContent({ role }: { role: Role }) {
         <CardContent className="space-y-6">
             {isLoading ? (
                  <Skeleton className="h-48 w-full" />
-            ) : hasMessages ? (
+            ) : hasActiveMessages ? (
                 <>
-                    {messages.map(item => renderWidgets(item))}
+                    {activeMessages.map(item => renderWidgets(item))}
                 </>
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
@@ -220,6 +228,34 @@ function MessagesContent({ role }: { role: Role }) {
                         Important updates and required actions will appear here.
                     </p>
                 </div>
+            )}
+
+            {acknowledgedHistory.length > 0 && (
+                <Accordion type="single" collapsible className="w-full pt-6">
+                    <AccordionItem value="history" className="border-t">
+                        <AccordionTrigger className="text-lg font-semibold text-muted-foreground hover:no-underline">
+                            <div className="flex items-center gap-2">
+                                <Archive className="h-5 w-5" />
+                                Acknowledged History
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 space-y-4">
+                            {acknowledgedHistory.map(item => (
+                                <Card key={item.trackingId} className="bg-muted/50">
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="text-base">{item.subject}</CardTitle>
+                                        <CardDescription className="text-xs">
+                                            Acknowledged on: {item.auditTrail?.find(e => e.event === 'Acknowledged')?.timestamp ? format(new Date(item.auditTrail.find(e => e.event === 'Acknowledged')!.timestamp), 'PPP p') : 'N/A'}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.message}</p>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             )}
         </CardContent>
       </Card>

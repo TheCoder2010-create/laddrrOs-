@@ -903,12 +903,19 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
     if (feedbackIndex === -1) return;
 
     const feedback = allFeedback[feedbackIndex];
+
+    // For general notifications, we'll mark them as 'Closed' to keep them in history.
+    if (feedback.status === 'Pending Acknowledgement') {
+        feedback.status = 'Closed';
+    } else {
+        feedback.status = 'Resolved';
+    }
     
-    feedback.status = 'Resolved';
     feedback.resolution = resolution;
-    feedback.assignedTo = [];
+    // We keep assignedTo so we can filter by who acknowledged it in history views.
+    // feedback.assignedTo = []; 
     feedback.auditTrail?.push({
-        event: 'Resolved',
+        event: 'Acknowledged',
         timestamp: new Date(),
         actor,
         details: resolution,
