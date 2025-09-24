@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book } from 'lucide-react';
-import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult } from '@/services/interviewer-lab-service';
+import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonActivity } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NetsInitialInput, NetsAnalysisOutput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import SimulationArena from '@/components/simulation-arena';
@@ -27,209 +27,214 @@ import type { InterviewerConversationInput } from '@/ai/schemas/interviewer-lab-
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
-
-function NominateDialog({ onNomination }: { onNomination: () => void }) {
-    const { role } = useRole();
-    const { toast } = useToast();
-    const [isOpen, setIsOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [nominee, setNominee] = useState<Role | null>(null);
-    const [targetRole, setTargetRole] = useState<string | null>(null);
-
-    const availableNominees: Role[] = ['Team Lead', 'AM', 'Employee'];
-    const targetRoles = ['Entry Level', 'IC', 'TL', 'Manager'];
-
-    const handleSubmit = async () => {
-        if (!role || !nominee || !targetRole) {
-            toast({ variant: 'destructive', title: 'Missing fields', description: 'Please select a nominee and target role.' });
-            return;
-        }
-        setIsSubmitting(true);
-        try {
-            await nominateUser(role, nominee, targetRole);
-            toast({ title: 'Nomination Successful!', description: `${roleUserMapping[nominee].name} has been nominated for interviewer coaching.` });
-            setIsOpen(false);
-            setNominee(null);
-            setTargetRole(null);
-            onNomination();
-        } catch (error) {
-            console.error("Failed to nominate user", error);
-            toast({ variant: 'destructive', title: 'Nomination Failed' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <PlusCircle className="mr-2" />
-                    Nominate User
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Nominate for Interviewer Coaching</DialogTitle>
-                    <DialogDescription>
-                        Select a team member to begin the Laddrr Interviewer Coaching Program. They will start with a baseline mock interview.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="nominee">Team Member</Label>
-                        <Select onValueChange={(value) => setNominee(value as Role)} value={nominee || ''}>
-                            <SelectTrigger id="nominee">
-                                <SelectValue placeholder="Select a user to nominate" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableNominees.map(role => (
-                                    <SelectItem key={role} value={role}>{roleUserMapping[role].name} ({role})</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="target-role">Target Interview Level</Label>
-                                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p className="max-w-xs">
-                                        This defines the type of candidate the nominee is being trained to interview (e.g., training to interview a Manager requires different skills than for an IC).
-                                    </p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-
-                        <Select onValueChange={setTargetRole} value={targetRole || ''}>
-                            <SelectTrigger id="target-role">
-                                <SelectValue placeholder="Select the target level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {targetRoles.map(role => (
-                                    <SelectItem key={role} value={role}>{role}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
-                    <Button onClick={handleSubmit} disabled={isSubmitting || !nominee || !targetRole}>
-                        {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
-                        Confirm Nomination
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onComplete: (result?: any) => void }) {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+    const [journalEntry, setJournalEntry] = useState('');
+    const [checkedItems, setCheckedItems] = useState<string[]>([]);
+    
+    const { toast } = useToast();
 
     const getIcon = () => {
         switch (lesson.type) {
             case 'video': return <Video className="h-6 w-6 text-primary" />;
-            case 'quiz': return <FileQuestion className="h-6 w-6 text-primary" />;
+            case 'reading': return <BookOpen className="h-6 w-6 text-primary" />;
             case 'interactive': return <Gamepad2 className="h-6 w-6 text-primary" />;
             case 'practice': return <Play className="h-6 w-6 text-primary" />;
-            case 'reading': return <Book className="h-6 w-6 text-primary" />;
-            default: return <BookOpen className="h-6 w-6 text-primary" />;
+            default: return <FileQuestion className="h-6 w-6 text-primary" />;
         }
     };
+    
+    const handleChecklistChange = (item: string) => {
+        setCheckedItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
+    };
 
+    const handleSimpleSubmit = () => {
+        if (lesson.activity?.type === 'journal') {
+            onComplete(journalEntry);
+            setJournalEntry('');
+        } else if (lesson.activity?.type === 'checklist') {
+            onComplete(checkedItems);
+            setCheckedItems([]);
+        } else if (lesson.activity?.type === 'fill_blank') {
+            onComplete(journalEntry); // Re-use journalEntry state for simplicity
+            setJournalEntry('');
+        } 
+        else {
+            onComplete();
+        }
+    };
+    
     const handleQuizSubmit = () => {
-        onComplete(selectedAnswer);
+        const activity = lesson.activity;
+        if (activity?.type !== 'quiz_mcq' || !selectedAnswer) return;
+        
+        const isCorrect = selectedAnswer === activity.correctAnswer;
+        toast({
+            title: isCorrect ? "Correct!" : "Not Quite",
+            description: isCorrect ? "Great job." : `The correct answer was: ${activity.correctAnswer}`,
+            variant: isCorrect ? "success" : "destructive",
+        });
+
+        if(isCorrect) {
+            onComplete(selectedAnswer);
+        }
         setSelectedAnswer(null);
     };
 
+    const handleSwipeSubmit = (answer: 'Legal' | 'Illegal', correctAnswer: 'Legal' | 'Illegal') => {
+         const isCorrect = answer === correctAnswer;
+         toast({
+            title: isCorrect ? "Correct!" : "Not Quite",
+            description: `That question is ${correctAnswer}.`,
+            variant: isCorrect ? "success" : "destructive",
+        });
+        if(isCorrect) {
+            onComplete(answer);
+        }
+    }
+
+
+    const renderActivity = (activity: LessonActivity) => {
+        switch (activity.type) {
+            case 'quiz_mcq':
+                return (
+                    <div className='space-y-4'>
+                        <p className="font-semibold">{activity.question}</p>
+                        <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer}>
+                            {activity.options.map((opt, i) => (
+                                <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
+                                    <RadioGroupItem value={opt} id={`q-${lesson.id}-${i}`} />
+                                    <Label htmlFor={`q-${lesson.id}-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
+                                </div>
+                            ))}
+                        </RadioGroup>
+                    </div>
+                );
+            case 'match_game':
+                return (
+                     <div className='space-y-4'>
+                        <p className="font-semibold">{activity.prompt}</p>
+                         <div className="space-y-2">
+                            {activity.items.map((item, i) => (
+                                <Card key={i} className="p-3">
+                                    <p className="font-medium">"{item.text}"</p>
+                                    <p className="text-sm text-green-500">Correctly matches: {item.category}</p>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                );
+            case 'fill_blank':
+                 return (
+                    <div className='space-y-2'>
+                        <p className="font-semibold">{activity.prompt}</p>
+                        <Textarea value={journalEntry} onChange={e => setJournalEntry(e.target.value)} placeholder="Type your answer..."/>
+                    </div>
+                 );
+            case 'checklist':
+                return (
+                    <div className='space-y-2'>
+                        <p className="font-semibold">{activity.prompt}</p>
+                        {activity.options.map((opt, i) => (
+                             <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
+                                <Checkbox id={`c-${lesson.id}-${i}`} onCheckedChange={() => handleChecklistChange(opt)} checked={checkedItems.includes(opt)} />
+                                <Label htmlFor={`c-${lesson.id}-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 'branching_scenario':
+                 return (
+                    <div className='space-y-4'>
+                        <p className="font-semibold">{activity.prompt}</p>
+                        <div className="flex flex-col gap-2">
+                        {activity.options.map((opt, i) => (
+                            <Button key={i} variant={opt.isCorrect ? "success" : "destructive"} onClick={() => {
+                                toast({ title: opt.isCorrect ? "Correct Choice!" : "Incorrect Choice", description: opt.isCorrect ? "This keeps the conversation focused and legally compliant." : "This question is illegal and introduces bias."});
+                                if(opt.isCorrect) onComplete(opt.text);
+                            }}>
+                                {opt.text}
+                            </Button>
+                        ))}
+                        </div>
+                    </div>
+                 );
+            case 'journal':
+                 return (
+                    <div className='space-y-2'>
+                        <p className="font-semibold">{activity.prompt}</p>
+                        <Textarea value={journalEntry} onChange={e => setJournalEntry(e.target.value)} placeholder="Your reflections..."/>
+                    </div>
+                );
+            case 'swipe_quiz':
+                return (
+                     <div className='space-y-4'>
+                        <p className="font-semibold">{activity.prompt}</p>
+                        {activity.cards.map((card, i) => (
+                             <Card key={i} className="p-4">
+                                <p className="text-center font-medium italic">"{card.text}"</p>
+                                <div className="flex justify-center gap-4 mt-4">
+                                    <Button variant="success" onClick={() => handleSwipeSubmit('Legal', card.correctAnswer)}>Legal</Button>
+                                    <Button variant="destructive" onClick={() => handleSwipeSubmit('Illegal', card.correctAnswer)}>Illegal</Button>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                )
+            default:
+                return null;
+        }
+    }
+
+    const renderFooter = () => {
+        if (lesson.type === 'practice') {
+            return <Button onClick={() => onComplete()}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>;
+        }
+        if (!lesson.activity) {
+            return <Button onClick={() => onComplete()}>Continue</Button>;
+        }
+        switch (lesson.activity.type) {
+            case 'quiz_mcq':
+                return <Button onClick={handleQuizSubmit} disabled={!selectedAnswer}>Submit Answer</Button>;
+            case 'match_game':
+                 return <Button onClick={handleSimpleSubmit}>Continue</Button>; // Auto-completes
+             case 'branching_scenario':
+                return null; // Buttons are inline
+            case 'swipe_quiz':
+                return null; // Buttons are inline
+            case 'fill_blank':
+                 return <Button onClick={handleSimpleSubmit} disabled={!journalEntry}>Submit</Button>;
+            case 'checklist':
+                 return <Button onClick={handleSimpleSubmit} disabled={checkedItems.length === 0}>Submit</Button>;
+            case 'journal':
+                return <Button onClick={handleSimpleSubmit} disabled={!journalEntry}>Save Reflection</Button>;
+            default:
+                return <Button onClick={() => onComplete()}>Continue</Button>;
+        }
+    };
+    
     return (
         <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle className="flex items-center gap-3">{getIcon()} {lesson.title}</CardTitle>
-                <CardDescription>{lesson.description}</CardDescription>
+                {lesson.script && <CardDescription className="whitespace-pre-wrap pt-2">{lesson.script}</CardDescription>}
             </CardHeader>
-            <CardContent>
-                {lesson.type === 'video' && (
-                    <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                        <Video className="h-16 w-16 text-muted-foreground" />
-                         <p className="absolute text-muted-foreground">Video placeholder</p>
+            
+            {lesson.activity && (
+                <CardContent>
+                    <div className="p-4 border bg-muted/50 rounded-lg">
+                        <h4 className="font-bold mb-4 text-center text-primary">Activity</h4>
+                        {renderActivity(lesson.activity)}
                     </div>
-                )}
-                {lesson.type === 'reading' && (
-                    <div className="prose dark:prose-invert max-w-none p-4 border rounded-lg">
-                        <h4>Placeholder Article</h4>
-                        <p>
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. 
-                        </p>
-                        <p>
-                            Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue.
-                        </p>
-                    </div>
-                )}
-                {lesson.type === 'quiz' && lesson.quizOptions && (
-                    <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer}>
-                        {lesson.quizOptions.map((opt, i) => (
-                            <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
-                                <RadioGroupItem value={opt} id={`q-${lesson.id}-${i}`} />
-                                <Label htmlFor={`q-${lesson.id}-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
-                            </div>
-                        ))}
-                    </RadioGroup>
-                )}
-                {lesson.type === 'interactive' && (
-                    <Accordion type="single" collapsible defaultValue="item-1">
-                        <AccordionItem value="item-1">
-                            <AccordionTrigger>Phase 1: The Opening</AccordionTrigger>
-                            <AccordionContent>
-                                <p><strong>Goal:</strong> Build rapport and set expectations.</p>
-                                <ul className="list-disc pl-5 mt-2 space-y-1">
-                                    <li>Introduce yourself and your role.</li>
-                                    <li>Set the agenda for the interview.</li>
-                                    <li>Explain the format (e.g., behavioral questions, coding exercise).</li>
-                                    <li>Confirm the time allocation and leave time for candidate questions.</li>
-                                </ul>
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-2">
-                            <AccordionTrigger>Phase 2: The Middle</AccordionTrigger>
-                            <AccordionContent>
-                                <p><strong>Goal:</strong> Assess competency and gather evidence.</p>
-                                <ul className="list-disc pl-5 mt-2 space-y-1">
-                                    <li>Ask behavioral questions using the STAR method.</li>
-                                    <li>Probe for details, especially on 'Action' and 'Result'.</li>
-                                    <li>Allow the candidate to ask questions throughout.</li>
-                                </ul>
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-3">
-                            <AccordionTrigger>Phase 3: The Closing</AccordionTrigger>
-                            <AccordionContent>
-                                <p><strong>Goal:</strong> End professionally and clarify next steps.</p>
-                                <ul className="list-disc pl-5 mt-2 space-y-1">
-                                    <li>Answer any final questions from the candidate.</li>
-                                    <li>Clearly outline the next steps in the hiring process.</li>
-                                    <li>Thank the candidate for their time.</li>
-                                </ul>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                )}
-            </CardContent>
+                </CardContent>
+            )}
+
             <CardFooter>
-                {lesson.type === 'video' && <Button onClick={() => onComplete()}>Continue</Button>}
-                {lesson.type === 'reading' && <Button onClick={() => onComplete()}>Continue</Button>}
-                {lesson.type === 'quiz' && <Button onClick={handleQuizSubmit} disabled={!selectedAnswer}>Submit Answer</Button>}
-                {lesson.type === 'interactive' && <Button onClick={() => onComplete()}>Continue</Button>}
-                {lesson.type === 'practice' && <Button onClick={() => onComplete()}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>}
+                {renderFooter()}
             </CardFooter>
         </Card>
     );
@@ -332,6 +337,12 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                     toast({
                         title: `Module ${currentModuleIndex+1} Complete!`,
                         description: "Your progress has been updated.",
+                    });
+                } else {
+                     // Not the last lesson, but still show a toast for completing the practice
+                    toast({
+                        title: "Practice Complete!",
+                        description: `You can now proceed to the next lesson.`
                     });
                 }
             }
