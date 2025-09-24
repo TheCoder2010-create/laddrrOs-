@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book, CheckSquare } from 'lucide-react';
 import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonActivity } from '@/services/interviewer-lab-service';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { NetsInitialInput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import SimulationArena from '@/components/simulation-arena';
 import { analyzeInterview } from '@/ai/flows/analyze-interview-flow';
@@ -256,14 +256,16 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         // This ensures the component state updates when the parent re-fetches data.
         setNomination(initialNomination);
 
-        // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
-        const firstUncompletedModuleIndex = initialNomination.modules.findIndex(m => !m.isCompleted);
-        const newModuleIndex = firstUncompletedModuleIndex >= 0 ? firstUncompletedModuleIndex : initialNomination.modules.length - 1;
-        setCurrentModuleIndex(newModuleIndex);
-        
-        const firstUncompletedLessonIndex = initialNomination.modules[newModuleIndex]?.lessons.findIndex(l => !l.isCompleted);
-        const newLessonIndex = firstUncompletedLessonIndex >= 0 ? firstUncompletedLessonIndex : 0;
-        setCurrentLessonIndex(newLessonIndex);
+        if (initialNomination.status !== 'Pre-assessment pending') {
+            // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
+            const firstUncompletedModuleIndex = initialNomination.modules.findIndex(m => !m.isCompleted);
+            const newModuleIndex = firstUncompletedModuleIndex >= 0 ? firstUncompletedModuleIndex : initialNomination.modules.length - 1;
+            setCurrentModuleIndex(newModuleIndex);
+            
+            const firstUncompletedLessonIndex = initialNomination.modules[newModuleIndex]?.lessons.findIndex(l => !l.isCompleted);
+            const newLessonIndex = firstUncompletedLessonIndex >= 0 ? firstUncompletedLessonIndex : 0;
+            setCurrentLessonIndex(newLessonIndex);
+        }
 
     }, [initialNomination]);
 
