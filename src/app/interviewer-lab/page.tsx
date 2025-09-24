@@ -17,7 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight } from 'lucide-react';
+import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book } from 'lucide-react';
 import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NetsInitialInput, NetsAnalysisOutput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
@@ -141,6 +141,7 @@ function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onCom
             case 'quiz': return <FileQuestion className="h-6 w-6 text-primary" />;
             case 'interactive': return <Gamepad2 className="h-6 w-6 text-primary" />;
             case 'practice': return <Play className="h-6 w-6 text-primary" />;
+            case 'reading': return <Book className="h-6 w-6 text-primary" />;
             default: return <BookOpen className="h-6 w-6 text-primary" />;
         }
     };
@@ -161,6 +162,17 @@ function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onCom
                     <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
                         <Video className="h-16 w-16 text-muted-foreground" />
                          <p className="absolute text-muted-foreground">Video placeholder</p>
+                    </div>
+                )}
+                {lesson.type === 'reading' && (
+                    <div className="prose dark:prose-invert max-w-none p-4 border rounded-lg">
+                        <h4>Placeholder Article</h4>
+                        <p>
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. 
+                        </p>
+                        <p>
+                            Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue.
+                        </p>
                     </div>
                 )}
                 {lesson.type === 'quiz' && lesson.quizOptions && (
@@ -214,6 +226,7 @@ function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onCom
             </CardContent>
             <CardFooter>
                 {lesson.type === 'video' && <Button onClick={() => onComplete()}>Continue</Button>}
+                {lesson.type === 'reading' && <Button onClick={() => onComplete()}>Continue</Button>}
                 {lesson.type === 'quiz' && <Button onClick={handleQuizSubmit} disabled={!selectedAnswer}>Submit Answer</Button>}
                 {lesson.type === 'interactive' && <Button onClick={() => onComplete()}>Continue</Button>}
                 {lesson.type === 'practice' && <Button onClick={() => onComplete()}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>}
@@ -576,7 +589,3 @@ export default function InterviewerLabPage() {
         </DashboardLayout>
     );
 }
-
-    
-
-    

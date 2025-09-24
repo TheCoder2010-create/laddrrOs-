@@ -102,8 +102,38 @@ const getInitialModules = (): TrainingModule[] => [
         isCompleted: false,
         lessons: [
             { id: 'l3-1', title: 'Common Types of Bias', description: 'Learn about affinity bias, confirmation bias, and the halo/horns effect.', type: 'video', isCompleted: false },
-            { id: 'l3-2', title: 'Quiz: Spot the Bias', description: 'Read a scenario and identify the most likely bias at play.', type: 'quiz', isCompleted: false, quizOptions: ["'The candidate went to the same university as me, they must be great!'", "'The candidate was a bit nervous, so they're probably not confident.'", "'Their first answer was weak, so I doubt their other skills are strong.'"], correctAnswer: "'The candidate went to the same university as me, they must be great!'" },
+            { id: 'l3-2', title: 'Quiz: Spot the Bias', description: 'Read a scenario and identify the most likely bias at play.', type: 'quiz', isCompleted: false, quizOptions: ["Affinity Bias ('The candidate went to the same university as me, they must be great!')", "Horns Effect ('The candidate was a bit nervous, so they're probably not confident.')", "Confirmation Bias ('Their first answer was weak, so I doubt their other skills are strong.')"], correctAnswer: "Affinity Bias ('The candidate went to the same university as me, they must be great!')" },
             { id: 'l3-3', title: 'Practice: Rephrase a Biased Question', description: 'Rewrite a question to be more inclusive and effective.', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Hiring Manager', scenario: "You are coaching a peer. They suggest asking, 'How would you handle a stressful deadline with a family at home?'. Help them rephrase this to focus only on job-relevant skills.", difficulty: 'cooperative' } },
+        ]
+    },
+    { 
+        id: 'm4', 
+        title: "Legal Compliance Essentials", 
+        description: "Understand the legal boundaries of interviewing.", 
+        isCompleted: false,
+        lessons: [
+            { id: 'l4-1', title: 'Protected Classes Explained', description: 'A quick overview of legally protected characteristics.', type: 'interactive', isCompleted: false },
+            { id: 'l4-2', title: 'Quiz: Is This Question Legal?', description: 'A rapid-fire quiz on common but problematic questions.', type: 'quiz', isCompleted: false, quizOptions: ["'Are you authorized to work in this country?'", "'Where are you from originally?'", "'Do you have children?'"], correctAnswer: "'Are you authorized to work in this country?'" },
+            { id: 'l4-3', title: 'Practice: Documentation Best Practices', description: 'Review sample interview notes and identify potential legal risks.', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Legal Advisor', scenario: "You are reviewing a colleague's interview notes which say 'Candidate seemed low-energy, might not be a culture fit.' The AI legal advisor will help you understand why this note is problematic and how to improve it.", difficulty: 'cooperative' } },
+        ]
+    },
+    { 
+        id: 'm5', 
+        title: "Mock Interview Simulator", 
+        description: "Put all your skills together in a full mock interview.", 
+        isCompleted: false,
+        lessons: [
+            { id: 'l5-1', title: 'Final Mock Interview', description: "Conduct a full interview with an AI candidate for your target role. You'll be scored on structure, STAR probing, bias avoidance, and legal compliance.", type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "This is a full mock interview simulation. You are the interviewer. Please conduct the interview from start to finish.", difficulty: 'neutral' } },
+        ]
+    },
+    { 
+        id: 'm6', 
+        title: "Leadership Through Interviewing", 
+        description: "Frame interviewing as a core leadership competency.", 
+        isCompleted: false,
+        lessons: [
+            { id: 'l6-1', title: 'Interviewing as a Leadership Skill', description: 'A short article on how great interviewing reflects strong leadership.', type: 'reading', isCompleted: false },
+            { id: 'l6-2', title: 'Practice: Handling a Difficult Candidate', description: "Practice managing a conversation with a candidate who is evasive or challenging.", type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "You are the interviewer. The AI candidate will be difficult, providing vague answers and questioning your process. Your goal is to remain professional and guide the interview back on track.", difficulty: 'aggressive' } },
         ]
     },
 ];
@@ -222,5 +252,3 @@ export async function saveLessonResult(nominationId: string, moduleId: string, l
     
     saveToStorage(INTERVIEWER_LAB_KEY, allNominations);
 }
-
-    
