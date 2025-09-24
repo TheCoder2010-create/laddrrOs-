@@ -8,6 +8,7 @@ import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import type { InterviewerAnalysisOutput } from '@/ai/schemas/interviewer-lab-schemas';
 import type { NetsInitialInput } from '@/ai/schemas/nets-schemas';
+import { getFeedbackFromStorage, saveFeedbackToStorage, type Feedback } from './feedback-service';
 
 export interface QuizActivity {
     type: 'quiz_mcq';
@@ -131,7 +132,7 @@ const getInitialModules = (): TrainingModule[] => [
                 script: "A great interview has three phases:\n\n- Opening: Build rapport and explain the process.\n- Middle: Ask behavioral and skills-based questions.\n- Closing: Answer candidate questions and share the next steps.",
                 activity: {
                     type: 'match_game', prompt: 'Place each step in the correct phase:',
-                    items: [ { text: "Candidate Q&A", category: "Closing"}, { text: "Explain interview format", category: "Opening"}, { text: "Ask role-specific questions", category: "Middle"} ],
+                    items: [ { text: "Candidate Q&A", category: "Closing"}, { text: "Explain format", category: "Opening"}, { text: "Role-specific Qs", category: "Middle"} ],
                     categories: ["Opening", "Middle", "Closing"]
                 }
             },
@@ -311,6 +312,30 @@ export async function nominateUser(managerRole: Role, nomineeRole: Role, targetR
 
     allNominations.unshift(newNomination);
     saveToStorage(INTERVIEWER_LAB_KEY, allNominations);
+    
+    // Create a notification for the nominated user
+    const managerName = roleUserMapping[managerRole]?.name || managerRole;
+    const notification: Feedback = {
+        trackingId: `IL-NOM-${newNomination.id}`,
+        subject: `You've been nominated for Interviewer Training!`,
+        message: `Congratulations! ${managerName} has nominated you for the Laddrr Interviewer Lab, a program designed to help you become a more effective and confident interviewer.\n\nThis training will help you:\n- Conduct structured, fair, and legally compliant interviews.\n- Master behavioral interviewing techniques like the STAR method.\n- Identify and mitigate unconscious bias.\n\nTo get started, please navigate to the "Interviewer Lab" section from the main sidebar and complete your pre-assessment.`,
+        submittedAt: now,
+        criticality: 'Low',
+        status: 'Pending Acknowledgement',
+        assignedTo: [nomineeRole],
+        viewed: false,
+        auditTrail: [{
+            event: 'Notification Created',
+            timestamp: now,
+            actor: 'System',
+            details: `Automated notification for Interviewer Lab nomination.`
+        }]
+    };
+    
+    const allFeedback = getFeedbackFromStorage();
+    allFeedback.unshift(notification);
+    saveFeedbackToStorage(allFeedback);
+
     return newNomination;
 }
 
