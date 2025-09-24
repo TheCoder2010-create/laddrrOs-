@@ -653,7 +653,7 @@ function ManagerView() {
                     </h1>
                     <p className="text-muted-foreground">Nominate, track, and coach your team members through the Interviewer Coaching Program.</p>
                 </div>
-                <NominateDialog onNomination={fetchNominations} />
+                {role === 'Manager' && <NominateDialog onNomination={fetchNominations} />}
             </div>
 
              <Card>
@@ -760,7 +760,7 @@ export default function InterviewerLabPage() {
         );
     }
     
-    // Manager always sees the ManagerView. Others see LearnerView if nominated.
+    // Managerial roles see the ManagerView. Others see LearnerView if nominated.
     const isManagerialRole = ['Manager', 'AM', 'HR Head'].includes(role);
     if (isManagerialRole) {
         return (
