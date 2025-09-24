@@ -7,13 +7,29 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import type { InterviewerAnalysisOutput } from '@/ai/schemas/interviewer-lab-schemas';
+import type { NetsInitialInput } from '@/ai/schemas/nets-schemas';
+
+export interface TrainingLesson {
+    id: string;
+    title: string;
+    description: string;
+    type: 'video' | 'quiz' | 'interactive' | 'practice' | 'reading';
+    isCompleted: boolean;
+    // For quizzes
+    quizOptions?: string[];
+    correctAnswer?: string;
+    // For practice scenarios
+    practiceScenario?: NetsInitialInput;
+    // For storing results
+    result?: any;
+}
 
 export interface TrainingModule {
     id: string;
     title: string;
     description: string;
-    content: string; // Placeholder for now
     isCompleted: boolean;
+    lessons: TrainingLesson[];
 }
 
 // Mirroring the planned Firebase structure
@@ -35,7 +51,7 @@ export interface Nomination {
     nominatedAt: string;
 }
 
-const INTERVIEWER_LAB_KEY = 'interviewer_lab_nominations_v1';
+const INTERVIEWER_LAB_KEY = 'interviewer_lab_nominations_v2'; // Incremented version
 
 // ==========================================
 // Generic Storage Helpers
@@ -56,11 +72,38 @@ const saveToStorage = (key: string, data: any[]): void => {
 
 
 const getInitialModules = (): TrainingModule[] => [
-    { id: 'm1', title: "Understanding the STAR Method", description: "Learn to probe for behavioral examples effectively.", content: "The STAR method is a structured manner of responding to a behavioral-based interview question by discussing the specific situation, task, action, and result of the situation you are describing.", isCompleted: false },
-    { id: 'm2', title: "Identifying and Mitigating Bias", description: "Recognize and avoid common interview biases.", content: "Unconscious biases can significantly impact hiring decisions. This module covers affinity bias, confirmation bias, halo/horn effects, and strategies to ensure a fair process.", isCompleted: false },
-    { id: 'm3', title: "Structuring the Interview", description: "Master the flow of a professional interview.", content: "A good interview has a clear beginning, middle, and end. This includes introductions, setting expectations, deep-dive questions, time for candidate questions, and a clear closing.", isCompleted: false },
-    { id: 'm4', title: "Legal & Compliance Guardrails", description: "Know what you can and cannot ask.", content: "Asking questions related to protected characteristics is illegal and unethical. This module provides clear guidelines on job-related questioning and topics to avoid.", isCompleted: false },
-    { id: 'm5', title: "Projecting Confidence and Control", description: "Learn techniques for interviewer demeanor.", content: "Your demeanor sets the tone. Learn about active listening, body language, and how to create a respectful environment that allows the candidate to perform their best.", isCompleted: false },
+    { 
+        id: 'm1', 
+        title: "Interview Foundations", 
+        description: "Learn the fundamentals of conducting a structured and professional interview.", 
+        isCompleted: false,
+        lessons: [
+            { id: 'l1-1', title: 'Why Structure Matters', description: '2-min explainer video', type: 'video', isCompleted: false },
+            { id: 'l1-2', title: 'Quiz: Importance of Structure', description: 'Test your knowledge', type: 'quiz', isCompleted: false, quizOptions: ['It helps the candidate feel comfortable', 'It ensures fairness and consistency', 'It makes the interviewer look professional', 'All of the above'], correctAnswer: 'All of the above' },
+            { id: 'l1-3', title: 'The Three Phases', description: 'Explore the interview timeline', type: 'interactive', isCompleted: false },
+            { id: 'l1-4', title: 'Practice: The Introduction', description: 'Practice your interview opening', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "You are a candidate for a software engineering role. The interviewer will start the conversation. Respond as you would in a real interview.", difficulty: 'friendly' } },
+        ]
+    },
+    { 
+        id: 'm2', 
+        title: "Behavioral Interviewing Mastery", 
+        description: "Master the STAR method to effectively probe for behavioral examples.", 
+        isCompleted: false,
+        lessons: [
+            { id: 'l2-1', title: 'STAR Method Breakdown', description: 'Visual guide and examples', type: 'video', isCompleted: false },
+            { id: 'l2-2', title: 'Practice: Ask a STAR Question', description: 'Roleplay with an AI candidate', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "You are the candidate. The interviewer will ask you a behavioral question. Please respond using the STAR method, but be a little vague at first to see if they can probe for more details.", difficulty: 'neutral' } },
+        ]
+    },
+     { 
+        id: 'm3', 
+        title: "Bias Awareness & Mitigation", 
+        description: "Learn to identify and reduce unconscious bias in the hiring process.", 
+        isCompleted: false,
+        lessons: [
+            { id: 'l3-1', title: 'Spot the Bias', description: 'Interactive quiz with scenarios', type: 'quiz', isCompleted: false, quizOptions: ['Affinity Bias', 'Confirmation Bias', 'Halo Effect'], correctAnswer: 'Affinity Bias' },
+            { id: 'l3-2', title: 'Practice: Rephrase a Biased Question', description: 'Rewrite a question to be more inclusive', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Hiring Manager', scenario: "You are coaching a fellow hiring manager. They suggest asking a candidate 'Are you a real team player?'. Help them rephrase this to be a better, less biased behavioral question.", difficulty: 'neutral' } },
+        ]
+    },
 ];
 
 
@@ -156,4 +199,24 @@ export async function completeModule(nominationId: string, moduleId: string): Pr
     }
 
     return nomination;
+}
+
+/**
+ * Saves the result of a single lesson.
+ */
+export async function saveLessonResult(nominationId: string, moduleId: string, lessonId: string, result: any): Promise<void> {
+    const allNominations = getFromStorage<Nomination>(INTERVIEWER_LAB_KEY);
+    const nominationIndex = allNominations.findIndex(n => n.id === nominationId);
+    if (nominationIndex === -1) return;
+
+    const moduleIndex = allNominations[nominationIndex].modules.findIndex(m => m.id === moduleId);
+    if (moduleIndex === -1) return;
+
+    const lessonIndex = allNominations[nominationIndex].modules[moduleIndex].lessons.findIndex(l => l.id === lessonId);
+    if (lessonIndex === -1) return;
+
+    allNominations[nominationIndex].modules[moduleIndex].lessons[lessonIndex].isCompleted = true;
+    allNominations[nominationIndex].modules[moduleIndex].lessons[lessonIndex].result = result;
+    
+    saveToStorage(INTERVIEWER_LAB_KEY, allNominations);
 }

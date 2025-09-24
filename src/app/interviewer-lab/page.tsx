@@ -7,7 +7,7 @@ import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -17,13 +17,16 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen } from 'lucide-react';
-import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment } from '@/services/interviewer-lab-service';
+import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight } from 'lucide-react';
+import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NetsInitialInput, NetsAnalysisOutput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import SimulationArena from '@/components/simulation-arena';
 import { analyzeInterview } from '@/ai/flows/analyze-interview-flow';
 import type { InterviewerConversationInput } from '@/ai/schemas/interviewer-lab-schemas';
+import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
@@ -129,23 +132,137 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
+function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onComplete: (result?: any) => void }) {
+    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+
+    const getIcon = () => {
+        switch (lesson.type) {
+            case 'video': return <Video className="h-6 w-6 text-primary" />;
+            case 'quiz': return <FileQuestion className="h-6 w-6 text-primary" />;
+            case 'interactive': return <Gamepad2 className="h-6 w-6 text-primary" />;
+            case 'practice': return <Play className="h-6 w-6 text-primary" />;
+            default: return <BookOpen className="h-6 w-6 text-primary" />;
+        }
+    };
+
+    const handleQuizSubmit = () => {
+        onComplete(selectedAnswer);
+        setSelectedAnswer(null);
+    };
+
+    return (
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">{getIcon()} {lesson.title}</CardTitle>
+                <CardDescription>{lesson.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {lesson.type === 'video' && (
+                    <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                        <Video className="h-16 w-16 text-muted-foreground" />
+                    </div>
+                )}
+                {lesson.type === 'quiz' && lesson.quizOptions && (
+                    <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer}>
+                        {lesson.quizOptions.map((opt, i) => (
+                            <div key={i} className="flex items-center space-x-2">
+                                <RadioGroupItem value={opt} id={`q-${lesson.id}-${i}`} />
+                                <Label htmlFor={`q-${lesson.id}-${i}`}>{opt}</Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                )}
+                {lesson.type === 'interactive' && (
+                    <Accordion type="single" collapsible>
+                        <AccordionItem value="item-1">
+                            <AccordionTrigger>Interview Phase 1: The Opening</AccordionTrigger>
+                            <AccordionContent>Introductions, setting the agenda, and building rapport.</AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="item-2">
+                            <AccordionTrigger>Interview Phase 2: The Middle</AccordionTrigger>
+                            <AccordionContent>Deep-dive questions, behavioral examples (STAR), and candidate questions.</AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="item-3">
+                            <AccordionTrigger>Interview Phase 3: The Closing</AccordionTrigger>
+                            <AccordionContent>Outlining next steps, answering final questions, and ending on a positive note.</AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                )}
+            </CardContent>
+            <CardFooter>
+                {lesson.type === 'video' && <Button onClick={() => onComplete()}>Continue</Button>}
+                {lesson.type === 'quiz' && <Button onClick={handleQuizSubmit} disabled={!selectedAnswer}>Submit Answer</Button>}
+                {lesson.type === 'interactive' && <Button onClick={() => onComplete()}>Continue</Button>}
+            </CardFooter>
+        </Card>
+    );
+}
+
 function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomination, onUpdate: () => void }) {
     const { toast } = useToast();
     const [nomination, setNomination] = useState(initialNomination);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [config, setConfig] = useState<NetsInitialInput | null>(null);
+    
+    // Simulation state
+    const [simulationConfig, setSimulationConfig] = useState<NetsInitialInput | null>(null);
+    const [currentPracticeLesson, setCurrentPracticeLesson] = useState<TrainingLesson | null>(null);
+
+    // Lesson navigation state
+    const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
+    const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+    
+    useEffect(() => {
+        // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
+        const firstUncompletedModule = nomination.modules.findIndex(m => !m.isCompleted);
+        setCurrentModuleIndex(firstUncompletedModule >= 0 ? firstUncompletedModule : 0);
+        setCurrentLessonIndex(0);
+    }, [nomination]);
+    
+    const currentModule = nomination.modules[currentModuleIndex];
+    const currentLesson = currentModule?.lessons[currentLessonIndex];
+    const allModulesCompleted = nomination.modules.every(m => m.isCompleted);
 
     const handleStartPreAssessment = () => {
-        setConfig({
+        setSimulationConfig({
             persona: 'Candidate', // The AI plays a generic candidate
-            scenario: `This is a pre-assessment mock interview for an interviewer. I am the interviewer, and you are the candidate. Please answer my questions as a candidate would.`,
+            scenario: `This is a pre-assessment mock interview. I am the interviewer, and you are the candidate. Please answer my questions as a candidate would.`,
             difficulty: 'neutral',
         });
     };
+    
+    const handleStartPractice = (lesson: TrainingLesson) => {
+        if (lesson.practiceScenario) {
+            setCurrentPracticeLesson(lesson);
+            setSimulationConfig(lesson.practiceScenario);
+        }
+    };
+
+    const handleLessonComplete = async (result?: any) => {
+        if (!currentLesson || !currentModule) return;
+        
+        await saveLessonResult(nomination.id, currentModule.id, currentLesson.id, result);
+
+        const nextLessonIndex = currentLessonIndex + 1;
+        if (nextLessonIndex < currentModule.lessons.length) {
+            setCurrentLessonIndex(nextLessonIndex);
+        } else {
+            // Last lesson of the module, but wait for practice
+            if (currentLesson.type !== 'practice') {
+                const practiceLesson = currentModule.lessons.find(l => l.type === 'practice');
+                if (practiceLesson) {
+                    handleStartPractice(practiceLesson);
+                } else {
+                    // No practice, so complete the module
+                    await completeModule(nomination.id, currentModule.id);
+                    onUpdate();
+                }
+            }
+        }
+    };
 
     const handleExitSimulation = async (messages?: { role: 'user' | 'model', content: string }[]) => {
-        if (!messages || messages.length === 0) {
-            setConfig(null); // Just exit if there's no conversation
+        if (!messages || messages.length < 2) { // Need at least one user turn
+            setSimulationConfig(null);
+            setCurrentPracticeLesson(null);
             return;
         }
 
@@ -154,45 +271,39 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         try {
             const analysisInput: InterviewerConversationInput = { transcript };
             const analysisResult = await analyzeInterview(analysisInput);
-            
-            await savePreAssessment(nomination.id, analysisResult);
 
-            toast({
-                title: "Pre-Assessment Complete!",
-                description: "Your baseline score has been saved. You can now begin your training modules.",
-            });
+            if (nomination.status === 'Pre-assessment pending') {
+                await savePreAssessment(nomination.id, analysisResult);
+                 toast({
+                    title: "Pre-Assessment Complete!",
+                    description: "Your baseline score has been saved. You can now begin your training modules.",
+                });
+            } else if (currentPracticeLesson && currentModule) {
+                // This was a practice session for a module
+                await completeModule(nomination.id, currentModule.id);
+                 toast({
+                    title: `Module ${currentModuleIndex+1} Complete!`,
+                    description: "Your progress has been updated.",
+                });
+            }
+
             onUpdate(); // Notify parent to re-fetch and update the view
         } catch (e) {
             console.error("Failed to analyze interview", e);
             toast({ variant: 'destructive', title: "Analysis Failed", description: "Could not generate a score for this session." });
         } finally {
-            setConfig(null);
+            setSimulationConfig(null);
+            setCurrentPracticeLesson(null);
         }
     };
-
-    const handleCompleteModule = async (moduleId: string) => {
-        setIsSubmitting(true);
-        try {
-            const updatedNomination = await completeModule(nomination.id, moduleId);
-            setNomination(updatedNomination);
-            toast({ title: "Module Completed!", description: "Your progress has been updated."});
-        } catch (error) {
-            console.error("Failed to complete module", error);
-            toast({ variant: 'destructive', title: "Update Failed"});
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const allModulesCompleted = nomination.modulesCompleted === nomination.modulesTotal;
-
-    if (config) {
+    
+    if (simulationConfig) {
         return (
             <div className="p-4 md:p-8 flex items-center justify-center">
                  <SimulationArena 
-                    initialConfig={config} 
+                    initialConfig={simulationConfig} 
                     onExit={handleExitSimulation} 
-                    arenaTitle="Pre-Assessment Mock Interview"
+                    arenaTitle={nomination.status === 'Pre-assessment pending' ? "Pre-Assessment Mock Interview" : `Practice: ${currentModule?.title}`}
                 />
             </div>
         )
@@ -207,7 +318,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                         My Interviewer Lab
                     </CardTitle>
                     <CardDescription className="text-lg text-muted-foreground">
-                        You've been nominated for Laddrr's Interviewer Coaching Program. Complete the modules below to unlock your certification.
+                        {allModulesCompleted ? "You've completed your training! It's time for the final assessment." : "You've been nominated for Laddrr's Interviewer Coaching Program. Complete the modules below to get certified."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -226,52 +337,18 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                             <Button className="mt-6" onClick={handleStartPreAssessment}>Begin Pre-Assessment</Button>
                         </div>
                     )}
-                    
                 </CardContent>
             </Card>
 
-             {nomination.status !== 'Pre-assessment pending' && (
+            {nomination.status !== 'Pre-assessment pending' && !allModulesCompleted && currentModule && currentLesson && (
                  <div className="space-y-4">
-                    {nomination.modules.map((module, index) => (
-                        <Card key={module.id} className={module.isCompleted ? 'bg-green-500/5 border-green-500/20' : 'bg-card'}>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div className="space-y-1.5">
-                                    <CardTitle className="flex items-center gap-3">
-                                        <BookOpen className="h-5 w-5 text-primary" />
-                                        Module {index + 1}: {module.title}
-                                    </CardTitle>
-                                    <CardDescription>{module.description}</CardDescription>
-                                </div>
-                                {module.isCompleted ? (
-                                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold">
-                                        <CheckCircle className="h-5 w-5" /> Completed
-                                    </div>
-                                ) : (
-                                    <Button size="sm" onClick={() => handleCompleteModule(module.id)} disabled={isSubmitting}>
-                                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Mark as Complete'}
-                                    </Button>
-                                )}
-                            </CardHeader>
-                             {!module.isCompleted && (
-                                <CardContent>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground p-4 border rounded-lg bg-muted/30">
-                                        <p>{module.content}</p>
-                                        <h4>Key Takeaways</h4>
-                                        <ul>
-                                            <li>This is placeholder content for the key takeaways.</li>
-                                            <li>Each module will contain specific learning points and examples.</li>
-                                            <li>Quizzes and reflection exercises can be added here.</li>
-                                        </ul>
-                                    </div>
-                                </CardContent>
-                            )}
-                        </Card>
-                    ))}
+                    <h2 className="text-xl font-semibold">Module {currentModuleIndex + 1}: {currentModule.title}</h2>
+                    <LessonComponent lesson={currentLesson} onComplete={handleLessonComplete} />
                  </div>
             )}
             
-            {allModulesCompleted && nomination.status !== 'Certified' && (
-                <Card className="border-primary/50">
+            {allModulesCompleted && (
+                <Card className="border-primary/50 mt-8">
                     <CardHeader className="text-center">
                         <CardTitle>Training Complete!</CardTitle>
                         <CardDescription>You've completed all the training modules. It's time for your final assessment to get certified.</CardDescription>
@@ -287,7 +364,6 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         </div>
     );
 }
-
 
 function ManagerView() {
     const { role } = useRole();
@@ -442,7 +518,8 @@ export default function InterviewerLabPage() {
     }
     
     // Manager always sees the ManagerView. Others see LearnerView if nominated.
-    if (role === 'Manager') {
+    const isManagerialRole = ['Manager', 'AM', 'HR Head'].includes(role);
+    if (isManagerialRole) {
         return (
             <DashboardLayout role={role} onSwitchRole={setRole}>
                 <ManagerView />
