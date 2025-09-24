@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -210,6 +209,11 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
     
+    useEffect(() => {
+        // This ensures the component state updates when the parent re-fetches data.
+        setNomination(initialNomination);
+    }, [initialNomination]);
+
     useEffect(() => {
         // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
         const firstUncompletedModule = nomination.modules.findIndex(m => !m.isCompleted);
@@ -540,3 +544,5 @@ export default function InterviewerLabPage() {
         </DashboardLayout>
     );
 }
+
+    
