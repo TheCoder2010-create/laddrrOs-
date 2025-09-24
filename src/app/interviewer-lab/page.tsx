@@ -761,7 +761,7 @@ export default function InterviewerLabPage() {
     }
     
     // Managerial roles see the ManagerView. Others see LearnerView if nominated.
-    const isManagerialRole = ['Manager', 'AM', 'HR Head'].includes(role);
+    const isManagerialRole = ['Manager', 'HR Head'].includes(role);
     if (isManagerialRole) {
         return (
             <DashboardLayout role={role} onSwitchRole={setRole}>
