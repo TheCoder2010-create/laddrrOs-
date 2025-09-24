@@ -17,10 +17,10 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book } from 'lucide-react';
+import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book, CheckSquare } from 'lucide-react';
 import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonActivity } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { NetsInitialInput, NetsAnalysisOutput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
+import type { NetsInitialInput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import SimulationArena from '@/components/simulation-arena';
 import { analyzeInterview } from '@/ai/flows/analyze-interview-flow';
 import type { InterviewerConversationInput } from '@/ai/schemas/interviewer-lab-schemas';
@@ -524,10 +524,85 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
+function NominationDetailDialog({ nomination, open, onOpenChange }: { nomination: Nomination | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    if (!nomination) return null;
+
+    const nomineeName = roleUserMapping[nomination.nominee]?.name || nomination.nominee;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Nomination Details: {nomineeName}</DialogTitle>
+                    <DialogDescription>
+                        Reviewing progress for the {nomination.targetInterviewRole} interview track.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card className="text-center">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">Pre-Assessment</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className={cn("text-3xl font-bold", nomination.scorePre ? 'text-primary' : 'text-muted-foreground')}>
+                                    {nomination.scorePre ? nomination.scorePre.toFixed(0) : 'N/A'}
+                                </p>
+                            </CardContent>
+                        </Card>
+                        <Card className="text-center">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">Current Progress</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-3xl font-bold text-primary">
+                                    {nomination.modulesCompleted}/{nomination.modulesTotal}
+                                </p>
+                                <p className="text-xs text-muted-foreground">Modules Completed</p>
+                            </CardContent>
+                        </Card>
+                         <Card className="text-center">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">Post-Assessment</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className={cn("text-3xl font-bold", nomination.scorePost ? 'text-green-500' : 'text-muted-foreground')}>
+                                    {nomination.scorePost ? nomination.scorePost.toFixed(0) : 'N/A'}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div>
+                        <h4 className="font-semibold mb-2">Module Status</h4>
+                        <div className="space-y-2">
+                            {nomination.modules.map(module => (
+                                <div key={module.id} className="flex items-center justify-between p-2 border rounded-md bg-muted/50">
+                                    <p className="font-medium text-sm">{module.title}</p>
+                                    {module.isCompleted ? (
+                                        <CheckSquare className="h-5 w-5 text-green-500" />
+                                    ) : (
+                                        <CheckSquare className="h-5 w-5 text-muted-foreground/30" />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function ManagerView() {
     const { role } = useRole();
     const [nominations, setNominations] = useState<Nomination[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedNomination, setSelectedNomination] = useState<Nomination | null>(null);
 
     const fetchNominations = useCallback(async () => {
         if (!role) return;
@@ -561,6 +636,11 @@ function ManagerView() {
 
     return (
         <div className="p-4 md:p-8 space-y-6">
+            <NominationDetailDialog
+                nomination={selectedNomination}
+                open={!!selectedNomination}
+                onOpenChange={() => setSelectedNomination(null)}
+            />
             <div className="flex justify-between items-center">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold font-headline flex items-center gap-3">
@@ -635,7 +715,7 @@ function ManagerView() {
                                         </TableCell>
                                         <TableCell>{getStatusBadge(n.status)}</TableCell>
                                         <TableCell>
-                                            <Button variant="ghost" size="sm">View</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => setSelectedNomination(n)}>View</Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
