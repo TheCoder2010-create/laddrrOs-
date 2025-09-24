@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -159,31 +160,54 @@ function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onCom
                 {lesson.type === 'video' && (
                     <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
                         <Video className="h-16 w-16 text-muted-foreground" />
+                         <p className="absolute text-muted-foreground">Video placeholder</p>
                     </div>
                 )}
                 {lesson.type === 'quiz' && lesson.quizOptions && (
                     <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer}>
                         {lesson.quizOptions.map((opt, i) => (
-                            <div key={i} className="flex items-center space-x-2">
+                            <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
                                 <RadioGroupItem value={opt} id={`q-${lesson.id}-${i}`} />
-                                <Label htmlFor={`q-${lesson.id}-${i}`}>{opt}</Label>
+                                <Label htmlFor={`q-${lesson.id}-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
                             </div>
                         ))}
                     </RadioGroup>
                 )}
                 {lesson.type === 'interactive' && (
-                    <Accordion type="single" collapsible>
+                    <Accordion type="single" collapsible defaultValue="item-1">
                         <AccordionItem value="item-1">
-                            <AccordionTrigger>Interview Phase 1: The Opening</AccordionTrigger>
-                            <AccordionContent>Introductions, setting the agenda, and building rapport.</AccordionContent>
+                            <AccordionTrigger>Phase 1: The Opening</AccordionTrigger>
+                            <AccordionContent>
+                                <p><strong>Goal:</strong> Build rapport and set expectations.</p>
+                                <ul className="list-disc pl-5 mt-2 space-y-1">
+                                    <li>Introduce yourself and your role.</li>
+                                    <li>Set the agenda for the interview.</li>
+                                    <li>Explain the format (e.g., behavioral questions, coding exercise).</li>
+                                    <li>Confirm the time allocation and leave time for candidate questions.</li>
+                                </ul>
+                            </AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="item-2">
-                            <AccordionTrigger>Interview Phase 2: The Middle</AccordionTrigger>
-                            <AccordionContent>Deep-dive questions, behavioral examples (STAR), and candidate questions.</AccordionContent>
+                            <AccordionTrigger>Phase 2: The Middle</AccordionTrigger>
+                            <AccordionContent>
+                                <p><strong>Goal:</strong> Assess competency and gather evidence.</p>
+                                <ul className="list-disc pl-5 mt-2 space-y-1">
+                                    <li>Ask behavioral questions using the STAR method.</li>
+                                    <li>Probe for details, especially on 'Action' and 'Result'.</li>
+                                    <li>Allow the candidate to ask questions throughout.</li>
+                                </ul>
+                            </AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="item-3">
-                            <AccordionTrigger>Interview Phase 3: The Closing</AccordionTrigger>
-                            <AccordionContent>Outlining next steps, answering final questions, and ending on a positive note.</AccordionContent>
+                            <AccordionTrigger>Phase 3: The Closing</AccordionTrigger>
+                            <AccordionContent>
+                                <p><strong>Goal:</strong> End professionally and clarify next steps.</p>
+                                <ul className="list-disc pl-5 mt-2 space-y-1">
+                                    <li>Answer any final questions from the candidate.</li>
+                                    <li>Clearly outline the next steps in the hiring process.</li>
+                                    <li>Thank the candidate for their time.</li>
+                                </ul>
+                            </AccordionContent>
                         </AccordionItem>
                     </Accordion>
                 )}
@@ -212,15 +236,16 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     useEffect(() => {
         // This ensures the component state updates when the parent re-fetches data.
         setNomination(initialNomination);
+
+        // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
+        const firstUncompletedModule = initialNomination.modules.findIndex(m => !m.isCompleted);
+        setCurrentModuleIndex(firstUncompletedModule >= 0 ? firstUncompletedModule : 0);
+        
+        const firstUncompletedLesson = initialNomination.modules[firstUncompletedModule]?.lessons.findIndex(l => !l.isCompleted);
+        setCurrentLessonIndex(firstUncompletedLesson >= 0 ? firstUncompletedLesson : 0);
+
     }, [initialNomination]);
 
-    useEffect(() => {
-        // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
-        const firstUncompletedModule = nomination.modules.findIndex(m => !m.isCompleted);
-        setCurrentModuleIndex(firstUncompletedModule >= 0 ? firstUncompletedModule : 0);
-        setCurrentLessonIndex(0);
-    }, [nomination]);
-    
     const currentModule = nomination.modules[currentModuleIndex];
     const currentLesson = currentModule?.lessons[currentLessonIndex];
     const allModulesCompleted = nomination.modules.every(m => m.isCompleted);
@@ -228,7 +253,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     const handleStartPreAssessment = () => {
         setSimulationConfig({
             persona: 'Candidate', // The AI plays a generic candidate
-            scenario: `This is a pre-assessment mock interview. I am the interviewer, and you are the candidate. Please answer my questions as a candidate would.`,
+            scenario: `This is a pre-assessment mock interview for a ${nomination.targetInterviewRole} role. I am the interviewer, and you are the candidate. Please answer my questions as a candidate would.`,
             difficulty: 'neutral',
         });
     };
@@ -249,18 +274,19 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         if (nextLessonIndex < currentModule.lessons.length) {
             setCurrentLessonIndex(nextLessonIndex);
         } else {
-            // Last lesson of the module, but wait for practice
-            if (currentLesson.type !== 'practice') {
-                const practiceLesson = currentModule.lessons.find(l => l.type === 'practice');
-                if (practiceLesson) {
-                    handleStartPractice(practiceLesson);
-                } else {
-                    // No practice, so complete the module
-                    await completeModule(nomination.id, currentModule.id);
-                    onUpdate();
-                }
+            // This was the last lesson of the module.
+            // All non-practice lessons are done. Now find the practice one.
+            const practiceLesson = currentModule.lessons.find(l => l.type === 'practice');
+            if (practiceLesson && !practiceLesson.isCompleted) {
+                 handleStartPractice(practiceLesson);
+            } else {
+                // No practice lesson, or it's somehow already done. Complete the module.
+                await completeModule(nomination.id, currentModule.id);
+                toast({ title: `Module ${currentModuleIndex + 1} Complete!` });
+                onUpdate();
             }
         }
+        onUpdate();
     };
 
     const handleExitSimulation = async (messages?: { role: 'user' | 'model', content: string }[]) => {
@@ -284,6 +310,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                 });
             } else if (currentPracticeLesson && currentModule) {
                 // This was a practice session for a module
+                await saveLessonResult(nomination.id, currentModule.id, currentPracticeLesson.id, analysisResult);
                 await completeModule(nomination.id, currentModule.id);
                  toast({
                     title: `Module ${currentModuleIndex+1} Complete!`,
@@ -544,5 +571,7 @@ export default function InterviewerLabPage() {
         </DashboardLayout>
     );
 }
+
+    
 
     

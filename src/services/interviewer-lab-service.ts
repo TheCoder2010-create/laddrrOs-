@@ -78,10 +78,10 @@ const getInitialModules = (): TrainingModule[] => [
         description: "Learn the fundamentals of conducting a structured and professional interview.", 
         isCompleted: false,
         lessons: [
-            { id: 'l1-1', title: 'Why Structure Matters', description: '2-min explainer video', type: 'video', isCompleted: false },
-            { id: 'l1-2', title: 'Quiz: Importance of Structure', description: 'Test your knowledge', type: 'quiz', isCompleted: false, quizOptions: ['It helps the candidate feel comfortable', 'It ensures fairness and consistency', 'It makes the interviewer look professional', 'All of the above'], correctAnswer: 'All of the above' },
-            { id: 'l1-3', title: 'The Three Phases', description: 'Explore the interview timeline', type: 'interactive', isCompleted: false },
-            { id: 'l1-4', title: 'Practice: The Introduction', description: 'Practice your interview opening', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "You are a candidate for a software engineering role. The interviewer will start the conversation. Respond as you would in a real interview.", difficulty: 'friendly' } },
+            { id: 'l1-1', title: 'Why Structure Matters', description: 'Understand the impact of a well-structured interview process.', type: 'video', isCompleted: false },
+            { id: 'l1-2', title: 'Quiz: Importance of Structure', description: 'Test your knowledge on interview structure.', type: 'quiz', isCompleted: false, quizOptions: ['It helps the candidate feel comfortable', 'It ensures fairness and consistency', 'It makes the interviewer look professional', 'All of the above'], correctAnswer: 'All of the above' },
+            { id: 'l1-3', title: 'The Three Phases of an Interview', description: 'Explore the timeline: opening, middle, and closing.', type: 'interactive', isCompleted: false },
+            { id: 'l1-4', title: 'Practice: The Introduction', description: 'Practice your interview opening with an AI candidate.', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "You are the interviewer. Start the interview by introducing yourself, setting the agenda, and building rapport with the AI candidate.", difficulty: 'friendly' } },
         ]
     },
     { 
@@ -90,8 +90,9 @@ const getInitialModules = (): TrainingModule[] => [
         description: "Master the STAR method to effectively probe for behavioral examples.", 
         isCompleted: false,
         lessons: [
-            { id: 'l2-1', title: 'STAR Method Breakdown', description: 'Visual guide and examples', type: 'video', isCompleted: false },
-            { id: 'l2-2', title: 'Practice: Ask a STAR Question', description: 'Roleplay with an AI candidate', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "You are the candidate. The interviewer will ask you a behavioral question. Please respond using the STAR method, but be a little vague at first to see if they can probe for more details.", difficulty: 'neutral' } },
+            { id: 'l2-1', title: 'STAR Method Breakdown', description: 'A visual guide to Situation, Task, Action, and Result.', type: 'video', isCompleted: false },
+            { id: 'l2-2', title: 'Quiz: Identifying STAR Components', description: 'Identify the "Action" in a sample candidate story.', type: 'quiz', isCompleted: false, quizOptions: ["'My project was falling behind schedule.'", "'I had to get the project back on track.'", "'I organized a daily stand-up and re-prioritized the backlog.'", "'The project was delivered on time.'"], correctAnswer: "'I organized a daily stand-up and re-prioritized the backlog.'" },
+            { id: 'l2-3', title: 'Practice: Ask a STAR Question', description: 'Roleplay with an AI candidate to get a full STAR example.', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Candidate', scenario: "You are the interviewer. Ask the candidate to describe a time they handled a difficult stakeholder. Your goal is to get a complete STAR answer, probing for details if they are vague.", difficulty: 'neutral' } },
         ]
     },
      { 
@@ -100,8 +101,9 @@ const getInitialModules = (): TrainingModule[] => [
         description: "Learn to identify and reduce unconscious bias in the hiring process.", 
         isCompleted: false,
         lessons: [
-            { id: 'l3-1', title: 'Spot the Bias', description: 'Interactive quiz with scenarios', type: 'quiz', isCompleted: false, quizOptions: ['Affinity Bias', 'Confirmation Bias', 'Halo Effect'], correctAnswer: 'Affinity Bias' },
-            { id: 'l3-2', title: 'Practice: Rephrase a Biased Question', description: 'Rewrite a question to be more inclusive', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Hiring Manager', scenario: "You are coaching a fellow hiring manager. They suggest asking a candidate 'Are you a real team player?'. Help them rephrase this to be a better, less biased behavioral question.", difficulty: 'neutral' } },
+            { id: 'l3-1', title: 'Common Types of Bias', description: 'Learn about affinity bias, confirmation bias, and the halo/horns effect.', type: 'video', isCompleted: false },
+            { id: 'l3-2', title: 'Quiz: Spot the Bias', description: 'Read a scenario and identify the most likely bias at play.', type: 'quiz', isCompleted: false, quizOptions: ["'The candidate went to the same university as me, they must be great!'", "'The candidate was a bit nervous, so they're probably not confident.'", "'Their first answer was weak, so I doubt their other skills are strong.'"], correctAnswer: "'The candidate went to the same university as me, they must be great!'" },
+            { id: 'l3-3', title: 'Practice: Rephrase a Biased Question', description: 'Rewrite a question to be more inclusive and effective.', type: 'practice', isCompleted: false, practiceScenario: { persona: 'Hiring Manager', scenario: "You are coaching a peer. They suggest asking, 'How would you handle a stressful deadline with a family at home?'. Help them rephrase this to focus only on job-relevant skills.", difficulty: 'cooperative' } },
         ]
     },
 ];
@@ -220,3 +222,5 @@ export async function saveLessonResult(nominationId: string, moduleId: string, l
     
     saveToStorage(INTERVIEWER_LAB_KEY, allNominations);
 }
+
+    
