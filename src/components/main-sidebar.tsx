@@ -45,7 +45,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   
   const menuItems = [
     { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
-    { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500"/>, label: '1-on-1' },
+    { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500 size-5 flex-shrink-0"/>, label: '1-on-1' },
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     ...(['Manager', 'HR Head'].includes(currentRole) ? [{ 
@@ -145,8 +145,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
   const renderMenuItem = (item: any) => {
      if (item.children) {
-      const isSubMenuOpen = openSubMenus.includes(item.label);
       const isParentActive = item.children.some((child: any) => pathname.startsWith(child.href));
+      const isSubMenuOpen = openSubMenus.includes(item.label) || isParentActive;
 
       return (
         <SidebarMenuItem key={item.label} className="flex flex-col">
@@ -168,7 +168,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
                 {item.children.map((child: any) => (
                   <SidebarMenuSubItem key={child.href}>
                      <Link href={child.href} passHref>
-                      <SidebarMenuSubButton asChild isActive={pathname === child.href}>
+                      <SidebarMenuSubButton asChild isActive={pathname.startsWith(child.href)}>
                           <div className="flex items-center gap-2">
                              {child.icon}
                              <span>{child.label}</span>
