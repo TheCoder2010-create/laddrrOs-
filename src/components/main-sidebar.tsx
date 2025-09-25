@@ -121,7 +121,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         icon: <FlaskConical className="text-orange-500"/>, 
         label: "Manager's Lab",
         children: [
-           { href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }
+           { href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" },
+           { href: '/leadership', icon: <Scale className="text-red-500"/>, label: "Leadership" }
         ]
     }] : []),
     ...(!isManagerial && isNominated ? [{ href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
