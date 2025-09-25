@@ -180,7 +180,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                     title: "Pre-Assessment Complete!",
                     description: "Your baseline score has been saved. You can now begin your training modules.",
                 });
-            } else if (nomination.status === 'Post-assessment pending') {
+            } else if (nomination.status === 'Post-assessment pending' || nomination.status === 'Retry Needed') {
                  await savePostAssessment(nomination.id, analysisResult);
                  toast({
                     title: "Post-Assessment Complete!",
@@ -280,7 +280,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
                             </Button>
                             
-                            {(currentStep.type === 'script' || currentStep.type === 'journal') && (
+                            {(currentStep.type === 'script' || (currentStep.type === 'journal' && !currentStep.prompt.includes("stretch activity"))) && (
                                 <Button onClick={() => handleStepComplete()}>
                                     Next <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
@@ -315,18 +315,30 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                     </CardTitle>
                     <CardDescription className="text-lg text-muted-foreground">
                         {nomination.status === 'Certified' ? "Congratulations, you are now a certified interviewer!" :
-                         allModulesCompleted ? "You've completed your training! It's time for the final assessment." : 
+                         allModulesCompleted && nomination.status !== 'Retry Needed' ? "You've completed your training! It's time for the final assessment." : 
+                         nomination.status === 'Retry Needed' ? "You did not meet the required score. Please retry the post-assessment." :
                          "You've been nominated for Laddrr's Interviewer Coaching Program. Complete the modules below to get certified."}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                     <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium">Progress:</span>
-                        <Progress value={(nomination.modulesCompleted / nomination.modulesTotal) * 100} className="w-full max-w-sm" />
-                        <span className="text-sm font-medium text-muted-foreground">
-                            {nomination.modulesCompleted} / {nomination.modulesTotal}
-                        </span>
+                <CardContent className={cn("space-y-4", nomination.status === 'Retry Needed' && "flex items-center gap-6")}>
+                    <div className={cn(nomination.status === 'Retry Needed' ? "w-1/2" : "w-full")}>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-medium">Progress:</span>
+                            <Progress value={(nomination.modulesCompleted / nomination.modulesTotal) * 100} className="w-full max-w-sm" />
+                            <span className="text-sm font-medium text-muted-foreground">
+                                {nomination.modulesCompleted} / {nomination.modulesTotal}
+                            </span>
+                        </div>
                     </div>
+                     {nomination.status === 'Retry Needed' && (
+                        <div className="w-1/2 text-center p-4 border border-destructive/50 rounded-lg bg-destructive/5">
+                            <h4 className="font-semibold text-destructive">Retry Post-Assessment</h4>
+                            <p className="text-sm text-muted-foreground mt-1">You did not meet the required score. Please review the modules and try again.</p>
+                            <Button size="sm" variant="destructive" className="mt-3" onClick={handleStartPostAssessment}>
+                                Retry Assessment
+                            </Button>
+                        </div>
+                     )}
 
                     {nomination.status === 'Pre-assessment pending' && (
                         <div className="border-2 border-dashed rounded-lg p-8 text-center bg-card">
@@ -395,21 +407,6 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                     </CardHeader>
                 </Card>
             )}
-
-            {nomination.status === 'Retry Needed' && (
-                 <Card className="border-destructive/50 mt-8 bg-destructive/5">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-destructive">Retry Needed</CardTitle>
-                        <CardDescription>You did not meet the required score improvement on the post-assessment. Please review your modules and try again.</CardDescription>
-                    </CardHeader>
-                     <CardContent className="flex justify-center">
-                        <Button size="lg" variant="destructive" onClick={handleStartPostAssessment}>
-                           Retry Post-Assessment
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
-
         </div>
     );
 }
