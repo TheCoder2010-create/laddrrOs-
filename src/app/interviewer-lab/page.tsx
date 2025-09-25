@@ -222,17 +222,18 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     };
     
     const renderFooter = () => {
-        if (!currentLesson || !currentStep) return null;
-
-        if (currentLesson.type === 'practice') {
-            return <Button onClick={() => handleStartPractice(currentLesson)}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>;
+        if (!currentLesson) return null;
+        
+        // No footer needed for practice or for lessons with internal buttons (quiz/journal)
+        if (currentLesson.type === 'practice' || currentStep?.type === 'quiz_mcq' || currentStep?.type === 'journal') {
+            return null;
         }
 
-        if (currentStep.type === 'script') {
+        // Only show next/complete button for script steps
+        if (currentStep?.type === 'script') {
             return <Button onClick={() => handleStepComplete()}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>;
         }
         
-        // For journal and quiz, the button is rendered inside the step component
         return null;
     }
     
@@ -293,8 +294,16 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                     </CardHeader>
                     
                     <CardContent>
-                        <div className="p-4 border bg-muted/50 rounded-lg">
-                            {currentStep ? (
+                        <div className="p-4 border bg-muted/50 rounded-lg min-h-[200px]">
+                            {currentLesson.type === 'practice' ? (
+                                <div className="flex flex-col items-center justify-center h-full text-center">
+                                    <p className="text-lg font-semibold">Ready to Practice?</p>
+                                    <p className="text-muted-foreground mt-1 max-w-md mx-auto">{currentLesson.practiceScenario?.scenario}</p>
+                                    <Button className="mt-6" onClick={() => handleStartPractice(currentLesson)}>
+                                        <Play className="mr-2 h-4 w-4"/> Start Practice
+                                    </Button>
+                                </div>
+                            ) : currentStep ? (
                                 <LessonStepComponent step={currentStep} onComplete={handleStepComplete} />
                             ) : (
                                 <div>
@@ -308,7 +317,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                         <Button
                             variant="outline"
                             onClick={() => setCurrentStepIndex(p => p - 1)}
-                            disabled={currentStepIndex === 0}
+                            disabled={currentStepIndex === 0 || currentLesson.type === 'practice'}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>

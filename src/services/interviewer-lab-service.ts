@@ -350,6 +350,7 @@ const getInitialModules = (): TrainingModule[] => [
             { id: 'l2-3', title: 'Evaluating STAR Answers', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: "Strong answers have clear, specific 'Action' steps and measurable 'Results'."}] },
             {
                 id: 'l2-4', title: 'Practice: Mock STAR Interview', type: 'practice', isCompleted: false,
+                steps: [],
                 practiceScenario: { persona: 'Candidate', scenario: "You are the interviewer. Ask the AI candidate, 'Tell me about a time you had to handle a difficult stakeholder.' Your goal is to get a complete STAR answer, probing for details if they are vague.", difficulty: 'neutral' }
             }
         ]
@@ -364,7 +365,10 @@ const getInitialModules = (): TrainingModule[] => [
             { id: 'l3-1', title: 'Spot the Bias', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Common biases include: Confirmation, Similarity, and Halo/Horn effect.'}] },
             { id: 'l3-2', title: 'Bias Interruption Techniques', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Use scorecards, ask all candidates the same core questions, and ensure a diverse interview panel.'}] },
             { id: 'l3-3', title: 'Inclusive Interviewing', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Never ask about a candidate\'s family, religion, personal life, or other protected characteristics.'}] },
-            { id: 'l3-4', title: 'Reflection', type: 'journal', isCompleted: false, steps: [{ type: 'journal', prompt: "Write down one bias you will consciously watch for in yourself during your next interview." }] }
+            {
+                id: 'l3-4', title: 'Reflection', type: 'standard', isCompleted: false,
+                steps: [{ type: 'journal', prompt: "Write down one bias you will consciously watch for in yourself during your next interview." }]
+            }
         ]
     },
     {
@@ -388,6 +392,7 @@ const getInitialModules = (): TrainingModule[] => [
         lessons: [
             {
                 id: 'l5-1', title: 'Final Mock Interview', type: 'practice', isCompleted: false,
+                steps: [],
                 practiceScenario: { persona: 'Candidate', scenario: "This is a full mock interview simulation. You are the interviewer. Please conduct the interview from start to finish. Introduce yourself, ask 2-3 behavioral questions, and close the interview professionally.", difficulty: 'neutral' }
             }
         ]
@@ -401,7 +406,10 @@ const getInitialModules = (): TrainingModule[] => [
         lessons: [
             { id: 'l6-1', title: 'Interviewing as a Leadership Skill', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Interviewing builds decision-making, communication, and judgment.'}] },
             { id: 'l6-2', title: 'Handling Difficult Situations', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Stay professional under pressure. To manage candidates who talk too much, politely interject and redirect.'}] },
-            { id: 'l6-3', title: 'Reflection & Growth', type: 'standard', isCompleted: false, steps: [{ type: 'journal', prompt: "Write one thing you’ll do differently in your next real-world interview." }] }
+            { 
+                id: 'l6-3', title: 'Reflection & Growth', type: 'standard', isCompleted: false,
+                steps: [{ type: 'journal', prompt: "Write one thing you’ll do differently in your next real-world interview." }]
+            }
         ]
     }
 ];
