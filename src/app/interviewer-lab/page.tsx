@@ -221,6 +221,21 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         }
     };
     
+    const renderFooter = () => {
+        if (!currentLesson || !currentStep) return null;
+
+        if (currentLesson.type === 'practice') {
+            return <Button onClick={() => handleStartPractice(currentLesson)}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>;
+        }
+
+        if (currentStep.type === 'script') {
+            return <Button onClick={() => handleStepComplete()}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>;
+        }
+        
+        // For journal and quiz, the button is rendered inside the step component
+        return null;
+    }
+    
     if (simulationConfig) {
         return (
             <div className="p-4 md:p-8 flex items-center justify-center">
@@ -298,11 +313,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
 
-                         {currentLesson.type === 'practice' ? (
-                            <Button onClick={() => handleStartPractice(currentLesson)}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>
-                         ) : currentStep?.type === 'script' ? (
-                            <Button onClick={() => handleStepComplete()}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
-                         ) : null}
+                         {renderFooter()}
                     </CardFooter>
                  </Card>
             )}
@@ -414,6 +425,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                                         <SelectValue placeholder="Select target role" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="Frontline Employee">Frontline Employee</SelectItem>
                                         <SelectItem value="Individual Contributor">Individual Contributor</SelectItem>
                                         <SelectItem value="Team Lead">Team Lead</SelectItem>
                                         <SelectItem value="Manager">Manager</SelectItem>
