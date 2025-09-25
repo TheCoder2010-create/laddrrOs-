@@ -17,7 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book, CheckSquare } from 'lucide-react';
+import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book, CheckSquare, Lock } from 'lucide-react';
 import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonStep, savePostAssessment } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { NetsInitialInput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
@@ -331,7 +331,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                         </div>
                     </div>
                      {nomination.status === 'Retry Needed' && (
-                        <Button size="sm" variant="destructive" onClick={handleStartPostAssessment}>
+                        <Button variant="destructive" onClick={handleStartPostAssessment}>
                             Retry Assessment
                         </Button>
                      )}
@@ -358,7 +358,16 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                                     <p className="text-sm text-muted-foreground">{module.description}</p>
                                 </div>
                                 <div className="ml-4">
-                                {module.isCompleted && <Badge variant="success">Completed</Badge>}
+                                {isLocked ? (
+                                    <Badge variant="outline" className="flex items-center gap-1.5">
+                                        <Lock className="h-3 w-3" />
+                                        Locked
+                                    </Badge>
+                                ) : module.isCompleted ? (
+                                    <Badge variant="success">Completed</Badge>
+                                ) : (
+                                    <Badge variant="secondary">In Progress</Badge>
+                                )}
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 border-t">
