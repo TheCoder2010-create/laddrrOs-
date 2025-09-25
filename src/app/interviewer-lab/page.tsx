@@ -326,7 +326,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                             <span className="text-sm font-medium">Progress:</span>
                             <Progress value={(nomination.modulesCompleted / nomination.modulesTotal) * 100} className="w-full max-w-sm" />
                             <span className="text-sm font-medium text-muted-foreground">
-                                {nomination.modulesCompleted} / {nomination.modulesTotal}
+                                {Math.round((nomination.modulesCompleted / nomination.modulesTotal) * 100)}%
                             </span>
                         </div>
                     </div>
@@ -357,7 +357,9 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                                     <p className="text-lg font-semibold">{`Module ${moduleIndex + 1}: ${module.title}`}</p>
                                     <p className="text-sm text-muted-foreground">{module.description}</p>
                                 </div>
-                                {module.isCompleted && <Badge variant="success" className="ml-4">Completed</Badge>}
+                                <div className="ml-4">
+                                {module.isCompleted && <Badge variant="success">Completed</Badge>}
+                                </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 border-t">
                                 <div className="space-y-2">
