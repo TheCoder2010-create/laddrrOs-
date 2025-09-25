@@ -52,8 +52,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         icon: <FlaskConical className="text-orange-500"/>, 
         label: "Manager's Lab",
         children: [
-           { href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500 size-5"/>, label: "Interviewer Lab" },
-           { href: '/leadership', icon: <LeadershipIcon className="text-red-500 size-5"/>, label: "Leadership" }
+           { href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500 size-4"/>, label: "Interviewer Lab" },
+           { href: '/leadership', icon: <LeadershipIcon className="text-red-500 size-4"/>, label: "Leadership" }
         ]
     }] : []),
     ...(!['Manager', 'HR Head'].includes(currentRole) && isNominated ? [{ href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
@@ -68,7 +68,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setOpenSubMenus(prev => [...prev, activeSubMenu.label]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname, menuItems]);
 
   useEffect(() => {
     if (sidebarState === 'collapsed') {
