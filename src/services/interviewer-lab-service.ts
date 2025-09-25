@@ -136,7 +136,7 @@ const getInitialModules = (): TrainingModule[] => [
             {
                 id: 'l1-2', title: 'Core Principles of Structured Interviewing', type: 'standard', isCompleted: false,
                 steps: [
-                    { type: 'script', title: '🎙️ Coach Intro', content: "Structured interviews aren’t just about asking the same questions. They’re built on 3 principles:\n\n- Consistency — ask the same core questions.\n- Relevance — questions tied to the job role.\n- Scoring — rate answers against clear criteria." },
+                    { type: 'script', title: '🎙️ Coach Intro', content: "Structured interviews aren’t just about asking the same questions. They’re built on 3 principles:\n\nConsistency — ask the same core questions.\n\nRelevance — questions tied to the job role.\n\nScoring — rate answers against clear criteria." },
                     { type: 'script', title: '📊 Teaching Moment / Analogy', content: "Think of it like refereeing a game.\n\nEvery player follows the same rules.\nScores are based on agreed standards.\n\nThat’s how you keep the game — and the hiring process — fair." },
                     { type: 'script', title: '📖 Mini-Case', content: "A financial services firm introduced structured scoring rubrics. Managers reported more confidence in hiring decisions because they had objective data to back them up." },
                     { type: 'quiz_mcq', question: "Which principle ensures fairness across candidates?", options: ["Consistency", "Small talk", "Improvisation", "Intuition"], correctAnswer: "Consistency", feedback: { correct: "Yes! Consistency = fairness.", incorrect: "The answer is A. Consistency is the foundation of fairness." } },
@@ -240,7 +240,15 @@ const getInitialModules = (): TrainingModule[] => [
             },
             {
                 id: 'l2-5', title: 'Practice, Feedback, and Continuous Improvement', type: 'practice', isCompleted: false,
-                steps: [],
+                steps: [
+                     { type: 'script', title: '🎙️ Coach Intro', content: 'Behavioral interviewing is a skill. You improve by:\n\nPracticing questions and probing\n\nScoring consistently\n\nIncorporating feedback\n\nReflecting on your own biases and assumptions' },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Like learning an instrument — you won’t master it by reading a book. You need practice, feedback, and repetition.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A company implemented mock interviews internally. Interviewers practiced STAR questions, scored each other, and gave feedback. Six months later, hiring accuracy increased 30%.' },
+                    { type: 'quiz_mcq', question: 'Which action improves interviewer skill the most?', options: ['Asking random questions', 'Practicing, scoring, and reflecting', 'Relying on intuition', 'Watching interviews passively'], correctAnswer: 'Practicing, scoring, and reflecting', feedback: { correct: 'Correct. Skill develops through active practice and reflection.', incorrect: 'The answer is B. Deliberate practice + scoring = improvement.' } },
+                    { type: 'journal', prompt: 'Commit to a weekly practice: either mock interviews, reviewing notes, or evaluating STAR answers. What will you do first?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Behavioral interviewing is a craft. Practice + structured evaluation = expertise.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nSchedule a mock interview with a colleague. Use STAR, probing, and scoring. Write a reflection on your strengths and areas to improve.' }
+                ],
                 practiceScenario: { persona: 'Candidate', scenario: "This is a practice session for behavioral interviewing. Ask the AI candidate, 'Tell me about a time you had to handle a difficult stakeholder.' Your goal is to get a complete STAR answer, probing effectively for details.", difficulty: 'neutral' }
             }
         ]
@@ -384,15 +392,70 @@ const getInitialModules = (): TrainingModule[] => [
     },
     {
         id: 'm5',
-        title: "Mock Interview Simulator",
-        description: "Put all your skills together in a full mock interview.",
-        duration: 60,
+        title: "Mock Interviewing and Feedback Systems",
+        description: "Practice conducting interviews and providing structured feedback.",
+        duration: 30,
         isCompleted: false,
         lessons: [
             {
-                id: 'l5-1', title: 'Final Mock Interview', type: 'practice', isCompleted: false,
-                steps: [],
-                practiceScenario: { persona: 'Candidate', scenario: "This is a full mock interview simulation. You are the interviewer. Please conduct the interview from start to finish. Introduce yourself, ask 2-3 behavioral questions, and close the interview professionally.", difficulty: 'neutral' }
+                id: 'l5-1', title: 'Introduction to Mock Interviews', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Mock interviews are practice opportunities where you can refine your skills, receive feedback, and simulate real interview conditions without risk. They’re the fastest way to learn structured interviewing and avoid common mistakes.' },
+                    { type: 'script', title: '📊 Teaching Moment', content: 'Think of a mock interview as a rehearsal before the performance — like athletes running drills before the big game. Mistakes here become learning opportunities, not consequences.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'An organization implemented regular mock interviews for new interviewers. Within a month, they noticed a 30% improvement in structured questioning and evaluation consistency.' },
+                    { type: 'quiz_mcq', question: 'What is the main purpose of a mock interview?', options: ['To make candidates nervous', 'To practice and improve interviewing skills', 'To replace real interviews', 'To test candidate knowledge'], correctAnswer: 'To practice and improve interviewing skills', feedback: { correct: 'Correct! Mock interviews are for skill development and feedback.', incorrect: 'The answer is B. They simulate real interviews for learning, not evaluation.' } },
+                    { type: 'journal', prompt: 'Have you ever practiced interviewing before a real session? What was challenging?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Mock interviews allow mistakes in a safe environment. Use them to develop consistency, clarity, and confidence.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nIdentify 3 aspects of your interview style you want to improve during mock sessions.' }
+                ]
+            },
+            {
+                id: 'l5-2', title: 'Preparing a Mock Interview', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Preparation is key to a productive mock interview. Define roles, select scenarios, and set evaluation criteria before starting.' },
+                    { type: 'script', title: '📊 Steps to Prepare', content: 'Assign Roles: Interviewer, candidate, observer(s)\n\nSelect Scenario: Choose realistic job scenarios relevant to the role\n\nDevelop Questions: Include both behavioral and technical questions\n\nSet Evaluation Criteria: Use structured rubrics aligned with STAR method and legal compliance' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'Before mock interviews, an interviewer prepared a role-specific scenario and scoring sheet. Feedback afterward was specific, actionable, and helped the interviewer correct mistakes immediately.' },
+                    { type: 'quiz_mcq', question: 'What is the first step in preparing a mock interview?', options: ['Conduct the interview', 'Assign roles and select scenarios', 'Give feedback', 'Review candidate resumes'], correctAnswer: 'Assign roles and select scenarios', feedback: { correct: 'Correct! Role assignment and scenario selection set the stage for effective practice.', incorrect: 'The answer is B. Preparation ensures the session is focused and productive.' } },
+                    { type: 'journal', prompt: 'Think about the last mock interview you conducted. Did you follow a structured preparation process?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Always invest time in preparation. A well-structured session ensures actionable feedback and learning.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nCreate a short scenario and set of questions for your next mock interview.' }
+                ]
+            },
+            {
+                id: 'l5-3', title: 'Conducting the Mock Interview', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'During the session, follow structured guidelines and maintain a realistic interview environment. Focus on asking, listening, and documenting.' },
+                    { type: 'script', title: '📊 Key Guidelines', content: 'Follow Structure: Opening, middle, closing phases\n\nBehavioral Focus: Ask STAR-based questions\n\nActive Listening: Paraphrase, probe, take notes\n\nTime Management: Keep interview within planned duration\n\nProfessionalism: Treat candidate as in real interview' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'During a mock session, an interviewer asked consistent questions and documented responses. Observers noted improvement in follow-up questioning and feedback clarity.' },
+                    { type: 'quiz_mcq', question: 'Which practice is essential during a mock interview?', options: ['Skip preparation', 'Focus on personal opinions about candidate', 'Follow structured questions and evaluate objectively', 'Rush through questions'], correctAnswer: 'Follow structured questions and evaluate objectively', feedback: { correct: 'Correct! Stick to structured questioning and objective evaluation.', incorrect: 'The answer is C. Personal opinions or shortcuts reduce learning effectiveness.' } },
+                    { type: 'journal', prompt: 'During mock interviews, do you find it easier to stick to structured questions or improvise? How does this impact feedback?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Treat mock interviews as real sessions to practice rigor, clarity, and objective evaluation.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nRun a 10-minute mock interview with a colleague using a prepared scenario. Focus on following the STAR method.' }
+                ]
+            },
+            {
+                id: 'l5-4', title: 'Providing Feedback', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Feedback is the learning engine of mock interviews. It must be specific, balanced, actionable, and timely.' },
+                    { type: 'script', title: '📊 Feedback Characteristics', content: 'Specific: Focus on concrete behaviors\n\nActionable: Give clear guidance for improvement\n\nBalanced: Highlight strengths and areas for growth\n\nTimely: Deliver immediately after the session' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'After a mock interview, peer feedback highlighted excellent questioning but weak probing. The interviewer improved significantly in the next session.' },
+                    { type: 'quiz_mcq', question: 'Which feedback is effective?', options: ['“You were fine.”', '“Your questions were clear, but you need to probe deeper for details.”', '“You could do better.”', '“Don’t be nervous next time.”'], correctAnswer: '“Your questions were clear, but you need to probe deeper for details.”', feedback: { correct: 'Correct! Feedback should be specific and actionable.', incorrect: 'The answer is B. General comments aren’t helpful for learning.' } },
+                    { type: 'journal', prompt: 'Think about feedback you’ve received in the past. Was it actionable or vague? How could it have been improved?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Feedback transforms practice into real skill development. Always be specific, actionable, and constructive.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nObserve a peer mock interview and write 3 actionable feedback points.' }
+                ]
+            },
+            {
+                id: 'l5-5', title: 'Self-Assessment and Reflection', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Reflection solidifies learning. After each mock interview, assess yourself, identify gaps, and plan next steps.' },
+                    { type: 'script', title: '📊 Self-Assessment Steps', content: 'Review Notes: Compare your questions and evaluation to the rubric\n\nIdentify Strengths: Note what went well\n\nSpot Gaps: Identify missed opportunities or mistakes\n\nPlan Improvement: Set actionable goals for next session' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'An interviewer used a self-assessment checklist after every mock session. Over 4 weeks, their structured questioning improved and feedback became more precise.' },
+                    { type: 'quiz_mcq', question: 'What is the main purpose of self-assessment after a mock interview?', options: ['To criticize yourself harshly', 'To reflect, learn, and plan improvement', 'To record candidate details', 'To reduce interview time'], correctAnswer: 'To reflect, learn, and plan improvement', feedback: { correct: 'Correct! Reflection and planning enhance skill development.', incorrect: 'The answer is B. Self-assessment is about improving performance, not blaming.' } },
+                    { type: 'journal', prompt: 'After your next mock interview, write down 2 things you did well and 2 things to improve.' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Self-assessment turns each practice into measurable growth. Combine this with peer feedback for maximum impact.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nCreate a personal improvement plan with 3 goals for your next 3 mock interviews.' }
+                ]
             }
         ]
     },
