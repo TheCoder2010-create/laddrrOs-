@@ -13,7 +13,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar } from '@/components/ui/sidebar';
 import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale, MessagesSquare, FlaskConical } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
@@ -21,6 +21,7 @@ import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service'
 import { getNominationForUser } from '@/services/interviewer-lab-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { cn } from '@/lib/utils';
 
 
 interface MainSidebarProps {
@@ -36,6 +37,15 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
   const [isNominated, setIsNominated] = useState(false);
+  const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
+  const { state: sidebarState } = useSidebar();
+
+  useEffect(() => {
+    if (sidebarState === 'collapsed') {
+      setOpenSubMenus([]);
+    }
+  }, [sidebarState]);
+
 
   const fetchData = useCallback(async () => {
     if (!currentRole) return;
@@ -100,18 +110,69 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
 
   const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
   const isManagerial = ['Manager', 'HR Head'].includes(currentRole);
-
+  
   const menuItems = [
     { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
     { href: '/1-on-1', icon: <CheckSquare className="text-green-500"/>, label: '1-on-1' },
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    ...(isManagerial ? [{ href: '/managers-lab', icon: <FlaskConical className="text-orange-500"/>, label: "Manager's Lab" }] : []),
-    ...(isManagerial || isNominated ? [{ href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
+    ...(isManagerial ? [{ 
+        href: '/managers-lab', 
+        icon: <FlaskConical className="text-orange-500"/>, 
+        label: "Manager's Lab",
+        children: [
+           { href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }
+        ]
+    }] : []),
+    ...(!isManagerial && isNominated ? [{ href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
     { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
   
-  const renderMenuItem = (item: any) => (
+  const toggleSubMenu = (label: string) => {
+    setOpenSubMenus(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
+  }
+
+  const renderMenuItem = (item: any) => {
+     if (item.children) {
+      const isSubMenuOpen = openSubMenus.includes(item.label);
+      const isParentActive = pathname.startsWith(item.href);
+
+      return (
+        <SidebarMenuItem key={item.label} className="flex flex-col">
+            <SidebarMenuButton 
+                asChild={false}
+                isActive={isParentActive && !isSubMenuOpen}
+                onClick={() => toggleSubMenu(item.label)}
+                className="w-full"
+            >
+              <div className="flex justify-between items-center w-full">
+                <div className="flex items-center gap-2">
+                    {item.icon}
+                    <span>{item.label}</span>
+                </div>
+              </div>
+            </SidebarMenuButton>
+            {isSubMenuOpen && (
+              <SidebarMenuSub className="mt-1">
+                {item.children.map((child: any) => (
+                  <SidebarMenuSubItem key={child.href}>
+                     <Link href={child.href} passHref>
+                      <SidebarMenuSubButton asChild isActive={pathname === child.href}>
+                          <div className="flex items-center gap-2">
+                             {child.icon}
+                             <span>{child.label}</span>
+                          </div>
+                      </SidebarMenuSubButton>
+                    </Link>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            )}
+        </SidebarMenuItem>
+      )
+    }
+
+    return (
      <SidebarMenuItem key={item.href}>
         <Link href={item.href} passHref>
           <SidebarMenuButton asChild isActive={pathname === item.href}>
@@ -129,7 +190,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-  );
+    );
+  }
 
   return (
     <Sidebar>
