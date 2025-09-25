@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale, MessagesSquare, FlaskConical, Handshake } from 'lucide-react';
+import { LogOut, User, BarChart, Check, ListTodo, MessageSquare, BrainCircuit, MessagesSquare, FlaskConical } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
@@ -24,6 +24,7 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import { cn } from '@/lib/utils';
 import { LeadershipIcon } from './ui/leadership-icon';
 import { InterviewerLabIcon } from './ui/interviewer-lab-icon';
+import { OneOnOneIcon } from './ui/one-on-one-icon';
 
 
 interface MainSidebarProps {
@@ -44,7 +45,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   
   const menuItems = [
     { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
-    { href: '/1-on-1', icon: <CheckSquare className="text-green-500"/>, label: '1-on-1' },
+    { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500"/>, label: '1-on-1' },
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     ...(['Manager', 'HR Head'].includes(currentRole) ? [{ 
