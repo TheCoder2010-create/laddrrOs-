@@ -659,15 +659,15 @@ function ManagerView() {
                     <CardTitle>Your Interviewer Bench</CardTitle>
                 </CardHeader>
                 <CardContent className="flex gap-4">
-                     <div className="p-4 rounded-lg bg-green-500/10 text-green-700 dark:text-green-400">
+                     <div className="p-4 rounded-lg bg-green-500/10 text-green-700 dark:text-green-400 text-center">
                         <p className="font-bold text-2xl">{benchStrength.certified}</p>
                         <p className="text-sm">Certified</p>
                     </div>
-                    <div className="p-4 rounded-lg bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
+                    <div className="p-4 rounded-lg bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 text-center">
                         <p className="font-bold text-2xl">{benchStrength.inProgress}</p>
                         <p className="text-sm">In Progress</p>
                     </div>
-                     <div className="p-4 rounded-lg bg-red-500/10 text-red-700 dark:text-red-500">
+                     <div className="p-4 rounded-lg bg-red-500/10 text-red-700 dark:text-red-500 text-center">
                         <p className="font-bold text-2xl">{benchStrength.retry}</p>
                         <p className="text-sm">Needs Retry</p>
                     </div>
