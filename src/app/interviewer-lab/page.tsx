@@ -320,7 +320,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                          "You've been nominated for Laddrr's Interviewer Coaching Program. Complete the modules below to get certified."}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className={cn("space-y-4", nomination.status === 'Retry Needed' && "flex items-center gap-6")}>
+                <CardContent className={cn("space-y-4", nomination.status === 'Retry Needed' && "flex items-center justify-between gap-6")}>
                     <div className={cn(nomination.status === 'Retry Needed' ? "w-1/2" : "w-full")}>
                         <div className="flex items-center gap-4">
                             <span className="text-sm font-medium">Progress:</span>
@@ -331,11 +331,9 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                         </div>
                     </div>
                      {nomination.status === 'Retry Needed' && (
-                        <div className="w-1/2 text-center p-4 border border-destructive/50 rounded-lg bg-destructive/5 flex items-center justify-center">
-                            <Button size="sm" variant="destructive" onClick={handleStartPostAssessment}>
-                                Retry Assessment
-                            </Button>
-                        </div>
+                        <Button size="sm" variant="destructive" onClick={handleStartPostAssessment}>
+                            Retry Assessment
+                        </Button>
                      )}
 
                     {nomination.status === 'Pre-assessment pending' && (
