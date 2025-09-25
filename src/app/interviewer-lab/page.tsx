@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book, CheckSquare } from 'lucide-react';
-import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonActivity, savePostAssessment } from '@/services/interviewer-lab-service';
+import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonStep, savePostAssessment } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { NetsInitialInput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import SimulationArena from '@/components/simulation-arena';
@@ -31,214 +31,63 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 
 
-function LessonComponent({ lesson, onComplete }: { lesson: TrainingLesson, onComplete: (result?: any) => void }) {
+function LessonStepComponent({ step, onComplete }: { step: LessonStep, onComplete: (result?: any) => void }) {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [journalEntry, setJournalEntry] = useState('');
-    const [checkedItems, setCheckedItems] = useState<string[]>([]);
-    
     const { toast } = useToast();
 
-    const getIcon = () => {
-        switch (lesson.type) {
-            case 'video': return <Video className="h-6 w-6 text-primary" />;
-            case 'reading': return <BookOpen className="h-6 w-6 text-primary" />;
-            case 'interactive': return <Gamepad2 className="h-6 w-6 text-primary" />;
-            case 'practice': return <Play className="h-6 w-6 text-primary" />;
-            default: return <FileQuestion className="h-6 w-6 text-primary" />;
-        }
-    };
-    
-    const handleChecklistChange = (item: string) => {
-        setCheckedItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
-    };
-
-    const handleSimpleSubmit = () => {
-        if (lesson.activity?.type === 'journal') {
-            onComplete(journalEntry);
-            setJournalEntry('');
-        } else if (lesson.activity?.type === 'checklist') {
-            onComplete(checkedItems);
-            setCheckedItems([]);
-        } else if (lesson.activity?.type === 'fill_blank') {
-            onComplete(journalEntry); // Re-use journalEntry state for simplicity
-            setJournalEntry('');
-        } 
-        else {
-            onComplete();
-        }
-    };
-    
     const handleQuizSubmit = () => {
-        const activity = lesson.activity;
-        if (activity?.type !== 'quiz_mcq' || !selectedAnswer) return;
+        if (step.type !== 'quiz_mcq' || !selectedAnswer) return;
         
-        const isCorrect = selectedAnswer === activity.correctAnswer;
+        const isCorrect = selectedAnswer === step.correctAnswer;
         toast({
             title: isCorrect ? "Correct!" : "Not Quite",
-            description: isCorrect ? "Great job." : `The correct answer was: ${activity.correctAnswer}`,
+            description: isCorrect ? step.feedback.correct : step.feedback.incorrect,
             variant: isCorrect ? "success" : "destructive",
         });
 
-        if(isCorrect) {
+        if (isCorrect) {
             onComplete(selectedAnswer);
         }
         setSelectedAnswer(null);
     };
 
-    const handleSwipeSubmit = (answer: 'Legal' | 'Illegal', correctAnswer: 'Legal' | 'Illegal') => {
-         const isCorrect = answer === correctAnswer;
-         toast({
-            title: isCorrect ? "Correct!" : "Not Quite",
-            description: `That question is ${correctAnswer}.`,
-            variant: isCorrect ? "success" : "destructive",
-        });
-        if(isCorrect) {
-            onComplete(answer);
-        }
-    }
-
-
-    const renderActivity = (activity: LessonActivity) => {
-        switch (activity.type) {
-            case 'quiz_mcq':
-                return (
-                    <div className='space-y-4'>
-                        <p className="font-semibold">{activity.question}</p>
-                        <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer}>
-                            {activity.options.map((opt, i) => (
-                                <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
-                                    <RadioGroupItem value={opt} id={`q-${lesson.id}-${i}`} />
-                                    <Label htmlFor={`q-${lesson.id}-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
-                                </div>
-                            ))}
-                        </RadioGroup>
-                    </div>
-                );
-            case 'match_game':
-                return (
-                     <div className='space-y-4'>
-                        <p className="font-semibold">{activity.prompt}</p>
-                         <div className="space-y-2">
-                            {activity.items.map((item, i) => (
-                                <Card key={i} className="p-3">
-                                    <p className="font-medium">"{item.text}"</p>
-                                    <p className="text-sm text-green-500">Correctly matches: {item.category}</p>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                );
-            case 'fill_blank':
-                 return (
-                    <div className='space-y-2'>
-                        <p className="font-semibold">{activity.prompt}</p>
-                        <Textarea value={journalEntry} onChange={e => setJournalEntry(e.target.value)} placeholder="Type your answer..."/>
-                    </div>
-                 );
-            case 'checklist':
-                return (
-                    <div className='space-y-2'>
-                        <p className="font-semibold">{activity.prompt}</p>
-                        {activity.options.map((opt, i) => (
-                             <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
-                                <Checkbox id={`c-${lesson.id}-${i}`} onCheckedChange={() => handleChecklistChange(opt)} checked={checkedItems.includes(opt)} />
-                                <Label htmlFor={`c-${lesson.id}-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
+    switch (step.type) {
+        case 'script':
+            return (
+                <div className="space-y-2">
+                    {step.title && <h4 className="text-lg font-semibold">{step.title}</h4>}
+                    <p className="whitespace-pre-wrap text-muted-foreground">{step.content}</p>
+                </div>
+            );
+        case 'quiz_mcq':
+            return (
+                <div className='space-y-4'>
+                    <p className="font-semibold">{step.question}</p>
+                    <RadioGroup value={selectedAnswer ?? ''} onValueChange={setSelectedAnswer}>
+                        {step.options.map((opt, i) => (
+                            <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
+                                <RadioGroupItem value={opt} id={`q-${i}`} />
+                                <Label htmlFor={`q-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
                             </div>
                         ))}
-                    </div>
-                );
-            case 'branching_scenario':
-                 return (
-                    <div className='space-y-4'>
-                        <p className="font-semibold">{activity.prompt}</p>
-                        <div className="flex flex-col gap-2">
-                        {activity.options.map((opt, i) => (
-                            <Button key={i} variant={opt.isCorrect ? "success" : "destructive"} onClick={() => {
-                                toast({ title: opt.isCorrect ? "Correct Choice!" : "Incorrect Choice", description: opt.isCorrect ? "This keeps the conversation focused and legally compliant." : "This question is illegal and introduces bias."});
-                                if(opt.isCorrect) onComplete(opt.text);
-                            }}>
-                                {opt.text}
-                            </Button>
-                        ))}
-                        </div>
-                    </div>
-                 );
-            case 'journal':
-                 return (
-                    <div className='space-y-2'>
-                        <p className="font-semibold">{activity.prompt}</p>
-                        <Textarea value={journalEntry} onChange={e => setJournalEntry(e.target.value)} placeholder="Your reflections..."/>
-                    </div>
-                );
-            case 'swipe_quiz':
-                return (
-                     <div className='space-y-4'>
-                        <p className="font-semibold">{activity.prompt}</p>
-                        {activity.cards.map((card, i) => (
-                             <Card key={i} className="p-4">
-                                <p className="text-center font-medium italic">"{card.text}"</p>
-                                <div className="flex justify-center gap-4 mt-4">
-                                    <Button variant="success" onClick={() => handleSwipeSubmit('Legal', card.correctAnswer)}>Legal</Button>
-                                    <Button variant="destructive" onClick={() => handleSwipeSubmit('Illegal', card.correctAnswer)}>Illegal</Button>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                )
-            default:
-                return null;
-        }
+                    </RadioGroup>
+                    <Button onClick={handleQuizSubmit} disabled={!selectedAnswer}>Submit Answer</Button>
+                </div>
+            );
+        case 'journal':
+            return (
+                 <div className='space-y-4'>
+                    <p className="font-semibold whitespace-pre-wrap">{step.prompt}</p>
+                    <Textarea value={journalEntry} onChange={e => setJournalEntry(e.target.value)} placeholder="Your reflections..." rows={5} />
+                    <Button onClick={() => onComplete(journalEntry)} disabled={!journalEntry}>Save Reflection</Button>
+                </div>
+            );
+        default:
+            return null;
     }
-
-    const renderFooter = () => {
-        if (lesson.type === 'practice') {
-            return <Button onClick={() => onComplete()}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>;
-        }
-        if (!lesson.activity) {
-            return <Button onClick={() => onComplete()}>Continue</Button>;
-        }
-        switch (lesson.activity.type) {
-            case 'quiz_mcq':
-                return <Button onClick={handleQuizSubmit} disabled={!selectedAnswer}>Submit Answer</Button>;
-            case 'match_game':
-                 return <Button onClick={handleSimpleSubmit}>Continue</Button>; // Auto-completes
-             case 'branching_scenario':
-                return null; // Buttons are inline
-            case 'swipe_quiz':
-                return null; // Buttons are inline
-            case 'fill_blank':
-                 return <Button onClick={handleSimpleSubmit} disabled={!journalEntry}>Submit</Button>;
-            case 'checklist':
-                 return <Button onClick={handleSimpleSubmit} disabled={checkedItems.length === 0}>Submit</Button>;
-            case 'journal':
-                return <Button onClick={handleSimpleSubmit} disabled={!journalEntry}>Save Reflection</Button>;
-            default:
-                return <Button onClick={() => onComplete()}>Continue</Button>;
-        }
-    };
-    
-    return (
-        <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-3">{getIcon()} {lesson.title}</CardTitle>
-                {lesson.script && <CardDescription className="whitespace-pre-wrap pt-2">{lesson.script}</CardDescription>}
-            </CardHeader>
-            
-            {lesson.activity && (
-                <CardContent>
-                    <div className="p-4 border bg-muted/50 rounded-lg">
-                        <h4 className="font-bold mb-4 text-center text-primary">Activity</h4>
-                        {renderActivity(lesson.activity)}
-                    </div>
-                </CardContent>
-            )}
-
-            <CardFooter>
-                {renderFooter()}
-            </CardFooter>
-        </Card>
-    );
 }
+
 
 function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomination, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -251,13 +100,11 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     // Lesson navigation state
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
     const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
     
     useEffect(() => {
-        // This ensures the component state updates when the parent re-fetches data.
         setNomination(initialNomination);
-
         if (initialNomination.status !== 'Pre-assessment pending') {
-            // When nomination data changes (e.g. after pre-assessment), find the first uncompleted module
             const firstUncompletedModuleIndex = initialNomination.modules.findIndex(m => !m.isCompleted);
             const newModuleIndex = firstUncompletedModuleIndex >= 0 ? firstUncompletedModuleIndex : initialNomination.modules.length - 1;
             setCurrentModuleIndex(newModuleIndex);
@@ -265,12 +112,13 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
             const firstUncompletedLessonIndex = initialNomination.modules[newModuleIndex]?.lessons.findIndex(l => !l.isCompleted);
             const newLessonIndex = firstUncompletedLessonIndex >= 0 ? firstUncompletedLessonIndex : 0;
             setCurrentLessonIndex(newLessonIndex);
+            setCurrentStepIndex(0); // Always start from the first step
         }
-
     }, [initialNomination]);
 
     const currentModule = nomination.modules[currentModuleIndex];
     const currentLesson = currentModule?.lessons[currentLessonIndex];
+    const currentStep = currentLesson?.steps?.[currentStepIndex];
     const allModulesCompleted = nomination.modules.every(m => m.isCompleted);
 
     const handleStartPreAssessment = () => {
@@ -296,27 +144,31 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         }
     };
 
-    const handleLessonComplete = async (result?: any) => {
-        if (!currentLesson || !currentModule) return;
-
-        // If it's a practice lesson, start the simulation instead of completing it right away
-        if (currentLesson.type === 'practice') {
-            handleStartPractice(currentLesson);
-            return;
-        }
-        
-        await saveLessonResult(nomination.id, currentModule.id, currentLesson.id, result);
-
+    const advanceToNextLesson = async () => {
         const nextLessonIndex = currentLessonIndex + 1;
         if (nextLessonIndex < currentModule.lessons.length) {
             setCurrentLessonIndex(nextLessonIndex);
+            setCurrentStepIndex(0);
         } else {
-            // This was the last lesson of the module.
             await completeModule(nomination.id, currentModule.id);
             toast({ title: `Module ${currentModuleIndex + 1} Complete!` });
             onUpdate();
         }
-        onUpdate();
+    };
+
+    const handleStepComplete = async (result?: any) => {
+        if (!currentLesson || !currentStep || !currentModule) return;
+        
+        await saveLessonResult(nomination.id, currentModule.id, currentLesson.id, result); // Save result per step
+
+        const nextStepIndex = currentStepIndex + 1;
+        if (currentLesson.steps && nextStepIndex < currentLesson.steps.length) {
+            setCurrentStepIndex(nextStepIndex);
+        } else {
+            // Last step of the lesson is complete
+            currentLesson.isCompleted = true; // Mark lesson as complete locally for UI
+            await advanceToNextLesson();
+        }
     };
 
     const handleExitSimulation = async (messages?: { role: 'user' | 'model', content: string }[]) => {
@@ -348,21 +200,15 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                 // This was a practice session for a module
                 await saveLessonResult(nomination.id, currentModule.id, currentPracticeLesson.id, analysisResult);
                 
-                // Check if this was the last lesson of the module to complete the module
                 const isLastLesson = currentModule.lessons[currentModule.lessons.length - 1].id === currentPracticeLesson.id;
                 if (isLastLesson) {
                     await completeModule(nomination.id, currentModule.id);
-                    toast({
-                        title: `Module ${currentModuleIndex+1} Complete!`,
-                        description: "Your progress has been updated.",
-                    });
+                    toast({ title: `Module ${currentModuleIndex+1} Complete!`, description: "Your progress has been updated." });
                 } else {
-                     // Not the last lesson, but still show a toast for completing the practice
-                    toast({
-                        title: "Practice Complete!",
-                        description: `You can now proceed to the next lesson.`
-                    });
+                     toast({ title: "Practice Complete!", description: `You can now proceed to the next lesson.` });
                 }
+                 // Advance to the next lesson automatically after practice
+                await advanceToNextLesson();
             }
 
             onUpdate(); // Notify parent to re-fetch and update the view
@@ -425,10 +271,40 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
             </Card>
 
             {nomination.status !== 'Pre-assessment pending' && !allModulesCompleted && currentModule && currentLesson && (
-                 <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Module {currentModuleIndex + 1}: {currentModule.title}</h2>
-                    <LessonComponent lesson={currentLesson} onComplete={handleLessonComplete} />
-                 </div>
+                 <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-2xl">{currentLesson.title}</CardTitle>
+                        <CardDescription>Module {currentModuleIndex + 1}: {currentModule.title}</CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent>
+                        <div className="p-4 border bg-muted/50 rounded-lg">
+                            {currentStep ? (
+                                <LessonStepComponent step={currentStep} onComplete={handleStepComplete} />
+                            ) : (
+                                <div>
+                                    <p>Loading step...</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+
+                    <CardFooter className="flex justify-between items-center">
+                        <Button
+                            variant="outline"
+                            onClick={() => setCurrentStepIndex(p => p - 1)}
+                            disabled={currentStepIndex === 0}
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        </Button>
+
+                         {currentLesson.type === 'practice' ? (
+                            <Button onClick={() => handleStartPractice(currentLesson)}><Play className="mr-2 h-4 w-4"/> Start Practice</Button>
+                         ) : currentStep?.type === 'script' ? (
+                            <Button onClick={() => handleStepComplete()}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                         ) : null}
+                    </CardFooter>
+                 </Card>
             )}
             
             {nomination.status === 'Post-assessment pending' && allModulesCompleted && (
