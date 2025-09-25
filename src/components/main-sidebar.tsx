@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale, MessagesSquare, FlaskConical } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale, MessagesSquare, FlaskConical, Handshake } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
@@ -121,11 +121,11 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         icon: <FlaskConical className="text-orange-500"/>, 
         label: "Manager's Lab",
         children: [
-           { href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" },
+           { href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" },
            { href: '/leadership', icon: <Scale className="text-red-500"/>, label: "Leadership" }
         ]
     }] : []),
-    ...(!isManagerial && isNominated ? [{ href: '/interviewer-lab', icon: <FlaskConical className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
+    ...(!isManagerial && isNominated ? [{ href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
     { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
   
