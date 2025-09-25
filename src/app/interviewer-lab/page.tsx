@@ -226,7 +226,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     }
     
     if (activeLesson !== null && currentLesson) {
-        if (currentLesson.type === 'practice' && currentLesson.steps?.length === 0) {
+        if (currentLesson.type === 'practice' && (!currentLesson.steps || currentLesson.steps.length === 0)) {
             return (
                  <div className="p-4 md:p-8 space-y-6">
                     <Card className="shadow-lg">
@@ -348,9 +348,11 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
 
             {nomination.status !== 'Pre-assessment pending' && (
                 <Accordion type="multiple" defaultValue={[`module-${nomination.modules.findIndex(m => !m.isCompleted)}`]} className="w-full space-y-4">
-                    {nomination.modules.map((module, moduleIndex) => (
-                        <AccordionItem key={module.id} value={`module-${moduleIndex}`} className="border rounded-lg bg-card shadow-sm">
-                            <AccordionTrigger className="p-4 hover:no-underline">
+                    {nomination.modules.map((module, moduleIndex) => {
+                        const isLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted;
+                        return (
+                        <AccordionItem key={module.id} value={`module-${moduleIndex}`} className="border rounded-lg bg-card shadow-sm" disabled={isLocked}>
+                            <AccordionTrigger className="p-4 hover:no-underline" disabled={isLocked}>
                                 <div className="flex-1 text-left">
                                     <p className="text-lg font-semibold">{`Module ${moduleIndex + 1}: ${module.title}`}</p>
                                     <p className="text-sm text-muted-foreground">{module.description}</p>
@@ -371,6 +373,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                                                 variant={lesson.isCompleted ? "secondary" : "default"} 
                                                 size="sm"
                                                 onClick={() => lesson.type === 'practice' ? handleStartPractice(moduleIndex, lessonIndex) : handleStartLesson(moduleIndex, lessonIndex)}
+                                                disabled={isLocked}
                                             >
                                                 {lesson.isCompleted ? 'Review' : 'Start'}
                                             </Button>
@@ -379,7 +382,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
-                    ))}
+                    )})}
                 </Accordion>
             )}
             
