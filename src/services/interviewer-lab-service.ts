@@ -124,44 +124,13 @@ const getInitialModules = (): TrainingModule[] => [
             {
                 id: 'l1-1', title: 'Why Structured Interviews Matter', type: 'standard', isCompleted: false,
                 steps: [
-                    {
-                        type: 'script',
-                        title: '👋 Coach Intro',
-                        content: "Most managers think they’re great at interviewing.\n\nBut research says otherwise: unstructured interviews are only about 20% predictive of job success. That’s barely better than flipping a coin.\n\nThe problem? Unstructured interviews:\n- Drift into small talk and gut feelings.\n- Let unconscious bias creep in.\n- Miss important, consistent evaluation points.\n\nSo how do world-class companies solve this? With structured interviews. Think of them as your playbook for fair, consistent, high-quality hiring."
-                    },
-                    {
-                        type: 'script',
-                        title: '📊 Teaching Moment',
-                        content: "Structured interviews double predictive accuracy — about 40% predictive. That might not sound like much, but in hiring, it’s massive.\n\nHere’s an analogy:\n\nImagine you’re scouting athletes. If you let each coach ask random questions, one might ask about diet, another about favorite music. Results are all over the place.\n\nBut if everyone runs the same timed sprint test, you can compare apples to apples.\n\nThat’s the essence of structure: same test, fairer results, better hires."
-                    },
-                    {
-                        type: 'script',
-                        title: '📖 Mini-Case',
-                        content: "Let me share a quick story.\n\nA retail company once let managers run their own unstructured interviews. The result? High turnover, inconsistent hiring, and even a lawsuit around discriminatory questioning.\n\nWhen they switched to structured interviews — same questions, standardized scoring — turnover dropped by 25% and legal risk disappeared.\n\nLesson: Structure isn’t bureaucracy. It’s protection + performance."
-                    },
-                    {
-                        type: 'quiz_mcq',
-                        question: "Which of these is a proven benefit of structured interviews?",
-                        options: ["They allow managers to improvise fully.", "They ensure fairness and reduce legal risk.", "They focus on casual conversation.", "They guarantee every candidate accepts an offer."],
-                        correctAnswer: "They ensure fairness and reduce legal risk.",
-                        feedback: {
-                            correct: "Exactly! Fairness and compliance are the backbone of structured interviews.",
-                            incorrect: "Not quite. Improvisation and small talk can feel nice, but they don’t predict performance or protect you legally. The right answer is B."
-                        }
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "Now, let’s apply this.\n\nThink of a time you were in an interview — either giving it or sitting as a candidate.\n\nWas it structured or unstructured?\n\nHow did it feel — fair, consistent, or random?\n\nWhat did you learn about the effectiveness of that style?\n\nWrite 2–3 sentences in your notes. This reflection primes your brain to connect the concept to real experience."
-                    },
-                    {
-                        type: 'script',
-                        title: '📌 Coach Wrap-Up',
-                        content: "Here’s what I want you to remember:\n\nUnstructured = random, risky, biased.\n\nStructured = fair, consistent, predictive.\n\nCompanies that use structured interviews not only hire better, they protect themselves legally and build trust with candidates.\n\nYour role as an interviewer is not just to ‘chat.’ It’s to create a reliable system that helps your team win. Structure is that system."
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "Want to go deeper? Try this optional stretch activity:\n\nWrite down 3 interview questions you’ve asked (or been asked).\n\nAsk yourself: Could these be standardized and asked to every candidate?\n\nHow would that change fairness and consistency?\n\nBring these to our next lesson — we’ll build on them."
-                    }
+                    { type: 'script', title: '👋 Coach Intro', content: "Most managers think they’re great at interviewing.\n\nBut research says otherwise: unstructured interviews are only about 20% predictive of job success. That’s barely better than flipping a coin.\n\nThe problem? Unstructured interviews:\n- Drift into small talk and gut feelings.\n- Let unconscious bias creep in.\n- Miss important, consistent evaluation points.\n\nSo how do world-class companies solve this? With structured interviews. Think of them as your playbook for fair, consistent, high-quality hiring." },
+                    { type: 'script', title: '📊 Teaching Moment', content: "Structured interviews double predictive accuracy — about 40% predictive. That might not sound like much, but in hiring, it’s massive.\n\nHere’s an analogy:\n\nImagine you’re scouting athletes. If you let each coach ask random questions, one might ask about diet, another about favorite music. Results are all over the place.\n\nBut if everyone runs the same timed sprint test, you can compare apples to apples.\n\nThat’s the essence of structure: same test, fairer results, better hires." },
+                    { type: 'script', title: '📖 Mini-Case', content: "Let me share a quick story.\n\nA retail company once let managers run their own unstructured interviews. The result? High turnover, inconsistent hiring, and even a lawsuit around discriminatory questioning.\n\nWhen they switched to structured interviews — same questions, standardized scoring — turnover dropped by 25% and legal risk disappeared.\n\nLesson: Structure isn’t bureaucracy. It’s protection + performance." },
+                    { type: 'quiz_mcq', question: "Which of these is a proven benefit of structured interviews?", options: ["They allow managers to improvise fully.", "They ensure fairness and reduce legal risk.", "They focus on casual conversation.", "They guarantee every candidate accepts an offer."], correctAnswer: "They ensure fairness and reduce legal risk.", feedback: { correct: "Exactly! Fairness and compliance are the backbone of structured interviews.", incorrect: "Not quite. Improvisation and small talk can feel nice, but they don’t predict performance or protect you legally. The right answer is B." } },
+                    { type: 'journal', prompt: "Now, let’s apply this.\n\nThink of a time you were in an interview — either giving it or sitting as a candidate.\n\nWas it structured or unstructured?\n\nHow did it feel — fair, consistent, or random?\n\nWhat did you learn about the effectiveness of that style?\n\nWrite 2–3 sentences in your notes. This reflection primes your brain to connect the concept to real experience." },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: "Here’s what I want you to remember:\n\nUnstructured = random, risky, biased.\n\nStructured = fair, consistent, predictive.\n\nCompanies that use structured interviews not only hire better, they protect themselves legally and build trust with candidates.\n\nYour role as an interviewer is not just to ‘chat.’ It’s to create a reliable system that helps your team win. Structure is that system." },
+                    { type: 'journal', prompt: "Want to go deeper? Try this optional stretch activity:\n\nWrite down 3 interview questions you’ve asked (or been asked).\n\nAsk yourself: Could these be standardized and asked to every candidate?\n\nHow would that change fairness and consistency?\n\nBring these to our next lesson — we’ll build on them." }
                 ]
             },
             {
@@ -271,15 +240,7 @@ const getInitialModules = (): TrainingModule[] => [
             },
             {
                 id: 'l2-5', title: 'Practice, Feedback, and Continuous Improvement', type: 'practice', isCompleted: false,
-                steps: [
-                    { type: 'script', title: '🎙️ Coach Intro', content: 'Behavioral interviewing is a skill. You improve by:\n\nPracticing questions and probing\nScoring consistently\nIncorporating feedback\nReflecting on your own biases and assumptions' },
-                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Like learning an instrument — you won’t master it by reading a book. You need practice, feedback, and repetition.' },
-                    { type: 'script', title: '📖 Mini-Case', content: 'A company implemented mock interviews internally. Interviewers practiced STAR questions, scored each other, and gave feedback. Six months later, hiring accuracy increased 30%.' },
-                    { type: 'quiz_mcq', question: 'Which action improves interviewer skill the most?', options: ['Asking random questions', 'Practicing, scoring, and reflecting', 'Relying on intuition', 'Watching interviews passively'], correctAnswer: 'Practicing, scoring, and reflecting', feedback: { correct: 'Correct. Skill develops through active practice and reflection.', incorrect: 'The answer is B. Deliberate practice + scoring = improvement.' } },
-                    { type: 'journal', prompt: 'Commit to a weekly practice: either mock interviews, reviewing notes, or evaluating STAR answers. What will you do first?' },
-                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Behavioral interviewing is a craft. Practice + structured evaluation = expertise.' },
-                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nSchedule a mock interview with a colleague. Use STAR, probing, and scoring. Write a reflection on your strengths and areas to improve.' }
-                ],
+                steps: [],
                 practiceScenario: { persona: 'Candidate', scenario: "This is a practice session for behavioral interviewing. Ask the AI candidate, 'Tell me about a time you had to handle a difficult stakeholder.' Your goal is to get a complete STAR answer, probing effectively for details.", difficulty: 'neutral' }
             }
         ]
@@ -307,7 +268,7 @@ const getInitialModules = (): TrainingModule[] => [
                 id: 'l3-2', title: 'Common Interview Biases', type: 'standard', isCompleted: false,
                 steps: [
                     { type: 'script', title: '🎙️ Coach Intro', content: 'Let’s explore the biases most likely to appear in interviews and how to counter them.' },
-                    { type: 'script', title: '📊 Bias Breakdown', content: 'Confirmation Bias\n\nDefinition: Seeking info that confirms your first impression.\nMitigation: Follow a structured question set and score each answer objectively.\n\nHalo/Horn Effect\n\nDefinition: One positive/negative trait dominates your judgment.\nMitigation: Evaluate competencies individually.\n\nSimilarity Bias\n\nDefinition: Favoring candidates with similar backgrounds or interests.\nMitigation: Focus on job-relevant criteria, not personal similarities.\n\nRecency Bias\n\nDefinition: Giving disproportionate weight to the last candidate.\nMitigation: Take notes and review previous candidates before scoring.\n\nAffinity Bias\n\nDefinition: Favoring those who share your opinions or personality.\nMitigation: Use objective metrics and a scoring rubric.' },
+                    { type: 'script', title: '📊 Bias Breakdown', content: "Confirmation Bias\n\nDefinition: Seeking info that confirms your first impression.\nMitigation: Follow a structured question set and score each answer objectively.\n\nHalo/Horn Effect\n\nDefinition: One positive/negative trait dominates your judgment.\nMitigation: Evaluate competencies individually.\n\nSimilarity Bias\n\nDefinition: Favoring candidates with similar backgrounds or interests.\nMitigation: Focus on job-relevant criteria, not personal similarities.\n\nRecency Bias\n\nDefinition: Giving disproportionate weight to the last candidate.\nMitigation: Take notes and review previous candidates before scoring.\n\nAffinity Bias\n\nDefinition: Favoring those who share your opinions or personality.\nMitigation: Use objective metrics and a scoring rubric." },
                     { type: 'quiz_mcq', question: 'Which bias occurs when one strong trait influences all judgments?', options: ['Confirmation', 'Halo/Horn', 'Recency', 'Similarity'], correctAnswer: 'Halo/Horn', feedback: { correct: 'Correct! The halo/horn effect makes one trait dominate perception.', incorrect: 'The answer is B. Evaluate each competency independently.' } },
                     { type: 'journal', prompt: 'Identify a bias you think is most common in your interviews. How have you unintentionally allowed it to affect your judgment?' },
                     { type: 'script', title: '📌 Coach Wrap-Up', content: 'Recognizing common biases is the first step; applying structured mitigation strategies ensures fairness.' },
@@ -330,7 +291,7 @@ const getInitialModules = (): TrainingModule[] => [
                 id: 'l3-4', title: 'Real-Time Bias Interruption Techniques', type: 'standard', isCompleted: false,
                 steps: [
                     { type: 'script', title: '🎙️ Coach Intro', content: 'Even with structure, bias can creep in. Real-time techniques help you pause and reset during interviews.' },
-                    { type: 'script', title: '📊 Techniques', content: 'Self-Check: Ask, ‘Am I favoring this candidate based on irrelevant factors?’\n\nPause & Reflect: Take a 5-second mental pause before scoring.\n\nObjective Notes: Record quotes or behaviors before giving a rating.\n\nUse Comparisons: Evaluate candidates against competency benchmarks, not each other.' },
+                    { type: 'script', title: '📊 Techniques', content: "Self-Check: Ask, ‘Am I favoring this candidate based on irrelevant factors?’\n\nPause & Reflect: Take a 5-second mental pause before scoring.\n\nObjective Notes: Record quotes or behaviors before giving a rating.\n\nUse Comparisons: Evaluate candidates against competency benchmarks, not each other." },
                     { type: 'script', title: '📖 Mini-Case', content: 'During a panel interview, one interviewer realized they were favoring a candidate with similar hobbies. They paused, reviewed the scoring rubric, and corrected their evaluation.' },
                     { type: 'quiz_mcq', question: 'What is the best immediate action if you notice bias creeping in?', options: ['Ignore it', 'Pause and check the rubric', 'Ask the candidate personal questions', 'Score based on gut feeling'], correctAnswer: 'Pause and check the rubric', feedback: { correct: 'Correct! Pause and review your rubric or notes to counter bias immediately.', incorrect: 'The answer is B. Conscious reflection mitigates bias impact.' } },
                     { type: 'journal', prompt: 'Think of a bias you notice in yourself. How will you pause and interrupt it in future interviews?' },
@@ -359,9 +320,66 @@ const getInitialModules = (): TrainingModule[] => [
         duration: 35,
         isCompleted: false,
         lessons: [
-            { id: 'l4-1', title: 'Prohibited vs. Legal Qs', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Illegal questions relate to protected classes. Legal questions focus on ability to perform job functions.'}] },
-            { id: 'l4-2', title: 'Protected Classes', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'In the US, the EEOC protects candidates based on race, religion, sex, age (40+), disability, and more.'}] },
-            { id: 'l4-3', title: 'Documentation Best Practices', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Always document questions asked, candidate responses, scoring, and the final hiring decision.'}] },
+            {
+                id: 'l4-1', title: 'Introduction to Legal Compliance', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Legal compliance in interviews isn’t just about avoiding lawsuits — it ensures fairness, protects candidates, and upholds your organization’s reputation. Understanding the law helps you focus on evaluating talent objectively.' },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Think of legal compliance as the boundaries on a sports field. The rules don’t stop the game; they make it fair and structured.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'An organization faced legal scrutiny when an interviewer asked candidates about marital status. After training, all interviewers followed structured questions and compliance checklists, reducing risk and increasing fairness.' },
+                    { type: 'quiz_mcq', question: 'Why is legal compliance critical in interviews?', options: ['To avoid fines and lawsuits', 'To ensure fair evaluation and protect candidates', 'To limit hiring flexibility', 'Both A & B'], correctAnswer: 'Both A & B', feedback: { correct: 'Correct! Legal compliance protects both the organization and the candidates, while promoting fairness.', incorrect: 'The answer is D. Compliance ensures fairness and reduces legal risk.' } },
+                    { type: 'journal', prompt: 'Think about any interview you conducted or participated in. Were all questions compliant with legal standards?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Understanding compliance is the foundation. Every question you ask must focus on job-relevant criteria.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nList 3 topics you should never ask a candidate about during an interview. Think about alternatives you could use instead.' }
+                ]
+            },
+            {
+                id: 'l4-2', title: 'Protected Characteristics', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Federal and local laws protect candidates from discrimination based on certain characteristics. Awareness is the first step to ensuring compliance.' },
+                    { type: 'script', title: '📊 Protected Characteristics', content: 'Race / Color\n\nReligion\n\nSex / Gender / Pregnancy / Sexual Orientation\n\nNational Origin\n\nAge (40+)\n\nDisability\n\nGenetic Information' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A manager asked a candidate about their childcare arrangements. This violated federal guidance. After training, managers learned to focus only on availability and job requirements.' },
+                    { type: 'quiz_mcq', question: 'Which question is legally compliant?', options: ['Are you planning to have children soon?', 'Are you authorized to work in the country?', 'What is your spouse’s job?', 'How old are you?'], correctAnswer: 'Are you authorized to work in the country?', feedback: { correct: 'Correct! Focus only on job-relevant information.', incorrect: 'The answer is B. Questions about family, age, or spouse are prohibited.' } },
+                    { type: 'journal', prompt: 'Identify 2 questions you’ve asked in the past that could risk discrimination. How can you reframe them to be compliant?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Protected characteristics must never influence hiring decisions. Always focus on job-related skills and qualifications.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nWrite compliant alternatives for 3 common non-compliant questions.' }
+                ]
+            },
+            {
+                id: 'l4-3', title: 'Prohibited Questions & Safe Alternatives', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Some questions may seem harmless but are legally risky. Learn safe alternatives to assess the same competencies.' },
+                    { type: 'script', title: '📊 Categories & Examples', content: "Personal / Family\n\nProhibited: Marital status, childcare plans\nSafe Alternative: “Are you available to work the required schedule?”\n\nAge / Physical Characteristics\n\nProhibited: Age, height, weight\nSafe Alternative: “Can you perform the essential functions of this role with or without reasonable accommodation?”\n\nBackground / Origin\n\nProhibited: Nationality, accent, religion\nSafe Alternative: “Are you legally authorized to work in this country?”\n\nHealth / Disability\n\nProhibited: Questions about disabilities or health history\nSafe Alternative: Focus on ability to perform job functions, e.g., “This role requires lifting 20 lbs. Can you perform this task with or without reasonable accommodation?”" },
+                    { type: 'quiz_mcq', question: 'Which is a safe interview question?', options: ['What religion do you practice?', 'Are you legally allowed to work here?', 'How tall are you?', 'Are you married?'], correctAnswer: 'Are you legally allowed to work here?', feedback: { correct: 'Correct! Always ask about legal work eligibility or job-related abilities.', incorrect: 'The answer is B. Avoid any questions about personal characteristics.' } },
+                    { type: 'journal', prompt: 'Review your current interview guide. Are there any prohibited questions? Replace them with job-relevant alternatives.' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Always ask questions that measure ability and qualifications — not personal attributes.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nCreate a mini cheat sheet of 5 prohibited questions and their compliant alternatives.' }
+                ]
+            },
+            {
+                id: 'l4-4', title: 'Documentation and Record-Keeping', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Documentation is your safeguard. Objective, consistent records protect the organization and provide defensible hiring decisions.' },
+                    { type: 'script', title: '📊 Best Practices', content: 'Record every question asked\n\nTake detailed, job-relevant notes on candidate responses\n\nUse consistent scoring rubrics\n\nDocument final hiring decisions and rationale\n\nRetain records as required by law' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'After an audit, an organization’s well-documented interviews protected them from an EEOC complaint. Notes included structured question responses and objective scoring.' },
+                    { type: 'quiz_mcq', question: 'What should interview notes focus on?', options: ['Candidate’s personal background', 'Job-relevant skills and behaviors', 'Gut feeling impressions', 'Off-topic comments'], correctAnswer: 'Job-relevant skills and behaviors', feedback: { correct: 'Correct! Notes must be objective and job-focused.', incorrect: 'The answer is B. Avoid documenting personal characteristics or opinions.' } },
+                    { type: 'journal', prompt: 'Examine your note-taking habits. Are you consistently recording objective, job-relevant information?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Good documentation ensures fairness, legal compliance, and audit readiness.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nRevise your current interview template to include structured sections for questions, candidate responses, and scoring.' }
+                ]
+            },
+            {
+                id: 'l4-5', title: 'Practical Application and Scenarios', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Let’s apply compliance knowledge in real-world interview scenarios.' },
+                    { type: 'script', title: '📖 Scenario 1', content: "Situation: A candidate mentions they are pregnant.\nQuestion: How should you respond?\n\n✅ Focus on role requirements, not personal circumstances.\n\nCompliant Response: “Can you perform the essential functions of this role?”" },
+                    { type: 'script', title: '📖 Scenario 2', content: "Situation: A candidate has a foreign accent.\nQuestion: How should you assess them?\n\n✅ Focus on communication ability as required by the role.\n\nCompliant Response: “Please provide an example of a complex task you explained to a team member.”" },
+                    { type: 'script', title: '📖 Scenario 3', content: "Situation: You notice a candidate went to the same school as you.\nQuestion: Should this affect scoring?\n\n❌ No. Focus only on skills and competencies, not shared background." },
+                    { type: 'quiz_mcq', question: 'If a candidate shares personal information, what’s the best approach?', options: ['Ask follow-up personal questions', 'Focus on job-relevant abilities', 'Let it influence scoring', 'Ignore all responses'], correctAnswer: 'Focus on job-relevant abilities', feedback: { correct: 'Correct! Personal information should not affect your evaluation.', incorrect: 'The answer is B. Keep assessment objective and compliant.' } },
+                    { type: 'journal', prompt: 'Write down 1 challenging scenario you’ve faced or could face. How will you ensure your response is compliant?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Practice makes compliance automatic. Use structured questions, focus on role requirements, and document consistently.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nCreate 3 mock interview questions that are fully legally compliant and evaluate the same competencies as your previous non-compliant questions.' }
+                ]
+            }
         ]
     },
     {
