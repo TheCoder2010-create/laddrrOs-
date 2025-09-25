@@ -167,173 +167,49 @@ const getInitialModules = (): TrainingModule[] => [
             {
                 id: 'l1-2', title: 'Core Principles of Structured Interviewing', type: 'standard', isCompleted: false,
                 steps: [
-                    {
-                        type: 'script',
-                        title: '🎙️ Coach Intro',
-                        content: "Structured interviews aren’t just about asking the same questions. They’re built on 3 principles:\n\n- Consistency — ask the same core questions.\n- Relevance — questions tied to the job role.\n- Scoring — rate answers against clear criteria."
-                    },
-                    {
-                        type: 'script',
-                        title: '📊 Teaching Moment / Analogy',
-                        content: "Think of it like refereeing a game.\n\nEvery player follows the same rules.\nScores are based on agreed standards.\n\nThat’s how you keep the game — and the hiring process — fair."
-                    },
-                    {
-                        type: 'script',
-                        title: '📖 Mini-Case',
-                        content: "A financial services firm introduced structured scoring rubrics. Managers reported more confidence in hiring decisions because they had objective data to back them up."
-                    },
-                    {
-                        type: 'quiz_mcq',
-                        question: "Which principle ensures fairness across candidates?",
-                        options: ["Consistency", "Small talk", "Improvisation", "Intuition"],
-                        correctAnswer: "Consistency",
-                        feedback: {
-                            correct: "Yes! Consistency = fairness.",
-                            incorrect: "The answer is A. Consistency is the foundation of fairness."
-                        }
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "Which of these principles do you personally find hardest: consistency, relevance, or scoring? Why?"
-                    },
-                    {
-                        type: 'script',
-                        title: '📌 Coach Wrap-Up',
-                        content: "Consistency makes it fair. Relevance makes it useful. Scoring makes it actionable."
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "🚀 Stretch Activity\n\nPick one job in your team. Write 2 consistent, relevant questions you could ask every candidate for that role."
-                    }
+                    { type: 'script', title: '🎙️ Coach Intro', content: "Structured interviews aren’t just about asking the same questions. They’re built on 3 principles:\n\n- Consistency — ask the same core questions.\n- Relevance — questions tied to the job role.\n- Scoring — rate answers against clear criteria." },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: "Think of it like refereeing a game.\n\nEvery player follows the same rules.\nScores are based on agreed standards.\n\nThat’s how you keep the game — and the hiring process — fair." },
+                    { type: 'script', title: '📖 Mini-Case', content: "A financial services firm introduced structured scoring rubrics. Managers reported more confidence in hiring decisions because they had objective data to back them up." },
+                    { type: 'quiz_mcq', question: "Which principle ensures fairness across candidates?", options: ["Consistency", "Small talk", "Improvisation", "Intuition"], correctAnswer: "Consistency", feedback: { correct: "Yes! Consistency = fairness.", incorrect: "The answer is A. Consistency is the foundation of fairness." } },
+                    { type: 'journal', prompt: "Which of these principles do you personally find hardest: consistency, relevance, or scoring? Why?" },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: "Consistency makes it fair. Relevance makes it useful. Scoring makes it actionable." },
+                    { type: 'journal', prompt: "🚀 Stretch Activity\n\nPick one job in your team. Write 2 consistent, relevant questions you could ask every candidate for that role." }
                 ]
             },
             {
                 id: 'l1-3', title: 'Designing Structured Interview Questions', type: 'standard', isCompleted: false,
                 steps: [
-                    {
-                        type: 'script',
-                        title: '🎙️ Coach Intro',
-                        content: "Not all questions are created equal. Structured interviews rely on behavioral (‘Tell me about a time…’) and situational (‘What would you do if…’) questions. These dig into real skills, not just surface-level talk."
-                    },
-                    {
-                        type: 'script',
-                        title: '📊 Teaching Moment / Analogy',
-                        content: "Think of it like testing a driver. Asking ‘Are you good at driving?’ is useless. Making them take a road test shows you the truth.\n\nGood questions = road test for skills."
-                    },
-                    {
-                        type: 'script',
-                        title: '📖 Mini-Case',
-                        content: "A tech company replaced vague questions (‘What’s your greatest strength?’) with behavioral ones (‘Tell me about a time you solved a tough bug’). Result: much stronger signal about candidate skills."
-                    },
-                    {
-                        type: 'quiz_mcq',
-                        question: "Which of these is a behavioral interview question?",
-                        options: ["What’s your favorite movie?", "Tell me about a time you led a difficult project.", "Do you consider yourself detail-oriented?", "How would you feel about working weekends?"],
-                        correctAnswer: "Tell me about a time you led a difficult project.",
-                        feedback: {
-                            correct: "Correct — behavioral questions use past experiences as evidence.",
-                            incorrect: "The answer is B. Behavioral questions start with ‘Tell me about a time…’"
-                        }
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "Think of a role you hire for. What’s one strong behavioral question you could use?"
-                    },
-                    {
-                        type: 'script',
-                        title: '📌 Coach Wrap-Up',
-                        content: "Structured interviews use job-relevant, evidence-based questions. Behavior predicts future behavior."
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "🚀 Stretch Activity\n\nWrite one behavioral and one situational question for your next role. Save them for your question bank."
-                    }
+                    { type: 'script', title: '🎙️ Coach Intro', content: "Not all questions are created equal. Structured interviews rely on behavioral (‘Tell me about a time…’) and situational (‘What would you do if…’) questions. These dig into real skills, not just surface-level talk." },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: "Think of it like testing a driver. Asking ‘Are you good at driving?’ is useless. Making them take a road test shows you the truth.\n\nGood questions = road test for skills." },
+                    { type: 'script', title: '📖 Mini-Case', content: "A tech company replaced vague questions (‘What’s your greatest strength?’) with behavioral ones (‘Tell me about a time you solved a tough bug’). Result: much stronger signal about candidate skills." },
+                    { type: 'quiz_mcq', question: "Which of these is a behavioral interview question?", options: ["What’s your favorite movie?", "Tell me about a time you led a difficult project.", "Do you consider yourself detail-oriented?", "How would you feel about working weekends?"], correctAnswer: "Tell me about a time you led a difficult project.", feedback: { correct: "Correct — behavioral questions use past experiences as evidence.", incorrect: "The answer is B. Behavioral questions start with ‘Tell me about a time…’" } },
+                    { type: 'journal', prompt: "Think of a role you hire for. What’s one strong behavioral question you could use?" },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: "Structured interviews use job-relevant, evidence-based questions. Behavior predicts future behavior." },
+                    { type: 'journal', prompt: "🚀 Stretch Activity\n\nWrite one behavioral and one situational question for your next role. Save them for your question bank." }
                 ]
             },
             {
                 id: 'l1-4', title: 'Scoring and Evaluation Rubrics', type: 'standard', isCompleted: false,
                 steps: [
-                    {
-                        type: 'script',
-                        title: '🎙️ Coach Intro',
-                        content: "Even the best questions fail without clear scoring. Structured interviews use rubrics: 1–5 scales with defined behaviors at each level."
-                    },
-                    {
-                        type: 'script',
-                        title: '📊 Teaching Moment / Analogy',
-                        content: "Imagine grading an essay without a rubric. One teacher gives it an A, another a C. That’s chaos. A rubric makes evaluation fair and repeatable."
-                    },
-                    {
-                        type: 'script',
-                        title: '📖 Mini-Case',
-                        content: "A healthcare company trained managers to use 1–5 rubrics. Result: interviewer agreement went up 40%. That means less debate, faster decisions."
-                    },
-                    {
-                        type: 'quiz_mcq',
-                        question: "Why are rubrics important?",
-                        options: ["They allow gut-based scoring", "They reduce subjectivity", "They replace job descriptions", "They guarantee a perfect hire"],
-                        correctAnswer: "They reduce subjectivity",
-                        feedback: {
-                            correct: "Exactly — rubrics reduce subjectivity.",
-                            incorrect: "The answer is B. Rubrics keep scoring consistent and fair."
-                        }
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "Think about the last time you scored a candidate. Did you have a clear rubric, or did you rely on gut feel?"
-                    },
-                    {
-                        type: 'script',
-                        title: '📌 Coach Wrap-Up',
-                        content: "Rubrics = fairness + reliability. They turn vague answers into measurable data."
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "🚀 Stretch Activity\n\nDesign a 1–5 scoring rubric for one interview question. Write what ‘1’ looks like, what ‘5’ looks like, and fill in the middle."
-                    }
+                    { type: 'script', title: '🎙️ Coach Intro', content: "Even the best questions fail without clear scoring. Structured interviews use rubrics: 1–5 scales with defined behaviors at each level." },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: "Imagine grading an essay without a rubric. One teacher gives it an A, another a C. That’s chaos. A rubric makes evaluation fair and repeatable." },
+                    { type: 'script', title: '📖 Mini-Case', content: "A healthcare company trained managers to use 1–5 rubrics. Result: interviewer agreement went up 40%. That means less debate, faster decisions." },
+                    { type: 'quiz_mcq', question: "Why are rubrics important?", options: ["They allow gut-based scoring", "They reduce subjectivity", "They replace job descriptions", "They guarantee a perfect hire"], correctAnswer: "They reduce subjectivity", feedback: { correct: "Exactly — rubrics reduce subjectivity.", incorrect: "The answer is B. Rubrics keep scoring consistent and fair." } },
+                    { type: 'journal', prompt: "Think about the last time you scored a candidate. Did you have a clear rubric, or did you rely on gut feel?" },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: "Rubrics = fairness + reliability. They turn vague answers into measurable data." },
+                    { type: 'journal', prompt: "🚀 Stretch Activity\n\nDesign a 1–5 scoring rubric for one interview question. Write what ‘1’ looks like, what ‘5’ looks like, and fill in the middle." }
                 ]
             },
             {
                 id: 'l1-5', title: 'Reducing Bias in Hiring', type: 'standard', isCompleted: false,
                 steps: [
-                    {
-                        type: 'script',
-                        title: '🎙️ Coach Intro',
-                        content: "Bias creeps in when interviews are unstructured. Structured interviews help — but only if you stay disciplined. Bias isn’t always obvious; it’s often unconscious."
-                    },
-                    {
-                        type: 'script',
-                        title: '📊 Teaching Moment / Analogy',
-                        content: "Think of it like a GPS. Without structure, you drift off course without noticing. Structure = a route that keeps you honest."
-                    },
-                    {
-                        type: 'script',
-                        title: '📖 Mini-Case',
-                        content: "A consulting firm trained managers to stick to structured questions and scoring. Over 18 months, their gender balance in new hires improved by 20% — not by lowering the bar, but by reducing bias."
-                    },
-                    {
-                        type: 'quiz_mcq',
-                        question: "Which practice reduces bias in interviews?",
-                        options: ["Asking every candidate different questions", "Sticking to structured questions and rubrics", "Relying on first impressions", "Letting gut feel decide"],
-                        correctAnswer: "Sticking to structured questions and rubrics",
-                        feedback: {
-                            correct: "Yes — consistency and rubrics reduce bias.",
-                            incorrect: "The correct answer is B. Structure keeps bias out."
-                        }
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "Think of a time when bias — yours or someone else’s — may have influenced a hiring decision. How could structure have reduced it?"
-                    },
-                    {
-                        type: 'script',
-                        title: '📌 Coach Wrap-Up',
-                        content: "Bias is sneaky. Structure protects against it by forcing consistency and fairness. That’s how you build diverse, high-performing teams."
-                    },
-                    {
-                        type: 'journal',
-                        prompt: "🚀 Stretch Activity\n\nReview your last interview notes. Did you evaluate everyone against the same criteria, or were impressions creeping in? Rewrite your notes with a structured rubric lens."
-                    }
+                    { type: 'script', title: '🎙️ Coach Intro', content: "Bias creeps in when interviews are unstructured. Structured interviews help — but only if you stay disciplined. Bias isn’t always obvious; it’s often unconscious." },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: "Think of it like a GPS. Without structure, you drift off course without noticing. Structure = a route that keeps you honest." },
+                    { type: 'script', title: '📖 Mini-Case', content: "A consulting firm trained managers to stick to structured questions and scoring. Over 18 months, their gender balance in new hires improved by 20% — not by lowering the bar, but by reducing bias." },
+                    { type: 'quiz_mcq', question: "Which practice reduces bias in interviews?", options: ["Asking every candidate different questions", "Sticking to structured questions and rubrics", "Relying on first impressions", "Letting gut feel decide"], correctAnswer: "Sticking to structured questions and rubrics", feedback: { correct: "Yes — consistency and rubrics reduce bias.", incorrect: "The correct answer is B. Structure keeps bias out." } },
+                    { type: 'journal', prompt: "Think of a time when bias — yours or someone else’s — may have influenced a hiring decision. How could structure have reduced it?" },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: "Bias is sneaky. Structure protects against it by forcing consistency and fairness. That’s how you build diverse, high-performing teams." },
+                    { type: 'journal', prompt: "🚀 Stretch Activity\n\nReview your last interview notes. Did you evaluate everyone against the same criteria, or were impressions creeping in? Rewrite your notes with a structured rubric lens." }
                 ]
             }
         ]
@@ -395,7 +271,15 @@ const getInitialModules = (): TrainingModule[] => [
             },
             {
                 id: 'l2-5', title: 'Practice, Feedback, and Continuous Improvement', type: 'practice', isCompleted: false,
-                steps: [],
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Behavioral interviewing is a skill. You improve by:\n\nPracticing questions and probing\nScoring consistently\nIncorporating feedback\nReflecting on your own biases and assumptions' },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Like learning an instrument — you won’t master it by reading a book. You need practice, feedback, and repetition.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A company implemented mock interviews internally. Interviewers practiced STAR questions, scored each other, and gave feedback. Six months later, hiring accuracy increased 30%.' },
+                    { type: 'quiz_mcq', question: 'Which action improves interviewer skill the most?', options: ['Asking random questions', 'Practicing, scoring, and reflecting', 'Relying on intuition', 'Watching interviews passively'], correctAnswer: 'Practicing, scoring, and reflecting', feedback: { correct: 'Correct. Skill develops through active practice and reflection.', incorrect: 'The answer is B. Deliberate practice + scoring = improvement.' } },
+                    { type: 'journal', prompt: 'Commit to a weekly practice: either mock interviews, reviewing notes, or evaluating STAR answers. What will you do first?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Behavioral interviewing is a craft. Practice + structured evaluation = expertise.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nSchedule a mock interview with a colleague. Use STAR, probing, and scoring. Write a reflection on your strengths and areas to improve.' }
+                ],
                 practiceScenario: { persona: 'Candidate', scenario: "This is a practice session for behavioral interviewing. Ask the AI candidate, 'Tell me about a time you had to handle a difficult stakeholder.' Your goal is to get a complete STAR answer, probing effectively for details.", difficulty: 'neutral' }
             }
         ]
@@ -407,12 +291,64 @@ const getInitialModules = (): TrainingModule[] => [
         duration: 30,
         isCompleted: false,
         lessons: [
-            { id: 'l3-1', title: 'Spot the Bias', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Common biases include: Confirmation, Similarity, and Halo/Horn effect.'}] },
-            { id: 'l3-2', title: 'Bias Interruption Techniques', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Use scorecards, ask all candidates the same core questions, and ensure a diverse interview panel.'}] },
-            { id: 'l3-3', title: 'Inclusive Interviewing', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Never ask about a candidate\'s family, religion, personal life, or other protected characteristics.'}] },
             {
-                id: 'l3-4', title: 'Reflection', type: 'standard', isCompleted: false,
-                steps: [{ type: 'journal', prompt: "Write down one bias you will consciously watch for in yourself during your next interview." }]
+                id: 'l3-1', title: 'Understanding Bias in Interviews', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Bias is a natural human tendency. In interviews, unconscious bias can distort your judgment, favor some candidates, or disadvantage others. Recognizing bias is the first step to reducing it.' },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Think of bias like colored glasses. If you don’t notice the tint, everything you see is slightly skewed. Removing or adjusting those glasses gives a clearer, fairer view.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A tech company found interviewers favored candidates from their own alma mater. After bias awareness training, interviewers consciously evaluated candidates based on competencies, not backgrounds.' },
+                    { type: 'quiz_mcq', question: 'What is unconscious bias?', options: ['Intentional discrimination', 'Automatic, unintentional mental shortcuts', 'Strict adherence to rules', 'Following the STAR method'], correctAnswer: 'Automatic, unintentional mental shortcuts', feedback: { correct: 'Correct! Unconscious biases happen without awareness but still influence decisions.', incorrect: 'The answer is B. Bias is often invisible and automatic, not intentional.' } },
+                    { type: 'journal', prompt: 'Recall your last interview. Can you identify any moments where bias may have influenced your judgment?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Bias is inevitable, but awareness and structured methods help reduce its impact.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nWrite down 2 biases you think might affect your interviews and 1 strategy to mitigate each.' }
+                ]
+            },
+            {
+                id: 'l3-2', title: 'Common Interview Biases', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Let’s explore the biases most likely to appear in interviews and how to counter them.' },
+                    { type: 'script', title: '📊 Bias Breakdown', content: 'Confirmation Bias\n\nDefinition: Seeking info that confirms your first impression.\nMitigation: Follow a structured question set and score each answer objectively.\n\nHalo/Horn Effect\n\nDefinition: One positive/negative trait dominates your judgment.\nMitigation: Evaluate competencies individually.\n\nSimilarity Bias\n\nDefinition: Favoring candidates with similar backgrounds or interests.\nMitigation: Focus on job-relevant criteria, not personal similarities.\n\nRecency Bias\n\nDefinition: Giving disproportionate weight to the last candidate.\nMitigation: Take notes and review previous candidates before scoring.\n\nAffinity Bias\n\nDefinition: Favoring those who share your opinions or personality.\nMitigation: Use objective metrics and a scoring rubric.' },
+                    { type: 'quiz_mcq', question: 'Which bias occurs when one strong trait influences all judgments?', options: ['Confirmation', 'Halo/Horn', 'Recency', 'Similarity'], correctAnswer: 'Halo/Horn', feedback: { correct: 'Correct! The halo/horn effect makes one trait dominate perception.', incorrect: 'The answer is B. Evaluate each competency independently.' } },
+                    { type: 'journal', prompt: 'Identify a bias you think is most common in your interviews. How have you unintentionally allowed it to affect your judgment?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Recognizing common biases is the first step; applying structured mitigation strategies ensures fairness.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nPick one bias. Write a short strategy for counteracting it in every interview you conduct this week.' }
+                ]
+            },
+            {
+                id: 'l3-3', title: 'Structural Bias Mitigation Techniques', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Structure is your best defense against bias. The more consistent and objective your process, the less influence bias has.' },
+                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Imagine a scale. Bias is like uneven weights. Structured interviews balance the scale.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A sales organization implemented standard scoring rubrics and identical question sets. After six months, employee diversity and performance metrics improved significantly.' },
+                    { type: 'quiz_mcq', question: 'Which is a structural bias mitigation technique?', options: ['Using different questions for each candidate', 'Blind resume reviews', 'Relying on gut feeling', 'Asking personal questions'], correctAnswer: 'Blind resume reviews', feedback: { correct: 'Correct! Blind reviews and structured rubrics reduce bias.', incorrect: 'The answer is B. Objective, standardized methods counter bias effectively.' } },
+                    { type: 'journal', prompt: 'Which structural change can you implement immediately to reduce bias in your interviews?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Structure = fairness. Standardized questions and scoring rubrics reduce unconscious bias influence.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nCreate a simple scoring rubric for one of your commonly asked behavioral questions.' }
+                ]
+            },
+            {
+                id: 'l3-4', title: 'Real-Time Bias Interruption Techniques', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Even with structure, bias can creep in. Real-time techniques help you pause and reset during interviews.' },
+                    { type: 'script', title: '📊 Techniques', content: 'Self-Check: Ask, ‘Am I favoring this candidate based on irrelevant factors?’\n\nPause & Reflect: Take a 5-second mental pause before scoring.\n\nObjective Notes: Record quotes or behaviors before giving a rating.\n\nUse Comparisons: Evaluate candidates against competency benchmarks, not each other.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'During a panel interview, one interviewer realized they were favoring a candidate with similar hobbies. They paused, reviewed the scoring rubric, and corrected their evaluation.' },
+                    { type: 'quiz_mcq', question: 'What is the best immediate action if you notice bias creeping in?', options: ['Ignore it', 'Pause and check the rubric', 'Ask the candidate personal questions', 'Score based on gut feeling'], correctAnswer: 'Pause and check the rubric', feedback: { correct: 'Correct! Pause and review your rubric or notes to counter bias immediately.', incorrect: 'The answer is B. Conscious reflection mitigates bias impact.' } },
+                    { type: 'journal', prompt: 'Think of a bias you notice in yourself. How will you pause and interrupt it in future interviews?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Bias interruption is about awareness and action — a conscious habit.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nDuring your next interview, note any moments you consciously applied a bias interruption technique.' }
+                ]
+            },
+            {
+                id: 'l3-5', title: 'Continuous Improvement and Accountability', type: 'practice', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Bias awareness isn’t one-off. Continuous improvement and accountability help maintain fair interviewing practices.' },
+                    { type: 'script', title: '📊 Strategies', content: 'Peer Review: Regularly review each other’s interview notes.\n\nCalibration Meetings: Compare scores across interviewers and align standards.\n\nFeedback Loops: Incorporate feedback from candidates and hiring teams.\n\nSelf-Reflection Journals: Record and review your interviews to spot patterns.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A consulting firm implemented quarterly calibration sessions. Interviewers became more aligned, consistent scoring increased, and hiring outcomes improved.' },
+                    { type: 'quiz_mcq', question: 'Which action supports continuous bias mitigation?', options: ['Occasional reminders only', 'Peer review and calibration', 'Relying on memory', 'Ignoring feedback'], correctAnswer: 'Peer review and calibration', feedback: { correct: 'Correct! Continuous checks and accountability prevent bias drift.', incorrect: 'The answer is B. Regular calibration and feedback are essential.' } },
+                    { type: 'journal', prompt: 'What one accountability mechanism will you implement immediately to track your own bias reduction?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Bias mitigation is a journey. Structure, reflection, and peer accountability create lasting fairness.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nSet up a bi-weekly review with a peer to discuss scoring alignment and bias reflections.' }
+                ]
             }
         ]
     },
