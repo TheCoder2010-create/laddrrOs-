@@ -60,15 +60,15 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   ];
 
   useEffect(() => {
-    // When the path changes, check if the new path is a child of any sub-menu.
-    // If it is, ensure that sub-menu is open.
     const activeSubMenu = menuItems.find(item => 
       item.children?.some(child => pathname.startsWith(child.href))
     );
     if (activeSubMenu && !openSubMenus.includes(activeSubMenu.label)) {
       setOpenSubMenus(prev => [...prev, activeSubMenu.label]);
     }
-  }, [pathname, menuItems, openSubMenus]);
+    // No dependency on openSubMenus to prevent re-opening a manually closed menu on re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   useEffect(() => {
     if (sidebarState === 'collapsed') {
