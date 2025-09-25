@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getActiveCoachingPlansForSupervisor, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn, addCustomCoachingPlan } from '@/services/feedback-service';
-import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
+import type { CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
 import { useRole } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -436,10 +436,10 @@ export default function DevelopmentPlanWidget() {
                 </CardHeader>
                 <CardContent>
                     {activePlans.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
-                            <NotebookPen className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold">No Active Plans</h3>
-                            <p className="text-muted-foreground mt-1">Accept an AI recommendation or add your own goal to get started.</p>
+                        <div className="flex flex-col items-center justify-center text-center p-6 border-2 border-dashed rounded-lg">
+                            <NotebookPen className="h-8 w-8 text-muted-foreground mb-3" />
+                            <h3 className="text-md font-semibold">No Active Plans</h3>
+                            <p className="text-muted-foreground text-sm mt-1">Accept an AI recommendation or add your own goal.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -501,5 +501,7 @@ export default function DevelopmentPlanWidget() {
         </>
     );
 }
+
+    
 
     
