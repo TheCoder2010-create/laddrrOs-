@@ -40,6 +40,35 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [isNominated, setIsNominated] = useState(false);
   const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
   const { state: sidebarState } = useSidebar();
+  
+  const menuItems = [
+    { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
+    { href: '/1-on-1', icon: <CheckSquare className="text-green-500"/>, label: '1-on-1' },
+    { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
+    ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
+    ...(['Manager', 'HR Head'].includes(currentRole) ? [{ 
+        href: '/managers-lab', 
+        icon: <FlaskConical className="text-orange-500"/>, 
+        label: "Manager's Lab",
+        children: [
+           { href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" },
+           { href: '/leadership', icon: <LeadershipIcon className="text-red-500"/>, label: "Leadership" }
+        ]
+    }] : []),
+    ...(!['Manager', 'HR Head'].includes(currentRole) && isNominated ? [{ href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
+    { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
+  ];
+
+  useEffect(() => {
+    // When the path changes, check if the new path is a child of any sub-menu.
+    // If it is, ensure that sub-menu is open.
+    const activeSubMenu = menuItems.find(item => 
+      item.children?.some(child => pathname.startsWith(child.href))
+    );
+    if (activeSubMenu && !openSubMenus.includes(activeSubMenu.label)) {
+      setOpenSubMenus(prev => [...prev, activeSubMenu.label]);
+    }
+  }, [pathname, menuItems, openSubMenus]);
 
   useEffect(() => {
     if (sidebarState === 'collapsed') {
@@ -108,27 +137,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
     };
   }, [fetchData]);
-
-  const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
-  const isManagerial = ['Manager', 'HR Head'].includes(currentRole);
-  
-  const menuItems = [
-    { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
-    { href: '/1-on-1', icon: <CheckSquare className="text-green-500"/>, label: '1-on-1' },
-    { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
-    ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    ...(isManagerial ? [{ 
-        href: '/managers-lab', 
-        icon: <FlaskConical className="text-orange-500"/>, 
-        label: "Manager's Lab",
-        children: [
-           { href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" },
-           { href: '/leadership', icon: <LeadershipIcon className="text-red-500"/>, label: "Leadership" }
-        ]
-    }] : []),
-    ...(!isManagerial && isNominated ? [{ href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
-    { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
-  ];
   
   const toggleSubMenu = (label: string) => {
     setOpenSubMenus(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
@@ -137,7 +145,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const renderMenuItem = (item: any) => {
      if (item.children) {
       const isSubMenuOpen = openSubMenus.includes(item.label);
-      const isParentActive = pathname.startsWith(item.href);
+      const isParentActive = item.children.some((child: any) => pathname.startsWith(child.href));
 
       return (
         <SidebarMenuItem key={item.label} className="flex flex-col">
