@@ -435,6 +435,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const [selectedNominee, setSelectedNominee] = useState('');
     const [targetRole, setTargetRole] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     const handleNominate = async () => {
         if (!role || !selectedNominee || !targetRole) {
@@ -446,6 +447,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
             await nominateUser(role, selectedNominee as Role, targetRole);
             toast({ title: 'Nomination Submitted!', description: `${roleUserMapping[selectedNominee as Role]?.name} has been enrolled.` });
             onNomination();
+            setIsOpen(false);
         } catch (error) {
             console.error("Failed to nominate user", error);
             toast({ variant: 'destructive', title: 'Nomination Failed' });
@@ -455,7 +457,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     };
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button>
                     <PlusCircle className="mr-2" /> Nominate
@@ -476,7 +478,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                                 <SelectValue placeholder="Select a team member" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Object.values(roleUserMapping).filter(user => user.role !== role && user.role !== 'HR Head' && user.role !== 'Anonymous').map(user => (
+                                {Object.values(roleUserMapping).filter(user => user.role !== role && user.role !== 'HR Head' && user.role !== 'Anonymous' && user.role !== 'Manager').map(user => (
                                     <SelectItem key={user.role} value={user.role}>
                                         {user.name} ({user.role})
                                     </SelectItem>
@@ -513,15 +515,11 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                     </div>
                 </div>
                 <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="ghost">Cancel</Button>
-                    </DialogClose>
-                    <DialogClose asChild>
-                        <Button onClick={handleNominate} disabled={isSubmitting || !selectedNominee || !targetRole}>
-                            {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
-                            Submit Nomination
-                        </Button>
-                    </DialogClose>
+                    <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleNominate} disabled={isSubmitting || !selectedNominee || !targetRole}>
+                        {isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                        Submit Nomination
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -656,7 +654,7 @@ function ManagerView() {
                 {role === 'Manager' && <NominateDialog onNomination={fetchNominations} />}
             </div>
 
-             <Card>
+             <Card className="w-fit">
                 <CardHeader>
                     <CardTitle>Your Interviewer Bench</CardTitle>
                 </CardHeader>
