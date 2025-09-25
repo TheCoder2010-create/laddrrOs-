@@ -224,44 +224,84 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
             </div>
         )
     }
-
-    if(activeLesson !== null && currentLesson && currentStep) {
-        return (
-             <div className="p-4 md:p-8 space-y-6">
-                <Card className="shadow-lg">
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <CardTitle className="flex items-center gap-3 text-2xl">{currentLesson.title}</CardTitle>
-                            <Button variant="ghost" onClick={() => setActiveLesson(null)}>
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Modules
+    
+    if (activeLesson !== null && currentLesson) {
+        if (currentLesson.type === 'practice' && currentLesson.steps?.length === 0) {
+            return (
+                 <div className="p-4 md:p-8 space-y-6">
+                    <Card className="shadow-lg">
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="flex items-center gap-3 text-2xl">{currentLesson.title}</CardTitle>
+                                <Button variant="ghost" onClick={() => setActiveLesson(null)}>
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Modules
+                                </Button>
+                            </div>
+                            <CardDescription>Module {activeLesson.moduleIndex + 1}: {currentModule?.title}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="text-center py-12">
+                             <h3 className="text-xl font-semibold">Ready to Practice?</h3>
+                            <p className="text-muted-foreground mt-2">This is a hands-on simulation. When you're ready, start the session to practice your skills with an AI candidate.</p>
+                            <Button className="mt-6" onClick={() => handleStartPractice(activeLesson.moduleIndex, activeLesson.lessonIndex)}>
+                                Start Practice Session
                             </Button>
-                        </div>
-                        <CardDescription>Module {activeLesson.moduleIndex + 1}: {currentModule?.title}</CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent>
-                        <div className="p-4 border bg-muted/50 rounded-lg min-h-[200px]">
-                            <LessonStepComponent step={currentStep} onComplete={handleStepComplete} />
-                        </div>
-                    </CardContent>
-                    
-                     <CardFooter className="flex justify-between items-center">
-                        <Button
-                            variant="outline"
-                            onClick={() => setCurrentStepIndex(p => p - 1)}
-                            disabled={currentStepIndex === 0}
-                        >
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                        </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            )
+        }
+        
+        if (currentStep) {
+            return (
+                <div className="p-4 md:p-8 space-y-6">
+                    <Card className="shadow-lg">
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="flex items-center gap-3 text-2xl">{currentLesson.title}</CardTitle>
+                                <Button variant="ghost" onClick={() => setActiveLesson(null)}>
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Modules
+                                </Button>
+                            </div>
+                            <CardDescription>Module {activeLesson.moduleIndex + 1}: {currentModule?.title}</CardDescription>
+                        </CardHeader>
                         
-                        {(currentStep.type === 'script' || currentStep.type === 'journal') && (
-                            <Button onClick={() => handleStepComplete()}>
-                                Next <ArrowRight className="ml-2 h-4 w-4" />
+                        <CardContent>
+                            <div className="p-4 border bg-muted/50 rounded-lg min-h-[200px]">
+                                <LessonStepComponent step={currentStep} onComplete={handleStepComplete} />
+                            </div>
+                        </CardContent>
+                        
+                        <CardFooter className="flex justify-between items-center">
+                            <Button
+                                variant="outline"
+                                onClick={() => setCurrentStepIndex(p => p - 1)}
+                                disabled={currentStepIndex === 0}
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Back
                             </Button>
-                        )}
-                    </CardFooter>
+                            
+                            {(currentStep.type === 'script' || currentStep.type === 'journal') && (
+                                <Button onClick={() => handleStepComplete()}>
+                                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            )}
+                        </CardFooter>
+                    </Card>
+                </div>
+            )
+        }
+         
+        return (
+            <div className="p-4 md:p-8 space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Loading step...</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-48 w-full" />
+                    </CardContent>
                 </Card>
-             </div>
+            </div>
         )
     }
 
@@ -304,12 +344,10 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                         <AccordionItem key={module.id} value={`module-${moduleIndex}`} className="border rounded-lg bg-card shadow-sm">
                             <AccordionTrigger className="p-4 hover:no-underline">
                                 <div className="flex-1 text-left">
-                                    <div className="flex items-center gap-3">
-                                        <p className="text-lg font-semibold">{`Module ${moduleIndex + 1}: ${module.title}`}</p>
-                                        {module.isCompleted && <Badge variant="success">Completed</Badge>}
-                                    </div>
+                                    <p className="text-lg font-semibold">{`Module ${moduleIndex + 1}: ${module.title}`}</p>
                                     <p className="text-sm text-muted-foreground">{module.description}</p>
                                 </div>
+                                {module.isCompleted && <Badge variant="success" className="ml-4">Completed</Badge>}
                             </AccordionTrigger>
                             <AccordionContent className="p-4 border-t">
                                 <div className="space-y-2">
@@ -706,7 +744,6 @@ export default function InterviewerLabPage() {
         );
     }
     
-    // Managerial roles see the ManagerView. Others see LearnerView if nominated.
     const isManagerialRole = ['Manager', 'HR Head'].includes(role);
     if (isManagerialRole) {
         return (
@@ -729,4 +766,3 @@ export default function InterviewerLabPage() {
         </DashboardLayout>
     );
 }
-
