@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale, MessagesSquare, FlaskConical, Handshake } from 'lucide-react';
+import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale, MessagesSquare, FlaskConical } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
@@ -68,7 +68,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setOpenSubMenus(prev => [...prev, activeSubMenu.label]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, menuItems]);
+  }, [pathname]);
 
   useEffect(() => {
     if (sidebarState === 'collapsed') {
