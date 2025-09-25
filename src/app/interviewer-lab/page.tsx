@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { FlaskConical, PlusCircle, Users, Briefcase, UserCheck, Loader2, Send, Info, CheckCircle, BookOpen, Video, FileQuestion, Gamepad2, Play, ArrowLeft, ArrowRight, Book, CheckSquare } from 'lucide-react';
-import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonActivity } from '@/services/interviewer-lab-service';
+import { getNominationsForManager, nominateUser, getNominationForUser, type Nomination, completeModule, savePreAssessment, type TrainingModule, type TrainingLesson, saveLessonResult, type LessonActivity, savePostAssessment } from '@/services/interviewer-lab-service';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { NetsInitialInput, InterviewerAnalysisOutput } from '@/ai/schemas/nets-schemas';
 import SimulationArena from '@/components/simulation-arena';
@@ -281,6 +281,14 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
         });
     };
     
+    const handleStartPostAssessment = () => {
+        setSimulationConfig({
+            persona: 'Candidate',
+            scenario: `This is the final post-assessment mock interview for a ${nomination.targetInterviewRole} role. Please conduct a full interview.`,
+            difficulty: 'neutral',
+        });
+    };
+
     const handleStartPractice = (lesson: TrainingLesson) => {
         if (lesson.practiceScenario) {
             setCurrentPracticeLesson(lesson);
@@ -330,6 +338,12 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                     title: "Pre-Assessment Complete!",
                     description: "Your baseline score has been saved. You can now begin your training modules.",
                 });
+            } else if (nomination.status === 'Post-assessment pending') {
+                 await savePostAssessment(nomination.id, analysisResult);
+                 toast({
+                    title: "Post-Assessment Complete!",
+                    description: "Your final score has been saved. Checking for certification...",
+                });
             } else if (currentPracticeLesson && currentModule) {
                 // This was a practice session for a module
                 await saveLessonResult(nomination.id, currentModule.id, currentPracticeLesson.id, analysisResult);
@@ -367,7 +381,11 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                  <SimulationArena 
                     initialConfig={simulationConfig} 
                     onExit={handleExitSimulation} 
-                    arenaTitle={nomination.status === 'Pre-assessment pending' ? "Pre-Assessment Mock Interview" : `Practice: ${currentModule?.title}`}
+                    arenaTitle={
+                        nomination.status === 'Pre-assessment pending' ? "Pre-Assessment Mock Interview" 
+                        : nomination.status === 'Post-assessment pending' ? "Post-Assessment Mock Interview"
+                        : `Practice: ${currentModule?.title}`
+                    }
                 />
             </div>
         )
@@ -382,7 +400,9 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                         My Interviewer Lab
                     </CardTitle>
                     <CardDescription className="text-lg text-muted-foreground">
-                        {allModulesCompleted ? "You've completed your training! It's time for the final assessment." : "You've been nominated for Laddrr's Interviewer Coaching Program. Complete the modules below to get certified."}
+                        {nomination.status === 'Certified' ? "Congratulations, you are now a certified interviewer!" :
+                         allModulesCompleted ? "You've completed your training! It's time for the final assessment." : 
+                         "You've been nominated for Laddrr's Interviewer Coaching Program. Complete the modules below to get certified."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -411,15 +431,38 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                  </div>
             )}
             
-            {allModulesCompleted && (
+            {nomination.status === 'Post-assessment pending' && allModulesCompleted && (
                 <Card className="border-primary/50 mt-8">
                     <CardHeader className="text-center">
                         <CardTitle>Training Complete!</CardTitle>
                         <CardDescription>You've completed all the training modules. It's time for your final assessment to get certified.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex justify-center">
-                        <Button size="lg" className="bg-primary hover:bg-primary/90">
+                        <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={handleStartPostAssessment}>
                            Begin Post-Assessment
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {nomination.status === 'Certified' && (
+                 <Card className="border-green-500/50 mt-8 bg-green-500/5">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-green-600 dark:text-green-400">Certified!</CardTitle>
+                        <CardDescription>You passed the post-assessment and are now a certified interviewer. Great work!</CardDescription>
+                    </CardHeader>
+                </Card>
+            )}
+
+            {nomination.status === 'Retry Needed' && (
+                 <Card className="border-destructive/50 mt-8 bg-destructive/5">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-destructive">Retry Needed</CardTitle>
+                        <CardDescription>You did not meet the required score improvement on the post-assessment. Please review your modules and try again.</CardDescription>
+                    </CardHeader>
+                     <CardContent className="flex justify-center">
+                        <Button size="lg" variant="destructive" onClick={handleStartPostAssessment}>
+                           Retry Post-Assessment
                         </Button>
                     </CardContent>
                 </Card>

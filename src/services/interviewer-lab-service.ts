@@ -125,7 +125,7 @@ const getInitialModules = (): TrainingModule[] => [
             {
                 id: 'l1-1', title: 'Why Structure Matters', type: 'reading', isCompleted: false,
                 script: "Unstructured interviews feel natural but are unreliable. Structured interviews predict performance better, reduce bias, and provide legal protection.",
-                activity: { type: 'quiz_mcq', question: "Which interview type is most legally defensible?", options: ["Unstructured", "Semi-structured", "Structured"], correctAnswer: "Structured" }
+                activity: { type: 'quiz_mcq', question: "Which interview type is most defensible?", options: ["Unstructured", "Semi-structured", "Structured"], correctAnswer: "Structured" }
             },
             {
                 id: 'l1-2', title: 'Interview Phases', type: 'interactive', isCompleted: false,
@@ -137,7 +137,7 @@ const getInitialModules = (): TrainingModule[] => [
                 }
             },
             {
-                id: 'l1-3', title: 'Active Listening', type: 'interactive', isCompleted: false,
+                id: 'l1-3', title: 'Active Listening', type: 'reading', isCompleted: false,
                 script: "Good interviewers follow the 80/20 rule: the candidate should talk 80% of the time. Use reflective listening to paraphrase answers and confirm your understanding. Don't be afraid to use silence to allow the candidate to think.",
                 activity: { type: 'quiz_mcq', question: "A candidate gives a long-winded answer. What should you do?", options: ["Interrupt and finish their sentence for them", "Paraphrase their key points to confirm understanding", "Immediately skip to the next question"], correctAnswer: "Paraphrase their key points to confirm understanding" }
             }
@@ -193,7 +193,7 @@ const getInitialModules = (): TrainingModule[] => [
                 activity: { type: 'checklist', prompt: "Select which two strategies you’ll commit to using in your next interview:", options: ["Use a scorecard for every interview", "Ask the same core set of questions to all candidates", "Include a diverse panel of interviewers"] }
             },
             {
-                id: 'l3-3', title: 'Inclusive Interviewing', type: 'reading', isCompleted: false,
+                id: 'l3-3', title: 'Inclusive Interviewing', type: 'interactive', isCompleted: false,
                 script: "Never ask about a candidate's family, religion, personal life, or other protected characteristics. Always frame questions around the requirements of the role.",
                 activity: {
                     type: 'branching_scenario', prompt: "A candidate says: 'I may need some flexibility for childcare support.' What do you say?",
@@ -372,6 +372,36 @@ export async function savePreAssessment(nominationId: string, analysis: Intervie
         saveToStorage(INTERVIEWER_LAB_KEY, allNominations);
     }
 }
+
+/**
+ * Saves the result of a post-assessment and determines certification.
+ */
+export async function savePostAssessment(nominationId: string, analysis: InterviewerAnalysisOutput): Promise<void> {
+    const allNominations = getFromStorage<Nomination>(INTERVIEWER_LAB_KEY);
+    const index = allNominations.findIndex(n => n.id === nominationId);
+
+    if (index !== -1) {
+        const nomination = allNominations[index];
+        nomination.scorePost = analysis.overallScore;
+        nomination.analysisPost = analysis;
+        nomination.lastUpdated = new Date().toISOString();
+
+        // Certification Logic: Must show at least 15% improvement
+        const preScore = nomination.scorePre || 0;
+        const postScore = nomination.scorePost;
+        const improvement = preScore > 0 ? ((postScore - preScore) / preScore) * 100 : 100;
+
+        if (postScore >= 75 && improvement >= 15) {
+            nomination.status = 'Certified';
+            nomination.certified = true;
+        } else {
+            nomination.status = 'Retry Needed';
+        }
+
+        saveToStorage(INTERVIEWER_LAB_KEY, allNominations);
+    }
+}
+
 
 /**
  * Marks a training module as complete for a given nomination.
