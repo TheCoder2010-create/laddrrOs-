@@ -436,11 +436,7 @@ export default function DevelopmentPlanWidget() {
                 </CardHeader>
                 <CardContent>
                     {activePlans.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center text-center p-6 border-2 border-dashed rounded-lg">
-                            <NotebookPen className="h-8 w-8 text-muted-foreground mb-3" />
-                            <h3 className="text-md font-semibold">No Active Plans</h3>
-                            <p className="text-muted-foreground text-sm mt-1">Accept an AI recommendation or add your own goal.</p>
-                        </div>
+                        <div className="p-1"></div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                             {activePlans.map(({ historyId, rec }) => (
