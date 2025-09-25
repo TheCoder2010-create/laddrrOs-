@@ -22,6 +22,7 @@ import { getNominationForUser } from '@/services/interviewer-lab-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { cn } from '@/lib/utils';
+import { LeadershipIcon } from './ui/leadership-icon';
 
 
 interface MainSidebarProps {
@@ -122,7 +123,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         label: "Manager's Lab",
         children: [
            { href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" },
-           { href: '/leadership', icon: <Scale className="text-red-500"/>, label: "Leadership" }
+           { href: '/leadership', icon: <LeadershipIcon className="text-red-500"/>, label: "Leadership" }
         ]
     }] : []),
     ...(!isManagerial && isNominated ? [{ href: '/interviewer-lab', icon: <Handshake className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
