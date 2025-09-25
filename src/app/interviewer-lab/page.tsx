@@ -95,35 +95,23 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
     
     // Simulation state
     const [simulationConfig, setSimulationConfig] = useState<NetsInitialInput | null>(null);
-    const [currentPracticeLesson, setCurrentPracticeLesson] = useState<TrainingLesson | null>(null);
-
-    // Lesson navigation state
-    const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
-    const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-    const [currentStepIndex, setCurrentStepIndex] = useState(0);
     
+    // Lesson navigation state
+    const [activeLesson, setActiveLesson] = useState<{ moduleIndex: number; lessonIndex: number } | null>(null);
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
     useEffect(() => {
         setNomination(initialNomination);
-        if (initialNomination.status !== 'Pre-assessment pending') {
-            const firstUncompletedModuleIndex = initialNomination.modules.findIndex(m => !m.isCompleted);
-            const newModuleIndex = firstUncompletedModuleIndex >= 0 ? firstUncompletedModuleIndex : initialNomination.modules.length - 1;
-            setCurrentModuleIndex(newModuleIndex);
-            
-            const firstUncompletedLessonIndex = initialNomination.modules[newModuleIndex]?.lessons.findIndex(l => !l.isCompleted);
-            const newLessonIndex = firstUncompletedLessonIndex >= 0 ? firstUncompletedLessonIndex : 0;
-            setCurrentLessonIndex(newLessonIndex);
-            setCurrentStepIndex(0); // Always start from the first step
-        }
     }, [initialNomination]);
 
-    const currentModule = nomination.modules[currentModuleIndex];
-    const currentLesson = currentModule?.lessons[currentLessonIndex];
+    const currentModule = activeLesson ? nomination.modules[activeLesson.moduleIndex] : null;
+    const currentLesson = currentModule && activeLesson ? currentModule.lessons[activeLesson.lessonIndex] : null;
     const currentStep = currentLesson?.steps?.[currentStepIndex];
     const allModulesCompleted = nomination.modules.every(m => m.isCompleted);
 
     const handleStartPreAssessment = () => {
         setSimulationConfig({
-            persona: 'Candidate', // The AI plays a generic candidate
+            persona: 'Candidate',
             scenario: `This is a pre-assessment mock interview for a ${nomination.targetInterviewRole} role. I am the interviewer, and you are the candidate. Please answer my questions as a candidate would.`,
             difficulty: 'neutral',
         });
@@ -136,45 +124,47 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
             difficulty: 'neutral',
         });
     };
-
-    const handleStartPractice = (lesson: TrainingLesson) => {
+    
+    const handleStartPractice = (moduleIndex: number, lessonIndex: number) => {
+        const lesson = nomination.modules[moduleIndex].lessons[lessonIndex];
         if (lesson.practiceScenario) {
-            setCurrentPracticeLesson(lesson);
+            setActiveLesson({ moduleIndex, lessonIndex });
             setSimulationConfig(lesson.practiceScenario);
         }
     };
-
-    const advanceToNextLesson = async () => {
-        const nextLessonIndex = currentLessonIndex + 1;
-        if (nextLessonIndex < currentModule.lessons.length) {
-            setCurrentLessonIndex(nextLessonIndex);
-            setCurrentStepIndex(0);
-        } else {
-            await completeModule(nomination.id, currentModule.id);
-            toast({ title: `Module ${currentModuleIndex + 1} Complete!` });
-            onUpdate();
-        }
-    };
-
+    
+    const handleStartLesson = (moduleIndex: number, lessonIndex: number) => {
+        setActiveLesson({ moduleIndex, lessonIndex });
+        setCurrentStepIndex(0);
+    }
+    
     const handleStepComplete = async (result?: any) => {
-        if (!currentLesson || !currentStep || !currentModule) return;
+        if (!currentLesson || !currentModule || activeLesson === null) return;
         
-        await saveLessonResult(nomination.id, currentModule.id, currentLesson.id, result); // Save result per step
+        await saveLessonResult(nomination.id, currentModule.id, currentLesson.id, result);
 
         const nextStepIndex = currentStepIndex + 1;
         if (currentLesson.steps && nextStepIndex < currentLesson.steps.length) {
             setCurrentStepIndex(nextStepIndex);
         } else {
-            // Last step of the lesson is complete
             currentLesson.isCompleted = true; // Mark lesson as complete locally for UI
-            await advanceToNextLesson();
+            
+            const isLastLessonOfModule = activeLesson.lessonIndex === currentModule.lessons.length - 1;
+            if(isLastLessonOfModule && !currentModule.isCompleted) {
+                await completeModule(nomination.id, currentModule.id);
+                toast({ title: `Module ${activeLesson.moduleIndex + 1} Complete!` });
+            }
+            
+            onUpdate();
+            setActiveLesson(null); // Return to module list
         }
     };
+
 
     const handleExitSimulation = async (messages?: { role: 'user' | 'model', content: string }[]) => {
         if (!messages || messages.length < 2) { // Need at least one user turn
             setSimulationConfig(null);
-            setCurrentPracticeLesson(null);
+            setActiveLesson(null);
             return;
         }
 
@@ -196,60 +186,82 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                     title: "Post-Assessment Complete!",
                     description: "Your final score has been saved. Checking for certification...",
                 });
-            } else if (currentPracticeLesson && currentModule) {
+            } else if (activeLesson !== null && currentModule && currentLesson) {
                 // This was a practice session for a module
-                await saveLessonResult(nomination.id, currentModule.id, currentPracticeLesson.id, analysisResult);
+                await saveLessonResult(nomination.id, currentModule.id, currentLesson.id, analysisResult);
                 
-                const isLastLesson = currentModule.lessons[currentModule.lessons.length - 1].id === currentPracticeLesson.id;
-                if (isLastLesson) {
+                const isLastLessonOfModule = activeLesson.lessonIndex === currentModule.lessons.length - 1;
+                if (isLastLessonOfModule && !currentModule.isCompleted) {
                     await completeModule(nomination.id, currentModule.id);
-                    toast({ title: `Module ${currentModuleIndex+1} Complete!`, description: "Your progress has been updated." });
+                    toast({ title: `Module ${activeLesson.moduleIndex + 1} Complete!`, description: "Your progress has been updated." });
                 } else {
                      toast({ title: "Practice Complete!", description: `You can now proceed to the next lesson.` });
                 }
-                 // Advance to the next lesson automatically after practice
-                await advanceToNextLesson();
             }
-
-            onUpdate(); // Notify parent to re-fetch and update the view
+            onUpdate();
         } catch (e) {
             console.error("Failed to analyze interview", e);
             toast({ variant: 'destructive', title: "Analysis Failed", description: "Could not generate a score for this session." });
         } finally {
             setSimulationConfig(null);
-            setCurrentPracticeLesson(null);
+            setActiveLesson(null);
         }
     };
     
-    const renderFooter = () => {
-        if (!currentLesson) return null;
-        
-        // No footer needed for practice or for lessons with internal buttons (quiz/journal)
-        if (currentLesson.type === 'practice' || currentStep?.type === 'quiz_mcq' || currentStep?.type === 'journal') {
-            return null;
-        }
-
-        // Only show next/complete button for script steps
-        if (currentStep?.type === 'script') {
-            return <Button onClick={() => handleStepComplete()}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>;
-        }
-        
-        return null;
-    }
-    
     if (simulationConfig) {
+        let title = "Practice Arena";
+        if (nomination.status === 'Pre-assessment pending') title = "Pre-Assessment Mock Interview";
+        else if (nomination.status === 'Post-assessment pending') title = "Post-Assessment Mock Interview";
+        else if (currentModule) title = `Practice: ${currentModule.title}`;
+
         return (
             <div className="p-4 md:p-8 flex items-center justify-center">
                  <SimulationArena 
                     initialConfig={simulationConfig} 
                     onExit={handleExitSimulation} 
-                    arenaTitle={
-                        nomination.status === 'Pre-assessment pending' ? "Pre-Assessment Mock Interview" 
-                        : nomination.status === 'Post-assessment pending' ? "Post-Assessment Mock Interview"
-                        : `Practice: ${currentModule?.title}`
-                    }
+                    arenaTitle={title}
                 />
             </div>
+        )
+    }
+
+    if(activeLesson !== null && currentLesson && currentStep) {
+        return (
+             <div className="p-4 md:p-8 space-y-6">
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-3 text-2xl">{currentLesson.title}</CardTitle>
+                            <Button variant="ghost" onClick={() => setActiveLesson(null)}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Modules
+                            </Button>
+                        </div>
+                        <CardDescription>Module {activeLesson.moduleIndex + 1}: {currentModule?.title}</CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent>
+                        <div className="p-4 border bg-muted/50 rounded-lg min-h-[200px]">
+                            <LessonStepComponent step={currentStep} onComplete={handleStepComplete} />
+                        </div>
+                    </CardContent>
+                    
+                     <CardFooter className="flex justify-between items-center">
+                        <Button
+                            variant="outline"
+                            onClick={() => setCurrentStepIndex(p => p - 1)}
+                            disabled={currentStepIndex === 0}
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        </Button>
+                        
+                        {(currentStep.type === 'script' || currentStep.type === 'journal') && (
+                            <Button onClick={() => handleStepComplete()}>
+                                Next <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </CardFooter>
+                </Card>
+             </div>
         )
     }
 
@@ -286,45 +298,41 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Nomin
                 </CardContent>
             </Card>
 
-            {nomination.status !== 'Pre-assessment pending' && !allModulesCompleted && currentModule && currentLesson && (
-                 <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-2xl">{currentLesson.title}</CardTitle>
-                        <CardDescription>Module {currentModuleIndex + 1}: {currentModule.title}</CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent>
-                        <div className="p-4 border bg-muted/50 rounded-lg min-h-[200px]">
-                            {currentLesson.type === 'practice' ? (
-                                <div className="flex flex-col items-center justify-center h-full text-center">
-                                    <p className="text-lg font-semibold">Ready to Practice?</p>
-                                    <p className="text-muted-foreground mt-1 max-w-md mx-auto">{currentLesson.practiceScenario?.scenario}</p>
-                                    <Button className="mt-6" onClick={() => handleStartPractice(currentLesson)}>
-                                        <Play className="mr-2 h-4 w-4"/> Start Practice
-                                    </Button>
+            {nomination.status !== 'Pre-assessment pending' && (
+                <Accordion type="multiple" defaultValue={[`module-${nomination.modules.findIndex(m => !m.isCompleted)}`]} className="w-full space-y-4">
+                    {nomination.modules.map((module, moduleIndex) => (
+                        <AccordionItem key={module.id} value={`module-${moduleIndex}`} className="border rounded-lg bg-card shadow-sm">
+                            <AccordionTrigger className="p-4 hover:no-underline">
+                                <div className="flex-1 text-left">
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-lg font-semibold">{`Module ${moduleIndex + 1}: ${module.title}`}</p>
+                                        {module.isCompleted && <Badge variant="success">Completed</Badge>}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{module.description}</p>
                                 </div>
-                            ) : currentStep ? (
-                                <LessonStepComponent step={currentStep} onComplete={handleStepComplete} />
-                            ) : (
-                                <div>
-                                    <p>Loading step...</p>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 border-t">
+                                <div className="space-y-2">
+                                    {module.lessons.map((lesson, lessonIndex) => (
+                                        <div key={lesson.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
+                                            <div className="flex items-center gap-3">
+                                                {lesson.isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
+                                                <p className="font-medium">{lesson.title}</p>
+                                            </div>
+                                            <Button 
+                                                variant={lesson.isCompleted ? "secondary" : "default"} 
+                                                size="sm"
+                                                onClick={() => lesson.type === 'practice' ? handleStartPractice(moduleIndex, lessonIndex) : handleStartLesson(moduleIndex, lessonIndex)}
+                                            >
+                                                {lesson.isCompleted ? 'Review' : 'Start'}
+                                            </Button>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                        </div>
-                    </CardContent>
-
-                    <CardFooter className="flex justify-between items-center">
-                        <Button
-                            variant="outline"
-                            onClick={() => setCurrentStepIndex(p => p - 1)}
-                            disabled={currentStepIndex === 0 || currentLesson.type === 'practice'}
-                        >
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                        </Button>
-
-                         {renderFooter()}
-                    </CardFooter>
-                 </Card>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
             )}
             
             {nomination.status === 'Post-assessment pending' && allModulesCompleted && (
@@ -721,3 +729,4 @@ export default function InterviewerLabPage() {
         </DashboardLayout>
     );
 }
+
