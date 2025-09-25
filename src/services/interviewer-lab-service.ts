@@ -240,15 +240,7 @@ const getInitialModules = (): TrainingModule[] => [
             },
             {
                 id: 'l2-5', title: 'Practice, Feedback, and Continuous Improvement', type: 'practice', isCompleted: false,
-                steps: [
-                     { type: 'script', title: '🎙️ Coach Intro', content: 'Behavioral interviewing is a skill. You improve by:\n\nPracticing questions and probing\n\nScoring consistently\n\nIncorporating feedback\n\nReflecting on your own biases and assumptions' },
-                    { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Like learning an instrument — you won’t master it by reading a book. You need practice, feedback, and repetition.' },
-                    { type: 'script', title: '📖 Mini-Case', content: 'A company implemented mock interviews internally. Interviewers practiced STAR questions, scored each other, and gave feedback. Six months later, hiring accuracy increased 30%.' },
-                    { type: 'quiz_mcq', question: 'Which action improves interviewer skill the most?', options: ['Asking random questions', 'Practicing, scoring, and reflecting', 'Relying on intuition', 'Watching interviews passively'], correctAnswer: 'Practicing, scoring, and reflecting', feedback: { correct: 'Correct. Skill develops through active practice and reflection.', incorrect: 'The answer is B. Deliberate practice + scoring = improvement.' } },
-                    { type: 'journal', prompt: 'Commit to a weekly practice: either mock interviews, reviewing notes, or evaluating STAR answers. What will you do first?' },
-                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Behavioral interviewing is a craft. Practice + structured evaluation = expertise.' },
-                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nSchedule a mock interview with a colleague. Use STAR, probing, and scoring. Write a reflection on your strengths and areas to improve.' }
-                ],
+                steps: [],
                 practiceScenario: { persona: 'Candidate', scenario: "This is a practice session for behavioral interviewing. Ask the AI candidate, 'Tell me about a time you had to handle a difficult stakeholder.' Your goal is to get a complete STAR answer, probing effectively for details.", difficulty: 'neutral' }
             }
         ]
@@ -446,7 +438,7 @@ const getInitialModules = (): TrainingModule[] => [
                 ]
             },
             {
-                id: 'l5-5', title: 'Self-Assessment and Reflection', type: 'standard', isCompleted: false,
+                id: 'l5-5', title: 'Self-Assessment and Reflection', type: 'practice', isCompleted: false,
                 steps: [
                     { type: 'script', title: '🎙️ Coach Intro', content: 'Reflection solidifies learning. After each mock interview, assess yourself, identify gaps, and plan next steps.' },
                     { type: 'script', title: '📊 Self-Assessment Steps', content: 'Review Notes: Compare your questions and evaluation to the rubric\n\nIdentify Strengths: Note what went well\n\nSpot Gaps: Identify missed opportunities or mistakes\n\nPlan Improvement: Set actionable goals for next session' },
@@ -459,18 +451,72 @@ const getInitialModules = (): TrainingModule[] => [
             }
         ]
     },
-     {
+    {
         id: 'm6',
         title: "Leadership Through Interviewing",
         description: "Frame interviewing as a core leadership competency.",
         duration: 30,
         isCompleted: false,
         lessons: [
-            { id: 'l6-1', title: 'Interviewing as a Leadership Skill', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Interviewing builds decision-making, communication, and judgment.'}] },
-            { id: 'l6-2', title: 'Handling Difficult Situations', type: 'standard', isCompleted: false, steps: [{ type: 'script', content: 'Stay professional under pressure. To manage candidates who talk too much, politely interject and redirect.'}] },
-            { 
-                id: 'l6-3', title: 'Reflection & Growth', type: 'standard', isCompleted: false,
-                steps: [{ type: 'journal', prompt: "Write one thing you’ll do differently in your next real-world interview." }]
+            {
+                id: 'l6-1', title: 'Interviewing as a Leadership Skill', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Effective interviewing is a critical leadership competency. The way you conduct interviews reflects your ability to evaluate talent, make decisions, and influence organizational outcomes.' },
+                    { type: 'script', title: '📊 Teaching Moment', content: 'Leaders who master interviewing consistently select high-performing teams, identify gaps early, and model organizational values through behavior.' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A TL who mastered structured interviewing noticed her team’s hiring quality improved. She was able to make better decisions, mentor others, and reduce turnover by 15%.' },
+                    { type: 'quiz_mcq', question: 'Why is interviewing considered a leadership skill?', options: ['It lets you ask tough questions', 'It reflects your ability to assess talent, make decisions, and influence outcomes', 'It is only about hiring', 'It allows you to test candidates’ knowledge'], correctAnswer: 'It reflects your ability to assess talent, make decisions, and influence outcomes', feedback: { correct: 'Correct! Interviewing is a reflection of leadership and decision-making capabilities.', incorrect: 'The answer is B. Leadership includes guiding hiring and team development through interviews.' } },
+                    { type: 'journal', prompt: 'Think about a leader you admire. How do they approach hiring and interviews? What leadership qualities do they demonstrate?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Interviewing hones your communication skills, which are essential for leadership. Clear, concise, and inclusive communication creates trust and ensures accurate evaluation.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nWrite down 2 ways you can demonstrate leadership during interviews beyond asking questions.' }
+                ]
+            },
+            {
+                id: 'l6-2', title: 'Strategic Thinking in Interviewing', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Interviews are not isolated events—they are part of broader organizational strategy. Leaders align hiring decisions with long-term business goals.' },
+                    { type: 'script', title: '📊 Key Points', content: 'Understand Organizational Needs: Know the skills, culture, and gaps\n\nAlign Candidate Capabilities: Hire talent that supports strategic objectives\n\nPlan for Growth: Consider how candidates can evolve into future roles\n\nIntegrate Feedback Loops: Use interview data to refine hiring strategies' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A hiring manager analyzed past interviews and realized candidates with certain competencies consistently excelled. By integrating this insight, the team improved project delivery speed.' },
+                    { type: 'quiz_mcq', question: 'What is a strategic approach to interviewing?', options: ['Asking random questions', 'Aligning candidate capabilities with organizational objectives', 'Only focusing on cultural fit', 'Speeding up the hiring process'], correctAnswer: 'Aligning candidate capabilities with organizational objectives', feedback: { correct: 'Correct! Strategic interviewing ensures hires support organizational goals.', incorrect: 'The answer is B. Leadership requires connecting hiring to broader strategy.' } },
+                    { type: 'journal', prompt: 'Reflect on your current team: Are you hiring for immediate needs only, or long-term growth?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Self-reflection solidifies learning. After each mock interview, assess yourself, identify gaps, and plan next steps.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nCreate a simple mapping of a candidate’s skills to potential organizational goals for practice.' }
+                ]
+            },
+            {
+                id: 'l6-3', title: 'Emotional Intelligence in Interviewing', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Emotional intelligence (EQ) is crucial during interviews. Leaders with high EQ read candidates, manage dynamics, and create inclusive environments.' },
+                    { type: 'script', title: '📊 Key Points', content: 'Self-Awareness: Monitor your own biases and emotions\n\nEmpathy: Understand candidates’ perspectives\n\nSocial Skills: Facilitate smooth interactions\n\nConflict Management: Navigate challenging candidate scenarios' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'During a tough interview, a TL noticed a candidate was nervous. By acknowledging it and adjusting their tone, the candidate performed better, giving more accurate insights.' },
+                    { type: 'quiz_mcq', question: 'How does emotional intelligence enhance interviewing?', options: ['Helps you intimidate candidates', 'Supports understanding, empathy, and smooth interactions', 'Makes interviews faster', 'Allows you to skip structured questions'], correctAnswer: 'Supports understanding, empathy, and smooth interactions', feedback: { correct: 'Correct! EQ helps leaders interpret candidate responses and maintain professionalism.', incorrect: 'The answer is B. Emotional intelligence is about understanding, not control.' } },
+                    { type: 'journal', prompt: 'Think about a time when you or someone else demonstrated empathy in a professional conversation. How did it affect the outcome?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Leadership is a journey. Interviews are both an assessment of others and a mirror for your own development. Reflection turns each session into growth.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nDuring your next interview, practice one EQ skill (e.g., active listening or empathy) and note its impact.' }
+                ]
+            },
+            {
+                id: 'l6-4', title: 'Communication Excellence', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Interviewing hones your communication skills, which are essential for leadership. Clear, concise, and inclusive communication creates trust and ensures accurate evaluation.' },
+                    { type: 'script', title: '📊 Key Guidelines', content: 'Active Listening: Pay full attention and paraphrase responses\n\nClear Questioning: Avoid ambiguity; use role-relevant examples\n\nInclusive Language: Ensure candidates feel valued\n\nProfessional Representation: Model organization’s values through tone and behavior' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A TL noticed candidates misunderstood a question. By rephrasing clearly and inclusively, candidate responses became more informative, improving decision-making.' },
+                    { type: 'quiz_mcq', question: 'Effective communication in interviewing includes:', options: ['Speaking as much as possible', 'Active listening, clear questions, and inclusive language', 'Using technical jargon', 'Rapid-fire questioning'], correctAnswer: 'Active listening, clear questions, and inclusive language', feedback: { correct: 'Correct! Communication is key to understanding candidates accurately.', incorrect: 'The answer is B. Leadership communication fosters clarity and fairness.' } },
+                    { type: 'journal', prompt: 'During your last interview, how well did you listen and communicate? Where could you improve?' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Leadership is a journey. Interviews are both an assessment of others and a mirror for your own development. Reflection turns each session into growth.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nPractice rephrasing a technical question into simple, inclusive language for clarity.' }
+                ]
+            },
+            {
+                id: 'l6-5', title: 'Self-Reflection and Continuous Improvement', type: 'standard', isCompleted: false,
+                steps: [
+                    { type: 'script', title: '🎙️ Coach Intro', content: 'Leadership is a journey. Interviews are both an assessment of others and a mirror for your own development. Reflection turns each session into growth.' },
+                    { type: 'script', title: '📊 Self-Reflection Steps', content: 'Assess Decisions: Were your judgments fair, consistent, and aligned with strategy?\n\nIdentify Strengths: Where did you communicate or lead effectively?\n\nSpot Improvement Areas: What skills need more practice (e.g., EQ, STAR questioning)?\n\nSet Goals: Create a plan to enhance leadership through interviewing' },
+                    { type: 'script', title: '📖 Mini-Case', content: 'A TL reviewed notes after each interview and tracked recurring patterns in decision-making. Over time, their judgment improved, and they became a mentor for peers.' },
+                    { type: 'quiz_mcq', question: 'Why is self-reflection critical for leadership in interviewing?', options: ['To feel guilty about mistakes', 'To learn, improve, and model leadership behavior', 'To skip feedback sessions', 'To evaluate candidates faster'], correctAnswer: 'To learn, improve, and model leadership behavior', feedback: { correct: 'Correct! Reflection transforms practice into growth.', incorrect: 'The answer is B. It’s about improving your leadership and interviewing skills.' } },
+                    { type: 'journal', prompt: 'Write down 2 behaviors from today’s interview practice that reflect leadership, and 2 you want to improve.' },
+                    { type: 'script', title: '📌 Coach Wrap-Up', content: 'Leadership is a journey. Interviews are both an assessment of others and a mirror for your own development. Reflection turns each session into growth.' },
+                    { type: 'journal', prompt: '🚀 Stretch Activity\n\nCreate a personal development plan for interviewing skills to enhance leadership over the next month.' }
+                ]
             }
         ]
     }
