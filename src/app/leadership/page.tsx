@@ -20,6 +20,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const { role } = useRole();
@@ -76,17 +78,20 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                    <p className="font-semibold text-foreground">Select Nominee:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                        {eligibleNominees.map(nomineeRole => (
-                            <Button
-                                key={nomineeRole}
-                                variant={selectedNominee === nomineeRole ? 'default' : 'outline'}
-                                onClick={() => setSelectedNominee(nomineeRole)}
-                            >
-                                {roleUserMapping[nomineeRole].name}
-                            </Button>
-                        ))}
+                     <div className="space-y-2">
+                        <p className="font-semibold text-foreground">Select Nominee:</p>
+                        <Select onValueChange={(value: Role) => setSelectedNominee(value)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select an employee or team lead" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {eligibleNominees.map(nomineeRole => (
+                                    <SelectItem key={nomineeRole} value={nomineeRole}>
+                                        {roleUserMapping[nomineeRole].name} ({nomineeRole})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {selectedNominee && targetRole && (
