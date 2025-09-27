@@ -60,8 +60,8 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
         }
     };
     
-    // A manager can nominate employees and team leads.
-    const eligibleNominees: Role[] = ['Employee', 'Team Lead'];
+    // A manager can nominate employees, team leads, and AMs.
+    const eligibleNominees: Role[] = ['Employee', 'Team Lead', 'AM'];
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
