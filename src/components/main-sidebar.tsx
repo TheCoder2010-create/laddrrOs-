@@ -60,7 +60,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         ]
     }] : []),
     ...(!['Manager', 'HR Head'].includes(currentRole) && isInterviewerNominee ? [{ href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
-    ...(!['Manager', 'HR Head'].includes(currentRole) && isLeadershipNominee ? [{ href: '/leadership', icon: <LeadershipIcon className="text-red-500"/>, label: "Leadership" }] : []),
+    ...(!['Manager', 'HR Head'].includes(currentRole) && isLeadershipNominee ? [{ href: '/leadership', icon: <LeadershipIcon className="text-red-500 size-4"/>, label: "Leadership" }] : []),
     { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
 
