@@ -18,7 +18,7 @@ export interface LeadershipNomination {
     id: string;
     nominatedBy: Role;
     nomineeRole: Role;
-    targetRole: string; // e.g., 'Team Lead / Manager'
+    targetRole: Role;
     status: 'InProgress' | 'Completed' | 'Certified';
     startDate: string;
     modules: LeadershipModule[];
@@ -72,7 +72,7 @@ const getMockLeadershipData = (): LeadershipNomination[] => {
         id: 'mock-lead-1',
         nominatedBy: 'Manager',
         nomineeRole: 'Team Lead',
-        targetRole: 'Manager',
+        targetRole: 'AM',
         status: 'InProgress',
         startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString(),
         modules: modules.map((m, i) => ({ ...m, isCompleted: i < 1 })), // First module completed
@@ -92,7 +92,7 @@ const getMockLeadershipData = (): LeadershipNomination[] => {
 /**
  * Nominates an employee for the Leadership Coaching program.
  */
-export async function nominateForLeadership(managerRole: Role, nomineeRole: Role): Promise<LeadershipNomination> {
+export async function nominateForLeadership(managerRole: Role, nomineeRole: Role, targetRole: Role): Promise<LeadershipNomination> {
     const allNominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
     const now = new Date().toISOString();
     const initialModules = getInitialModules();
@@ -101,7 +101,7 @@ export async function nominateForLeadership(managerRole: Role, nomineeRole: Role
         id: uuidv4(),
         nominatedBy: managerRole,
         nomineeRole,
-        targetRole: 'Team Lead / Manager',
+        targetRole: targetRole,
         status: 'InProgress',
         startDate: now,
         modules: initialModules,

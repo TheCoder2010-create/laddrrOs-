@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { PlusCircle, Loader2, BookOpen, CheckCircle } from 'lucide-react';
+import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight } from 'lucide-react';
 import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership } from '@/services/leadership-service';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -28,13 +28,25 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
+    const getNextRole = (currentRole: Role | null): Role | null => {
+        if (!currentRole) return null;
+        switch (currentRole) {
+            case 'Employee': return 'Team Lead';
+            case 'Team Lead': return 'AM';
+            case 'AM': return 'Manager';
+            default: return null;
+        }
+    };
+
+    const targetRole = getNextRole(selectedNominee);
+
     const handleNominate = async () => {
-        if (!role || !selectedNominee) return;
+        if (!role || !selectedNominee || !targetRole) return;
 
         setIsSubmitting(true);
         try {
-            await nominateForLeadership(role, selectedNominee);
-            toast({ title: 'Nomination Submitted!', description: `${roleUserMapping[selectedNominee]?.name} has been enrolled in the Leadership Coaching program.` });
+            await nominateForLeadership(role, selectedNominee, targetRole);
+            toast({ title: 'Nomination Submitted!', description: `${roleUserMapping[selectedNominee]?.name} has been enrolled in the Leadership Development Program.` });
             onNomination();
             setIsOpen(false);
             setSelectedNominee(null);
@@ -45,6 +57,9 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
             setIsSubmitting(false);
         }
     };
+    
+    // A manager can nominate employees and team leads.
+    const eligibleNominees: Role[] = ['Employee', 'Team Lead'];
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -55,26 +70,38 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Nominate Employee for Leadership Coaching</DialogTitle>
+                    <DialogTitle>Nominate for Leadership Development</DialogTitle>
                     <DialogDescription>
-                        Select an employee to enroll in the leadership development program. They will be guided from subject matter expertise to leadership readiness.
+                        Select an employee to enroll them in a structured program to groom them for the next level.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <p className="font-semibold text-foreground">Select Nominee:</p>
                     <div className="grid grid-cols-2 gap-2">
-                        {Object.values(roleUserMapping)
-                            .filter(user => user.role === 'Employee' || user.role === 'Team Lead')
-                            .map(user => (
-                                <Button
-                                    key={user.role}
-                                    variant={selectedNominee === user.role ? 'default' : 'outline'}
-                                    onClick={() => setSelectedNominee(user.role)}
-                                >
-                                    {user.name}
-                                </Button>
-                            ))}
+                        {eligibleNominees.map(nomineeRole => (
+                            <Button
+                                key={nomineeRole}
+                                variant={selectedNominee === nomineeRole ? 'default' : 'outline'}
+                                onClick={() => setSelectedNominee(nomineeRole)}
+                            >
+                                {roleUserMapping[nomineeRole].name}
+                            </Button>
+                        ))}
                     </div>
+
+                    {selectedNominee && targetRole && (
+                        <div className="flex items-center justify-center gap-4 pt-4 text-center">
+                            <div className="text-center">
+                                <p className="text-sm text-muted-foreground">Current Role</p>
+                                <p className="font-semibold">{selectedNominee}</p>
+                            </div>
+                            <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                            <div className="text-center">
+                                <p className="text-sm text-muted-foreground">Target Role</p>
+                                <p className="font-semibold text-primary">{targetRole}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <DialogFooter>
                     <AlertDialog>
@@ -87,7 +114,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    You are nominating {selectedNominee ? roleUserMapping[selectedNominee].name : '...'} for Leadership Coaching. This will enroll them in a structured development program.
+                                    You are nominating {selectedNominee ? roleUserMapping[selectedNominee].name : '...'} for Leadership Coaching to become a {targetRole}.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
