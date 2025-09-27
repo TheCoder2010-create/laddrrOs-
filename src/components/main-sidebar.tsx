@@ -13,12 +13,13 @@ import {
   DropdownMenuGroup,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar } from '@/components/ui/sidebar';
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar } from '@/components/ui/sidebar';
 import { LogOut, User, BarChart, Check, ListTodo, MessageSquare, BrainCircuit, MessagesSquare, FlaskConical } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
-import { getNominationForUser } from '@/services/interviewer-lab-service';
+import { getNominationForUser as getInterviewerNominationForUser } from '@/services/interviewer-lab-service';
+import { getNominationForUser as getLeadershipNominationForUser } from '@/services/leadership-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { cn } from '@/lib/utils';
@@ -39,7 +40,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const pathname = usePathname();
   const [messageCount, setMessageCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
-  const [isNominated, setIsNominated] = useState(false);
+  const [isInterviewerNominee, setIsInterviewerNominee] = useState(false);
+  const [isLeadershipNominee, setIsLeadershipNominee] = useState(false);
   const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
   const { state: sidebarState } = useSidebar();
   
@@ -57,7 +59,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
            { href: '/leadership', icon: <LeadershipIcon className="text-red-500 size-4"/>, label: "Leadership" }
         ]
     }] : []),
-    ...(!['Manager', 'HR Head'].includes(currentRole) && isNominated ? [{ href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
+    ...(!['Manager', 'HR Head'].includes(currentRole) && isInterviewerNominee ? [{ href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
+    ...(!['Manager', 'HR Head'].includes(currentRole) && isLeadershipNominee ? [{ href: '/leadership', icon: <LeadershipIcon className="text-red-500"/>, label: "Leadership" }] : []),
     { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
   ];
 
@@ -110,15 +113,20 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       setCoachingCount(devCount);
 
-      // Check nomination status
-      const nomination = await getNominationForUser(currentRole);
-      setIsNominated(!!nomination);
+      // Check nomination statuses
+      const [interviewerNomination, leadershipNomination] = await Promise.all([
+        getInterviewerNominationForUser(currentRole),
+        getLeadershipNominationForUser(currentRole)
+      ]);
+      setIsInterviewerNominee(!!interviewerNomination);
+      setIsLeadershipNominee(!!leadershipNomination);
 
     } catch (error) {
       console.error("Failed to fetch sidebar data", error);
       setMessageCount(0);
       setCoachingCount(0);
-      setIsNominated(false);
+      setIsInterviewerNominee(false);
+      setIsLeadershipNominee(false);
     }
   }, [currentRole, currentUserName]);
 
@@ -146,7 +154,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const renderMenuItem = (item: any) => {
      if (item.children) {
       const isParentActive = item.children.some((child: any) => pathname.startsWith(child.href));
-      const isSubMenuOpen = openSubMenus.includes(item.label) || isParentActive;
+      const isSubMenuOpen = openSubMenus.includes(item.label);
 
       return (
         <SidebarMenuItem key={item.label} className="flex flex-col">
