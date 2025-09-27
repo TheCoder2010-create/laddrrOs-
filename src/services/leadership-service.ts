@@ -6,12 +6,45 @@ import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { getFeedbackFromStorage, saveFeedbackToStorage, type Feedback } from './feedback-service';
 
+export interface ScriptStep {
+    type: 'script';
+    id: string;
+    content: string;
+}
+
+export interface QuizStep {
+    type: 'quiz_mcq';
+    id: string;
+    question: string;
+    options: string[];
+    correctAnswer: string;
+    feedback?: {
+        correct: string;
+        incorrect: string;
+    };
+}
+
+export interface ActivityStep {
+    type: 'activity';
+    id: string;
+    content: string;
+}
+
+export type LessonStep = ScriptStep | QuizStep | ActivityStep;
+
+export interface LeadershipLesson {
+    id: string;
+    title: string;
+    isCompleted: boolean;
+    steps: LessonStep[];
+}
+
 export interface LeadershipModule {
     id: string;
     title: string;
     description: string;
-    content: string; // Simplified content for now
     isCompleted: boolean;
+    lessons: LeadershipLesson[];
 }
 
 export interface LeadershipNomination {
@@ -28,14 +61,165 @@ export interface LeadershipNomination {
     lastUpdated: string;
 }
 
-const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v1';
+const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v2';
 
-const getInitialModules = (): LeadershipModule[] => [
-    { id: 'm1', title: 'From Peer to Leader', description: 'Navigating the transition from individual contributor to a leadership role.', content: 'This module covers managing former peers, setting boundaries, and establishing authority.', isCompleted: false },
-    { id: 'm2', title: 'Effective Communication', description: 'Mastering the art of clear, concise, and empathetic communication.', content: 'Lessons on active listening, delivering feedback, and leading team meetings.', isCompleted: false },
-    { id: 'm3', title: 'Delegation and Empowerment', description: 'Learning to delegate tasks effectively and empower your team.', content: 'Strategies for assigning tasks, trusting your team, and avoiding micromanagement.', isCompleted: false },
-    { id: 'm4', title: 'Performance Management', description: 'Setting goals, tracking performance, and handling difficult conversations.', content: 'Frameworks for performance reviews, goal setting (OKRs/SMART), and constructive feedback.', isCompleted: false },
-    { id: 'm5', title: 'Strategic Thinking', description: 'Developing a strategic mindset to align team goals with company objectives.', content: 'Introduction to strategic planning, resource allocation, and long-term vision.', isCompleted: false },
+const getModulesForEmployeeToLead = (): LeadershipModule[] => [
+    { 
+        id: 'm1', 
+        title: 'Building Personal Leadership Presence', 
+        description: 'Learn to show up as someone others trust, respect, and want to follow.',
+        isCompleted: false,
+        lessons: [
+            {
+                id: 'l1-1',
+                title: 'What is Leadership Presence?',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-1-1',
+                        type: 'script',
+                        content: `<p>Imagine walking into a meeting where Sarah, a software developer, quietly takes her seat in the back. When the project hits a roadblock, she doesn't speak up even though she knows the solution. Compare this to Marcus, also a developer, who enters the same meeting, makes eye contact with colleagues, and when the roadblock emerges, he leans forward and says, "I've seen this issue before. Here's what worked for our team last time, and here's what we learned to avoid."</p><p class="mt-4">Both Sarah and Marcus have the same technical skills. The difference? Marcus has developed <strong>leadership presence</strong>—the ability to show up as someone others trust, respect, and want to follow, even when he has no formal authority.</p><p class="mt-4">Leadership presence isn't about being the loudest person in the room or having a commanding personality. It's about developing four core qualities that make people think, "I trust this person's judgment" and "I want to hear what they have to say."</p>`
+                    }
+                ]
+            },
+            {
+                id: 'l1-2',
+                title: 'Pillar 1: Authenticity',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-2-1',
+                        type: 'script',
+                        content: `<h4>Pillar 1: Authenticity - Being Real Without Being Raw</h4><p>Authenticity means bringing your genuine self to work while maintaining professionalism. It's not about sharing every personal detail or emotion—it's about aligning your values with your actions consistently.</p><p class="mt-4 font-semibold">What authentic leadership looks like:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li>When you make a mistake, you own it immediately: "I missed that deadline because I underestimated the complexity. Here's my plan to prevent this in the future."</li><li>You share credit generously: "This success happened because Maria caught the critical bug and Tom stayed late to help test the fix."</li><li>You admit when you don't know something: "I'm not familiar with that technology stack. Can you walk me through how it would work?"</li></ul><p class="mt-4 font-semibold">What authentic leadership does NOT look like:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li>Oversharing personal problems: "I'm having marriage issues and that's why I've been distracted"</li><li>Being brutally honest without consideration: "That idea is terrible and won't work"</li><li>Using authenticity as an excuse for unprofessional behavior: "That's just who I am" when someone gives you feedback</li></ul>`
+                    },
+                    {
+                        id: 's1-2-2',
+                        type: 'quiz_mcq',
+                        question: 'A colleague praises you for a project you completed with a lot of help from a teammate. What is the most authentic response?',
+                        options: [
+                            'Say "Thanks, I worked really hard on it."',
+                            'Say "Thanks, but it was all [teammate\'s name]."',
+                            'Say "Thanks! [Teammate\'s name] and I made a great team on this. Their work on the data model was critical."',
+                            'Say nothing to avoid making it awkward.'
+                        ],
+                        correctAnswer: 'Say "Thanks! [Teammate\'s name] and I made a great team on this. Their work on the data model was critical."',
+                        feedback: {
+                            correct: "Excellent! This response is authentic because it accepts the praise gracefully while generously and specifically sharing credit.",
+                            incorrect: "While well-intentioned, the best answer is to share credit specifically. It acknowledges your role while highlighting your teammate's contribution, which is a key leadership behavior."
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'l1-3',
+                title: 'Pillar 2: Consistency',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-3-1',
+                        type: 'script',
+                        content: `<h4>Pillar 2: Consistency - Becoming Predictably Reliable</h4><p>Consistency means people know what to expect from you. They trust that your mood won't dramatically affect your decision-making, that you'll follow through on commitments, and that you'll apply the same standards fairly to everyone.</p><p class="mt-4 font-semibold">Building consistency in daily interactions:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>Morning routine example:</strong> Instead of rushing into work, take two minutes to check in with your team. "Good morning, everyone. Any obstacles I can help remove today?" This signals you care about both people and results.</li><li><strong>Decision-making consistency:</strong> When evaluating ideas, use the same criteria every time. "Let's check this against our goals: Does it align with the project? Do we have resources? What's the risk?"</li><li><strong>Follow-through consistency:</strong> If you say "I'll get back to you by Friday," do it. If you can't, communicate that on Thursday.</li></ul><p class="mt-4"><strong>The compound effect of consistency:</strong> People start coming to you for reliable information, then for your opinion, and eventually, they see you as leadership material because they trust your judgment.</p>`
+                    },
+                    {
+                        id: 's1-3-2',
+                        type: 'quiz_mcq',
+                        question: 'You promised a colleague you would review their document by end of day, but an urgent issue came up. What is the best demonstration of consistency?',
+                        options: [
+                            'Ignore the commitment and hope they forget.',
+                            'Send them a message saying "Sorry, can\'t do it today."',
+                            'Work late to finish the review, even if it means doing a poor job.',
+                            'Proactively message them before the deadline, explain the situation, and propose a new, specific timeline (e.g., "by 10 AM tomorrow").'
+                        ],
+                        correctAnswer: 'Proactively message them before the deadline, explain the situation, and propose a new, specific timeline (e.g., "by 10 AM tomorrow").',
+                        feedback: {
+                            correct: "Perfect. Consistency isn't about being perfect; it's about being reliably communicative and managing expectations.",
+                            incorrect: "The best choice is proactive communication. Reliability comes from managing commitments, even when you have to adjust them."
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'l1-4',
+                title: 'Pillar 3: Composure',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-4-1',
+                        type: 'script',
+                        content: `<h4>Pillar 3: Composure - Staying Calm When Others Can't</h4><p>Composure isn't about suppressing emotions. It's about managing your emotional responses so you can think clearly during stressful situations.</p><p class="mt-4 font-semibold">Practical composure techniques:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>The 3-breath technique:</strong> When stress rises, take three slow, deep breaths before responding. This engages your rational brain.</li><li><strong>The clarifying question:</strong> Instead of reacting to bad news, ask a question like, "Help me understand what you mean by that?" This buys you thinking time.</li><li><strong>The emotional labeling technique:</strong> Internally acknowledge your emotion without being controlled by it: "I'm feeling frustrated. Let me focus on what we can control."</li></ul><p class="mt-4 font-semibold">Composure in action example:</p><p>The situation: A major bug will delay a launch. The client is furious, and teammates are blaming each other.</p><p><em>Poor response:</em> "This is a disaster! How did we miss this?"</p><p><em>Composed response:</em> "This is a serious issue. Let's focus on three things: First, a plan to fix the bug. Second, how to communicate with the client. Third, what we can learn to prevent this."</p>`
+                    },
+                    {
+                        id: 's1-4-2',
+                        type: 'quiz_mcq',
+                        question: 'In a tense meeting, a colleague criticizes your work. What is the best first response to demonstrate composure?',
+                        options: [
+                            'Immediately defend your work and point out their flaws.',
+                            'Take a slow breath and ask, "Can you help me understand which part is most concerning to you?"',
+                            'Say nothing and shut down.',
+                            'Tell them they are being unprofessional.'
+                        ],
+                        correctAnswer: 'Take a slow breath and ask, "Can you help me understand which part is most concerning to you?"',
+                        feedback: {
+                            correct: "Exactly. This response combines the pause (breath) with a clarifying question, de-escalating the situation and gathering information.",
+                            incorrect: "The most composed response is to pause and ask a clarifying question. This prevents an emotional reaction and shifts the focus to problem-solving."
+                        }
+                    }
+                ]
+            },
+             {
+                id: 'l1-5',
+                title: 'Pillar 4: Connection',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-5-1',
+                        type: 'script',
+                        content: `<h4>Pillar 4: Connection - Building Bridges, Not Walls</h4><p>Connection is about making others feel heard, valued, and understood. It's the skill that transforms individual contributors into leaders that others want to follow.</p><p class="mt-4 font-semibold">Building connection through active listening:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>Level 1 - Passive listening:</strong> You're quiet, but your mind is preparing your response.</li><li><strong>Level 2 - Active listening:</strong> You're focused on understanding, asking clarifying questions, and reflecting back what you heard.</li><li><strong>Level 3 - Empathetic listening:</strong> You're not just hearing words, but understanding the emotions and motivations behind them.</li></ul><p class="mt-4 font-semibold">Building connection through recognition:</p><p><em>Generic:</em> "Good job."</p><p><em>Specific:</em> "Your decision to add automated testing caught three bugs. That attention to quality made a real difference."</p><p><em>Development-focused:</em> "The way you explained that complex concept to the sales team showed real leadership. That skill will serve you well."</p>`
+                    },
+                    {
+                        id: 's1-5-2',
+                        type: 'quiz_mcq',
+                        question: 'A junior team member successfully completes their first solo project. Which form of recognition best demonstrates the "Connection" pillar?',
+                        options: [
+                            'A quick "good job" in team chat.',
+                            'Mentioning their success in the weekly team meeting.',
+                            '"The way you managed the project timeline and communicated risks was exactly what we look for in future leaders on this team. Great work."',
+                            'Giving them an even harder project next time.'
+                        ],
+                        correctAnswer: '"The way you managed the project timeline and communicated risks was exactly what we look for in future leaders on this team. Great work."',
+                        feedback: {
+                            correct: "Yes. This feedback is specific, ties their actions to valued leadership behaviors, and encourages future growth.",
+                            incorrect: "Specific, development-focused feedback is the most powerful way to build connection and motivate your colleagues."
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'l1-6',
+                title: 'Activity: Self-Discovery',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-6-1',
+                        type: 'activity',
+                        content: `<h4>Part A: Authenticity Assessment</h4><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ol class="list-decimal pl-5 space-y-2"><li>Someone praised you for work that involved significant help from others.</li><li>You were asked about something you weren’t sure about.</li><li>You made an error that affected others.</li></ol>`
+                    },
+                ]
+            },
+            {
+                id: 'l1-7',
+                title: 'Scenario: The Project Conflict',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-7-1',
+                        type: 'activity',
+                        content: `<h4>Background</h4><p>You’re part of a six-person project team. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising and everyone is uncomfortable.</p><h4>Your Challenge</h4><p>You have 30 seconds to respond to reduce conflict and refocus the team. Write out exactly what you would say or do.</p>`
+                    }
+                ]
+            }
+        ]
+    }
 ];
 
 // ==========================================
@@ -67,7 +251,7 @@ const saveToStorage = (key: string, data: any[]): void => {
 
 
 const getMockLeadershipData = (): LeadershipNomination[] => {
-    const modules = getInitialModules();
+    const modules = getModulesForEmployeeToLead();
     const mockNomination: LeadershipNomination = {
         id: 'mock-lead-1',
         nominatedBy: 'Manager',
@@ -75,9 +259,9 @@ const getMockLeadershipData = (): LeadershipNomination[] => {
         targetRole: 'AM',
         status: 'InProgress',
         startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString(),
-        modules: modules.map((m, i) => ({ ...m, isCompleted: i < 1 })), // First module completed
-        modulesCompleted: 1,
-        currentModuleId: 'm2',
+        modules: modules.map((m, i) => ({ ...m, isCompleted: i < 0 })), // Nothing completed initially
+        modulesCompleted: 0,
+        currentModuleId: 'm1',
         certified: false,
         lastUpdated: new Date().toISOString(),
     };
@@ -95,7 +279,7 @@ const getMockLeadershipData = (): LeadershipNomination[] => {
 export async function nominateForLeadership(managerRole: Role, nomineeRole: Role, targetRole: Role): Promise<LeadershipNomination> {
     const allNominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
     const now = new Date().toISOString();
-    const initialModules = getInitialModules();
+    const initialModules = getModulesForEmployeeToLead();
 
     const newNomination: LeadershipNomination = {
         id: uuidv4(),
@@ -156,4 +340,39 @@ export async function getLeadershipNominationsForManager(managerRole: Role): Pro
 export async function getNominationForUser(userRole: Role): Promise<LeadershipNomination | null> {
     const allNominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
     return allNominations.find(n => n.nomineeRole === userRole) || null;
+}
+
+export async function completeLeadershipLesson(nominationId: string, moduleId: string, lessonId: string): Promise<void> {
+    const nominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
+    const nomIndex = nominations.findIndex(n => n.id === nominationId);
+    if (nomIndex === -1) return;
+
+    const nomination = nominations[nomIndex];
+    const modIndex = nomination.modules.findIndex(m => m.id === moduleId);
+    if (modIndex === -1) return;
+
+    const lessonIndex = nomination.modules[modIndex].lessons.findIndex(l => l.id === lessonId);
+    if (lessonIndex !== -1) {
+        nomination.modules[modIndex].lessons[lessonIndex].isCompleted = true;
+    }
+
+    // Check if module is complete
+    const module = nomination.modules[modIndex];
+    const allLessonsCompleted = module.lessons.every(l => l.isCompleted);
+    if (allLessonsCompleted && !module.isCompleted) {
+        module.isCompleted = true;
+        nomination.modulesCompleted = nomination.modules.filter(m => m.isCompleted).length;
+        
+        // Unlock next module
+        const nextModule = nomination.modules[modIndex + 1];
+        if (nextModule) {
+            nomination.currentModuleId = nextModule.id;
+        } else {
+            // All modules completed
+            nomination.status = 'Completed';
+        }
+    }
+
+    nomination.lastUpdated = new Date().toISOString();
+    saveToStorage(LEADERSHIP_COACHING_KEY, nominations);
 }

@@ -14,13 +14,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight } from 'lucide-react';
-import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership } from '@/services/leadership-service';
+import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep } from '@/services/leadership-service';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
@@ -136,12 +139,153 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
-function LearnerView({ initialNomination }: { initialNomination: LeadershipNomination }) {
+function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer }: { step: LessonStep, onComplete: () => void, onUpdateAnswer: (answer: string) => void, answer?: string }) {
+    const { toast } = useToast();
+
+    const handleQuizSubmit = () => {
+        if (step.type !== 'quiz_mcq' || !answer) return;
+        
+        const isCorrect = answer === step.correctAnswer;
+        toast({
+            title: isCorrect ? "Correct!" : "Not Quite",
+            description: isCorrect ? step.feedback?.correct : step.feedback?.incorrect,
+            variant: isCorrect ? "success" : "destructive",
+        });
+
+        if (isCorrect) {
+            onComplete();
+        }
+    };
+
+    switch (step.type) {
+        case 'script':
+            return (
+                <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: step.content }} />
+            );
+        case 'quiz_mcq':
+            return (
+                <div className='space-y-4'>
+                    <p className="font-semibold">{step.question}</p>
+                    <RadioGroup value={answer} onValueChange={onUpdateAnswer}>
+                        {step.options.map((opt, i) => (
+                            <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
+                                <RadioGroupItem value={opt} id={`q-${i}`} />
+                                <Label htmlFor={`q-${i}`} className="flex-1 cursor-pointer">{opt}</Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                    <Button onClick={handleQuizSubmit} disabled={!answer}>Submit Answer</Button>
+                </div>
+            );
+        case 'activity':
+             return (
+                 <div className='space-y-4'>
+                    <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: step.content }} />
+                    <Textarea 
+                        value={answer || ''} 
+                        onChange={(e) => onUpdateAnswer(e.target.value)} 
+                        placeholder="Your reflections..." 
+                        rows={8} 
+                    />
+                    <Button onClick={onComplete} disabled={!answer}>Save & Continue</Button>
+                </div>
+            );
+        default:
+            return null;
+    }
+}
+
+function LearnerView({ initialNomination, onUpdate }: { initialNomination: LeadershipNomination, onUpdate: () => void }) {
     const [nomination, setNomination] = useState(initialNomination);
+    const { toast } = useToast();
+    
+    // Lesson navigation state
+    const [activeLesson, setActiveLesson] = useState<{ moduleIndex: number; lessonIndex: number } | null>(null);
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
+    const [stepAnswers, setStepAnswers] = useState<Record<string, string>>({});
 
     useEffect(() => {
         setNomination(initialNomination);
     }, [initialNomination]);
+    
+    const currentModule = activeLesson ? nomination.modules[activeLesson.moduleIndex] : null;
+    const currentLesson = currentModule && activeLesson ? currentModule.lessons[activeLesson.lessonIndex] : null;
+    const currentStep = currentLesson?.steps?.[currentStepIndex];
+
+    const handleStartLesson = (moduleIndex: number, lessonIndex: number) => {
+        setActiveLesson({ moduleIndex, lessonIndex });
+        setCurrentStepIndex(0);
+    };
+
+    const handleStepComplete = async () => {
+        if (!currentLesson || !currentModule || activeLesson === null || !currentStep) return;
+        
+        const nextStepIndex = currentStepIndex + 1;
+        if (currentLesson.steps && nextStepIndex < currentLesson.steps.length) {
+            setCurrentStepIndex(nextStepIndex);
+        } else {
+            // Lesson is complete
+            await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
+            toast({ title: "Lesson Complete!", description: `"${currentLesson.title}" has been marked as complete.`});
+            onUpdate();
+            setActiveLesson(null); // Return to module list
+            setStepAnswers({}); // Clear answers for next lesson
+        }
+    };
+    
+    const handleUpdateAnswer = (answer: string) => {
+        if (!currentStep) return;
+        setStepAnswers(prev => ({ ...prev, [currentStep.id]: answer }));
+    };
+
+    if (activeLesson !== null && currentLesson && currentStep) {
+        return (
+            <div className="p-4 md:p-8 space-y-6">
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <CardTitle className="flex items-center gap-3 text-2xl">{currentLesson.title}</CardTitle>
+                            <Button variant="ghost" onClick={() => setActiveLesson(null)}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Modules
+                            </Button>
+                        </div>
+                        <CardDescription>Module {activeLesson.moduleIndex + 1}: {currentModule?.title}</CardDescription>
+                    </CardHeader>
+                    
+                    <CardContent>
+                        <div className="p-4 border bg-muted/50 rounded-lg min-h-[300px]">
+                            <LessonStepComponent 
+                                step={currentStep} 
+                                onComplete={handleStepComplete} 
+                                onUpdateAnswer={handleUpdateAnswer}
+                                answer={stepAnswers[currentStep.id]}
+                            />
+                        </div>
+                    </CardContent>
+                    
+                    <CardFooter className="flex justify-between items-center">
+                        <Button
+                            variant="outline"
+                            onClick={() => setCurrentStepIndex(p => p - 1)}
+                            disabled={currentStepIndex === 0}
+                        >
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        </Button>
+                        
+                        <p className="text-sm text-muted-foreground">
+                            Step {currentStepIndex + 1} of {currentLesson.steps?.length || 1}
+                        </p>
+                        
+                        {(currentStep.type === 'script') && (
+                            <Button onClick={handleStepComplete}>
+                                Next <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </CardFooter>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 md:p-8 space-y-6">
@@ -184,9 +328,25 @@ function LearnerView({ initialNomination }: { initialNomination: LeadershipNomin
                         </AccordionTrigger>
                         <AccordionContent className="p-4 border-t">
                             <div className="space-y-2">
-                                <p className="text-sm text-muted-foreground">{module.content}</p>
-                                {/* Placeholder for lessons */}
-                                <Button disabled>Start Lesson</Button>
+                               {module.lessons.map((lesson, lessonIndex) => {
+                                   const isLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted; // Simple lock logic
+                                   return (
+                                        <div key={lesson.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
+                                            <div className="flex items-center gap-3">
+                                                {lesson.isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
+                                                <p className="font-medium">{lesson.title}</p>
+                                            </div>
+                                            <Button 
+                                                variant={lesson.isCompleted ? "secondary" : "default"} 
+                                                size="sm"
+                                                onClick={() => handleStartLesson(moduleIndex, lessonIndex)}
+                                                disabled={isLocked || (lessonIndex > 0 && !module.lessons[lessonIndex-1].isCompleted)}
+                                            >
+                                                {lesson.isCompleted ? 'Review' : 'Start'}
+                                            </Button>
+                                        </div>
+                                   )
+                               })}
                             </div>
                         </AccordionContent>
                     </AccordionItem>
@@ -296,7 +456,11 @@ export default function LeadershipPage() {
   useEffect(() => {
     if(role) {
         fetchNominationData();
+         window.addEventListener('feedbackUpdated', fetchNominationData);
     }
+     return () => {
+      window.removeEventListener('feedbackUpdated', fetchNominationData);
+    };
   }, [role, fetchNominationData]);
 
   const isLoading = isRoleLoading || isCheckingNomination;
@@ -323,7 +487,7 @@ export default function LeadershipPage() {
   if (nomination) {
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
-            <LearnerView initialNomination={nomination} />
+            <LearnerView initialNomination={nomination} onUpdate={fetchNominationData} />
         </DashboardLayout>
     );
   }
