@@ -15,8 +15,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, NotebookPen } from 'lucide-react';
-import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep, saveLeadershipLessonAnswer, type LeadershipLesson, LEADERSHIP_COACHING_KEY, getFromStorage, saveToStorage, getNominationForUser } from '@/services/leadership-service';
+import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, NotebookPen, Lock } from 'lucide-react';
+import { getLeadershipNominationsForManager, getNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep, saveLeadershipLessonAnswer, type LeadershipLesson, LEADERSHIP_COACHING_KEY, getFromStorage, saveToStorage } from '@/services/leadership-service';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -162,13 +162,13 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
 
         const newReflection = { text: reflectionText, date: new Date().toISOString() };
 
-        const existingReflections = lesson.userInputs?.[weekId] || [];
+        const existingReflections = (lesson.userInputs && lesson.userInputs[weekId] ? lesson.userInputs[weekId] : []) || [];
         const updatedReflections = [...existingReflections, newReflection];
         
         await saveLeadershipLessonAnswer(nominationId, lesson.id, weekId, updatedReflections);
 
         setCurrentReflection(prev => ({...prev, [weekId]: ''}));
-        toast({ title: `Reflection for week ${weekId} saved!`, description: "You can continue to add more reflections." });
+        toast({ title: `Reflection for week ${weekId.split('-')[0].toUpperCase()} saved!`, description: "You can continue to add more reflections." });
         onUpdate();
     };
 
@@ -321,7 +321,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
     const currentLesson = activeLesson?.lesson;
     const currentStep = currentLesson?.steps?.[currentStepIndex];
 
-    const handleStartLesson = (moduleIndex: number, lesson: LeadershipLesson) => {
+    const handleStartLesson = async (moduleIndex: number, lesson: LeadershipLesson) => {
         setActiveLesson({ moduleIndex, lesson });
         setCurrentStepIndex(0);
         if (lesson.id === 'l1-5' && !lesson.startDate) {
@@ -354,10 +354,15 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
         if (currentLesson.steps && nextStepIndex < currentLesson.steps.length) {
             setCurrentStepIndex(nextStepIndex);
         } else {
-            await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
-            toast({ title: "Lesson Complete!", description: `"${currentLesson.title}" has been marked as complete.`});
-            onUpdate();
-            setActiveLesson(null); 
+            // Do not complete Synthesis lesson here, it is long-running
+            if (currentLesson.id !== 'l1-5') {
+                 await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
+                 toast({ title: "Lesson Complete!", description: `"${currentLesson.title}" has been marked as complete.`});
+                 onUpdate();
+                 setActiveLesson(null); 
+            } else {
+                toast({ title: "Progress Saved", description: "Your Synthesis journal has been updated." });
+            }
         }
     };
     
@@ -474,8 +479,12 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                         <AccordionContent className="p-4 border-t">
                             <div className="space-y-2">
                                {module.lessons.map((lesson, lessonIndex) => {
-                                   const isLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted; 
-                                   const isInProgress = lesson.userInputs && Object.keys(lesson.userInputs).length > 0 && !lesson.isCompleted;
+                                   const isModuleLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted;
+                                   const isLessonLocked = lessonIndex > 0 && !module.lessons[lessonIndex-1].isCompleted;
+                                   const isLocked = isModuleLocked || isLessonLocked;
+                                   
+                                   const hasStarted = lesson.userInputs && Object.keys(lesson.userInputs).length > 0;
+                                   const isInProgress = hasStarted && !lesson.isCompleted;
 
                                    let buttonText = 'Start';
                                    if (lesson.isCompleted) {
@@ -487,17 +496,20 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                                    return (
                                         <div key={lesson.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
                                             <div className="flex items-center gap-3">
-                                                {lesson.isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
-                                                <p className="font-medium">{lesson.title}</p>
+                                                {isLocked ? <Lock className="h-5 w-5 text-muted-foreground/50" /> : lesson.isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <BookOpen className="h-5 w-5 text-muted-foreground" />}
+                                                <p className={cn("font-medium", isLocked && "text-muted-foreground/50")}>{lesson.title}</p>
                                             </div>
-                                            <Button 
-                                                variant={lesson.isCompleted ? "secondary" : "default"} 
-                                                size="sm"
-                                                onClick={() => handleStartLesson(moduleIndex, lesson)}
-                                                disabled={isLocked || (lessonIndex > 0 && !module.lessons[lessonIndex-1].isCompleted)}
-                                            >
-                                                {buttonText}
-                                            </Button>
+                                            <div className="flex items-center gap-2">
+                                                {isLocked && <Badge variant="outline">Locked</Badge>}
+                                                <Button 
+                                                    variant={lesson.isCompleted ? "secondary" : "default"} 
+                                                    size="sm"
+                                                    onClick={() => handleStartLesson(moduleIndex, lesson)}
+                                                    disabled={isLocked}
+                                                >
+                                                    {buttonText}
+                                                </Button>
+                                            </div>
                                         </div>
                                    )
                                })}
@@ -650,6 +662,7 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
