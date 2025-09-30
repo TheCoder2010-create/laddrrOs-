@@ -232,6 +232,7 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                 id: 'l1-5',
                 title: 'Synthesis: Putting It All Together',
                 isCompleted: false,
+                startDate: undefined,
                 steps: [
                     {
                         id: 's1-5-1',
@@ -256,7 +257,17 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                     {
                         id: 's1-6-1',
                         type: 'activity',
-                        content: `<h4>Leadership Presence Self-Discovery</h4><p>This activity is a private reflection. Your answers will not be shared. Be honest with yourself to get the most value.</p><h5>Part A: Authenticity Assessment</h5><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ul class="list-disc pl-5 mt-2 space-y-4"><li><strong>Someone praised you for work that involved others.</strong></li><li><strong>You were asked about something you weren’t sure about.</strong></li><li><strong>You made an error that affected others.</strong></li></ul><h5>Part C: Composure Practice</h5><p>List your top 3 work stress triggers, the physical signs you notice, your usual reaction, and a more composed response you could try.</p><h5>Part D: Connection Experiment</h5><p>Choose three colleagues and practice Level 2 listening, Level 3 listening, and specific recognition. Note your observations and their responses.</p>`
+                        content: `<h4>Leadership Presence Self-Discovery</h4><p>This activity is a private reflection. Your answers will not be shared. Be honest with yourself to get the most value.</p><h5>Part A: Authenticity Assessment</h5><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li>Someone praised you for work that involved others.</li><li>You were asked about something you weren’t sure about.</li><li>You made an error that affected others.</li></ul>`
+                    },
+                    {
+                        id: 's1-6-2',
+                        type: 'activity',
+                        content: `<h5>Part B: Composure Practice</h5><p>List your top 3 work stress triggers, the physical signs you notice, your usual reaction, and a more composed response you could try for each.</p>`
+                    },
+                    {
+                        id: 's1-6-3',
+                        type: 'activity',
+                        content: `<h5>Part C: Connection Experiment</h5><p>Choose three colleagues and practice Level 2 listening (active listening), Level 3 listening (empathetic listening), and specific recognition. Note your observations and their responses for each person.</p>`
                     }
                 ]
             },
