@@ -37,6 +37,7 @@ export interface SynthesisStep {
     title: string;
     intro: string;
     weeklyPractices: {
+        id: string;
         startWeek: number;
         endWeek: number;
         focus: string;
@@ -76,7 +77,7 @@ export interface LeadershipNomination {
     lastUpdated: string;
 }
 
-const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v3';
+const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v4';
 
 const getModulesForEmployeeToLead = (): LeadershipModule[] => [
     { 
@@ -86,17 +87,17 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
         isCompleted: false,
         lessons: [
             {
-                id: 'l1-1',
+                id: 'l1-0',
                 title: 'What is Leadership Presence?',
                 isCompleted: false,
                 steps: [
-                    {
-                        id: 's1-1-1',
+                     {
+                        id: 's1-0-1',
                         type: 'script',
                         content: `<h4>What is Leadership Presence and Why Does It Matter?</h4><p>Imagine walking into a meeting where Sarah, a software developer, quietly takes her seat in the back. When the project hits a roadblock, she doesn't speak up even though she knows the solution. Compare this to Marcus, also a developer, who enters the same meeting, makes eye contact with colleagues, and when the roadblock emerges, he leans forward and says, "I've seen this issue before. Here's what worked for our team last time, and here's what we learned to avoid."</p><p class="mt-4">Both Sarah and Marcus have the same technical skills. The difference? Marcus has developed <strong>leadership presence</strong>—the ability to show up as someone others trust, respect, and want to follow, even when he has no formal authority.</p><p class="mt-4">Leadership presence isn't about being the loudest person in the room or having a commanding personality. It's about developing four core qualities that make people think, "I trust this person's judgment" and "I want to hear what they have to say."</p>`
                     },
                     {
-                        id: 's1-1-2',
+                        id: 's1-0-2',
                         type: 'quiz_mcq',
                         question: 'According to the text, what is the best definition of leadership presence?',
                         options: [
@@ -114,17 +115,17 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                 ]
             },
             {
-                id: 'l1-2',
+                id: 'l1-1',
                 title: 'Pillar 1: Authenticity',
                 isCompleted: false,
                 steps: [
                     {
-                        id: 's1-2-1',
+                        id: 's1-1-1',
                         type: 'script',
                         content: `<h4>Pillar 1: Authenticity - Being Real Without Being Raw</h4><p>Authenticity means bringing your genuine self to work while maintaining professionalism. It's not about sharing every personal detail or emotion—it's about aligning your values with your actions consistently.</p><p class="mt-4 font-semibold">What authentic leadership looks like:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li>When you make a mistake, you own it immediately: "I missed that deadline because I underestimated the complexity. Here's my plan to prevent this in the future."</li><li>You share credit generously: "This success happened because Maria caught the critical bug and Tom stayed late to help test the fix."</li><li>You admit when you don't know something: "I'm not familiar with that technology stack. Can you walk me through how it would work?"</li></ul><p class="mt-4 font-semibold">What authentic leadership does NOT look like:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li>Oversharing personal problems: "I'm having marriage issues and that's why I've been distracted"</li><li>Being brutally honest without consideration: "That idea is terrible and won't work"</li><li>Using authenticity as an excuse for unprofessional behavior: "That's just who I am" when someone gives you feedback</li></ul>`
                     },
                     {
-                        id: 's1-2-2',
+                        id: 's1-1-2',
                         type: 'quiz_mcq',
                         question: 'A colleague praises you for a project you completed with a lot of help from a teammate. What is the most authentic response?',
                         options: [
@@ -142,17 +143,17 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                 ]
             },
             {
-                id: 'l1-3',
+                id: 'l1-2',
                 title: 'Pillar 2: Consistency',
                 isCompleted: false,
                 steps: [
                     {
-                        id: 's1-3-1',
+                        id: 's1-2-1',
                         type: 'script',
                         content: `<h4>Pillar 2: Consistency - Becoming Predictably Reliable</h4><p>Consistency means people know what to expect from you. They trust that your mood won't dramatically affect your decision-making, that you'll follow through on commitments, and that you'll apply the same standards fairly to everyone.</p><p class="mt-4 font-semibold">Building consistency in daily interactions:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>Morning routine example:</strong> Instead of rushing into work, take two minutes to check in with your team. "Good morning, everyone. Any obstacles I can help remove today?" This signals you care about both people and results.</li><li><strong>Decision-making consistency:</strong> When evaluating ideas, use the same criteria every time. "Let's check this against our goals: Does it align with the project? Do we have resources? What's the risk?"</li><li><strong>Follow-through consistency:</strong> If you say "I'll get back to you by Friday," do it. If you can't, communicate that on Thursday.</li></ul><p class="mt-4"><strong>The compound effect of consistency:</strong> People start coming to you for reliable information, then for your opinion, and eventually, they see you as leadership material because they trust your judgment.</p>`
                     },
                     {
-                        id: 's1-3-2',
+                        id: 's1-2-2',
                         type: 'quiz_mcq',
                         question: 'You promised a colleague you would review their document by end of day, but an urgent issue came up. What is the best demonstration of consistency?',
                         options: [
@@ -170,17 +171,17 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                 ]
             },
             {
-                id: 'l1-4',
+                id: 'l1-3',
                 title: 'Pillar 3: Composure',
                 isCompleted: false,
                 steps: [
                     {
-                        id: 's1-4-1',
+                        id: 's1-3-1',
                         type: 'script',
                         content: `<h4>Pillar 3: Composure - Staying Calm When Others Can't</h4><p>Composure isn't about suppressing emotions. It's about managing your emotional responses so you can think clearly during stressful situations.</p><p class="mt-4 font-semibold">Practical composure techniques:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>The 3-breath technique:</strong> When stress rises, take three slow, deep breaths before responding. This engages your rational brain.</li><li><strong>The clarifying question:</strong> Instead of reacting to bad news, ask a question like, "Help me understand what you mean by that?" This buys you thinking time.</li><li><strong>The emotional labeling technique:</strong> Internally acknowledge your emotion without being controlled by it: "I'm feeling frustrated. Let me focus on what we can control."</li></ul><p class="mt-4 font-semibold">Composure in action example:</p><p>The situation: A major bug will delay a launch. The client is furious, and teammates are blaming each other.</p><p><em>Poor response:</em> "This is a disaster! How did we miss this?"</p><p><em>Composed response:</em> "This is a serious issue. Let's focus on three things: First, a plan to fix the bug. Second, how to communicate with the client. Third, what we can learn to prevent this."</p>`
                     },
                     {
-                        id: 's1-4-2',
+                        id: 's1-3-2',
                         type: 'quiz_mcq',
                         question: 'In a tense meeting, a colleague criticizes your work. What is the best first response to demonstrate composure?',
                         options: [
@@ -198,17 +199,17 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                 ]
             },
             {
-                id: 'l1-5',
+                id: 'l1-4',
                 title: 'Pillar 4: Connection',
                 isCompleted: false,
                 steps: [
                     {
-                        id: 's1-5-1',
+                        id: 's1-4-1',
                         type: 'script',
                         content: `<h4>Pillar 4: Connection - Building Bridges, Not Walls</h4><p>Connection is about making others feel heard, valued, and understood. It's the skill that transforms individual contributors into leaders that others want to follow.</p><p class="mt-4 font-semibold">Building connection through active listening:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>Level 1 - Passive listening:</strong> You're quiet, but your mind is preparing your response.</li><li><strong>Level 2 - Active listening:</strong> You're focused on understanding, asking clarifying questions, and reflecting back what you heard.</li><li><strong>Level 3 - Empathetic listening:</strong> You're not just hearing words, but understanding the emotions and motivations behind them.</li></ul><p class="mt-4 font-semibold">Building connection through recognition:</p><p><em>Generic:</em> "Good job."</p><p><em>Specific:</em> "Your decision to add automated testing caught three bugs. That attention to quality made a real difference."</p><p><em>Development-focused:</em> "The way you explained that complex concept to the sales team showed real leadership. That skill will serve you well."</p>`
                     },
                     {
-                        id: 's1-5-2',
+                        id: 's1-4-2',
                         type: 'quiz_mcq',
                         question: 'A junior team member successfully completes their first solo project. Which form of recognition best demonstrates the "Connection" pillar?',
                         options: [
@@ -226,44 +227,44 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                 ]
             },
             {
-                id: 'l1-6',
+                id: 'l1-5',
                 title: 'Synthesis: Putting It All Together',
                 isCompleted: false,
                 steps: [
                     {
-                        id: 's1-6-1',
+                        id: 's1-5-1',
                         type: 'synthesis',
                         title: 'Daily Practices to Build Leadership Presence',
                         intro: "Leadership presence isn't about perfecting each pillar in isolation—it's about integrating them into a consistent way of showing up. The following is a guided 8-week plan to help you build these skills daily. Each week, focus on the assigned tasks.",
                         weeklyPractices: [
-                            { startWeek: 1, endWeek: 2, focus: 'Authenticity Focus', tasks: ["Practice admitting when you don't know something in low-stakes situations.", "Give credit to others at least once per day.", "When you make a mistake, own it immediately and share what you learned."] },
-                            { startWeek: 3, endWeek: 4, focus: 'Consistency Focus', tasks: ["Track three commitments you make each day and whether you keep them.", "Use the same decision-making criteria for similar situations.", "Develop a standard way of responding to common requests."] },
-                            { startWeek: 5, endWeek: 6, focus: 'Composure Focus', tasks: ["Practice the 3-breath technique during routine conversations.", "When someone shares bad news, pause and ask a clarifying question before reacting.", "Start meetings with a brief moment to center yourself."] },
-                            { startWeek: 7, endWeek: 8, focus: 'Connection Focus', tasks: ["Ask one genuine question about each person you work with each day.", "Practice level 3 listening in at least one conversation daily.", "Give specific, development-focused recognition to colleagues."] }
+                            { id: 'w1-2', startWeek: 1, endWeek: 2, focus: 'Authenticity Focus', tasks: ["Practice admitting when you don't know something in low-stakes situations.", "Give credit to others at least once per day.", "When you make a mistake, own it immediately and share what you learned."] },
+                            { id: 'w3-4', startWeek: 3, endWeek: 4, focus: 'Consistency Focus', tasks: ["Track three commitments you make each day and whether you keep them.", "Use the same decision-making criteria for similar situations.", "Develop a standard way of responding to common requests."] },
+                            { id: 'w5-6', startWeek: 5, endWeek: 6, focus: 'Composure Focus', tasks: ["Practice the 3-breath technique during routine conversations.", "When someone shares bad news, pause and ask a clarifying question before reacting.", "Start meetings with a brief moment to center yourself."] },
+                            { id: 'w7-8', startWeek: 7, endWeek: 8, focus: 'Connection Focus', tasks: ["Ask one genuine question about each person you work with each day.", "Practice level 3 listening in at least one conversation daily.", "Give specific, development-focused recognition to colleagues."] }
                         ],
                         outro: "Signs of growth include: people seeking your input more often, feeling more confident in meetings, and your influence growing even without a formal title."
                     }
                 ]
             },
             {
-                id: 'l1-7',
+                id: 'l1-6',
                 title: 'Activity: Self-Discovery',
                 isCompleted: false,
                 steps: [
                     {
-                        id: 's1-7-1',
+                        id: 's1-6-1',
                         type: 'activity',
                         content: `<h4>Leadership Presence Self-Discovery</h4><p>This activity is a private reflection. Your answers will not be shared. Be honest with yourself to get the most value.</p><h5>Part A: Authenticity Assessment</h5><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ul class="list-disc pl-5 mt-2 space-y-4"><li><strong>Someone praised you for work that involved others.</strong></li><li><strong>You were asked about something you weren’t sure about.</strong></li><li><strong>You made an error that affected others.</strong></li></ul><h5>Part C: Composure Practice</h5><p>List your top 3 work stress triggers, the physical signs you notice, your usual reaction, and a more composed response you could try.</p><h5>Part D: Connection Experiment</h5><p>Choose three colleagues and practice Level 2 listening, Level 3 listening, and specific recognition. Note your observations and their responses.</p>`
                     }
                 ]
             },
             {
-                id: 'l1-8',
+                id: 'l1-7',
                 title: 'Scenario: The Project Conflict',
                 isCompleted: false,
                 steps: [
                     {
-                        id: 's1-8-1',
+                        id: 's1-7-1',
                         type: 'activity',
                         content: `<h4>Practice Scenario: The Project Conflict</h4><p><strong>Background:</strong> You’re part of a six-person project team. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising.</p><p class="mt-2"><strong>Your Challenge:</strong> You have 30 seconds to respond to reduce conflict and refocus the team. Write out exactly what you would say or do below.</p>`
                     }

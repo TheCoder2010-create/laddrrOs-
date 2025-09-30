@@ -139,8 +139,10 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
-function SynthesisStepComponent({ step, startDate, onComplete, onUpdateAnswer, answer }: { step: LessonStep, startDate: string, onComplete: () => void, onUpdateAnswer: (answer: string) => void, answer?: string }) {
+function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDate: string }) {
     const { toast } = useToast();
+    const [reflections, setReflections] = useState<Record<string, string>>({});
+
     if (step.type !== 'synthesis') return null;
 
     const getWeekNumber = (startDate: string) => {
@@ -150,48 +152,62 @@ function SynthesisStepComponent({ step, startDate, onComplete, onUpdateAnswer, a
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return Math.floor(diffDays / 7) + 1;
     };
-
-    const currentWeek = getWeekNumber(startDate);
-    const activePractice = step.weeklyPractices.find(p => currentWeek >= p.startWeek && currentWeek <= p.endWeek);
-
-    const handleSave = () => {
-        if (!answer) {
+    
+    const handleSaveReflection = (weekId: string) => {
+        if (!reflections[weekId]) {
             toast({ title: "Please enter your reflection.", variant: "destructive" });
             return;
         }
-        // In a real app, this would save the reflection. Here we just move on.
-        onComplete();
+        // In a real app, this would save to a persistent store.
+        // Here, we just give user feedback.
+        toast({ title: `Reflection for week ${weekId} saved!`, description: "You can continue to add more reflections." });
+        console.log(`Saved reflection for week ${weekId}:`, reflections[weekId]);
     };
+
+    const currentProgramWeek = getWeekNumber(startDate);
+    const defaultOpenAccordion = step.weeklyPractices.find(p => currentProgramWeek >= p.startWeek && currentProgramWeek <= p.endWeek)?.id;
 
     return (
         <div className="space-y-4">
             <h3 className="text-lg font-semibold">{step.title}</h3>
             <p className="text-muted-foreground whitespace-pre-wrap">{step.intro}</p>
 
-            {activePractice ? (
-                <div className="p-4 border rounded-lg bg-primary/10 border-primary/20">
-                    <h4 className="font-semibold text-primary">This Week's Focus (Week {currentWeek}): {activePractice.focus}</h4>
-                    <ul className="list-disc pl-5 mt-2 text-sm text-primary/90 space-y-1">
-                        {activePractice.tasks.map((task, i) => (
-                            <li key={i}>{task}</li>
-                        ))}
-                    </ul>
-                     <div className="mt-4 space-y-2">
-                        <Label htmlFor="synthesis-journal">Log your reflections for today:</Label>
-                        <Textarea
-                            id="synthesis-journal"
-                            value={answer || ''}
-                            onChange={(e) => onUpdateAnswer(e.target.value)}
-                            placeholder="e.g., 'Today I gave specific credit to Sarah in the team chat. She seemed really pleased...'"
-                            rows={4}
-                        />
-                        <Button onClick={handleSave} disabled={!answer}>Save Reflection & Continue</Button>
-                    </div>
-                </div>
-            ) : (
-                <p className="text-muted-foreground">Your weekly practice plan will begin soon.</p>
-            )}
-
+            <Accordion type="single" collapsible defaultValue={defaultOpenAccordion} className="w-full space-y-2">
+                {step.weeklyPractices.map(practice => {
+                    const isCurrent = currentProgramWeek >= practice.startWeek && currentProgramWeek <= practice.endWeek;
+                    return (
+                        <AccordionItem value={practice.id} key={practice.id} className={cn("border rounded-lg", isCurrent ? "bg-primary/10 border-primary/20" : "bg-muted/50")}>
+                            <AccordionTrigger className="p-3 font-semibold text-left hover:no-underline">
+                                <div className="flex justify-between items-center w-full pr-2">
+                                     <span>Weeks {practice.startWeek}-{practice.endWeek}: {practice.focus}</span>
+                                     {isCurrent && <Badge>This Week</Badge>}
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 border-t space-y-4">
+                                <ul className="list-disc pl-5 text-sm text-primary/90 space-y-1">
+                                    {practice.tasks.map((task, i) => (
+                                        <li key={i}>{task}</li>
+                                    ))}
+                                </ul>
+                                <div className="mt-4 space-y-2">
+                                    <Label htmlFor={`synthesis-journal-${practice.id}`}>Log your reflections for this period:</Label>
+                                    <Textarea
+                                        id={`synthesis-journal-${practice.id}`}
+                                        value={reflections[practice.id] || ''}
+                                        onChange={(e) => setReflections(prev => ({...prev, [practice.id]: e.target.value}))}
+                                        placeholder="e.g., 'Today I gave specific credit to Sarah in the team chat...'"
+                                        rows={4}
+                                    />
+                                    <Button onClick={() => handleSaveReflection(practice.id)} disabled={!reflections[practice.id]}>
+                                        Save Reflection for this Week
+                                    </Button>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    )
+                })}
+            </Accordion>
+            
             <div className="mt-6 pt-4 border-t">
                  <h4 className="font-semibold">Measuring Your Progress</h4>
                  <p className="text-muted-foreground whitespace-pre-wrap">{step.outro}</p>
@@ -253,7 +269,7 @@ function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer, startDa
                 </div>
             );
         case 'synthesis':
-            return <SynthesisStepComponent step={step} startDate={startDate} onComplete={onComplete} onUpdateAnswer={onUpdateAnswer} answer={answer} />;
+            return <SynthesisStepComponent step={step} startDate={startDate} />;
         default:
             return null;
     }
@@ -283,6 +299,15 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
     const handleStepComplete = async () => {
         if (!currentLesson || !currentModule || activeLesson === null || !currentStep) return;
         
+        // The synthesis step is long-running and doesn't "complete" in the same way.
+        if (currentStep.type === 'synthesis') {
+            toast({ title: "Module Complete!", description: "You can return to the Synthesis lesson anytime to continue your reflections."});
+            await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
+            onUpdate();
+            setActiveLesson(null);
+            return;
+        }
+
         const nextStepIndex = currentStepIndex + 1;
         if (currentLesson.steps && nextStepIndex < currentLesson.steps.length) {
             setCurrentStepIndex(nextStepIndex);
@@ -342,6 +367,11 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                         {(currentStep.type === 'script') && (
                             <Button onClick={handleStepComplete}>
                                 Next <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                         {(currentStep.type === 'synthesis') && (
+                            <Button onClick={handleStepComplete} variant="success">
+                                Mark Module as Complete
                             </Button>
                         )}
                     </CardFooter>
@@ -559,4 +589,5 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
