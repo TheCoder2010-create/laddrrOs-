@@ -53,6 +53,8 @@ export interface LeadershipLesson {
     title: string;
     isCompleted: boolean;
     steps: LessonStep[];
+    userInputs?: Record<string, any>; // To store answers and reflections
+    startDate?: string;
 }
 
 export interface LeadershipModule {
@@ -226,7 +228,7 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                     }
                 ]
             },
-            {
+             {
                 id: 'l1-5',
                 title: 'Synthesis: Putting It All Together',
                 isCompleted: false,
@@ -340,7 +342,10 @@ export async function nominateForLeadership(managerRole: Role, nomineeRole: Role
         targetRole: targetRole,
         status: 'InProgress',
         startDate: now,
-        modules: initialModules,
+        modules: initialModules.map(m => ({
+            ...m,
+            lessons: m.lessons.map(l => ({ ...l, userInputs: {} })) // Initialize userInputs
+        })),
         modulesCompleted: 0,
         currentModuleId: initialModules[0].id,
         certified: false,
@@ -427,4 +432,30 @@ export async function completeLeadershipLesson(nominationId: string, moduleId: s
 
     nomination.lastUpdated = new Date().toISOString();
     saveToStorage(LEADERSHIP_COACHING_KEY, nominations);
+}
+
+export async function saveLeadershipLessonAnswer(nominationId: string, lessonId: string, stepId: string, answer: any): Promise<void> {
+    const nominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
+    const nomIndex = nominations.findIndex(n => n.id === nominationId);
+    if (nomIndex === -1) return;
+
+    const nomination = nominations[nomIndex];
+    
+    // Find the correct lesson across all modules
+    let lesson: LeadershipLesson | undefined;
+    for (const module of nomination.modules) {
+        lesson = module.lessons.find(l => l.id === lessonId);
+        if (lesson) break;
+    }
+
+    if (lesson) {
+        if (!lesson.userInputs) {
+            lesson.userInputs = {};
+        }
+        lesson.userInputs[stepId] = answer;
+        nomination.lastUpdated = new Date().toISOString();
+        saveToStorage(LEADERSHIP_COACHING_KEY, nominations);
+    } else {
+        console.error(`Lesson with ID ${lessonId} not found in nomination ${nominationId}`);
+    }
 }

@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
-import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep } from '@/services/leadership-service';
+import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep, saveLeadershipLessonAnswer, type LeadershipLesson } from '@/services/leadership-service';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -139,10 +139,9 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
-function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDate: string }) {
+function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step: LessonStep, lesson: LeadershipLesson, nominationId: string, onUpdate: () => void }) {
     const { toast } = useToast();
     const [currentReflection, setCurrentReflection] = useState<Record<string, string>>({});
-    const [savedReflections, setSavedReflections] = useState<Record<string, { text: string; date: string }[]>>({});
 
     if (step.type !== 'synthesis') return null;
 
@@ -154,27 +153,27 @@ function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDa
         return Math.floor(diffDays / 7) + 1;
     };
     
-    const handleSaveReflection = (weekId: string) => {
+    const handleSaveReflection = async (weekId: string) => {
         const reflectionText = currentReflection[weekId];
         if (!reflectionText) {
             toast({ title: "Please enter your reflection.", variant: "destructive" });
             return;
         }
 
-        setSavedReflections(prev => ({
-            ...prev,
-            [weekId]: [
-                ...(prev[weekId] || []),
-                { text: reflectionText, date: new Date().toISOString() }
-            ]
-        }));
-        
-        setCurrentReflection(prev => ({...prev, [weekId]: ''}));
+        const newReflection = { text: reflectionText, date: new Date().toISOString() };
 
+        // Get existing reflections for this week and add the new one
+        const existingReflections = lesson.userInputs?.[weekId] || [];
+        const updatedReflections = [...existingReflections, newReflection];
+        
+        await saveLeadershipLessonAnswer(nominationId, lesson.id, weekId, updatedReflections);
+
+        setCurrentReflection(prev => ({...prev, [weekId]: ''}));
         toast({ title: `Reflection for week ${weekId} saved!`, description: "You can continue to add more reflections." });
+        onUpdate(); // Re-fetch data to update UI
     };
 
-    const currentProgramWeek = getWeekNumber(startDate);
+    const currentProgramWeek = getWeekNumber(lesson.startDate || new Date().toISOString());
     const defaultOpenAccordion = step.weeklyPractices.find(p => currentProgramWeek >= p.startWeek && currentProgramWeek <= p.endWeek)?.id;
 
     return (
@@ -185,7 +184,7 @@ function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDa
             <Accordion type="single" collapsible defaultValue={defaultOpenAccordion} className="w-full space-y-2">
                 {step.weeklyPractices.map(practice => {
                     const isCurrent = currentProgramWeek >= practice.startWeek && currentProgramWeek <= practice.endWeek;
-                    const weeklySavedReflections = savedReflections[practice.id] || [];
+                    const weeklySavedReflections = lesson.userInputs?.[practice.id] || [];
 
                     return (
                         <AccordionItem value={practice.id} key={practice.id} className={cn("border rounded-lg", isCurrent ? "bg-primary/10 border-primary/20" : "bg-muted/50")}>
@@ -206,7 +205,7 @@ function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDa
                                     <div className="mt-4 space-y-3 pt-4 border-t">
                                         <h5 className="font-semibold text-foreground">Your Saved Reflections:</h5>
                                         <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                            {weeklySavedReflections.map((reflection, i) => (
+                                            {weeklySavedReflections.map((reflection: any, i: number) => (
                                                 <div key={i} className="p-2 border rounded-md bg-background/50 text-sm">
                                                     <p className="text-xs text-muted-foreground">{new Date(reflection.date).toLocaleString()}</p>
                                                     <p className="whitespace-pre-wrap">{reflection.text}</p>
@@ -244,7 +243,7 @@ function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDa
 }
 
 
-function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer, startDate }: { step: LessonStep, onComplete: () => void, onUpdateAnswer: (answer: string) => void, answer?: string, startDate: string }) {
+function LessonStepComponent({ step, lesson, nominationId, onComplete, onUpdateAnswer, onUpdate, answer }: { step: LessonStep, lesson: LeadershipLesson, nominationId: string, onComplete: () => void, onUpdateAnswer: (stepId: string, answer: any) => void, onUpdate: () => void, answer?: any }) {
     const { toast } = useToast();
 
     const handleQuizSubmit = () => {
@@ -271,7 +270,7 @@ function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer, startDa
             return (
                 <div className='space-y-4'>
                     <p className="font-semibold">{step.question}</p>
-                    <RadioGroup value={answer} onValueChange={onUpdateAnswer}>
+                    <RadioGroup value={answer} onValueChange={(val) => onUpdateAnswer(step.id, val)}>
                         {step.options.map((opt, i) => (
                             <div key={i} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
                                 <RadioGroupItem value={opt} id={`q-${i}`} />
@@ -288,7 +287,7 @@ function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer, startDa
                     <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: step.content }} />
                     <Textarea 
                         value={answer || ''} 
-                        onChange={(e) => onUpdateAnswer(e.target.value)} 
+                        onChange={(e) => onUpdateAnswer(step.id, e.target.value)} 
                         placeholder="Your reflections..." 
                         rows={8} 
                     />
@@ -296,7 +295,7 @@ function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer, startDa
                 </div>
             );
         case 'synthesis':
-            return <SynthesisStepComponent step={step} startDate={startDate} />;
+            return <SynthesisStepComponent step={step} lesson={lesson} nominationId={nominationId} onUpdate={onUpdate} />;
         default:
             return null;
     }
@@ -306,33 +305,34 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
     const [nomination, setNomination] = useState(initialNomination);
     const { toast } = useToast();
     
-    const [activeLesson, setActiveLesson] = useState<{ moduleIndex: number; lessonIndex: number } | null>(null);
+    const [activeLesson, setActiveLesson] = useState<{ moduleIndex: number; lesson: LeadershipLesson } | null>(null);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [stepAnswers, setStepAnswers] = useState<Record<string, string>>({});
 
     useEffect(() => {
         setNomination(initialNomination);
     }, [initialNomination]);
     
     const currentModule = activeLesson ? nomination.modules[activeLesson.moduleIndex] : null;
-    const currentLesson = currentModule && activeLesson ? currentModule.lessons[activeLesson.lessonIndex] : null;
+    const currentLesson = activeLesson?.lesson;
     const currentStep = currentLesson?.steps?.[currentStepIndex];
 
-    const handleStartLesson = (moduleIndex: number, lessonIndex: number) => {
-        setActiveLesson({ moduleIndex, lessonIndex });
+    const handleStartLesson = (moduleIndex: number, lesson: LeadershipLesson) => {
+        setActiveLesson({ moduleIndex, lesson });
         setCurrentStepIndex(0);
+        // Mark lesson as in-progress if it's not already completed.
+        if (!lesson.isCompleted) {
+             // In a real app, you'd save this status change to the backend.
+             // For now, it's just a local state change until completion.
+        }
     };
 
     const handleStepComplete = async () => {
         if (!currentLesson || !currentModule || activeLesson === null || !currentStep) return;
         
-        // The synthesis step is long-running and doesn't "complete" in the same way.
-        if (currentStep.type === 'synthesis') {
-            toast({ title: "Module Complete!", description: "You can return to the Synthesis lesson anytime to continue your reflections."});
-            await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
-            onUpdate();
-            setActiveLesson(null);
-            return;
+        // Save the answer for the current step
+        const answer = currentLesson.userInputs?.[currentStep.id];
+        if (answer) {
+            await saveLeadershipLessonAnswer(nomination.id, currentLesson.id, currentStep.id, answer);
         }
 
         const nextStepIndex = currentStepIndex + 1;
@@ -343,16 +343,31 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
             toast({ title: "Lesson Complete!", description: `"${currentLesson.title}" has been marked as complete.`});
             onUpdate();
             setActiveLesson(null); 
-            setStepAnswers({}); 
         }
     };
     
-    const handleUpdateAnswer = (answer: string) => {
-        if (!currentStep) return;
-        setStepAnswers(prev => ({ ...prev, [currentStep.id]: answer }));
+    const handleUpdateAnswer = (stepId: string, answer: any) => {
+        if (!currentLesson) return;
+        const updatedLesson = {
+            ...currentLesson,
+            userInputs: {
+                ...currentLesson.userInputs,
+                [stepId]: answer,
+            }
+        };
+        // Update local state to reflect the change immediately
+        setActiveLesson(prev => prev ? ({ ...prev, lesson: updatedLesson }) : null);
     };
 
-    if (activeLesson !== null && currentLesson && currentStep) {
+    const handleBack = () => {
+        if (currentStepIndex > 0) {
+            setCurrentStepIndex(p => p - 1);
+        } else {
+            setActiveLesson(null);
+        }
+    };
+
+    if (activeLesson && currentLesson && currentStep) {
         return (
             <div className="p-4 md:p-8 space-y-6">
                 <Card className="shadow-lg">
@@ -370,10 +385,12 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                         <div className="p-4 border bg-muted/50 rounded-lg min-h-[300px]">
                             <LessonStepComponent 
                                 step={currentStep} 
+                                lesson={currentLesson}
+                                nominationId={nomination.id}
                                 onComplete={handleStepComplete} 
                                 onUpdateAnswer={handleUpdateAnswer}
-                                answer={stepAnswers[currentStep.id]}
-                                startDate={nomination.startDate}
+                                onUpdate={onUpdate}
+                                answer={currentLesson.userInputs?.[currentStep.id]}
                             />
                         </div>
                     </CardContent>
@@ -381,8 +398,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                     <CardFooter className="flex justify-between items-center">
                         <Button
                             variant="outline"
-                            onClick={() => setCurrentStepIndex(p => p - 1)}
-                            disabled={currentStepIndex === 0}
+                            onClick={handleBack}
                         >
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
@@ -394,11 +410,6 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                         {(currentStep.type === 'script') && (
                             <Button onClick={handleStepComplete}>
                                 Next <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        )}
-                         {(currentStep.type === 'synthesis') && (
-                            <Button onClick={handleStepComplete} variant="success">
-                                Mark Module as Complete
                             </Button>
                         )}
                     </CardFooter>
@@ -459,7 +470,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                                             <Button 
                                                 variant={lesson.isCompleted ? "secondary" : "default"} 
                                                 size="sm"
-                                                onClick={() => handleStartLesson(moduleIndex, lessonIndex)}
+                                                onClick={() => handleStartLesson(moduleIndex, lesson)}
                                                 disabled={isLocked || (lessonIndex > 0 && !module.lessons[lessonIndex-1].isCompleted)}
                                             >
                                                 {lesson.isCompleted ? 'Review' : 'Start'}
@@ -616,6 +627,7 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
