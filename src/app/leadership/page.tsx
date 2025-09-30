@@ -461,6 +461,15 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                             <div className="space-y-2">
                                {module.lessons.map((lesson, lessonIndex) => {
                                    const isLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted; 
+                                   const isInProgress = lesson.userInputs && Object.keys(lesson.userInputs).length > 0 && !lesson.isCompleted;
+
+                                   let buttonText = 'Start';
+                                   if (lesson.isCompleted) {
+                                       buttonText = 'Review';
+                                   } else if (isInProgress) {
+                                       buttonText = 'Resume';
+                                   }
+
                                    return (
                                         <div key={lesson.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
                                             <div className="flex items-center gap-3">
@@ -473,7 +482,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                                                 onClick={() => handleStartLesson(moduleIndex, lesson)}
                                                 disabled={isLocked || (lessonIndex > 0 && !module.lessons[lessonIndex-1].isCompleted)}
                                             >
-                                                {lesson.isCompleted ? 'Review' : 'Start'}
+                                                {buttonText}
                                             </Button>
                                         </div>
                                    )
@@ -627,6 +636,7 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
