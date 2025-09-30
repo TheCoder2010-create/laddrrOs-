@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft, MessageSquare } from 'lucide-react';
 import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep, saveLeadershipLessonAnswer, type LeadershipLesson } from '@/services/leadership-service';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -162,7 +162,6 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
 
         const newReflection = { text: reflectionText, date: new Date().toISOString() };
 
-        // Get existing reflections for this week and add the new one
         const existingReflections = lesson.userInputs?.[weekId] || [];
         const updatedReflections = [...existingReflections, newReflection];
         
@@ -170,7 +169,7 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
 
         setCurrentReflection(prev => ({...prev, [weekId]: ''}));
         toast({ title: `Reflection for week ${weekId} saved!`, description: "You can continue to add more reflections." });
-        onUpdate(); // Re-fetch data to update UI
+        onUpdate();
     };
 
     const currentProgramWeek = getWeekNumber(lesson.startDate || new Date().toISOString());
@@ -203,12 +202,18 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
 
                                 {weeklySavedReflections.length > 0 && (
                                     <div className="mt-4 space-y-3 pt-4 border-t">
-                                        <h5 className="font-semibold text-foreground">Your Saved Reflections:</h5>
-                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                        <h5 className="font-semibold text-foreground mb-4">Your Reflection Timeline</h5>
+                                        <div className="relative pl-6 space-y-6">
+                                            <div className="absolute left-[7px] top-1 h-full w-0.5 bg-border -z-10"></div>
                                             {weeklySavedReflections.map((reflection: any, i: number) => (
-                                                <div key={i} className="p-2 border rounded-md bg-background/50 text-sm">
-                                                    <p className="text-xs text-muted-foreground">{new Date(reflection.date).toLocaleString()}</p>
-                                                    <p className="whitespace-pre-wrap">{reflection.text}</p>
+                                                <div key={i} className="flex items-start gap-4">
+                                                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary flex-shrink-0 mt-1">
+                                                        <div className="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-xs text-muted-foreground">{new Date(reflection.date).toLocaleString()}</p>
+                                                        <p className="text-sm whitespace-pre-wrap mt-1">{reflection.text}</p>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -319,17 +324,27 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
     const handleStartLesson = (moduleIndex: number, lesson: LeadershipLesson) => {
         setActiveLesson({ moduleIndex, lesson });
         setCurrentStepIndex(0);
-        // Mark lesson as in-progress if it's not already completed.
-        if (!lesson.isCompleted) {
-             // In a real app, you'd save this status change to the backend.
-             // For now, it's just a local state change until completion.
+        if (lesson.id === 'l1-5' && !lesson.startDate) {
+             // Special handling for Synthesis: mark its start date
+            const updatedNominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
+            const nomIndex = updatedNominations.findIndex(n => n.id === nomination.id);
+            if(nomIndex !== -1) {
+                const modIndex = updatedNominations[nomIndex].modules.findIndex(m => m.id === nomination.modules[moduleIndex].id);
+                if(modIndex !== -1) {
+                    const lessIndex = updatedNominations[nomIndex].modules[modIndex].lessons.findIndex(l => l.id === lesson.id);
+                    if(lessIndex !== -1) {
+                         updatedNominations[nomIndex].modules[modIndex].lessons[lessIndex].startDate = new Date().toISOString();
+                         saveToStorage(LEADERSHIP_COACHING_KEY, updatedNominations);
+                         onUpdate();
+                    }
+                }
+            }
         }
     };
 
     const handleStepComplete = async () => {
         if (!currentLesson || !currentModule || activeLesson === null || !currentStep) return;
         
-        // Save the answer for the current step
         const answer = currentLesson.userInputs?.[currentStep.id];
         if (answer) {
             await saveLeadershipLessonAnswer(nomination.id, currentLesson.id, currentStep.id, answer);
@@ -355,7 +370,6 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                 [stepId]: answer,
             }
         };
-        // Update local state to reflect the change immediately
         setActiveLesson(prev => prev ? ({ ...prev, lesson: updatedLesson }) : null);
     };
 
@@ -636,6 +650,7 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
