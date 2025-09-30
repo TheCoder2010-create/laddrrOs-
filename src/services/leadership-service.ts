@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -30,7 +31,21 @@ export interface ActivityStep {
     content: string;
 }
 
-export type LessonStep = ScriptStep | QuizStep | ActivityStep;
+export interface SynthesisStep {
+    type: 'synthesis';
+    id: string;
+    title: string;
+    intro: string;
+    weeklyPractices: {
+        startWeek: number;
+        endWeek: number;
+        focus: string;
+        tasks: string[];
+    }[];
+    outro: string;
+}
+
+export type LessonStep = ScriptStep | QuizStep | ActivityStep | SynthesisStep;
 
 export interface LeadershipLesson {
     id: string;
@@ -61,7 +76,7 @@ export interface LeadershipNomination {
     lastUpdated: string;
 }
 
-const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v2';
+const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v3';
 
 const getModulesForEmployeeToLead = (): LeadershipModule[] => [
     { 
@@ -217,24 +232,16 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                 steps: [
                     {
                         id: 's1-6-1',
-                        type: 'script',
-                        content: `<h4>Putting the Four Pillars Together</h4><p>Leadership presence isn't about perfecting each pillar in isolation—it's about integrating them into a consistent way of showing up.</p><h4>Daily Practices to Build Leadership Presence</h4><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>Weeks 1–2: Authenticity Focus</strong> - Practice admitting when you don't know something and give credit to others daily.</li><li><strong>Weeks 3–4: Consistency Focus</strong> - Track your commitments and apply consistent decision filters.</li><li><strong>Weeks 5–6: Composure Focus</strong> - Use the 3-breath technique and pause before reacting to stressful news.</li><li><strong>Weeks 7–8: Connection Focus</strong> - Ask genuine questions and give specific, development-focused recognition.</li></ul><h4>Measuring Your Progress</h4><p>Signs of growth include people seeking your input more often, feeling more confident in meetings, and your influence growing even without a formal title.</p>`
-                    },
-                    {
-                        id: 's1-6-2',
-                        type: 'quiz_mcq',
-                        question: 'Which of the following is a sign that your leadership presence is growing?',
-                        options: [
-                            'You win every argument.',
-                            'People start coming to you for your opinion on important decisions.',
-                            'You do all the most important work yourself to ensure quality.',
-                            'You avoid difficult conversations to keep the team happy.'
+                        type: 'synthesis',
+                        title: 'Daily Practices to Build Leadership Presence',
+                        intro: "Leadership presence isn't about perfecting each pillar in isolation—it's about integrating them into a consistent way of showing up. The following is a guided 8-week plan to help you build these skills daily. Each week, focus on the assigned tasks.",
+                        weeklyPractices: [
+                            { startWeek: 1, endWeek: 2, focus: 'Authenticity Focus', tasks: ["Practice admitting when you don't know something in low-stakes situations.", "Give credit to others at least once per day.", "When you make a mistake, own it immediately and share what you learned."] },
+                            { startWeek: 3, endWeek: 4, focus: 'Consistency Focus', tasks: ["Track three commitments you make each day and whether you keep them.", "Use the same decision-making criteria for similar situations.", "Develop a standard way of responding to common requests."] },
+                            { startWeek: 5, endWeek: 6, focus: 'Composure Focus', tasks: ["Practice the 3-breath technique during routine conversations.", "When someone shares bad news, pause and ask a clarifying question before reacting.", "Start meetings with a brief moment to center yourself."] },
+                            { startWeek: 7, endWeek: 8, focus: 'Connection Focus', tasks: ["Ask one genuine question about each person you work with each day.", "Practice level 3 listening in at least one conversation daily.", "Give specific, development-focused recognition to colleagues."] }
                         ],
-                        correctAnswer: 'People start coming to you for your opinion on important decisions.',
-                        feedback: {
-                            correct: "That's right. Growing influence and being sought out for your judgment are key indicators of leadership presence.",
-                            incorrect: "The best indicator is that others start to seek out your opinion, showing that they trust your judgment."
-                        }
+                        outro: "Signs of growth include: people seeking your input more often, feeling more confident in meetings, and your influence growing even without a formal title."
                     }
                 ]
             },
@@ -355,7 +362,7 @@ export async function nominateForLeadership(managerRole: Role, nomineeRole: Role
         viewed: false,
         auditTrail: [{
             event: 'Notification Created',
-            timestamp: now,
+            timestamp: new Date(now),
             actor: 'System',
             details: `Automated notification for Leadership Program enrollment.`
         }]

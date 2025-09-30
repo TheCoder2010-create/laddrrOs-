@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -63,7 +64,6 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
         }
     };
     
-    // A manager can nominate employees, team leads, and AMs.
     const eligibleNominees: Role[] = ['Employee', 'Team Lead', 'AM'];
 
     return (
@@ -139,7 +139,69 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
-function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer }: { step: LessonStep, onComplete: () => void, onUpdateAnswer: (answer: string) => void, answer?: string }) {
+function SynthesisStepComponent({ step, startDate, onComplete, onUpdateAnswer, answer }: { step: LessonStep, startDate: string, onComplete: () => void, onUpdateAnswer: (answer: string) => void, answer?: string }) {
+    const { toast } = useToast();
+    if (step.type !== 'synthesis') return null;
+
+    const getWeekNumber = (startDate: string) => {
+        const start = new Date(startDate);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.floor(diffDays / 7) + 1;
+    };
+
+    const currentWeek = getWeekNumber(startDate);
+    const activePractice = step.weeklyPractices.find(p => currentWeek >= p.startWeek && currentWeek <= p.endWeek);
+
+    const handleSave = () => {
+        if (!answer) {
+            toast({ title: "Please enter your reflection.", variant: "destructive" });
+            return;
+        }
+        // In a real app, this would save the reflection. Here we just move on.
+        onComplete();
+    };
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{step.title}</h3>
+            <p className="text-muted-foreground whitespace-pre-wrap">{step.intro}</p>
+
+            {activePractice ? (
+                <div className="p-4 border rounded-lg bg-primary/10 border-primary/20">
+                    <h4 className="font-semibold text-primary">This Week's Focus (Week {currentWeek}): {activePractice.focus}</h4>
+                    <ul className="list-disc pl-5 mt-2 text-sm text-primary/90 space-y-1">
+                        {activePractice.tasks.map((task, i) => (
+                            <li key={i}>{task}</li>
+                        ))}
+                    </ul>
+                     <div className="mt-4 space-y-2">
+                        <Label htmlFor="synthesis-journal">Log your reflections for today:</Label>
+                        <Textarea
+                            id="synthesis-journal"
+                            value={answer || ''}
+                            onChange={(e) => onUpdateAnswer(e.target.value)}
+                            placeholder="e.g., 'Today I gave specific credit to Sarah in the team chat. She seemed really pleased...'"
+                            rows={4}
+                        />
+                        <Button onClick={handleSave} disabled={!answer}>Save Reflection & Continue</Button>
+                    </div>
+                </div>
+            ) : (
+                <p className="text-muted-foreground">Your weekly practice plan will begin soon.</p>
+            )}
+
+            <div className="mt-6 pt-4 border-t">
+                 <h4 className="font-semibold">Measuring Your Progress</h4>
+                 <p className="text-muted-foreground whitespace-pre-wrap">{step.outro}</p>
+            </div>
+        </div>
+    );
+}
+
+
+function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer, startDate }: { step: LessonStep, onComplete: () => void, onUpdateAnswer: (answer: string) => void, answer?: string, startDate: string }) {
     const { toast } = useToast();
 
     const handleQuizSubmit = () => {
@@ -190,6 +252,8 @@ function LessonStepComponent({ step, onComplete, onUpdateAnswer, answer }: { ste
                     <Button onClick={onComplete} disabled={!answer}>Save & Continue</Button>
                 </div>
             );
+        case 'synthesis':
+            return <SynthesisStepComponent step={step} startDate={startDate} onComplete={onComplete} onUpdateAnswer={onUpdateAnswer} answer={answer} />;
         default:
             return null;
     }
@@ -199,7 +263,6 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
     const [nomination, setNomination] = useState(initialNomination);
     const { toast } = useToast();
     
-    // Lesson navigation state
     const [activeLesson, setActiveLesson] = useState<{ moduleIndex: number; lessonIndex: number } | null>(null);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [stepAnswers, setStepAnswers] = useState<Record<string, string>>({});
@@ -224,12 +287,11 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
         if (currentLesson.steps && nextStepIndex < currentLesson.steps.length) {
             setCurrentStepIndex(nextStepIndex);
         } else {
-            // Lesson is complete
             await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
             toast({ title: "Lesson Complete!", description: `"${currentLesson.title}" has been marked as complete.`});
             onUpdate();
-            setActiveLesson(null); // Return to module list
-            setStepAnswers({}); // Clear answers for next lesson
+            setActiveLesson(null); 
+            setStepAnswers({}); 
         }
     };
     
@@ -259,6 +321,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                                 onComplete={handleStepComplete} 
                                 onUpdateAnswer={handleUpdateAnswer}
                                 answer={stepAnswers[currentStep.id]}
+                                startDate={nomination.startDate}
                             />
                         </div>
                     </CardContent>
@@ -329,7 +392,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                         <AccordionContent className="p-4 border-t">
                             <div className="space-y-2">
                                {module.lessons.map((lesson, lessonIndex) => {
-                                   const isLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted; // Simple lock logic
+                                   const isLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted; 
                                    return (
                                         <div key={lesson.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
                                             <div className="flex items-center gap-3">
@@ -473,7 +536,6 @@ export default function LeadershipPage() {
     );
   }
   
-  // Managerial roles see the main dashboard.
   const isManagerialRole = ['Manager', 'HR Head'].includes(role);
   if (isManagerialRole) {
       return (
@@ -483,7 +545,6 @@ export default function LeadershipPage() {
       );
   }
 
-  // Nominated employees see the learner view.
   if (nomination) {
     return (
         <DashboardLayout role={role} onSwitchRole={setRole}>
@@ -492,10 +553,10 @@ export default function LeadershipPage() {
     );
   }
 
-  // Fallback for non-managerial roles who are not nominated.
   return (
     <DashboardLayout role={role} onSwitchRole={setRole}>
       <div className="p-8"><p>Access to the Leadership hub is by nomination only.</p></div>
     </DashboardLayout>
   );
 }
+
