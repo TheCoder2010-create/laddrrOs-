@@ -78,7 +78,23 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                     {
                         id: 's1-1-1',
                         type: 'script',
-                        content: `<p>Imagine walking into a meeting where Sarah, a software developer, quietly takes her seat in the back. When the project hits a roadblock, she doesn't speak up even though she knows the solution. Compare this to Marcus, also a developer, who enters the same meeting, makes eye contact with colleagues, and when the roadblock emerges, he leans forward and says, "I've seen this issue before. Here's what worked for our team last time, and here's what we learned to avoid."</p><p class="mt-4">Both Sarah and Marcus have the same technical skills. The difference? Marcus has developed <strong>leadership presence</strong>—the ability to show up as someone others trust, respect, and want to follow, even when he has no formal authority.</p><p class="mt-4">Leadership presence isn't about being the loudest person in the room or having a commanding personality. It's about developing four core qualities that make people think, "I trust this person's judgment" and "I want to hear what they have to say."</p>`
+                        content: `<h4>What is Leadership Presence and Why Does It Matter?</h4><p>Imagine walking into a meeting where Sarah, a software developer, quietly takes her seat in the back. When the project hits a roadblock, she doesn't speak up even though she knows the solution. Compare this to Marcus, also a developer, who enters the same meeting, makes eye contact with colleagues, and when the roadblock emerges, he leans forward and says, "I've seen this issue before. Here's what worked for our team last time, and here's what we learned to avoid."</p><p class="mt-4">Both Sarah and Marcus have the same technical skills. The difference? Marcus has developed <strong>leadership presence</strong>—the ability to show up as someone others trust, respect, and want to follow, even when he has no formal authority.</p><p class="mt-4">Leadership presence isn't about being the loudest person in the room or having a commanding personality. It's about developing four core qualities that make people think, "I trust this person's judgment" and "I want to hear what they have to say."</p>`
+                    },
+                    {
+                        id: 's1-1-2',
+                        type: 'quiz_mcq',
+                        question: 'According to the text, what is the best definition of leadership presence?',
+                        options: [
+                            'Having a commanding personality and being the loudest in the room.',
+                            'The ability to show up in a way that inspires trust and respect from others.',
+                            'Having the most technical skill and experience on the team.',
+                            'Always having the correct answer to every problem.'
+                        ],
+                        correctAnswer: 'The ability to show up in a way that inspires trust and respect from others.',
+                        feedback: {
+                            correct: "Correct! Leadership presence is about how you project credibility and earn trust, regardless of your official title.",
+                            incorrect: "Not quite. The key to leadership presence is inspiring trust and respect, which is more than just personality or technical skill."
+                        }
                     }
                 ]
             },
@@ -166,7 +182,7 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                     }
                 ]
             },
-             {
+            {
                 id: 'l1-5',
                 title: 'Pillar 4: Connection',
                 isCompleted: false,
@@ -196,25 +212,53 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
             },
             {
                 id: 'l1-6',
-                title: 'Activity: Self-Discovery',
+                title: 'Synthesis: Putting It All Together',
                 isCompleted: false,
                 steps: [
                     {
                         id: 's1-6-1',
-                        type: 'activity',
-                        content: `<h4>Part A: Authenticity Assessment</h4><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ol class="list-decimal pl-5 space-y-2"><li>Someone praised you for work that involved significant help from others.</li><li>You were asked about something you weren’t sure about.</li><li>You made an error that affected others.</li></ol>`
+                        type: 'script',
+                        content: `<h4>Putting the Four Pillars Together</h4><p>Leadership presence isn't about perfecting each pillar in isolation—it's about integrating them into a consistent way of showing up.</p><h4>Daily Practices to Build Leadership Presence</h4><ul class="list-disc pl-5 mt-2 space-y-1"><li><strong>Weeks 1–2: Authenticity Focus</strong> - Practice admitting when you don't know something and give credit to others daily.</li><li><strong>Weeks 3–4: Consistency Focus</strong> - Track your commitments and apply consistent decision filters.</li><li><strong>Weeks 5–6: Composure Focus</strong> - Use the 3-breath technique and pause before reacting to stressful news.</li><li><strong>Weeks 7–8: Connection Focus</strong> - Ask genuine questions and give specific, development-focused recognition.</li></ul><h4>Measuring Your Progress</h4><p>Signs of growth include people seeking your input more often, feeling more confident in meetings, and your influence growing even without a formal title.</p>`
                     },
+                    {
+                        id: 's1-6-2',
+                        type: 'quiz_mcq',
+                        question: 'Which of the following is a sign that your leadership presence is growing?',
+                        options: [
+                            'You win every argument.',
+                            'People start coming to you for your opinion on important decisions.',
+                            'You do all the most important work yourself to ensure quality.',
+                            'You avoid difficult conversations to keep the team happy.'
+                        ],
+                        correctAnswer: 'People start coming to you for your opinion on important decisions.',
+                        feedback: {
+                            correct: "That's right. Growing influence and being sought out for your judgment are key indicators of leadership presence.",
+                            incorrect: "The best indicator is that others start to seek out your opinion, showing that they trust your judgment."
+                        }
+                    }
                 ]
             },
             {
                 id: 'l1-7',
-                title: 'Scenario: The Project Conflict',
+                title: 'Activity: Self-Discovery',
                 isCompleted: false,
                 steps: [
                     {
                         id: 's1-7-1',
                         type: 'activity',
-                        content: `<h4>Background</h4><p>You’re part of a six-person project team. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising and everyone is uncomfortable.</p><h4>Your Challenge</h4><p>You have 30 seconds to respond to reduce conflict and refocus the team. Write out exactly what you would say or do.</p>`
+                        content: `<h4>Leadership Presence Self-Discovery</h4><p>This activity is a private reflection. Your answers will not be shared. Be honest with yourself to get the most value.</p><h5>Part A: Authenticity Assessment</h5><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ul class="list-disc pl-5 mt-2 space-y-4"><li><strong>Someone praised you for work that involved others.</strong></li><li><strong>You were asked about something you weren’t sure about.</strong></li><li><strong>You made an error that affected others.</strong></li></ul><h5>Part C: Composure Practice</h5><p>List your top 3 work stress triggers, the physical signs you notice, your usual reaction, and a more composed response you could try.</p><h5>Part D: Connection Experiment</h5><p>Choose three colleagues and practice Level 2 listening, Level 3 listening, and specific recognition. Note your observations and their responses.</p>`
+                    }
+                ]
+            },
+            {
+                id: 'l1-8',
+                title: 'Scenario: The Project Conflict',
+                isCompleted: false,
+                steps: [
+                    {
+                        id: 's1-8-1',
+                        type: 'activity',
+                        content: `<h4>Practice Scenario: The Project Conflict</h4><p><strong>Background:</strong> You’re part of a six-person project team. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising.</p><p class="mt-2"><strong>Your Challenge:</strong> You have 30 seconds to respond to reduce conflict and refocus the team. Write out exactly what you would say or do below.</p>`
                     }
                 ]
             }
