@@ -79,7 +79,7 @@ export interface LeadershipNomination {
     lastUpdated: string;
 }
 
-const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v4';
+export const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v4';
 
 const getModulesForEmployeeToLead = (): LeadershipModule[] => [
     { 
@@ -268,7 +268,7 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                     {
                         id: 's1-7-1',
                         type: 'activity',
-                        content: `<h4>Practice Scenario: The Project Conflict</h4><p><strong>Background:</strong> You’re part of a six-person project team. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising.</p><p class="mt-2"><strong>Your Challenge:</strong> You have 30 seconds to respond to reduce conflict and refocus the team. Write out exactly what you would say or do below.</p>`
+                        content: `<h4>Practice Scenario: The Project Conflict</h4><p><strong>Background:</strong> You’re part of a six-person project team developing a new customer portal. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising.</p><p class="mt-2"><strong>Your Challenge:</strong> You have 30 seconds to respond to reduce conflict and refocus the team. Write out exactly what you would say or do below.</p>`
                     }
                 ]
             }
@@ -280,7 +280,7 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
 // Generic Storage Helpers
 // ==========================================
 
-const getFromStorage = <T>(key: string): T[] => {
+export const getFromStorage = <T>(key: string): T[] => {
     if (typeof window === 'undefined') return [];
     const json = sessionStorage.getItem(key);
     
@@ -296,7 +296,7 @@ const getFromStorage = <T>(key: string): T[] => {
     return JSON.parse(json);
 };
 
-const saveToStorage = (key: string, data: any[]): void => {
+export const saveToStorage = (key: string, data: any[]): void => {
     if (typeof window === 'undefined') return;
     sessionStorage.setItem(key, JSON.stringify(data));
     window.dispatchEvent(new CustomEvent('feedbackUpdated'));
