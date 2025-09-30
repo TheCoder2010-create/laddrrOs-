@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, NotebookPen } from 'lucide-react';
-import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep, saveLeadershipLessonAnswer, type LeadershipLesson, LEADERSHIP_COACHING_KEY, getFromStorage, saveToStorage } from '@/services/leadership-service';
+import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep, saveLeadershipLessonAnswer, type LeadershipLesson, LEADERSHIP_COACHING_KEY, getFromStorage, saveToStorage, getNominationForUser } from '@/services/leadership-service';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -207,7 +207,7 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
                                             <div className="absolute left-[7px] top-1 h-full w-0.5 bg-border -z-10"></div>
                                             {weeklySavedReflections.map((reflection: any, i: number) => (
                                                 <div key={i} className="flex items-start gap-4">
-                                                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-background border-2 border-primary flex-shrink-0 mt-1">
+                                                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-background border-2 border-primary flex-shrink-0 mt-1">
                                                         <NotebookPen className="h-3 w-3 text-primary/80" />
                                                     </div>
                                                     <div className="flex-1">
@@ -650,6 +650,7 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
