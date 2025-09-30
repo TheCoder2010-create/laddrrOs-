@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
-import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft, MessageSquare } from 'lucide-react';
+import { PlusCircle, Loader2, BookOpen, CheckCircle, ArrowRight, ArrowLeft, MessageSquare, NotebookPen } from 'lucide-react';
 import { getLeadershipNominationsForManager, getNominationForUser as getLeadershipNominationForUser, type LeadershipNomination, type LeadershipModule, nominateForLeadership, completeLeadershipLesson, type LessonStep, saveLeadershipLessonAnswer, type LeadershipLesson, LEADERSHIP_COACHING_KEY, getFromStorage, saveToStorage } from '@/services/leadership-service';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -183,7 +183,7 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
             <Accordion type="single" collapsible defaultValue={defaultOpenAccordion} className="w-full space-y-2">
                 {step.weeklyPractices.map(practice => {
                     const isCurrent = currentProgramWeek >= practice.startWeek && currentProgramWeek <= practice.endWeek;
-                    const weeklySavedReflections = lesson.userInputs?.[practice.id] || [];
+                    const weeklySavedReflections = (lesson.userInputs?.[practice.id] || []).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
                     return (
                         <AccordionItem value={practice.id} key={practice.id} className={cn("border rounded-lg", isCurrent ? "bg-primary/10 border-primary/20" : "bg-muted/50")}>
@@ -203,15 +203,15 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
                                 {weeklySavedReflections.length > 0 && (
                                     <div className="mt-4 space-y-3 pt-4 border-t">
                                         <h5 className="font-semibold text-foreground mb-4">Your Reflection Timeline</h5>
-                                        <div className="relative pl-6 space-y-6">
+                                        <div className="relative pl-8 space-y-6">
                                             <div className="absolute left-[7px] top-1 h-full w-0.5 bg-border -z-10"></div>
                                             {weeklySavedReflections.map((reflection: any, i: number) => (
                                                 <div key={i} className="flex items-start gap-4">
-                                                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary flex-shrink-0 mt-1">
-                                                        <div className="h-2 w-2 rounded-full bg-primary-foreground"></div>
+                                                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-background border-2 border-primary flex-shrink-0 mt-1">
+                                                        <NotebookPen className="h-3 w-3 text-primary/80" />
                                                     </div>
                                                     <div className="flex-1">
-                                                        <p className="text-xs text-muted-foreground">{new Date(reflection.date).toLocaleString()}</p>
+                                                        <p className="text-xs font-medium text-muted-foreground">{new Date(reflection.date).toLocaleString()}</p>
                                                         <p className="text-sm whitespace-pre-wrap mt-1">{reflection.text}</p>
                                                     </div>
                                                 </div>
@@ -230,7 +230,7 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
                                         rows={4}
                                     />
                                     <Button onClick={() => handleSaveReflection(practice.id)} disabled={!currentReflection[practice.id]}>
-                                        Save Reflection for this Week
+                                        Save Reflection
                                     </Button>
                                 </div>
                             </AccordionContent>
@@ -602,7 +602,7 @@ export default function LeadershipPage() {
   const fetchNominationData = useCallback(async () => {
     if (!role) return;
     setIsCheckingNomination(true);
-    const userNomination = await getLeadershipNominationForUser(role);
+    const userNomination = await getNominationForUser(role);
     setNomination(userNomination);
     setIsCheckingNomination(false);
   }, [role]);
@@ -650,6 +650,7 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
