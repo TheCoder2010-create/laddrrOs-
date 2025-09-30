@@ -141,7 +141,8 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
 
 function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDate: string }) {
     const { toast } = useToast();
-    const [reflections, setReflections] = useState<Record<string, string>>({});
+    const [currentReflection, setCurrentReflection] = useState<Record<string, string>>({});
+    const [savedReflections, setSavedReflections] = useState<Record<string, { text: string; date: string }[]>>({});
 
     if (step.type !== 'synthesis') return null;
 
@@ -154,14 +155,23 @@ function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDa
     };
     
     const handleSaveReflection = (weekId: string) => {
-        if (!reflections[weekId]) {
+        const reflectionText = currentReflection[weekId];
+        if (!reflectionText) {
             toast({ title: "Please enter your reflection.", variant: "destructive" });
             return;
         }
-        // In a real app, this would save to a persistent store.
-        // Here, we just give user feedback.
+
+        setSavedReflections(prev => ({
+            ...prev,
+            [weekId]: [
+                ...(prev[weekId] || []),
+                { text: reflectionText, date: new Date().toISOString() }
+            ]
+        }));
+        
+        setCurrentReflection(prev => ({...prev, [weekId]: ''}));
+
         toast({ title: `Reflection for week ${weekId} saved!`, description: "You can continue to add more reflections." });
-        console.log(`Saved reflection for week ${weekId}:`, reflections[weekId]);
     };
 
     const currentProgramWeek = getWeekNumber(startDate);
@@ -175,6 +185,8 @@ function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDa
             <Accordion type="single" collapsible defaultValue={defaultOpenAccordion} className="w-full space-y-2">
                 {step.weeklyPractices.map(practice => {
                     const isCurrent = currentProgramWeek >= practice.startWeek && currentProgramWeek <= practice.endWeek;
+                    const weeklySavedReflections = savedReflections[practice.id] || [];
+
                     return (
                         <AccordionItem value={practice.id} key={practice.id} className={cn("border rounded-lg", isCurrent ? "bg-primary/10 border-primary/20" : "bg-muted/50")}>
                             <AccordionTrigger className="p-3 font-semibold text-left hover:no-underline">
@@ -189,16 +201,31 @@ function SynthesisStepComponent({ step, startDate }: { step: LessonStep, startDa
                                         <li key={i}>{task}</li>
                                     ))}
                                 </ul>
+
+                                {weeklySavedReflections.length > 0 && (
+                                    <div className="mt-4 space-y-3 pt-4 border-t">
+                                        <h5 className="font-semibold text-foreground">Your Saved Reflections:</h5>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                            {weeklySavedReflections.map((reflection, i) => (
+                                                <div key={i} className="p-2 border rounded-md bg-background/50 text-sm">
+                                                    <p className="text-xs text-muted-foreground">{new Date(reflection.date).toLocaleString()}</p>
+                                                    <p className="whitespace-pre-wrap">{reflection.text}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
                                 <div className="mt-4 space-y-2">
                                     <Label htmlFor={`synthesis-journal-${practice.id}`}>Log your reflections for this period:</Label>
                                     <Textarea
                                         id={`synthesis-journal-${practice.id}`}
-                                        value={reflections[practice.id] || ''}
-                                        onChange={(e) => setReflections(prev => ({...prev, [practice.id]: e.target.value}))}
+                                        value={currentReflection[practice.id] || ''}
+                                        onChange={(e) => setCurrentReflection(prev => ({...prev, [practice.id]: e.target.value}))}
                                         placeholder="e.g., 'Today I gave specific credit to Sarah in the team chat...'"
                                         rows={4}
                                     />
-                                    <Button onClick={() => handleSaveReflection(practice.id)} disabled={!reflections[practice.id]}>
+                                    <Button onClick={() => handleSaveReflection(practice.id)} disabled={!currentReflection[practice.id]}>
                                         Save Reflection for this Week
                                     </Button>
                                 </div>
@@ -589,5 +616,6 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
