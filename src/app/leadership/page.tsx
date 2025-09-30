@@ -186,7 +186,7 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
                     const weeklySavedReflections = (lesson.userInputs?.[practice.id] || []).sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
                     return (
-                        <AccordionItem value={practice.id} key={practice.id} className={cn("border rounded-lg", isCurrent ? "bg-primary/10 border-primary/20" : "bg-muted/50")}>
+                        <AccordionItem value={practice.id} key={practice.id} className={cn("border rounded-lg", isCurrent ? "bg-muted/50" : "bg-card")}>
                             <AccordionTrigger className="p-3 font-semibold text-left hover:no-underline">
                                 <div className="flex justify-between items-center w-full pr-2">
                                      <span>Weeks {practice.startWeek}-{practice.endWeek}: {practice.focus}</span>
@@ -479,11 +479,22 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                         <AccordionContent className="p-4 border-t">
                             <div className="space-y-2">
                                {module.lessons.map((lesson, lessonIndex) => {
+                                   const previousLesson = module.lessons[lessonIndex - 1];
                                    const isModuleLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted;
-                                   const isLessonLocked = lessonIndex > 0 && !module.lessons[lessonIndex-1].isCompleted;
+                                   
+                                   // Special logic for Synthesis lesson: it doesn't block subsequent lessons once started.
+                                   let isLessonLocked = false;
+                                   if (previousLesson) {
+                                       if (previousLesson.id === 'l1-5') { // If the previous lesson was Synthesis
+                                           isLessonLocked = !previousLesson.startDate; // Locked only if Synthesis hasn't even been started.
+                                       } else {
+                                           isLessonLocked = !previousLesson.isCompleted;
+                                       }
+                                   }
+                                   
                                    const isLocked = isModuleLocked || isLessonLocked;
                                    
-                                   const hasStarted = lesson.userInputs && Object.keys(lesson.userInputs).length > 0;
+                                   const hasStarted = (lesson.userInputs && Object.keys(lesson.userInputs).length > 0) || lesson.startDate;
                                    const isInProgress = hasStarted && !lesson.isCompleted;
 
                                    let buttonText = 'Start';
@@ -662,6 +673,7 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
