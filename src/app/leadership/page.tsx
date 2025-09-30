@@ -139,7 +139,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     );
 }
 
-function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step: LessonStep, lesson: LeadershipLesson, nominationId: string, onUpdate: () => void }) {
+function SynthesisStepComponent({ step, lesson, nominationId, onUpdate, onComplete }: { step: LessonStep, lesson: LeadershipLesson, nominationId: string, onUpdate: () => void, onComplete: () => void }) {
     const { toast } = useToast();
     const [currentReflection, setCurrentReflection] = useState<Record<string, string>>({});
 
@@ -243,6 +243,9 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate }: { step
                  <h4 className="font-semibold">Measuring Your Progress</h4>
                  <p className="text-muted-foreground whitespace-pre-wrap">{step.outro}</p>
             </div>
+            <div className="mt-6 pt-4 border-t flex justify-end">
+                <Button variant="outline" onClick={onComplete}>Mark as Complete (for testing)</Button>
+            </div>
         </div>
     );
 }
@@ -300,7 +303,7 @@ function LessonStepComponent({ step, lesson, nominationId, onComplete, onUpdateA
                 </div>
             );
         case 'synthesis':
-            return <SynthesisStepComponent step={step} lesson={lesson} nominationId={nominationId} onUpdate={onUpdate} />;
+            return <SynthesisStepComponent step={step} lesson={lesson} nominationId={nominationId} onUpdate={onUpdate} onComplete={onComplete} />;
         default:
             return null;
     }
@@ -354,15 +357,10 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
         if (currentLesson.steps && nextStepIndex < currentLesson.steps.length) {
             setCurrentStepIndex(nextStepIndex);
         } else {
-            // Do not complete Synthesis lesson here, it is long-running
-            if (currentLesson.id !== 'l1-5') {
-                 await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
-                 toast({ title: "Lesson Complete!", description: `"${currentLesson.title}" has been marked as complete.`});
-                 onUpdate();
-                 setActiveLesson(null); 
-            } else {
-                toast({ title: "Progress Saved", description: "Your Synthesis journal has been updated." });
-            }
+             await completeLeadershipLesson(nomination.id, currentModule.id, currentLesson.id);
+             toast({ title: "Lesson Complete!", description: `"${currentLesson.title}" has been marked as complete.`});
+             onUpdate();
+             setActiveLesson(null); 
         }
     };
     
@@ -482,11 +480,10 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                                    const previousLesson = module.lessons[lessonIndex - 1];
                                    const isModuleLocked = moduleIndex > 0 && !nomination.modules[moduleIndex - 1].isCompleted;
                                    
-                                   // Special logic for Synthesis lesson: it doesn't block subsequent lessons once started.
                                    let isLessonLocked = false;
                                    if (previousLesson) {
-                                       if (previousLesson.id === 'l1-5') { // If the previous lesson was Synthesis
-                                           isLessonLocked = !previousLesson.startDate; // Locked only if Synthesis hasn't even been started.
+                                       if (previousLesson.id === 'l1-5') {
+                                           isLessonLocked = !previousLesson.startDate;
                                        } else {
                                            isLessonLocked = !previousLesson.isCompleted;
                                        }
@@ -673,14 +670,3 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

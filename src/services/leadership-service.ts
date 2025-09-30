@@ -361,7 +361,7 @@ export async function nominateForLeadership(managerRole: Role, nomineeRole: Role
         trackingId: `LD-NOM-${newNomination.id}`,
         subject: `You've been enrolled in the Leadership Development Program!`,
         message: `Congratulations! ${managerName} has enrolled you in the Leadership Development Program.\n\nThis program is designed to help you grow from a subject matter expert into an effective leader. You can track your progress and access modules in the "Leadership" section.`,
-        submittedAt: now,
+        submittedAt: new Date(now),
         criticality: 'Low',
         status: 'Pending Acknowledgement',
         assignedTo: [nomineeRole],
