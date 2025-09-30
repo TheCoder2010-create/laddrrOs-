@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { getFeedbackFromStorage, saveFeedbackToStorage, type Feedback } from './feedback-service';
+import type { NetsInitialInput } from '@/ai/schemas/nets-schemas';
 
 export interface ScriptStep {
     type: 'script';
@@ -46,7 +47,14 @@ export interface SynthesisStep {
     outro: string;
 }
 
-export type LessonStep = ScriptStep | QuizStep | ActivityStep | SynthesisStep;
+export interface PracticeStep {
+    type: 'practice';
+    id: string;
+    scenario: NetsInitialInput;
+}
+
+
+export type LessonStep = ScriptStep | QuizStep | ActivityStep | SynthesisStep | PracticeStep;
 
 export interface LeadershipLesson {
     id: string;
@@ -55,6 +63,7 @@ export interface LeadershipLesson {
     steps: LessonStep[];
     userInputs?: Record<string, any>; // To store answers and reflections
     startDate?: string;
+    type?: 'standard' | 'practice';
 }
 
 export interface LeadershipModule {
@@ -79,7 +88,7 @@ export interface LeadershipNomination {
     lastUpdated: string;
 }
 
-export const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v4';
+export const LEADERSHIP_COACHING_KEY = 'leadership_coaching_nominations_v5';
 
 const getModulesForEmployeeToLead = (): LeadershipModule[] => [
     { 
@@ -257,29 +266,34 @@ const getModulesForEmployeeToLead = (): LeadershipModule[] => [
                     {
                         id: 's1-6-1',
                         type: 'activity',
-                        content: `<h4>Leadership Presence Self-Discovery</h4><p>This activity is a private reflection. Your answers will not be shared. Be honest with yourself to get the most value.</p><h5>Part A: Authenticity Assessment</h5><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li>Someone praised you for work that involved others.</li><li>You were asked about something you weren’t sure about.</li><li>You made an error that affected others.</li></ul>`
+                        content: `<h4>Part A: Authenticity Assessment</h4><p>Think about your last work week. For each situation below, write what you actually did and what a more authentic response might have looked like:</p><ul class="list-disc pl-5 mt-2 space-y-1"><li>Someone praised you for work that involved others.</li><li>You were asked about something you weren’t sure about.</li><li>You made an error that affected others.</li></ul>`
                     },
                     {
                         id: 's1-6-2',
                         type: 'activity',
-                        content: `<h5>Part B: Composure Practice</h5><p>List your top 3 work stress triggers, the physical signs you notice, your usual reaction, and a more composed response you could try for each.</p>`
+                        content: `<h4>Part B: Composure Practice</h4><p>List your top 3 work stress triggers, the physical signs you notice, your usual reaction, and a more composed response you could try for each.</p>`
                     },
                     {
                         id: 's1-6-3',
                         type: 'activity',
-                        content: `<h5>Part C: Connection Experiment</h5><p>Choose three colleagues and practice Level 2 listening (active listening), Level 3 listening (empathetic listening), and specific recognition. Note your observations and their responses for each person.</p>`
+                        content: `<h4>Part C: Connection Experiment</h4><p>Choose three colleagues and practice Level 2 listening (active listening), Level 3 listening (empathetic listening), and specific recognition. Note your observations and their responses for each person.</p>`
                     }
                 ]
             },
             {
                 id: 'l1-7',
-                title: 'Scenario: The Project Conflict',
+                title: 'Practice Scenario: The Project Conflict',
                 isCompleted: false,
+                type: 'practice',
                 steps: [
                     {
                         id: 's1-7-1',
-                        type: 'activity',
-                        content: `<h4>Practice Scenario: The Project Conflict</h4><p><strong>Background:</strong> You’re part of a six-person project team developing a new customer portal. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising.</p><p class="mt-2"><strong>Your Challenge:</strong> You have 30 seconds to respond to reduce conflict and refocus the team. Write out exactly what you would say or do below.</p>`
+                        type: 'practice',
+                        scenario: {
+                            persona: 'Team Lead',
+                            difficulty: 'strict',
+                            scenario: `You’re part of a six-person project team. In a meeting, Elena says: "James, your dashboard design doesn’t make sense. It’s going to confuse users." James fires back: "Well maybe if the requirements had been clear, I wouldn’t have designed it this way!" The tension is rising. You need to intervene to de-escalate the conflict and refocus the team.`,
+                        }
                     }
                 ]
             }

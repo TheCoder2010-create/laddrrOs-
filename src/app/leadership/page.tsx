@@ -25,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import SimulationArena from '@/components/simulation-arena';
+import { completePracticeScenario } from '@/services/feedback-service';
 
 
 function NominateDialog({ onNomination }: { onNomination: () => void }) {
@@ -201,7 +203,7 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate, onComple
                                 </ul>
 
                                 {weeklySavedReflections.length > 0 && (
-                                    <div className="mt-4 space-y-3 pt-4 border-t">
+                                     <div className="mt-4 space-y-3 pt-4 border-t">
                                         <h5 className="font-semibold text-foreground mb-4">Your Reflection Timeline</h5>
                                         <div className="relative pl-8 space-y-6">
                                             <div className="absolute left-[7px] top-1 h-full w-0.5 bg-border -z-10"></div>
@@ -251,7 +253,7 @@ function SynthesisStepComponent({ step, lesson, nominationId, onUpdate, onComple
 }
 
 
-function LessonStepComponent({ step, lesson, nominationId, onComplete, onUpdateAnswer, onUpdate, answer }: { step: LessonStep, lesson: LeadershipLesson, nominationId: string, onComplete: () => void, onUpdateAnswer: (stepId: string, answer: any) => void, onUpdate: () => void, answer?: any }) {
+function LessonStepComponent({ step, lesson, nominationId, onComplete, onUpdateAnswer, onUpdate, answer, onExitSimulation }: { step: LessonStep, lesson: LeadershipLesson, nominationId: string, onComplete: () => void, onUpdateAnswer: (stepId: string, answer: any) => void, onUpdate: () => void, answer?: any, onExitSimulation: (messages?: any[]) => void; }) {
     const { toast } = useToast();
 
     const handleQuizSubmit = () => {
@@ -304,6 +306,8 @@ function LessonStepComponent({ step, lesson, nominationId, onComplete, onUpdateA
             );
         case 'synthesis':
             return <SynthesisStepComponent step={step} lesson={lesson} nominationId={nominationId} onUpdate={onUpdate} onComplete={onComplete} />;
+        case 'practice':
+            return <SimulationArena initialConfig={step.scenario} onExit={onExitSimulation} />;
         default:
             return null;
     }
@@ -364,6 +368,34 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
         }
     };
     
+    const handleExitSimulation = async (messages?: any[]) => {
+        if (!messages || messages.length === 0) {
+            setActiveLesson(null); // Just exit if there's no conversation
+            return;
+        }
+
+        try {
+            await completePracticeScenario({
+                persona: (currentStep as any).scenario.persona,
+                scenario: (currentStep as any).scenario.scenario,
+                difficulty: (currentStep as any).scenario.difficulty,
+                history: messages
+            });
+            toast({
+                title: "Practice Complete!",
+                description: "Your session has been logged.",
+            });
+        } catch (e) {
+             toast({
+                variant: "destructive",
+                title: "Practice Logging Failed",
+                description: "Could not save your session data.",
+            });
+        } finally {
+            handleStepComplete();
+        }
+    };
+
     const handleUpdateAnswer = (stepId: string, answer: any) => {
         if (!currentLesson) return;
         const updatedLesson = {
@@ -385,6 +417,9 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
     };
 
     if (activeLesson && currentLesson && currentStep) {
+         if (currentStep.type === 'practice') {
+            return <LessonStepComponent step={currentStep} lesson={currentLesson} nominationId={nomination.id} onComplete={handleStepComplete} onUpdateAnswer={handleUpdateAnswer} onUpdate={onUpdate} answer={currentLesson.userInputs?.[currentStep.id]} onExitSimulation={handleExitSimulation} />;
+        }
         return (
             <div className="p-4 md:p-8 space-y-6">
                 <Card className="shadow-lg">
@@ -408,6 +443,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                                 onUpdateAnswer={handleUpdateAnswer}
                                 onUpdate={onUpdate}
                                 answer={currentLesson.userInputs?.[currentStep.id]}
+                                onExitSimulation={handleExitSimulation}
                             />
                         </div>
                     </CardContent>
@@ -482,7 +518,7 @@ function LearnerView({ initialNomination, onUpdate }: { initialNomination: Leade
                                    
                                    let isLessonLocked = false;
                                    if (previousLesson) {
-                                       if (previousLesson.id === 'l1-5') {
+                                       if (previousLesson.id === 'l1-5') { // Synthesis lesson exception
                                            isLessonLocked = !previousLesson.startDate;
                                        } else {
                                            isLessonLocked = !previousLesson.isCompleted;
