@@ -33,6 +33,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const { role } = useRole();
     const { toast } = useToast();
     const [selectedNominee, setSelectedNominee] = useState<Role | null>(null);
+    const [selectedMentor, setSelectedMentor] = useState<Role | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -49,15 +50,16 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     const targetRole = getNextRole(selectedNominee);
 
     const handleNominate = async () => {
-        if (!role || !selectedNominee || !targetRole) return;
+        if (!role || !selectedNominee || !targetRole || !selectedMentor) return;
 
         setIsSubmitting(true);
         try {
-            await nominateForLeadership(role, selectedNominee, targetRole);
+            await nominateForLeadership(role, selectedNominee, targetRole, selectedMentor);
             toast({ title: 'Nomination Submitted!', description: `${roleUserMapping[selectedNominee]?.name} has been enrolled in the Leadership Development Program.` });
             onNomination();
             setIsOpen(false);
             setSelectedNominee(null);
+            setSelectedMentor(null);
         } catch (error) {
             console.error("Failed to nominate user", error);
             toast({ variant: 'destructive', title: 'Nomination Failed' });
@@ -67,6 +69,8 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
     };
     
     const eligibleNominees: Role[] = ['Employee', 'Team Lead', 'AM'];
+    const eligibleMentors: Role[] = ['AM', 'Manager', 'HR Head'];
+
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -84,7 +88,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                      <div className="space-y-2">
-                        <p className="font-semibold text-foreground">Select Nominee:</p>
+                        <Label>Select Nominee</Label>
                         <Select onValueChange={(value: Role) => setSelectedNominee(value)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select an employee or team lead" />
@@ -93,6 +97,22 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                                 {eligibleNominees.map(nomineeRole => (
                                     <SelectItem key={nomineeRole} value={nomineeRole}>
                                         {roleUserMapping[nomineeRole].name} ({nomineeRole})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Select Mentor</Label>
+                        <Select onValueChange={(value: Role) => setSelectedMentor(value)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a mentor for the nominee" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {eligibleMentors.map(mentorRole => (
+                                    <SelectItem key={mentorRole} value={mentorRole}>
+                                        {roleUserMapping[mentorRole].name} ({mentorRole})
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -116,7 +136,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                 <DialogFooter>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button disabled={!selectedNominee || isSubmitting}>
+                            <Button disabled={!selectedNominee || !selectedMentor || isSubmitting}>
                                 {isSubmitting ? <Loader2 className="mr-2 animate-spin" /> : 'Confirm Nomination'}
                             </Button>
                         </AlertDialogTrigger>
@@ -124,7 +144,7 @@ function NominateDialog({ onNomination }: { onNomination: () => void }) {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    You are nominating {selectedNominee ? roleUserMapping[selectedNominee].name : '...'} for Leadership Coaching to become a {targetRole}.
+                                    You are nominating {selectedNominee ? roleUserMapping[selectedNominee].name : '...'} for Leadership Coaching to become a {targetRole}, with {selectedMentor ? roleUserMapping[selectedMentor].name : '...'} as their mentor.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -706,3 +726,4 @@ export default function LeadershipPage() {
     </DashboardLayout>
   );
 }
+

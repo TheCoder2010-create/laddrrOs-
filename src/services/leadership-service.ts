@@ -79,6 +79,7 @@ export interface LeadershipNomination {
     nominatedBy: Role;
     nomineeRole: Role;
     targetRole: Role;
+    mentorRole?: Role;
     status: 'InProgress' | 'Completed' | 'Certified';
     startDate: string;
     modules: LeadershipModule[];
@@ -355,7 +356,7 @@ const getMockLeadershipData = (): LeadershipNomination[] => {
 /**
  * Nominates an employee for the Leadership Coaching program.
  */
-export async function nominateForLeadership(managerRole: Role, nomineeRole: Role, targetRole: Role): Promise<LeadershipNomination> {
+export async function nominateForLeadership(managerRole: Role, nomineeRole: Role, targetRole: Role, mentorRole: Role): Promise<LeadershipNomination> {
     const allNominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
     const now = new Date().toISOString();
     const initialModules = getModulesForEmployeeToLead();
@@ -365,6 +366,7 @@ export async function nominateForLeadership(managerRole: Role, nomineeRole: Role
         nominatedBy: managerRole,
         nomineeRole,
         targetRole: targetRole,
+        mentorRole: mentorRole,
         status: 'InProgress',
         startDate: now,
         modules: initialModules.map(m => ({
@@ -484,3 +486,4 @@ export async function saveLeadershipLessonAnswer(nominationId: string, lessonId:
         console.error(`Lesson with ID ${lessonId} not found in nomination ${nominationId}`);
     }
 }
+
