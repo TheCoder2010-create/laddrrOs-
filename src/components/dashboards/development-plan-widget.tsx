@@ -279,13 +279,13 @@ export default function DevelopmentPlanWidget() {
     const fetchActivePlans = useCallback(async () => {
         if (!role) return;
         setIsLoading(true);
-        const currentUserName = role ? roleUserMapping[role].name : null;
+        const currentUserName = role ? roleUserMapping[role as Role]?.name || role : null;
         if (!currentUserName) {
             setIsLoading(false);
             return;
         }
 
-        const plans = await getActiveCoachingPlansForUser(currentUserName);
+        const plans = await getActiveCoachingPlansForUser(role);
         setActivePlans(plans.sort((a, b) => new Date(a.rec.startDate || 0).getTime() - new Date(b.rec.startDate || 0).getTime()));
         setIsLoading(false);
     }, [role]);
