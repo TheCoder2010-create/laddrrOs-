@@ -54,15 +54,15 @@ export default function CoachingTipWidget() {
   }
 
   return (
-    <Card className="bg-secondary/10 border-secondary/30">
+    <Card className="bg-primary/10 border-primary/30">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base text-secondary">
+        <CardTitle className="flex items-center gap-2 text-base text-primary">
           <Lightbulb className="h-5 w-5" />
-          Coaching Tip of the Day
+          Coaching Tip
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm italic text-secondary-foreground/90">
+        <p className="text-sm italic text-primary-foreground/90">
           "{tip}"
         </p>
       </CardContent>

@@ -16,9 +16,11 @@ export default function EmployeeDashboard() {
       <div className="space-y-6">
         <DevelopmentPlanWidget />
         <AiInsightFeedWidget />
-        <NetsScoreboardWidget />
-        <CoachingTipWidget />
-        <TeamPulseWidget />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <NetsScoreboardWidget />
+          <CoachingTipWidget />
+          <TeamPulseWidget />
+        </div>
       </div>
     </div>
   );
