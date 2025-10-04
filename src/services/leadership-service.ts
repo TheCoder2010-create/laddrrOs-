@@ -337,6 +337,7 @@ const getMockLeadershipData = (): LeadershipNomination[] => {
         nominatedBy: 'Manager',
         nomineeRole: 'Team Lead',
         targetRole: 'AM',
+        mentorRole: 'Manager',
         status: 'InProgress',
         startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString(),
         modules: modules.map((m, i) => ({ ...m, isCompleted: i < 0 })), // Nothing completed initially
@@ -426,6 +427,11 @@ export async function getNominationForUser(userRole: Role): Promise<LeadershipNo
     return allNominations.find(n => n.nomineeRole === userRole) || null;
 }
 
+export async function getNominationsForMentor(mentorRole: Role): Promise<LeadershipNomination[]> {
+    const allNominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
+    return allNominations.filter(n => n.mentorRole === mentorRole);
+}
+
 export async function completeLeadershipLesson(nominationId: string, moduleId: string, lessonId: string): Promise<void> {
     const nominations = getFromStorage<LeadershipNomination>(LEADERSHIP_COACHING_KEY);
     const nomIndex = nominations.findIndex(n => n.id === nominationId);
@@ -486,4 +492,3 @@ export async function saveLeadershipLessonAnswer(nominationId: string, lessonId:
         console.error(`Lesson with ID ${lessonId} not found in nomination ${nominationId}`);
     }
 }
-

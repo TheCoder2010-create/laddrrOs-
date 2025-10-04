@@ -19,7 +19,7 @@ import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
 import { getNominationForUser as getInterviewerNominationForUser } from '@/services/interviewer-lab-service';
-import { getNominationForUser as getLeadershipNominationForUser } from '@/services/leadership-service';
+import { getNominationForUser as getLeadershipNominationForUser, getNominationsForMentor } from '@/services/leadership-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [coachingCount, setCoachingCount] = useState(0);
   const [isInterviewerNominee, setIsInterviewerNominee] = useState(false);
   const [isLeadershipNominee, setIsLeadershipNominee] = useState(false);
+  const [isMentor, setIsMentor] = useState(false);
   const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
   const { state: sidebarState } = useSidebar();
   
@@ -50,6 +51,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500 size-5 flex-shrink-0"/>, label: '1-on-1' },
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
+    ...(isMentor ? [{ href: '/mentorship', icon: <Handshake className="text-cyan-500"/>, label: 'Mentorship' }] : []),
     ...(['Manager', 'HR Head'].includes(currentRole) ? [{ 
         href: '/managers-lab', 
         icon: <FlaskConical className="text-orange-500"/>, 
@@ -114,12 +116,14 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setCoachingCount(devCount);
 
       // Check nomination statuses
-      const [interviewerNomination, leadershipNomination] = await Promise.all([
+      const [interviewerNomination, leadershipNomination, mentorNominations] = await Promise.all([
         getInterviewerNominationForUser(currentRole),
-        getLeadershipNominationForUser(currentRole)
+        getLeadershipNominationForUser(currentRole),
+        getNominationsForMentor(currentRole)
       ]);
       setIsInterviewerNominee(!!interviewerNomination);
       setIsLeadershipNominee(!!leadershipNomination);
+      setIsMentor(mentorNominations.length > 0);
 
     } catch (error) {
       console.error("Failed to fetch sidebar data", error);
@@ -127,6 +131,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setCoachingCount(0);
       setIsInterviewerNominee(false);
       setIsLeadershipNominee(false);
+      setIsMentor(false);
     }
   }, [currentRole, currentUserName]);
 
