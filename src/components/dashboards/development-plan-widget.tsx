@@ -25,6 +25,8 @@ import { Input } from '@/components/ui/input';
 import { getGoalFeedback } from '@/ai/flows/get-goal-feedback-flow';
 import type { GoalFeedbackInput } from '@/ai/schemas/goal-feedback-schemas';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { generateDevelopmentSuggestion } from '@/ai/flows/generate-development-suggestion-flow';
+import type { DevelopmentSuggestionOutput } from '@/ai/schemas/development-suggestion-schemas';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -141,6 +143,108 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean; onO
                         Add
                     </Button>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean, onOpenChange: (open: boolean) => void, onPlanAdded: () => void }) {
+    const { role } = useRole();
+    const { toast } = useToast();
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [suggestions, setSuggestions] = useState<DevelopmentSuggestionOutput['suggestions']>([]);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (open && role) {
+            setIsGenerating(true);
+            setError(null);
+            setSuggestions([]);
+            generateDevelopmentSuggestion({ forRole: role })
+                .then(result => {
+                    setSuggestions(result.suggestions);
+                })
+                .catch(err => {
+                    console.error("Failed to generate suggestions:", err);
+                    setError("Could not generate suggestions at this time. Please try again.");
+                })
+                .finally(() => {
+                    setIsGenerating(false);
+                });
+        }
+    }, [open, role]);
+
+    const handleAddSuggestion = async (suggestion: DevelopmentSuggestionOutput['suggestions'][0]) => {
+        if (!role) return;
+        
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + 30); // Default 30-day timeline
+
+        try {
+            await addCustomCoachingPlan(role, {
+                area: suggestion.area,
+                resource: suggestion.resource,
+                startDate,
+                endDate,
+            });
+            toast({ title: "Development Plan Added", description: `The suggested goal for "${suggestion.area}" is now active.` });
+            onPlanAdded();
+            onOpenChange(false);
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Failed to Add Plan" });
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Bot /> AI-Suggested Development Goals</DialogTitle>
+                    <DialogDescription>
+                        Based on your recent activity, here are some personalized development goals.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                    {isGenerating && (
+                         <div className="flex items-center justify-center h-48">
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-8 w-8 animate-spin" />
+                                <p>Analyzing your profile...</p>
+                            </div>
+                        </div>
+                    )}
+                    {error && (
+                         <Alert variant="destructive">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    {!isGenerating && suggestions.length > 0 && (
+                        <div className="space-y-3">
+                            {suggestions.map((s, i) => (
+                                <Card key={i} className="bg-muted/50">
+                                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-primary">{s.area}</p>
+                                            <p className="text-sm text-foreground">{s.resource}</p>
+                                            <p className="text-xs text-muted-foreground italic mt-1">Justification: {s.justification}</p>
+                                        </div>
+                                        <Button size="sm" onClick={() => handleAddSuggestion(s)}>
+                                            <Plus className="mr-2 h-4 w-4" /> Add to Plan
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                     {!isGenerating && suggestions.length === 0 && !error && (
+                        <div className="text-center h-48 flex flex-col justify-center items-center">
+                            <p className="text-muted-foreground">Could not generate any specific suggestions at this time.</p>
+                            <p className="text-xs text-muted-foreground">Try again after your next 1-on-1 session.</p>
+                        </div>
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );
@@ -273,14 +377,15 @@ export default function DevelopmentPlanWidget() {
 
     const [historyInView, setHistoryInView] = useState<CoachingRecommendation | null>(null);
     const [isAddPlanDialogOpen, setIsAddPlanDialogOpen] = useState(false);
+    const [isSuggestPlanDialogOpen, setIsSuggestPlanDialogOpen] = useState(false);
     
     const [feedbackGoal, setFeedbackGoal] = useState<{ historyId: string | null, rec: CoachingRecommendation } | null>(null);
 
     const fetchActivePlans = useCallback(async () => {
         if (!role) return;
         setIsLoading(true);
-        const currentUserName = role ? roleUserMapping[role as Role]?.name || role : null;
-        if (!currentUserName) {
+        const userName = roleUserMapping[role as Role]?.name || role;
+        if (!userName) {
             setIsLoading(false);
             return;
         }
@@ -350,6 +455,12 @@ export default function DevelopmentPlanWidget() {
                 open={isAddPlanDialogOpen} 
                 onOpenChange={setIsAddPlanDialogOpen} 
                 onPlanAdded={fetchActivePlans} 
+            />
+
+            <SuggestPlanDialog
+                open={isSuggestPlanDialogOpen}
+                onOpenChange={setIsSuggestPlanDialogOpen}
+                onPlanAdded={fetchActivePlans}
             />
 
              <GoalFeedbackDialog
@@ -430,9 +541,14 @@ export default function DevelopmentPlanWidget() {
                             Update your progress on your current coaching goals. Click a card to view its history.
                         </CardDescription>
                     </div>
-                     <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)}>
-                        <Plus className="h-5 w-5" />
-                    </Button>
+                     <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)}>
+                            <Bot className="h-5 w-5 text-primary" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)}>
+                            <Plus className="h-5 w-5" />
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {activePlans.length === 0 ? (
