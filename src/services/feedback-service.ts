@@ -286,25 +286,32 @@ export async function getDeclinedCoachingAreasForSupervisor(supervisorName: stri
     return Array.from(declinedAreas);
 }
 
-export async function getActiveCoachingPlansForSupervisor(supervisorName: string): Promise<{ historyId: string | null, rec: CoachingRecommendation }[]> {
+export async function getActiveCoachingPlansForUser(userName: string): Promise<{ historyId: string | null, rec: CoachingRecommendation }[]> {
     const history = await getOneOnOneHistory();
     const customPlans = getFromStorage<CoachingRecommendation>(CUSTOM_COACHING_PLANS_KEY);
     const activePlans: { historyId: string | null, rec: CoachingRecommendation }[] = [];
     
     // Add plans from 1-on-1 history
     history.forEach(item => {
-        if (item.supervisorName === supervisorName) {
+        // A coaching plan can be for a supervisor OR an employee
+        const isUserInvolved = item.supervisorName === userName || item.employeeName === userName;
+        if (isUserInvolved) {
             item.analysis.coachingRecommendations.forEach(rec => {
                 if (rec.status === 'accepted') {
-                    activePlans.push({ historyId: item.id, rec });
+                    // This logic assumes coaching recs are primarily for supervisors, which might need adjustment
+                    // if employees can have them too. For now, we'll associate it if the user is the supervisor.
+                    if (item.supervisorName === userName) {
+                        activePlans.push({ historyId: item.id, rec });
+                    }
                 }
             });
         }
     });
 
-    // Add custom self-directed plans
+    // Add custom self-directed plans (which are associated with a user by name)
     customPlans.forEach(rec => {
-        if (rec.status === 'accepted') { // Custom plans are 'accepted' by default
+        const planOwner = rec.auditTrail?.[0]?.actor;
+        if (planOwner === userName && rec.status === 'accepted') { // Custom plans are 'accepted' by default
              activePlans.push({ historyId: null, rec });
         }
     });

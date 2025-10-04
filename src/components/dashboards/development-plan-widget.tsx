@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getActiveCoachingPlansForSupervisor, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn, addCustomCoachingPlan } from '@/services/feedback-service';
+import { getActiveCoachingPlansForUser, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn, addCustomCoachingPlan } from '@/services/feedback-service';
 import type { CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
 import { useRole } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
@@ -285,7 +285,7 @@ export default function DevelopmentPlanWidget() {
             return;
         }
 
-        const plans = await getActiveCoachingPlansForSupervisor(currentUserName);
+        const plans = await getActiveCoachingPlansForUser(currentUserName);
         setActivePlans(plans.sort((a, b) => new Date(a.rec.startDate || 0).getTime() - new Date(b.rec.startDate || 0).getTime()));
         setIsLoading(false);
     }, [role]);
