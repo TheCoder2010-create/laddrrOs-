@@ -129,11 +129,12 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
 
 1.  **supervisorSummary**: A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback.
 2.  **employeeSummary**: A concise, forward-looking summary for the employee. Focus on key takeaways, agreed-upon action items, and positive reinforcement or growth opportunities discussed. Frame it constructively.
-3.  **employeeSwotAnalysis**: A SWOT analysis for the employee based on the conversation. Be objective and base it on evidence from the inputs.
-4.  **Leadership Score (1-10)**: Rate the supervisor based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
-5.  **Effectiveness Score (1-10)**: Rate the session based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
-6.  **Strengths Observed**: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
-7.  **Coaching Recommendations**: This is the MOST IMPORTANT part of your analysis. Provide 2-3 concrete, structured coaching recommendations based on weaknesses observed in this session. For each recommendation:
+3.  **employeeInsights**: Generate a short, bulleted list of 2-3 encouraging or reflective insights specifically for the employee's feed. Examples: "You handled corrective feedback with real professionalism," or "Asking clarifying questions about the project timeline was a great move." These should be concise and positive.
+4.  **employeeSwotAnalysis**: A SWOT analysis for the employee based on the conversation. Be objective and base it on evidence from the inputs.
+5.  **Leadership Score (1-10)**: Rate the supervisor based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
+6.  **Effectiveness Score (1-10)**: Rate the session based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
+7.  **Strengths Observed**: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
+8.  **Coaching Recommendations**: This is the MOST IMPORTANT part of your analysis. Provide 2-3 concrete, structured coaching recommendations based on weaknesses observed in this session. For each recommendation:
     *   Generate a unique string for the 'id' field.
     *   Identify a clear 'area' for improvement (e.g., "Active Listening," "Delivering Corrective Feedback," "Setting Clear Expectations").
     *   Write a concise 'recommendation' for the supervisor.
@@ -142,25 +143,25 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   Provide the name of a REAL, SPECIFIC 'resource' (e.g., book title: "Crucial Conversations"; podcast: "HBR IdeaCast").
     *   Write a compelling 'justification' explaining why this resource is a good fit.
     *   The 'status' must be "pending".
-8.  **Action Items**: List all concrete tasks for both employee and supervisor. For each item:
+9.  **Action Items**: List all concrete tasks for both employee and supervisor. For each item:
     *   Generate a unique string for the 'id' field.
     *   Set the 'owner' field to either "Employee" or "Supervisor".
     *   Set the 'status' field to "pending".
     *   DO NOT set the 'completedAt' field.
-9.  **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided). Analyze if the supervisor had an opportunity to apply their active learning goals in this session.
+10. **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided). Analyze if the supervisor had an opportunity to apply their active learning goals in this session.
     *   For each active goal, review the user's check-in notes for context on what they are learning/practicing.
     *   Determine if a situation arose where this learning could be applied.
     *   If the learning was applied, set \`didApply\` to true and provide an \`applicationExample\` with a supporting quote. This is an appreciation of their effort.
     *   If an opportunity existed but was missed, set \`didApply\` to false and provide a \`missedOpportunityExample\` with a quote and a explanation of how they could have applied their learning. This is a notification.
     *   If the supervisor has clearly mastered the goal (e.g., applied it consistently and effectively), set \`completedGoalId\` to the ID of the goal and provide a \`masteryJustification\` explaining why they've mastered it.
-10. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
-11. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
+11. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
+12. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
     *   **Trigger Conditions**: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, potential HR issues (e.g., statements like "I hate this workplace" or personal attacks like "you are a bad TL"). If a signal meets these conditions, it MUST be a Critical Coaching Insight and NOT a Missed Signal.
     *   **Content**: Must include a \`summary\` (what was missed), \`reason\` (why it matters AND a recommended micro-learning action), and \`severity\`. If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
     *   The \`status\` field should be set to 'open'. The AI should NOT generate content for \`supervisorResponse\` or \`employeeAcknowledgement\`.
-12. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
-13. **Localization Compliance**: If languageLocale is not 'en', note that analysis applied localized norms.
-14. **Legal & Data Compliance**: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
+13. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
+14. **Localization Compliance**: If languageLocale is not 'en', note that analysis applied localized norms.
+15. **Legal & Data Compliance**: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
 
 Generate the complete, compliant, and objective report now.`,
 });

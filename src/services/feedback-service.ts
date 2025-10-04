@@ -96,6 +96,12 @@ export interface AssignedPracticeScenario {
     analysis?: NetsAnalysisOutput;
 }
 
+export interface ActionItemWithSource extends ActionItem {
+    sourceType: '1-on-1' | 'Coaching' | 'Training';
+    source: string; // e.g., "1-on-1 with Alex Smith" or "Coaching: Active Listening"
+    dueDate?: string;
+}
+
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
 const CUSTOM_COACHING_PLANS_KEY = 'custom_coaching_plans_v1';
@@ -286,20 +292,20 @@ export async function getDeclinedCoachingAreasForSupervisor(supervisorName: stri
     return Array.from(declinedAreas);
 }
 
-export async function getActiveCoachingPlansForUser(userName: string): Promise<{ historyId: string | null, rec: CoachingRecommendation }[]> {
+export async function getActiveCoachingPlansForUser(userNameOrRole: string | Role): Promise<{ historyId: string | null, rec: CoachingRecommendation }[]> {
+    const userName = roleUserMapping[userNameOrRole as Role]?.name || userNameOrRole;
+    
     const history = await getOneOnOneHistory();
     const customPlans = getFromStorage<CoachingRecommendation>(CUSTOM_COACHING_PLANS_KEY);
     const activePlans: { historyId: string | null, rec: CoachingRecommendation }[] = [];
     
     // Add plans from 1-on-1 history
     history.forEach(item => {
-        // A coaching plan can be for a supervisor OR an employee
         const isUserInvolved = item.supervisorName === userName || item.employeeName === userName;
         if (isUserInvolved) {
             item.analysis.coachingRecommendations.forEach(rec => {
                 if (rec.status === 'accepted') {
-                    // This logic assumes coaching recs are primarily for supervisors, which might need adjustment
-                    // if employees can have them too. For now, we'll associate it if the user is the supervisor.
+                     // The person who owns the plan is the supervisor from that 1-on-1
                     if (item.supervisorName === userName) {
                         activePlans.push({ historyId: item.id, rec });
                     }
@@ -308,10 +314,10 @@ export async function getActiveCoachingPlansForUser(userName: string): Promise<{
         }
     });
 
-    // Add custom self-directed plans (which are associated with a user by name)
+    // Add custom self-directed plans
     customPlans.forEach(rec => {
-        const planOwner = rec.auditTrail?.[0]?.actor;
-        if (planOwner === userName && rec.status === 'accepted') { // Custom plans are 'accepted' by default
+        const planOwnerName = rec.auditTrail?.[0]?.actor;
+        if (planOwnerName === userName && rec.status === 'accepted') {
              activePlans.push({ historyId: null, rec });
         }
     });
@@ -1004,4 +1010,64 @@ export async function submitEmployeeFeedbackAcknowledgement(trackingId: string, 
     
     item.assignedTo = Array.from(currentAssignees);
     saveFeedbackToStorage(allFeedback);
+}
+
+// ==========================================
+// Dashboard Widget Services
+// ==========================================
+
+export async function getAggregatedActionItems(role: Role): Promise<ActionItemWithSource[]> {
+    const allItems: ActionItemWithSource[] = [];
+    const currentUserName = roleUserMapping[role]?.name;
+    if (!currentUserName) return [];
+
+    // 1. From 1-on-1s
+    const history = await getOneOnOneHistory();
+    history.forEach(h => {
+        if (h.analysis.actionItems) {
+            h.analysis.actionItems.forEach(ai => {
+                const ownerName = roleUserMapping[ai.owner]?.name;
+                if (ownerName === currentUserName && ai.status === 'pending') {
+                    allItems.push({
+                        ...ai,
+                        sourceType: '1-on-1',
+                        source: `1-on-1 with ${h.supervisorName === currentUserName ? h.employeeName : h.supervisorName}`,
+                        dueDate: new Date(new Date(h.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Mock due date: 1 week after 1-on-1
+                    });
+                }
+            });
+        }
+    });
+
+    // 2. From Coaching Plans
+    const coachingPlans = await getActiveCoachingPlansForUser(role);
+    coachingPlans.forEach(plan => {
+        allItems.push({
+            id: `coach-${plan.rec.id}`,
+            owner: role,
+            task: `Continue working on coaching goal: ${plan.rec.area}`,
+            status: 'pending',
+            sourceType: 'Coaching',
+            source: `Plan: ${plan.rec.resource}`,
+            dueDate: plan.rec.endDate,
+        });
+    });
+
+    // In a real app, you would also fetch from training programs etc.
+    // For now, this is a good start.
+
+    return allItems.sort((a,b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
+}
+
+export async function getTeamPulse(): Promise<number> {
+    const history = await getOneOnOneHistory();
+    const recentRatings = history
+        .slice(0, 20) // Look at the last 20 1-on-1s for the pulse
+        .map(h => parseInt(h.analysis.employeeSwotAnalysis?.opportunities[0] || h.analysis.leadershipScore.toString(), 10)) // Using SWOT as a proxy for growthRating
+        .filter(r => !isNaN(r));
+
+    if (recentRatings.length === 0) return 3.5; // Default pulse if no data
+
+    const average = recentRatings.reduce((sum, current) => sum + current, 0) / recentRatings.length;
+    return average;
 }

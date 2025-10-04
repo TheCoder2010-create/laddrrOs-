@@ -141,6 +141,7 @@ export type ActionItem = z.infer<typeof ActionItemSchema>;
 export const AnalyzeOneOnOneOutputSchema = z.object({
   supervisorSummary: z.string().describe("A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback."),
   employeeSummary: z.string().describe("A concise summary for the employee, focusing on key takeaways, action items, and growth opportunities discussed."),
+  employeeInsights: z.array(z.string()).optional().describe("A short, bulleted list of 2-3 encouraging or reflective insights specifically for the employee's feed."),
   employeeSwotAnalysis: z.object({
       strengths: z.array(z.string()).describe("List of strengths observed for the employee."),
       weaknesses: z.array(z.string()).describe("List of weaknesses or areas for improvement for the employee."),
