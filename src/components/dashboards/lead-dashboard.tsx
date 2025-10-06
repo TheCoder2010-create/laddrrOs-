@@ -1,10 +1,33 @@
 
 import DevelopmentPlanWidget from "./development-plan-widget";
+import QualityScoreTrendWidget from "./quality-score-trend-widget";
+import ActionItemHeatmapWidget from "./action-item-heatmap-widget";
+import MissedSignalAlertsWidget from "./missed-signal-alerts-widget";
+import CoachingOpportunitiesWidget from "./coaching-opportunities-widget";
+import NetsLeaderboardWidget from "./nets-leaderboard-widget";
+import TeamGrowthHighlightsWidget from "./team-growth-highlights-widget";
 
 export default function LeadDashboard() {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold font-headline mb-6 text-foreground">Team Lead Dashboard</h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <QualityScoreTrendWidget />
+          <ActionItemHeatmapWidget />
+        </div>
+        <div className="space-y-6">
+          <MissedSignalAlertsWidget />
+          <CoachingOpportunitiesWidget />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <NetsLeaderboardWidget />
+        <TeamGrowthHighlightsWidget />
+      </div>
+
       <DevelopmentPlanWidget />
     </div>
   );

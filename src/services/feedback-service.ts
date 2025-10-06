@@ -1026,7 +1026,7 @@ export async function getAggregatedActionItems(role: Role): Promise<ActionItemWi
     history.forEach(h => {
         if (h.analysis.actionItems) {
             h.analysis.actionItems.forEach(ai => {
-                const ownerName = roleUserMapping[ai.owner]?.name;
+                const ownerName = roleUserMapping[ai.owner as Role]?.name;
                 if (ownerName === currentUserName && ai.status === 'pending') {
                     allItems.push({
                         ...ai,
@@ -1070,4 +1070,98 @@ export async function getTeamPulse(): Promise<number> {
 
     const average = recentRatings.reduce((sum, current) => sum + current, 0) / recentRatings.length;
     return average;
+}
+
+export async function getTeamActionItemStatus(supervisorRole: Role): Promise<Record<string, { open: number, overdue: number }>> {
+    const history = await getOneOnOneHistory();
+    const supervisorName = roleUserMapping[supervisorRole]?.name;
+    const teamMembers: Record<string, { open: number, overdue: number }> = {};
+    const now = new Date();
+
+    history.forEach(item => {
+        // Find sessions where the current user was the supervisor
+        if (item.supervisorName === supervisorName) {
+            const employeeName = item.employeeName;
+            if (!teamMembers[employeeName]) {
+                teamMembers[employeeName] = { open: 0, overdue: 0 };
+            }
+
+            item.analysis.actionItems?.forEach(action => {
+                if (action.status === 'pending') {
+                    teamMembers[employeeName].open++;
+                    // Mock due date is 1 week after the 1-on-1
+                    const dueDate = new Date(new Date(item.date).getTime() + 7 * 24 * 60 * 60 * 1000);
+                    if (now > dueDate) {
+                        teamMembers[employeeName].overdue++;
+                    }
+                }
+            });
+        }
+    });
+
+    return teamMembers;
+}
+
+export async function getTeamGrowthHighlights(supervisorRole: Role): Promise<{ employeeName: string, growth: number }[]> {
+    const history = await getOneOnOneHistory();
+    const supervisorName = roleUserMapping[supervisorRole]?.name;
+    const growthMap: Record<string, number[]> = {};
+
+    history
+        .filter(item => item.supervisorName === supervisorName)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort oldest to newest
+        .forEach(item => {
+            const employeeName = item.employeeName;
+            if (!growthMap[employeeName]) {
+                growthMap[employeeName] = [];
+            }
+            growthMap[employeeName].push(item.analysis.effectivenessScore);
+        });
+
+    const highlights = Object.entries(growthMap)
+        .map(([employeeName, scores]) => {
+            if (scores.length < 2) return { employeeName, growth: 0 };
+            const latestScore = scores[scores.length - 1];
+            const previousScore = scores[scores.length - 2];
+            return { employeeName, growth: latestScore - previousScore };
+        })
+        .filter(item => item.growth > 0)
+        .sort((a, b) => b.growth - a.growth)
+        .slice(0, 3); // Get top 3 growers
+
+    return highlights;
+}
+
+export async function getTeamNetsScores(supervisorRole: Role): Promise<Record<string, { average: number, sessions: number }>> {
+    const allPractice = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
+    const supervisorName = roleUserMapping[supervisorRole]?.name;
+    const allHistory = await getOneOnOneHistory();
+    
+    // Simple hierarchy: Team Lead manages Employee
+    const teamMemberRoles: Role[] = [];
+    if (supervisorRole === 'Team Lead') {
+        teamMemberRoles.push('Employee');
+    }
+
+    const teamScores: Record<string, { totalScore: number, count: number }> = {};
+
+    allPractice.forEach(practice => {
+        if (teamMemberRoles.includes(practice.assignedTo) && practice.status === 'completed' && practice.analysis) {
+            const memberName = roleUserMapping[practice.assignedTo]?.name;
+            if (!teamScores[memberName]) {
+                teamScores[memberName] = { totalScore: 0, count: 0 };
+            }
+            teamScores[memberName].totalScore += practice.analysis.scores.overall;
+            teamScores[memberName].count++;
+        }
+    });
+
+    const result: Record<string, { average: number, sessions: number }> = {};
+    for (const memberName in teamScores) {
+        result[memberName] = {
+            average: teamScores[memberName].totalScore / teamScores[memberName].count,
+            sessions: teamScores[memberName].count,
+        };
+    }
+    return result;
 }
