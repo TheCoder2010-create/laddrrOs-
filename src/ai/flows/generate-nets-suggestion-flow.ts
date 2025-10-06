@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { NetsSuggestionInputSchema, NetsSuggestionOutputSchema, type NetsSuggestionInput, type NetsSuggestionOutput } from '@/ai/schemas/nets-schemas';
-import { getOneOnOneHistory, getActiveCoachingPlansForSupervisor } from '@/services/feedback-service';
+import { getOneOnOneHistory, getActiveCoachingPlansForUser } from '@/services/feedback-service';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 
@@ -20,7 +20,7 @@ export async function generateNetsSuggestion(input: { forRole: Role; }): Promise
     
     // 1. Fetch all relevant data
     const allHistory = await getOneOnOneHistory();
-    const supervisorActiveGoals = await getActiveCoachingPlansForSupervisor(supervisorName);
+    const supervisorActiveGoals = await getActiveCoachingPlansForUser(supervisorName);
 
     // 2. Filter data for the specific supervisor
     const relevantHistory = allHistory

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput, type CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForSupervisor } from '@/services/feedback-service';
+import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForUser } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -211,7 +211,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
 
             // Fetch contextual data for the AI
             const pastDeclinedAreas = await getDeclinedCoachingAreasForSupervisor(supervisor);
-            const activePlans = await getActiveCoachingPlansForSupervisor(supervisor);
+            const activePlans = await getActiveCoachingPlansForUser(supervisor);
             const activeDevelopmentGoals = activePlans.map(p => ({
                 id: p.rec.id,
                 area: p.rec.area,

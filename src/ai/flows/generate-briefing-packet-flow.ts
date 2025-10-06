@@ -8,14 +8,14 @@
 
 import { ai } from '@/ai/genkit';
 import { BriefingPacketInputSchema, BriefingPacketOutputSchema, type BriefingPacketInput, type BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
-import { getOneOnOneHistory, getActiveCoachingPlansForSupervisor } from '@/services/feedback-service';
+import { getOneOnOneHistory, getActiveCoachingPlansForUser } from '@/services/feedback-service';
 import { format, formatDistanceToNow } from 'date-fns';
 import type { Role } from '@/hooks/use-role';
 
 export async function generateBriefingPacket(input: { supervisorName: string; employeeName: string; viewerRole: Role; }): Promise<BriefingPacketOutput> {
     // 1. Fetch all relevant data
     const allHistory = await getOneOnOneHistory();
-    const supervisorActiveGoals = await getActiveCoachingPlansForSupervisor(input.supervisorName);
+    const supervisorActiveGoals = await getActiveCoachingPlansForUser(input.supervisorName);
 
     // 2. Filter data for the specific supervisor-employee pair
     const relevantHistory = allHistory
