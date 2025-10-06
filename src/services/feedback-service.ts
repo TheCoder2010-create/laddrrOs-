@@ -1092,8 +1092,8 @@ export async function getAggregatedActionItems(role: Role): Promise<ActionItemWi
     history.forEach(h => {
         if (h.analysis.actionItems) {
             h.analysis.actionItems.forEach(ai => {
-                const ownerName = roleUserMapping[ai.owner as Role]?.name;
-                if (ownerName === currentUserName && ai.status === 'pending') {
+                const ownerRole = getRoleByName(ai.owner);
+                if (ownerRole === role && ai.status === 'pending') {
                     allItems.push({
                         ...ai,
                         sourceType: '1-on-1',
@@ -1230,4 +1230,148 @@ export async function getTeamNetsScores(supervisorRole: Role): Promise<Record<st
         };
     }
     return result;
+}
+
+// AM Dashboard Services
+export interface InterventionLogEntry {
+    id: string;
+    date: string;
+    summary: string;
+    employeeName: string;
+    responseStatus: 'Timely' | 'Delayed' | 'Unresolved';
+}
+
+export async function getAiInterventionLog(role: Role): Promise<InterventionLogEntry[]> {
+    const history = await getOneOnOneHistory();
+    const log: InterventionLogEntry[] = [];
+    const SLA_HOURS = 48;
+
+    history.forEach(item => {
+        if (item.analysis.criticalCoachingInsight) {
+            const insight = item.analysis.criticalCoachingInsight;
+            const creationEvent = insight.auditTrail?.find(e => e.event === 'Critical Insight Identified');
+            const responseEvent = insight.auditTrail?.find(e => e.event === 'Responded');
+
+            if (creationEvent) {
+                let responseStatus: InterventionLogEntry['responseStatus'] = 'Unresolved';
+                if (responseEvent) {
+                    const creationTime = new Date(creationEvent.timestamp).getTime();
+                    const responseTime = new Date(responseEvent.timestamp).getTime();
+                    const diffHours = (responseTime - creationTime) / (1000 * 60 * 60);
+                    responseStatus = diffHours <= SLA_HOURS ? 'Timely' : 'Delayed';
+                }
+
+                log.push({
+                    id: item.id,
+                    date: item.date,
+                    summary: insight.summary,
+                    employeeName: item.employeeName,
+                    responseStatus: responseStatus,
+                });
+            }
+        }
+    });
+    return log.slice(0, 5); // Return latest 5
+}
+
+export interface DevelopmentMapNode {
+    name: string;
+    role: Role;
+    leadershipScore: number;
+    trajectory: 'positive' | 'negative' | 'stable';
+}
+
+export async function getManagerDevelopmentMapData(amRole: Role): Promise<DevelopmentMapNode[]> {
+    const history = await getOneOnOneHistory();
+    const teamLeadRole: Role = 'Team Lead'; // AM manages Team Leads
+    const teamLeadName = roleUserMapping[teamLeadRole].name;
+
+    const leadScores = history
+        .filter(item => item.supervisorName === teamLeadName)
+        .map(item => ({ date: new Date(item.date), score: item.analysis.leadershipScore }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    if (leadScores.length < 2) {
+        return [{
+            name: teamLeadName,
+            role: teamLeadRole,
+            leadershipScore: leadScores[0]?.score || 5,
+            trajectory: 'stable'
+        }];
+    }
+
+    const latestScore = leadScores[leadScores.length - 1].score;
+    const previousScore = leadScores[leadScores.length - 2].score;
+    let trajectory: DevelopmentMapNode['trajectory'] = 'stable';
+    if (latestScore > previousScore) trajectory = 'positive';
+    if (latestScore < previousScore) trajectory = 'negative';
+
+    return [{
+        name: teamLeadName,
+        role: teamLeadRole,
+        leadershipScore: latestScore,
+        trajectory: trajectory
+    }];
+}
+
+export interface TeamCoachingQuality {
+    teamLeadName: string;
+    qualityScore: number;
+    totalSessions: number;
+}
+
+export async function getTeamCoachingQualityIndex(amRole: Role): Promise<TeamCoachingQuality[]> {
+    const history = await getOneOnOneHistory();
+    const qualityMap: Record<string, { totalScore: number, count: number }> = {};
+
+    history.forEach(item => {
+        // For AM, we're looking at their direct reports, the Team Leads
+        const supervisorName = item.supervisorName;
+        if (!qualityMap[supervisorName]) {
+            qualityMap[supervisorName] = { totalScore: 0, count: 0 };
+        }
+        qualityMap[supervisorName].totalScore += item.analysis.effectivenessScore;
+        qualityMap[supervisorName].count++;
+    });
+
+    return Object.entries(qualityMap).map(([teamLeadName, data]) => ({
+        teamLeadName,
+        qualityScore: (data.totalScore / data.count) * 10, // Scale to 100
+        totalSessions: data.count,
+    })).filter(item => item.teamLeadName === roleUserMapping['Team Lead'].name); // Only show Team Lead for this demo
+}
+
+export interface ReadinessPipelineData {
+    employeeToLead: number;
+    leadToAm: number;
+}
+
+export async function getReadinessPipelineData(amRole: Role): Promise<ReadinessPipelineData> {
+    // This is heavily mocked as it requires complex logic
+    return {
+        employeeToLead: 65, // % of employees showing potential for TL role
+        leadToAm: 40,       // % of TLs showing potential for AM role
+    };
+}
+
+export interface EscalationInsight {
+    theme: string;
+    recommendation: string;
+    count: number;
+}
+
+export async function getEscalationInsights(amRole: Role): Promise<EscalationInsight[]> {
+    // This is mocked based on common HR themes
+    return [
+        {
+            theme: 'Lack of Clarity in Feedback',
+            recommendation: 'Reinforce STAR method training for giving specific, behavioral feedback.',
+            count: 3
+        },
+        {
+            theme: 'Unaddressed Career Growth Signals',
+            recommendation: 'Coach leads to proactively ask about career aspirations in every 1-on-1.',
+            count: 2
+        }
+    ];
 }
