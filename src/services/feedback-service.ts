@@ -109,17 +109,63 @@ const PRACTICE_SCENARIOS_KEY = 'practice_scenarios_v1';
 
 
 // ==========================================
-// Mock Data for Scorecard
+// Mock Data Generation
 // ==========================================
+const getMockOneOnOneHistory = (): OneOnOneHistoryItem[] => {
+    const now = new Date();
+    const leadName = roleUserMapping['Team Lead'].name;
+    const employeeName = roleUserMapping['Employee'].name;
+
+    return [
+        {
+            id: 'mock-1on1-1',
+            supervisorName: leadName,
+            employeeName: employeeName,
+            date: new Date(now.setDate(now.getDate() - 14)).toISOString(),
+            analysis: {
+                supervisorSummary: 'Good session focusing on project blockers. Casey seems motivated but a bit overwhelmed.',
+                employeeSummary: 'We discussed the current project challenges and set some clear priorities for the next two weeks.',
+                employeeInsights: ["You did a great job articulating the technical challenges you're facing."],
+                employeeSwotAnalysis: { strengths: ['Technical Skill'], weaknesses: ['Time Management'], opportunities: ['Lead a sub-feature'], threats: ['Potential burnout'] },
+                leadershipScore: 7,
+                effectivenessScore: 6,
+                strengthsObserved: [{ action: 'Active Listening', example: "When Casey spoke, you summarized their points accurately." }],
+                coachingRecommendations: [{ id: 'rec-1', area: 'Setting Clear Expectations', recommendation: 'Try to define "done" more clearly for tasks.', type: 'Article', resource: 'How to Set Clear Expectations', justification: 'Helps with alignment.', status: 'pending', auditTrail: [], checkIns: [], progress: 0 }],
+                actionItems: [{ id: 'ai-1', owner: 'Employee', task: 'Draft the API spec for the new feature', status: 'completed', completedAt: new Date(now.getDate() - 10).toISOString() }],
+                missedSignals: ["Casey mentioned working late twice, which could be a sign of workload issues you didn't explore."],
+                biasFairnessCheck: { flag: false },
+                localizationCompliance: { applied: false },
+                legalDataCompliance: { piiOmitted: false, privacyRequest: false },
+            }
+        },
+        {
+            id: 'mock-1on1-2',
+            supervisorName: leadName,
+            employeeName: employeeName,
+            date: new Date(now.setDate(now.getDate() - 7)).toISOString(),
+            analysis: {
+                supervisorSummary: 'Follow-up session. Casey has made progress on the API spec. We talked about career growth.',
+                employeeSummary: 'We reviewed your progress and discussed your interest in taking on more leadership responsibilities.',
+                employeeInsights: ["It's great that you're thinking about your long-term career goals."],
+                employeeSwotAnalysis: { strengths: ['Proactive'], weaknesses: ['Public Speaking'], opportunities: ['Mentor a new hire'], threats: ['Impatience with process'] },
+                leadershipScore: 8,
+                effectivenessScore: 8,
+                strengthsObserved: [{ action: 'Coaching', example: "You asked good, open-ended questions about Casey's career goals." }],
+                coachingRecommendations: [{ id: 'rec-2', area: 'Delegation', recommendation: 'Consider delegating the next non-critical bug fix to a junior dev.', type: 'Book', resource: 'The One Minute Manager', justification: 'Frees you up for high-level tasks.', status: 'pending', auditTrail: [], checkIns: [], progress: 0 }],
+                actionItems: [{ id: 'ai-2', owner: 'Supervisor', task: 'Identify a low-risk task for Casey to lead.', status: 'pending' }],
+                missedSignals: [],
+                biasFairnessCheck: { flag: false },
+                localizationCompliance: { applied: false },
+                legalDataCompliance: { piiOmitted: false, privacyRequest: false },
+            }
+        },
+    ];
+};
+
 const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
     const now = new Date();
-    const dueDate1 = new Date(now.setDate(now.getDate() - 10));
-    const assignedAt1 = new Date(new Date(dueDate1).setDate(dueDate1.getDate() - 5));
-    const completedAt1 = new Date(new Date(dueDate1).setDate(dueDate1.getDate() + 1));
-    
-    const dueDate2 = new Date(now.setDate(now.getDate() - 2));
-    const assignedAt2 = new Date(new Date(dueDate2).setDate(dueDate2.getDate() - 5));
-    const completedAt2 = new Date(new Date(dueDate2).setDate(dueDate2.getDate() + 1));
+    const leadName = roleUserMapping['Team Lead'].name;
+    const employeeName = roleUserMapping['Employee'].name;
 
     return [
         {
@@ -129,9 +175,9 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
             scenario: 'Practice giving corrective feedback to a high-performer about their communication style.',
             persona: 'Employee',
             status: 'completed',
-            assignedAt: assignedAt1.toISOString(),
-            dueDate: dueDate1.toISOString(),
-            completedAt: completedAt1.toISOString(),
+            assignedAt: new Date(new Date().setDate(now.getDate() - 10)).toISOString(),
+            dueDate: new Date(new Date().setDate(now.getDate() - 5)).toISOString(),
+            completedAt: new Date(new Date().setDate(now.getDate() - 4)).toISOString(),
             analysis: {
                 scores: { clarity: 8.5, empathy: 7.0, assertiveness: 9.0, overall: 8.2 },
                 strengths: ["You started the conversation clearly and directly.", "Good use of 'I' statements to own your perspective."],
@@ -151,9 +197,9 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
             scenario: 'Negotiating a deadline extension for the Q3 project with a senior manager.',
             persona: 'Manager',
             status: 'completed',
-            assignedAt: assignedAt2.toISOString(),
-            dueDate: dueDate2.toISOString(),
-            completedAt: completedAt2.toISOString(),
+            assignedAt: new Date(new Date().setDate(now.getDate() - 7)).toISOString(),
+            dueDate: new Date(new Date().setDate(now.getDate() - 2)).toISOString(),
+            completedAt: new Date(new Date().setDate(now.getDate() - 1)).toISOString(),
             analysis: {
                 scores: { clarity: 7.0, empathy: 8.0, assertiveness: 6.5, overall: 7.2 },
                 strengths: ["Excellent job explaining the 'why' behind the delay.", "You remained calm and professional throughout."],
@@ -174,12 +220,17 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
 
 const getFromStorage = <T>(key: string): T[] => {
     if (typeof window === 'undefined') return [];
-    const json = sessionStorage.getItem(key);
+    let json = sessionStorage.getItem(key);
     
     if (!json) {
-        // If this is the first time loading the practice scenarios, inject mock data.
+        // If storage is empty, inject mock data.
         if (key === PRACTICE_SCENARIOS_KEY) {
             const mockData = getMockPracticeScenarios() as T[];
+            saveToStorage(key, mockData);
+            return mockData;
+        }
+        if (key === ONE_ON_ONE_HISTORY_KEY) {
+            const mockData = getMockOneOnOneHistory() as T[];
             saveToStorage(key, mockData);
             return mockData;
         }
@@ -247,19 +298,34 @@ export async function getPracticeScenariosAssignedByMe(assignerRole: Role): Prom
 export async function completePracticeScenario(input: NetsConversationInput, assignedScenarioId?: string): Promise<NetsAnalysisOutput> {
     const { analyzeNetsConversation } = await import('@/ai/flows/analyze-nets-conversation-flow');
     const analysis = await analyzeNetsConversation(input);
-
+    const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
+    
     if (assignedScenarioId) {
-        const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
         const scenarioIndex = allScenarios.findIndex(s => s.id === assignedScenarioId);
         
         if (scenarioIndex !== -1) {
             allScenarios[scenarioIndex].status = 'completed';
             allScenarios[scenarioIndex].completedAt = new Date().toISOString();
             allScenarios[scenarioIndex].analysis = analysis;
-            saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
         }
+    } else {
+        // This was a self-initiated practice, save it anyway for the scorecard
+        const newCompletedScenario: AssignedPracticeScenario = {
+            id: uuidv4(),
+            assignedBy: input.persona as Role, // Loosely assign to self
+            assignedTo: getRoleByName(roleUserMapping['Employee'].name)!, // Assuming employee is practicing
+            scenario: input.scenario,
+            persona: input.persona as Role,
+            status: 'completed',
+            assignedAt: new Date().toISOString(),
+            dueDate: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            analysis: analysis,
+        };
+        allScenarios.unshift(newCompletedScenario);
     }
     
+    saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
     return analysis;
 }
 
