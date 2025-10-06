@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, Check, ListTodo, MessageSquare, BrainCircuit, MessagesSquare, FlaskConical, Handshake } from 'lucide-react';
+import { LogOut, User, BarChart, Check, ListTodo, MessageSquare, BrainCircuit, MessagesSquare, FlaskConical, Handshake, Scale } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
@@ -52,6 +52,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     ...(isMentor ? [{ href: '/mentorship', icon: <Handshake className="text-cyan-500"/>, label: 'Mentorship' }] : []),
+    ...(['Manager'].includes(currentRole) ? [{ href: '/goals', icon: <Scale className="text-rose-500"/>, label: 'Goals' }] : []),
     ...(['Manager', 'HR Head'].includes(currentRole) ? [{ 
         href: '/managers-lab', 
         icon: <FlaskConical className="text-orange-500"/>, 
