@@ -17,7 +17,7 @@ function ScoreRow({ label, score, previousScore }: { label: string; score: numbe
   const color = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'text-muted-foreground';
 
   return (
-    <div className="flex items-center justify-between py-2 border-b last:border-b-0">
+    <div className="flex items-center justify-between py-1">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <div className="flex items-center gap-4">
         <p className="text-lg font-bold">{score.toFixed(1)}</p>
