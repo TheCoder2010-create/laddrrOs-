@@ -1,0 +1,210 @@
+
+"use client"
+
+import * as React from "react"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter
+} from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { Rocket, X, Check, ChevronsUpDown, Bot, BarChart } from "lucide-react"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { Progress } from "@/components/ui/progress"
+import { useRole } from "@/hooks/use-role"
+
+const mockPeerData = [
+  { value: "alexa_ray", label: "Alexa Ray" },
+  { value: "ben_p", label: "Ben Parker" },
+  { value: "cody_f", label: "Cody Fisher" },
+  { value: "drew_h", label: "Drew Harris" },
+  { value: "eva_g", label: "Eva Green" },
+];
+
+const mockPerformanceData: Record<string, Record<string, { value: number; trend: 'up' | 'down' | 'stable' }>> = {
+  "You": {
+    "Goal Completion": { value: 92, trend: "up" },
+    "Project Delivery": { value: 85, trend: "stable" },
+    "Feedback Score": { value: 8.8, trend: "up" },
+  },
+  "alexa_ray": {
+    "Goal Completion": { value: 88, trend: "stable" },
+    "Project Delivery": { value: 91, trend: "up" },
+    "Feedback Score": { value: 8.5, trend: "down" },
+  },
+  "ben_p": {
+    "Goal Completion": { value: 95, trend: "up" },
+    "Project Delivery": { value: 82, trend: "down" },
+    "Feedback Score": { value: 9.1, trend: "up" },
+  },
+  "cody_f": {
+    "Goal Completion": { value: 85, trend: "down" },
+    "Project Delivery": { value: 88, trend: "stable" },
+    "Feedback Score": { value: 8.2, trend: "stable" },
+  },
+  "drew_h": {
+    "Goal Completion": { value: 91, trend: "up" },
+    "Project Delivery": { value: 93, trend: "up" },
+    "Feedback Score": { value: 8.9, trend: "up" },
+  },
+   "eva_g": {
+    "Goal Completion": { value: 89, trend: "stable" },
+    "Project Delivery": { value: 85, trend: "stable" },
+    "Feedback Score": { value: 8.6, trend: "down" },
+  },
+};
+
+const aiInsight = "You’re performing above 70% of your peers in goal completion, showing strong consistency. Your project delivery score is solid, placing you in the top half of your peer group. There's an opportunity to focus on proactive communication to potentially boost your feedback score."
+
+export function ComparePerformanceSheet() {
+  const [open, setOpen] = React.useState(false)
+  const [selectedPeers, setSelectedPeers] = React.useState<string[]>([])
+  const { role } = useRole()
+
+  const handleSelect = (peerValue: string) => {
+    setSelectedPeers(prev =>
+      prev.includes(peerValue)
+        ? prev.filter(p => p !== peerValue)
+        : [...prev, peerValue]
+    )
+  }
+
+  const comparisonData = ["You", ...selectedPeers].map(peerValue => ({
+    name: peerValue === "You" ? "You" : mockPeerData.find(p => p.value === peerValue)?.label || "Unknown",
+    metrics: mockPerformanceData[peerValue === "You" ? "You" : peerValue] || {}
+  }))
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="outline" className="w-full">
+          <Rocket className="mr-2 h-4 w-4" /> Compare Performance
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="text-2xl">Compare Your Performance</SheetTitle>
+          <SheetDescription>
+            Select peers from your department to see a side-by-side comparison. This is private and for your development only.
+          </SheetDescription>
+        </SheetHeader>
+        <div className="py-6">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <ChevronsUpDown className="mr-2 h-4 w-4" />
+                  {selectedPeers.length > 0
+                    ? `Comparing with ${selectedPeers.length} peer(s)`
+                    : "Select peers to compare..."}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0" align="start">
+                <Command>
+                    <CommandInput placeholder="Search peers..." />
+                    <CommandList>
+                        <CommandEmpty>No results found.</CommandEmpty>
+                        <CommandGroup>
+                        {mockPeerData.map((peer) => {
+                            const isSelected = selectedPeers.includes(peer.value)
+                            return (
+                            <CommandItem
+                                key={peer.value}
+                                onSelect={() => handleSelect(peer.value)}
+                            >
+                                <div
+                                className={cn(
+                                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                    isSelected
+                                    ? "bg-primary text-primary-foreground"
+                                    : "opacity-50 [&_svg]:invisible"
+                                )}
+                                >
+                                <Check className={cn("h-4 w-4")} />
+                                </div>
+                                <span>{peer.label}</span>
+                            </CommandItem>
+                            )
+                        })}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+        </div>
+        
+        {selectedPeers.length > 0 && (
+          <div className="space-y-8">
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${comparisonData.length}, minmax(0, 1fr))` }}>
+              {comparisonData.map((data, idx) => (
+                <div key={idx} className={cn("text-center font-semibold", data.name === "You" && "text-primary")}>
+                  {data.name}
+                </div>
+              ))}
+            </div>
+
+            {Object.keys(mockPerformanceData["You"]).map((metricName) => (
+                <div key={metricName}>
+                    <h4 className="font-semibold text-muted-foreground mb-3">{metricName}</h4>
+                    <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${comparisonData.length}, minmax(0, 1fr))` }}>
+                        {comparisonData.map((data, idx) => {
+                            const metric = data.metrics[metricName];
+                            if (!metric) return <div key={idx}></div>;
+                            
+                            const yourMetric = comparisonData[0].metrics[metricName];
+                            const isHigher = data.name !== "You" && yourMetric.value > metric.value;
+                            const isLower = data.name !== "You" && yourMetric.value < metric.value;
+
+                            return (
+                                <div key={idx} className="flex flex-col items-center text-center space-y-2">
+                                     <p className="text-xl font-bold">{metric.value}{metricName === "Goal Completion" ? "%" : ""}</p>
+                                     <Progress 
+                                        value={metricName === "Feedback Score" ? metric.value * 10 : metric.value} 
+                                        className="h-2"
+                                        indicatorClassName={cn(
+                                            data.name === "You" ? "bg-primary" : "bg-muted-foreground/30",
+                                            isHigher && "bg-green-500",
+                                            isLower && "bg-red-500",
+                                        )}
+                                    />
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            ))}
+
+            <div className="pt-6">
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                    <h4 className="font-semibold text-primary mb-2 flex items-center gap-2"><Bot /> AI Summary</h4>
+                    <p className="text-sm text-primary/90 italic">"{aiInsight}"</p>
+                </div>
+            </div>
+          </div>
+        )}
+
+      </SheetContent>
+    </Sheet>
+  )
+}

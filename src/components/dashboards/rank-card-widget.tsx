@@ -1,8 +1,10 @@
+
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Award, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ComparePerformanceSheet } from './compare-performance-sheet';
 
 // Mock data representing the employee's rank
 const rankData = {
@@ -34,11 +36,12 @@ export default function RankCardWidget() {
             Top {rankData.percentile}%
         </p>
       </CardContent>
-      <CardFooter className="flex justify-center">
+      <CardFooter className="flex-col items-center justify-center space-y-4">
          <Badge variant="secondary" className="flex items-center gap-1.5">
             <TrendingUp className="h-3 w-3 text-green-500"/>
             Up 2 spots from last quarter
         </Badge>
+        <ComparePerformanceSheet />
       </CardFooter>
     </Card>
   );
