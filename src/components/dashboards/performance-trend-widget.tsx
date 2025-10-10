@@ -9,22 +9,43 @@ import { LineChart, CartesianGrid, XAxis, YAxis, Line, Legend } from "recharts"
 import { TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { format } from "date-fns"
 
-// Mock data representing performance over a 12-month period for different KPIs
-const allPerformanceData = [
-  { month: "Jan", overall: 75, projectDelivery: 80, codeQuality: 70, collaboration: 75 },
-  { month: "Feb", overall: 78, projectDelivery: 82, codeQuality: 75, collaboration: 77 },
-  { month: "Mar", overall: 82, projectDelivery: 85, codeQuality: 80, collaboration: 81 },
-  { month: "Apr", overall: 80, projectDelivery: 83, codeQuality: 78, collaboration: 79 },
-  { month: "May", overall: 85, projectDelivery: 88, codeQuality: 82, collaboration: 85 },
-  { month: "Jun", overall: 84, projectDelivery: 86, codeQuality: 81, collaboration: 85 },
-  { month: "Jul", overall: 88, projectDelivery: 90, codeQuality: 85, collaboration: 89 },
-  { month: "Aug", overall: 90, projectDelivery: 92, codeQuality: 88, collaboration: 90 },
-  { month: "Sep", overall: 87, projectDelivery: 89, codeQuality: 86, collaboration: 86 },
-  { month: "Oct", overall: 92, projectDelivery: 94, codeQuality: 90, collaboration: 92 },
-  { month: "Nov", overall: 91, projectDelivery: 92, codeQuality: 91, collaboration: 89 },
-  { month: "Dec", overall: 94, projectDelivery: 95, codeQuality: 93, collaboration: 94 },
-];
+// Mock data representing performance over different time periods
+const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
+    let data = [];
+    let baseDate = new Date(2023, 0, 1);
+    for (let i = 0; i < numPoints; i++) {
+        let date;
+        if (period === 'day') date = new Date(baseDate.setDate(baseDate.getDate() + 1));
+        else if (period === 'week') date = new Date(baseDate.setDate(baseDate.getDate() + 7));
+        else date = new Date(baseDate.setMonth(baseDate.getMonth() + 1));
+        
+        const overall = 75 + (i * 1.5) + (Math.random() * 5 - 2.5);
+        const projectDelivery = overall + (Math.random() * 3 - 1.5);
+        const codeQuality = overall - (Math.random() * 3 - 1.5);
+        const collaboration = overall + (Math.random() * 2 - 1);
+        
+        data.push({
+            date,
+            overall: parseFloat(overall.toFixed(1)),
+            projectDelivery: parseFloat(projectDelivery.toFixed(1)),
+            codeQuality: parseFloat(codeQuality.toFixed(1)),
+            collaboration: parseFloat(collaboration.toFixed(1)),
+        });
+    }
+    return data;
+}
+
+const monthlyData = generateData(12, 'month');
+const weeklyData = generateData(52, 'week');
+const dailyData = generateData(90, 'day');
+
+const allPerformanceData = {
+    M: monthlyData,
+    W: weeklyData,
+    D: dailyData
+};
 
 const kpis = [
     { key: 'overall', label: 'Overall' },
@@ -34,14 +55,23 @@ const kpis = [
 ] as const;
 
 type KpiKey = typeof kpis[number]['key'];
+type TimePeriod = 'D' | 'W' | 'M';
 
 export default function PerformanceTrendWidget() {
-  const [range, setRange] = useState([0, 11]); // Default to showing all 12 months
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('M');
+  const [range, setRange] = useState([0, allPerformanceData[timePeriod].length - 1]); 
   const [selectedKpi, setSelectedKpi] = useState<KpiKey>('overall');
 
+  const currentData = useMemo(() => allPerformanceData[timePeriod], [timePeriod]);
+
+  // Reset range when time period changes
+  React.useEffect(() => {
+    setRange([0, currentData.length - 1]);
+  }, [timePeriod, currentData]);
+
   const visibleData = useMemo(() => {
-    return allPerformanceData.slice(range[0], range[1] + 1);
-  }, [range]);
+    return currentData.slice(range[0], range[1] + 1);
+  }, [range, currentData]);
 
   const handleRangeChange = (newRange: number[]) => {
     if (newRange[1] - newRange[0] < 1) {
@@ -62,6 +92,14 @@ export default function PerformanceTrendWidget() {
     },
   };
 
+  const formatLabel = (date: Date) => {
+    switch (timePeriod) {
+        case 'D': return format(date, 'MMM d');
+        case 'W': return `W${format(date, 'w')}`;
+        case 'M': return format(date, 'MMM');
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -77,32 +115,47 @@ export default function PerformanceTrendWidget() {
             </div>
             <div className="w-full sm:w-64">
                 <Slider
-                    defaultValue={range}
+                    value={range}
                     min={0}
-                    max={11}
+                    max={currentData.length - 1}
                     step={1}
                     onValueChange={handleRangeChange}
                     aria-label="Date Range Slider"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                    <span>{allPerformanceData[range[0]].month}</span>
-                    <span>{allPerformanceData[range[1]].month}</span>
+                    <span>{formatLabel(currentData[range[0]].date)}</span>
+                    <span>{formatLabel(currentData[range[1]].date)}</span>
                 </div>
             </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex flex-wrap gap-2">
-            {kpis.map(kpi => (
-                <Button
-                    key={kpi.key}
-                    variant={selectedKpi === kpi.key ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedKpi(kpi.key)}
-                >
-                    {kpi.label}
-                </Button>
-            ))}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+             <div className="flex flex-wrap gap-2">
+                {kpis.map(kpi => (
+                    <Button
+                        key={kpi.key}
+                        variant={selectedKpi === kpi.key ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSelectedKpi(kpi.key)}
+                    >
+                        {kpi.label}
+                    </Button>
+                ))}
+            </div>
+            <div className="flex items-center gap-1 rounded-md bg-muted p-1">
+                {(['D', 'W', 'M'] as TimePeriod[]).map(period => (
+                    <Button
+                        key={period}
+                        variant={timePeriod === period ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="h-7 px-2.5"
+                        onClick={() => setTimePeriod(period)}
+                    >
+                        {period}
+                    </Button>
+                ))}
+            </div>
         </div>
         <div className="h-[250px] w-full mb-4">
             <ChartContainer config={chartConfig}>
@@ -111,7 +164,13 @@ export default function PerformanceTrendWidget() {
                 margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
               >
                 <CartesianGrid vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                <XAxis 
+                    dataKey="date" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8}
+                    tickFormatter={(value) => formatLabel(new Date(value))}
+                />
                 <YAxis
                     domain={[60, 100]}
                     tickLine={false}
@@ -120,7 +179,7 @@ export default function PerformanceTrendWidget() {
                 />
                 <ChartTooltip
                     cursor={false}
-                    content={<ChartTooltipContent indicator="dot" />}
+                    content={<ChartTooltipContent indicator="dot" labelFormatter={(value) => formatLabel(new Date(value))} />}
                 />
                 <Legend verticalAlign="top" height={36} />
                 <Line
@@ -130,6 +189,7 @@ export default function PerformanceTrendWidget() {
                     strokeWidth={3}
                     dot={{ r: 5 }}
                     activeDot={{ r: 7 }}
+                    name={chartConfig[selectedKpi]?.label}
                 />
               </LineChart>
             </ChartContainer>
