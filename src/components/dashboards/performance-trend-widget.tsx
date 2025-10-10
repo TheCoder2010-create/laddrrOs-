@@ -67,7 +67,7 @@ type TimePeriod = 'D' | 'W' | 'M';
 export default function PerformanceTrendWidget() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('M');
   const [range, setRange] = useState<number[]>([0, 11]); 
-  const [selectedKpi, setSelectedKpi] = useState<KpiKey>('overall');
+  const [selectedKpis, setSelectedKpis] = useState<KpiKey[]>(['overall']);
 
   const currentData = useMemo(() => allPerformanceData[timePeriod], [timePeriod]);
 
@@ -97,16 +97,24 @@ export default function PerformanceTrendWidget() {
     }
   };
 
+  const handleKpiToggle = (kpiKey: KpiKey) => {
+    setSelectedKpis(prev => {
+        const isSelected = prev.includes(kpiKey);
+        if (isSelected) {
+            // Prevent removing the last selected KPI
+            if (prev.length === 1) return prev;
+            return prev.filter(k => k !== kpiKey);
+        } else {
+            return [...prev, kpiKey];
+        }
+    });
+  };
+
   const chartConfig: ChartConfig = {
-    [selectedKpi]: {
-      label: kpis.find(k => k.key === selectedKpi)?.label || "Score",
-      color: "hsl(var(--primary))",
-    },
-    // We add all KPIs to the config so the color variable is always available
-    overall: { color: "hsl(var(--chart-1))" },
-    projectDelivery: { color: "hsl(var(--chart-2))" },
-    codeQuality: { color: "hsl(var(--chart-3))" },
-    collaboration: { color: "hsl(var(--chart-4))" },
+    overall: { label: "Overall", color: "hsl(var(--chart-1))" },
+    projectDelivery: { label: "Project Delivery", color: "hsl(var(--chart-2))" },
+    codeQuality: { label: "Code Quality", color: "hsl(var(--chart-3))" },
+    collaboration: { label: "Collaboration", color: "hsl(var(--chart-4))" },
   };
 
   const formatLabel = (date: Date) => {
@@ -124,18 +132,18 @@ export default function PerformanceTrendWidget() {
   const isRangeValid = currentData && currentData.length > 0 && range[0] < currentData.length && range[1] < currentData.length;
 
   const yAxisDomain = useMemo(() => {
-    if (!visibleData || visibleData.length === 0) {
+    if (!visibleData || visibleData.length === 0 || selectedKpis.length === 0) {
       return [60, 100];
     }
-    const scores = visibleData.map(d => d[selectedKpi]);
-    const minScore = Math.min(...scores);
-    const maxScore = Math.max(...scores);
+    const allScores = visibleData.flatMap(d => selectedKpis.map(kpi => d[kpi]));
+    const minScore = Math.min(...allScores);
+    const maxScore = Math.max(...allScores);
     
     const yAxisMin = Math.floor(minScore / 10) * 10;
     const yAxisMax = Math.ceil(maxScore / 5) * 5;
 
     return [yAxisMin, yAxisMax];
-  }, [visibleData, selectedKpi]);
+  }, [visibleData, selectedKpis]);
 
 
   return (
@@ -179,19 +187,22 @@ export default function PerformanceTrendWidget() {
       <CardContent>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
              <div className="flex flex-wrap gap-2">
-                {kpis.map(kpi => (
-                    <Button
-                        key={kpi.key}
-                        variant={selectedKpi === kpi.key ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setSelectedKpi(kpi.key)}
-                        style={{'--color-indicator': `hsl(var(--chart-${Object.keys(chartConfig).indexOf(kpi.key)}))` } as React.CSSProperties}
-                        className="flex items-center gap-2"
-                    >
-                        <span className={cn('h-2 w-2 rounded-full', selectedKpi === kpi.key ? 'bg-primary-foreground' : `bg-chart-${Object.keys(chartConfig).indexOf(kpi.key)}`)}></span>
-                        {kpi.label}
-                    </Button>
-                ))}
+                {kpis.map(kpi => {
+                    const isSelected = selectedKpis.includes(kpi.key);
+                    return (
+                        <Button
+                            key={kpi.key}
+                            variant={isSelected ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleKpiToggle(kpi.key)}
+                            style={{'--color-indicator': chartConfig[kpi.key].color } as React.CSSProperties}
+                            className="flex items-center gap-2"
+                        >
+                            <span className={cn('h-2 w-2 rounded-full', isSelected ? 'bg-primary-foreground' : 'bg-[var(--color-indicator)]')}></span>
+                            {kpi.label}
+                        </Button>
+                    );
+                })}
             </div>
             <div className="flex items-center gap-1 rounded-md bg-muted p-1">
                 {(['D', 'W', 'M'] as TimePeriod[]).map(period => (
@@ -231,15 +242,18 @@ export default function PerformanceTrendWidget() {
                     cursor={false}
                     content={<ChartTooltipContent indicator="dot" labelFormatter={(value) => formatLabel(new Date(value))} />}
                 />
-                <Line
-                    dataKey={selectedKpi}
-                    type="monotone"
-                    stroke={`var(--color-${selectedKpi})`}
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 7 }}
-                    name={chartConfig[selectedKpi]?.label}
-                />
+                {selectedKpis.map(kpiKey => (
+                    <Line
+                        key={kpiKey}
+                        dataKey={kpiKey}
+                        type="monotone"
+                        stroke={chartConfig[kpiKey]?.color}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 7 }}
+                        name={chartConfig[kpiKey]?.label}
+                    />
+                ))}
               </LineChart>
             </ChartContainer>
         </div>
