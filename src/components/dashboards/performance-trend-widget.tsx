@@ -131,7 +131,7 @@ export default function PerformanceTrendWidget() {
         </div>
         <div className="px-2">
             <Slider
-                defaultValue={[0, 11]}
+                defaultValue={range}
                 min={0}
                 max={11}
                 step={1}
