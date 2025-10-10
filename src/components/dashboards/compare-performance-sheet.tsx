@@ -12,7 +12,7 @@ import {
   SheetFooter
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Rocket, X, Check, ChevronsUpDown, Bot, BarChart } from "lucide-react"
+import { Rocket, X, Check, ChevronsUpDown, Bot, BarChart, Send, Loader2 } from "lucide-react"
 import {
   Command,
   CommandEmpty,
@@ -30,6 +30,11 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Progress } from "@/components/ui/progress"
 import { useRole } from "@/hooks/use-role"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useToast } from "@/hooks/use-toast"
+import { runPerformanceChat } from "@/ai/flows/performance-chat-flow"
+import type { PerformanceChatInput, ChatMessage } from "@/ai/schemas/performance-chat-schemas"
 
 const mockPeerData = [
   { value: "alexa_ray", label: "Alexa Ray" },
@@ -78,6 +83,12 @@ export function ComparePerformanceSheet() {
   const [open, setOpen] = React.useState(false)
   const [selectedPeers, setSelectedPeers] = React.useState<string[]>([])
   const { role } = useRole()
+  const { toast } = useToast()
+  const [isPending, startTransition] = React.useTransition()
+
+  // Chat state
+  const [chatHistory, setChatHistory] = React.useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = React.useState("");
 
   const handleSelect = (peerValue: string) => {
     setSelectedPeers(prev =>
@@ -92,10 +103,51 @@ export function ComparePerformanceSheet() {
     metrics: mockPerformanceData[peerValue === "You" ? "You" : peerValue] || {}
   }))
 
+  const handleSendMessage = () => {
+    if (!chatInput.trim()) return;
+
+    const newUserMessage: ChatMessage = { role: 'user', content: chatInput };
+    setChatHistory(prev => [...prev, newUserMessage]);
+    setChatInput("");
+
+    startTransition(async () => {
+        try {
+            const performanceContext = comparisonData.map(p => ({
+                name: p.name,
+                metrics: p.metrics
+            }));
+
+            const input: PerformanceChatInput = {
+                userQuestion: chatInput,
+                performanceContext,
+                chatHistory,
+            };
+            const response = await runPerformanceChat(input);
+            setChatHistory(prev => [...prev, { role: 'model', content: response.answer }]);
+        } catch (e) {
+            console.error("Chat failed", e);
+            toast({
+                variant: 'destructive',
+                title: "Chat Error",
+                description: "The AI coach could not respond. Please try again."
+            });
+            // Remove the user's message if the AI fails
+            setChatHistory(prev => prev.slice(0, -1));
+        }
+    });
+  };
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        // Reset state on close
+        setSelectedPeers([]);
+        setChatHistory([]);
+      }
+    }}>
       <SheetTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" size="sm">
           <Rocket className="mr-2 h-4 w-4" /> Compare Performance
         </Button>
       </SheetTrigger>
@@ -201,9 +253,51 @@ export function ComparePerformanceSheet() {
                     <p className="text-sm text-primary/90 italic">"{aiInsight}"</p>
                 </div>
             </div>
+
+            <div className="pt-6">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Bot className="text-primary" /> Performance Coach
+                </h3>
+                 <div className="border rounded-lg p-4 space-y-4">
+                    <ScrollArea className="h-48 pr-3">
+                        <div className="space-y-4">
+                            {chatHistory.map((msg, index) => (
+                                <div key={index} className={cn("flex items-start gap-2", msg.role === 'user' ? 'justify-end' : '')}>
+                                    {msg.role === 'model' && <Bot className="h-5 w-5 text-primary flex-shrink-0" />}
+                                    <div className={cn("max-w-md rounded-lg px-3 py-2 text-sm", msg.role === 'user' ? "bg-primary text-primary-foreground" : "bg-muted")}>
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            ))}
+                            {isPending && (
+                                <div className="flex items-start gap-2">
+                                    <Bot className="h-5 w-5 text-primary flex-shrink-0" />
+                                    <div className="bg-muted rounded-lg px-3 py-2">
+                                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                        <Textarea
+                            placeholder="Ask for advice, e.g., 'How can I improve my project delivery score?'"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                            className="flex-1"
+                            rows={1}
+                            disabled={isPending}
+                        />
+                        <Button onClick={handleSendMessage} disabled={isPending || !chatInput.trim()}>
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
           </div>
         )}
-
       </SheetContent>
     </Sheet>
   )
