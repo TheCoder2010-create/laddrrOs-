@@ -17,9 +17,13 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
     const baseDate = new Date(2023, 0, 1);
     for (let i = 0; i < numPoints; i++) {
         let date;
-        if (period === 'day') date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + i);
-        else if (period === 'week') date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + (i * 7));
-        else date = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
+        if (period === 'day') {
+            date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + i);
+        } else if (period === 'week') {
+            date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + (i * 7));
+        } else { // month
+            date = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, 1);
+        }
         
         const overall = 75 + (i * 1.5) + (Math.random() * 5 - 2.5);
         const projectDelivery = overall + (Math.random() * 3 - 1.5);
@@ -59,7 +63,7 @@ type TimePeriod = 'D' | 'W' | 'M';
 
 export default function PerformanceTrendWidget() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('M');
-  const [range, setRange] = useState([0, allPerformanceData[timePeriod].length - 1]); 
+  const [range, setRange] = useState<number[]>([0, 11]); 
   const [selectedKpi, setSelectedKpi] = useState<KpiKey>('overall');
 
   const currentData = useMemo(() => allPerformanceData[timePeriod], [timePeriod]);
