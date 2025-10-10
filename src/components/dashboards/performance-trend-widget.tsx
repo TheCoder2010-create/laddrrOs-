@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useMemo, useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
@@ -14,12 +14,12 @@ import { format } from "date-fns"
 // Mock data representing performance over different time periods
 const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
     let data = [];
-    let baseDate = new Date(2023, 0, 1);
+    const baseDate = new Date(2023, 0, 1);
     for (let i = 0; i < numPoints; i++) {
         let date;
-        if (period === 'day') date = new Date(baseDate.setDate(baseDate.getDate() + 1));
-        else if (period === 'week') date = new Date(baseDate.setDate(baseDate.getDate() + 7));
-        else date = new Date(baseDate.setMonth(baseDate.getMonth() + 1));
+        if (period === 'day') date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + i);
+        else if (period === 'week') date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + (i * 7));
+        else date = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, baseDate.getDate());
         
         const overall = 75 + (i * 1.5) + (Math.random() * 5 - 2.5);
         const projectDelivery = overall + (Math.random() * 3 - 1.5);
@@ -93,6 +93,9 @@ export default function PerformanceTrendWidget() {
   };
 
   const formatLabel = (date: Date) => {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return ''; // Return empty string for invalid dates
+    }
     switch (timePeriod) {
         case 'D': return format(date, 'MMM d');
         case 'W': return `W${format(date, 'w')}`;
