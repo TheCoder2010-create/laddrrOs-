@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { Badge } from '@/components/ui/badge';
 
 const frameworks = [
   { id: 'bell-curve', title: 'Bell Curve', description: 'Traditional ranking distribution.', icon: LineChart },
