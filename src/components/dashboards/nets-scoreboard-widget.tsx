@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -17,7 +16,7 @@ function ScoreRow({ label, score, previousScore }: { label: string; score: numbe
   const color = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'text-muted-foreground';
 
   return (
-    <div className="flex items-center justify-between py-1">
+    <div className="flex items-center justify-between py-0.5">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <div className="flex items-center gap-4">
         <p className="text-lg font-bold">{score.toFixed(1)}</p>
@@ -67,7 +66,7 @@ export default function NetsScoreboardWidget() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <MessagesSquare className="text-indigo-500" />
-          Nets Practice Scoreboard
+          Nets Scoreboard
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
