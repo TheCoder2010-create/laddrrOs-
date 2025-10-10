@@ -1,10 +1,11 @@
+
 "use client"
 
 import { useMemo, useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
-import { LineChart, CartesianGrid, XAxis, YAxis, Line, Legend } from "recharts"
+import { LineChart, CartesianGrid, XAxis, YAxis, Line } from "recharts"
 import { TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -17,11 +18,14 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
     for (let i = 0; i < numPoints; i++) {
         let date;
         if (period === 'day') {
-            date = new Date(new Date(baseDate).setDate(baseDate.getDate() + i));
+            date = new Date(baseDate.getTime());
+            date.setDate(baseDate.getDate() + i);
         } else if (period === 'week') {
-            date = new Date(new Date(baseDate).setDate(baseDate.getDate() + (i * 7)));
+            date = new Date(baseDate.getTime());
+            date.setDate(baseDate.getDate() + (i * 7));
         } else { // month
-            date = new Date(new Date(baseDate).setMonth(baseDate.getMonth() + i));
+            date = new Date(baseDate.getTime());
+            date.setMonth(baseDate.getMonth() + i);
         }
         
         const overall = 75 + (i * (period === 'month' ? 1.5 : period === 'week' ? 0.3 : 0.1)) + (Math.random() * 5 - 2.5);
@@ -114,6 +118,17 @@ export default function PerformanceTrendWidget() {
   // Defensive check to prevent accessing out-of-bounds index
   const isRangeValid = currentData && currentData.length > 0 && range[0] < currentData.length && range[1] < currentData.length;
 
+  const yAxisDomain = useMemo(() => {
+    if (visibleData.length === 0) {
+      return [60, 100];
+    }
+    const scores = visibleData.map(d => d[selectedKpi]);
+    const minScore = Math.min(...scores);
+    const yAxisMin = Math.floor(minScore / 10) * 10;
+    return [yAxisMin, 100];
+  }, [visibleData, selectedKpi]);
+
+
   return (
     <Card className="overflow-hidden">
       <CardHeader>
@@ -198,7 +213,7 @@ export default function PerformanceTrendWidget() {
                     tickFormatter={(value) => formatLabel(new Date(value))}
                 />
                 <YAxis
-                    domain={[60, 100]}
+                    domain={yAxisDomain}
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
