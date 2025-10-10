@@ -5,11 +5,13 @@ import NextStepsWidget from "./next-steps-widget";
 import NetsScoreboardWidget from "./nets-scoreboard-widget";
 import TeamPulseWidget from "./team-pulse-widget";
 import CoachingTipWidget from "./coaching-tip-widget";
+import MyGoalsWidget from "./my-goals-widget";
 
 export default function EmployeeDashboard() {
   return (
     <div className="space-y-6">
       <RecentOneOnOneWidget />
+      <MyGoalsWidget />
       <NextStepsWidget />
       <DevelopmentPlanWidget />
       <AiInsightFeedWidget />
