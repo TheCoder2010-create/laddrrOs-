@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
@@ -65,7 +65,7 @@ export default function PerformanceTrendWidget() {
   const currentData = useMemo(() => allPerformanceData[timePeriod], [timePeriod]);
 
   // Reset range when time period changes
-  React.useEffect(() => {
+  useEffect(() => {
     setRange([0, currentData.length - 1]);
   }, [timePeriod, currentData]);
 
