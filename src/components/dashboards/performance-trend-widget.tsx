@@ -46,7 +46,7 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
 
 const monthlyData = generateData(12, 'month');
 const weeklyData = generateData(52, 'week');
-const dailyData = generateData(90, 'day');
+const dailyData = generateData(365, 'day'); // Changed from 90 to 365
 
 const allPerformanceData = {
     M: monthlyData,
@@ -73,7 +73,12 @@ export default function PerformanceTrendWidget() {
 
   // Reset range when time period changes
   useEffect(() => {
-    setRange([0, currentData.length - 1]);
+    // For daily view, show a 3-month (approx 90 days) window by default
+    if (timePeriod === 'D') {
+      setRange([0, 89]);
+    } else {
+      setRange([0, currentData.length - 1]);
+    }
   }, [timePeriod, currentData]);
 
   const visibleData = useMemo(() => {
@@ -119,7 +124,7 @@ export default function PerformanceTrendWidget() {
   const isRangeValid = currentData && currentData.length > 0 && range[0] < currentData.length && range[1] < currentData.length;
 
   const yAxisDomain = useMemo(() => {
-    if (visibleData.length === 0) {
+    if (!visibleData || visibleData.length === 0) {
       return [60, 100];
     }
     const scores = visibleData.map(d => d[selectedKpi]);
