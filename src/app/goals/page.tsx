@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
@@ -272,7 +272,17 @@ function GoalsDashboard() {
 export default function GoalsPage() {
   const { role, setRole, isLoading } = useRole();
   const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const [isCheckingSetup, setIsCheckingSetup] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check session storage to see if setup was already completed
+    const setupStatus = sessionStorage.getItem('goalsSetupComplete');
+    if (setupStatus === 'true') {
+      setIsSetupComplete(true);
+    }
+    setIsCheckingSetup(false);
+  }, []);
 
   const handleFinishSetup = () => {
     toast({
@@ -280,10 +290,12 @@ export default function GoalsPage() {
         description: "Your performance framework has been saved.",
         variant: 'success'
     });
+    // Save state to session storage to persist across reloads
+    sessionStorage.setItem('goalsSetupComplete', 'true');
     setIsSetupComplete(true);
   };
 
-  if (isLoading || !role) {
+  if (isLoading || isCheckingSetup || !role) {
     return (
       <DashboardLayout role="Manager" onSwitchRole={() => {}}>
         <Skeleton className="w-full h-screen" />
@@ -309,4 +321,5 @@ export default function GoalsPage() {
   );
 }
 
+    
     
