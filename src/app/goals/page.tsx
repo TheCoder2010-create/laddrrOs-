@@ -7,7 +7,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Scale, Target, CheckCircle, SlidersHorizontal, ArrowRight, BookCopy, LineChart, Users, ArrowLeft, Database, UserPlus, Sliders, Settings, RefreshCw, Wand2, ShieldCheck, FileInput, CalendarClock } from 'lucide-react';
+import { Scale, Target, ArrowRight, BookCopy, LineChart, Users, ArrowLeft, Database, RefreshCw, Wand2, ShieldCheck, Settings, FileInput, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -17,15 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
 
 const frameworks = [
   { id: 'bell-curve', title: 'Bell Curve', description: 'Traditional ranking distribution.', icon: LineChart },
   { id: '9-box', title: '9-Box Grid', description: 'Performance vs. Potential matrix.', icon: BookCopy },
   { id: 'okr', title: 'OKR-based System', description: 'Objectives and Key Results.', icon: Target },
-  { id: 'custom', title: 'Custom Framework', description: 'Create your own weighted scoring system.', icon: SlidersHorizontal },
+  { id: 'custom', title: 'Custom Framework', description: 'Create your own weighted scoring system.', icon: Scale },
 ];
 
 const reviewFrequencies = ['Monthly', 'Quarterly', 'Annually'];
@@ -242,6 +240,40 @@ const mockFrameworkData = [
 ];
 
 function GoalsDashboard() {
+    const { toast } = useToast();
+    const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setSelectedFileName(file.name);
+        }
+    };
+    
+    const handleDownloadSample = () => {
+        toast({
+            title: "Sample File Downloaded",
+            description: "A sample CSV template has been downloaded."
+        });
+    };
+
+    const handleUpload = () => {
+        if (!selectedFileName) {
+             toast({
+                variant: 'destructive',
+                title: "No File Selected",
+                description: "Please choose a file to upload."
+            });
+            return;
+        }
+        toast({
+            title: "Upload Successful",
+            description: `${selectedFileName} has been uploaded for processing.`,
+            variant: 'success'
+        });
+        setSelectedFileName(null);
+    }
+    
     return (
         <div className="p-4 md:p-8 space-y-6">
             <Card>
@@ -273,8 +305,48 @@ function GoalsDashboard() {
                         </TableBody>
                     </Table>
                 </CardContent>
-                 <CardFooter>
-                    <p className="text-xs text-muted-foreground">This dashboard shows the configured framework. The next step is to upload performance data to begin tracking.</p>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Upload Performance Data</CardTitle>
+                    <CardDescription>Upload an Excel or CSV file with the latest performance data for a specific role.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="upload-role">Select Role</Label>
+                            <Select>
+                                <SelectTrigger id="upload-role">
+                                    <SelectValue placeholder="Select role..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Employee">Employee</SelectItem>
+                                    <SelectItem value="Team Lead">Team Lead</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                             <Label>Sample File</Label>
+                             <Button variant="outline" className="w-full" onClick={handleDownloadSample}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download Sample
+                            </Button>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <Label htmlFor="file-upload">Upload File</Label>
+                        <Label htmlFor="file-upload" className="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent cursor-pointer">
+                            <FileInput className="h-5 w-5"/>
+                            <span>{selectedFileName || 'Choose a file...'}</span>
+                        </Label>
+                        <Input id="file-upload" type="file" className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={handleFileChange} />
+                        <p className="text-xs text-muted-foreground">Supported formats: .xlsx, .csv</p>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button className="w-full md:w-auto" onClick={handleUpload}>Upload Data</Button>
                 </CardFooter>
             </Card>
         </div>
