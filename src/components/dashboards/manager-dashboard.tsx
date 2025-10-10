@@ -1,7 +1,6 @@
 
 import DevelopmentPlanWidget from "./development-plan-widget";
 import OrganizationalLearningMapWidget from "./organizational-learning-map-widget";
-import CoachingRoiWidget from "./coaching-roi-widget";
 import LeadershipPersonaWidget from "./leadership-persona-widget";
 import AttritionRiskWidget from "./attrition-risk-widget";
 import AiAdvisorWidget from "./ai-advisor-widget";
@@ -18,7 +17,6 @@ export default function ManagerDashboard() {
           <LeadershipPersonaWidget />
         </div>
         <div className="space-y-6">
-            <CoachingRoiWidget />
             <AttritionRiskWidget />
         </div>
       </div>
