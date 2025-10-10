@@ -11,14 +11,14 @@ import RankCardWidget from "./rank-card-widget";
 export default function EmployeeDashboard() {
   return (
     <div className="space-y-6">
-      <RecentOneOnOneWidget />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MyGoalsWidget />
         <RankCardWidget />
       </div>
+      <RecentOneOnOneWidget />
       <NextStepsWidget />
       <DevelopmentPlanWidget />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <NetsScoreboardWidget />
           <CoachingTipWidget />
           <TeamPulseWidget />
