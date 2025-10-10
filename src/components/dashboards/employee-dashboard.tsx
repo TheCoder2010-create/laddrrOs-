@@ -6,6 +6,7 @@ import TeamPulseWidget from "./team-pulse-widget";
 import CoachingTipWidget from "./coaching-tip-widget";
 import MyGoalsWidget from "./my-goals-widget";
 import RankCardWidget from "./rank-card-widget";
+import PerformanceTrendWidget from "./performance-trend-widget";
 
 export default function EmployeeDashboard() {
   return (
@@ -14,6 +15,7 @@ export default function EmployeeDashboard() {
         <MyGoalsWidget />
         <RankCardWidget />
       </div>
+      <PerformanceTrendWidget />
       <NextStepsWidget />
       <DevelopmentPlanWidget />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
