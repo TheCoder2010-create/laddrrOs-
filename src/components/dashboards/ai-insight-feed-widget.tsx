@@ -5,6 +5,7 @@ import { useRole } from '@/hooks/use-role';
 import { getOneOnOneHistory } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bot, MessageSquareQuote } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 export default function AiInsightFeedWidget() {
@@ -39,29 +40,40 @@ export default function AiInsightFeedWidget() {
   }
 
   return (
-    <Carousel
-      opts={{
-        align: "start",
-        loop: true,
-      }}
-      className="w-full max-w-sm mx-auto"
-    >
-      <CarouselContent>
-        {insights.map((insight, index) => (
-          <CarouselItem key={index}>
-            <div className="p-1">
-              <div className="flex h-40 items-center justify-center p-6 bg-muted/50 rounded-lg">
-                <p className="text-center text-sm font-medium leading-relaxed italic text-foreground">
-                  <MessageSquareQuote className="inline-block h-4 w-4 mr-2 text-primary/70" />
-                  {insight}
-                </p>
-              </div>
-            </div>
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious className="left-2" />
-      <CarouselNext className="right-2" />
-    </Carousel>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary" />
+            AI Insight Feed
+        </CardTitle>
+        <CardDescription>A summary of personalized AI insights from your recent sessions.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Carousel
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+          className="w-full"
+        >
+          <CarouselContent>
+            {insights.map((insight, index) => (
+              <CarouselItem key={index}>
+                <div className="p-1">
+                  <div className="flex h-28 items-center justify-center p-6 bg-muted/50 rounded-lg">
+                    <p className="text-center text-sm font-medium leading-relaxed italic text-foreground">
+                      <MessageSquareQuote className="inline-block h-4 w-4 mr-2 text-primary/70" />
+                      {insight}
+                    </p>
+                  </div>
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="-left-4" />
+          <CarouselNext className="-right-4" />
+        </Carousel>
+      </CardContent>
+    </Card>
   );
 }
