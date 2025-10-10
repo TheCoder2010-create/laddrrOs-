@@ -233,10 +233,12 @@ function GoalsSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
   );
 }
 
-const mockGoalsData = [
-    { employee: 'Ben Carter', goal: 'Improve team coaching quality index by 15%', kpi: 'Team Coaching Quality', progress: 60, status: 'On Track' },
-    { employee: 'Casey Day', goal: 'Achieve "Excellent" rating on Project Delivery KPI', kpi: 'Project Delivery', progress: 80, status: 'At Risk' },
-    { employee: 'Sarah Jones (Sales)', goal: 'Increase Q3 sales by 20%', kpi: 'Sales Quota', progress: 95, status: 'On Track' },
+const mockFrameworkData = [
+    { role: 'Employee', kpi: 'Project Delivery Rate', weightage: '50%', methodology: 'Custom' },
+    { role: 'Employee', kpi: 'Code Quality Score', weightage: '30%', methodology: 'Custom' },
+    { role: 'Employee', kpi: 'Team Collaboration Rating', weightage: '20%', methodology: 'Custom' },
+    { role: 'Team Lead', kpi: 'Team Performance Index', weightage: '60%', methodology: 'Bell Curve' },
+    { role: 'Team Lead', kpi: 'Leadership Score Growth', weightage: '40%', methodology: 'Bell Curve' },
 ];
 
 function GoalsDashboard() {
@@ -244,40 +246,36 @@ function GoalsDashboard() {
         <div className="p-4 md:p-8 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Target className="h-8 w-8 text-primary" />Goals Dashboard</CardTitle>
-                    <CardDescription className="text-lg text-muted-foreground">Track annual goals and KPI progress for your team.</CardDescription>
+                    <CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Target className="h-8 w-8 text-primary" />Goals & KPI Framework</CardTitle>
+                    <CardDescription className="text-lg text-muted-foreground">Overview of the currently active performance framework for your teams.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Employee</TableHead>
-                                <TableHead>Annual Goal</TableHead>
-                                <TableHead>KPI Link</TableHead>
-                                <TableHead className="w-[200px]">Progress</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>KPI Name</TableHead>
+                                <TableHead>Weightage (%)</TableHead>
+                                <TableHead>Evaluation Methodology</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {mockGoalsData.map((item, index) => (
+                            {mockFrameworkData.map((item, index) => (
                                 <TableRow key={index}>
-                                    <TableCell className="font-medium">{item.employee}</TableCell>
-                                    <TableCell>{item.goal}</TableCell>
+                                    <TableCell className="font-medium">{item.role}</TableCell>
                                     <TableCell>{item.kpi}</TableCell>
+                                    <TableCell>{item.weightage}</TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Progress value={item.progress} className="w-full" />
-                                            <span>{item.progress}%</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={item.status === 'On Track' ? 'success' : 'destructive'}>{item.status}</Badge>
+                                        <Badge variant="secondary">{item.methodology}</Badge>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </CardContent>
+                 <CardFooter>
+                    <p className="text-xs text-muted-foreground">This dashboard shows the configured framework. The next step is to upload performance data to begin tracking.</p>
+                </CardFooter>
             </Card>
         </div>
     )
