@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 const frameworks = [
   { id: 'bell-curve', title: 'Bell Curve', description: 'Traditional ranking distribution.', icon: LineChart },
@@ -169,17 +171,7 @@ function RoleChangeStep({ onBack, onNext }: { onBack: () => void, onNext: () => 
     );
 }
 
-function SetupAssistanceStep({ onBack }: { onBack: () => void }) {
-    const { toast } = useToast();
-    
-    const handleFinish = () => {
-        toast({
-            title: "Setup Complete!",
-            description: "Your performance framework has been saved.",
-            variant: 'success'
-        });
-        // Here you would navigate away or reset the state
-    };
+function SetupAssistanceStep({ onBack, onFinish }: { onBack: () => void, onFinish: () => void }) {
     
     return (
          <Card className="max-w-4xl mx-auto">
@@ -189,13 +181,13 @@ function SetupAssistanceStep({ onBack }: { onBack: () => void }) {
                 <div className="grid md:grid-cols-2 gap-4">
                     <Card className="hover:bg-primary/5 hover:border-primary/50 transition-colors">
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><ShieldCheck className="text-primary" /> Yes, use Guided Wizard</CardTitle></CardHeader>
-                        <CardContent><p className="text-sm text-muted-foreground">Laddrr will pre-populate KPIs, weights, and thresholds based on role and appraisal history. You can edit these later.</p></CardContent>
-                        <CardFooter><Button className="w-full" onClick={handleFinish}>Finish with Guided Setup</Button></CardFooter>
+                        <CardContent><p className="text-sm text-muted-foreground">Laddrr will pre-populate KPIs, weights, and thresholds based on role & appraisal history. You can edit these later.</p></CardContent>
+                        <CardFooter><Button className="w-full" onClick={onFinish}>Finish with Guided Setup</Button></CardFooter>
                     </Card>
                      <Card className="hover:bg-primary/5 hover:border-primary/50 transition-colors">
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Settings className="text-primary" /> No, I'll set it up manually</CardTitle></CardHeader>
                         <CardContent><p className="text-sm text-muted-foreground">You will configure all KPIs, weights, and thresholds from scratch. Support will be available if you need it.</p></CardContent>
-                        <CardFooter><Button className="w-full" onClick={handleFinish}>Finish and Configure Manually</Button></CardFooter>
+                        <CardFooter><Button className="w-full" onClick={onFinish}>Finish and Configure Manually</Button></CardFooter>
                     </Card>
                 </div>
             </CardContent>
@@ -206,7 +198,7 @@ function SetupAssistanceStep({ onBack }: { onBack: () => void }) {
     );
 }
 
-function GoalsSetup() {
+function GoalsSetup({ onSetupComplete }: { onSetupComplete: () => void }) {
   const [setupStep, setSetupStep] = useState<SetupStep>('framework');
 
   const renderStep = () => {
@@ -215,7 +207,7 @@ function GoalsSetup() {
           case 'reviewGroup': return <ReviewGroupStep onBack={() => setSetupStep('framework')} onNext={() => setSetupStep('dataCollection')} />;
           case 'dataCollection': return <DataCollectionStep onBack={() => setSetupStep('reviewGroup')} onNext={() => setSetupStep('roleChange')} />;
           case 'roleChange': return <RoleChangeStep onBack={() => setSetupStep('dataCollection')} onNext={() => setSetupStep('setupAssistance')} />;
-          case 'setupAssistance': return <SetupAssistanceStep onBack={() => setSetupStep('roleChange')} />;
+          case 'setupAssistance': return <SetupAssistanceStep onBack={() => setSetupStep('roleChange')} onFinish={onSetupComplete} />;
           default: return <FrameworkStep onNext={() => setSetupStep('reviewGroup')} />;
       }
   }
@@ -227,9 +219,69 @@ function GoalsSetup() {
   );
 }
 
+const mockGoalsData = [
+    { employee: 'Ben Carter', goal: 'Improve team coaching quality index by 15%', kpi: 'Team Coaching Quality', progress: 60, status: 'On Track' },
+    { employee: 'Casey Day', goal: 'Achieve "Excellent" rating on Project Delivery KPI', kpi: 'Project Delivery', progress: 80, status: 'At Risk' },
+    { employee: 'Sarah Jones (Sales)', goal: 'Increase Q3 sales by 20%', kpi: 'Sales Quota', progress: 95, status: 'On Track' },
+];
+
+function GoalsDashboard() {
+    return (
+        <div className="p-4 md:p-8 space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Target className="h-8 w-8 text-primary" />Goals Dashboard</CardTitle>
+                    <CardDescription className="text-lg text-muted-foreground">Track annual goals and KPI progress for your team.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Employee</TableHead>
+                                <TableHead>Annual Goal</TableHead>
+                                <TableHead>KPI Link</TableHead>
+                                <TableHead className="w-[200px]">Progress</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {mockGoalsData.map((item, index) => (
+                                <TableRow key={index}>
+                                    <TableCell className="font-medium">{item.employee}</TableCell>
+                                    <TableCell>{item.goal}</TableCell>
+                                    <TableCell>{item.kpi}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Progress value={item.progress} className="w-full" />
+                                            <span>{item.progress}%</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={item.status === 'On Track' ? 'success' : 'destructive'}>{item.status}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
 
 export default function GoalsPage() {
   const { role, setRole, isLoading } = useRole();
+  const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const { toast } = useToast();
+
+  const handleFinishSetup = () => {
+    toast({
+        title: "Setup Complete!",
+        description: "Your performance framework has been saved.",
+        variant: 'success'
+    });
+    setIsSetupComplete(true);
+  };
 
   if (isLoading || !role) {
     return (
@@ -252,9 +304,7 @@ export default function GoalsPage() {
 
   return (
     <DashboardLayout role={role} onSwitchRole={setRole}>
-      <GoalsSetup />
+      {isSetupComplete ? <GoalsDashboard /> : <GoalsSetup onSetupComplete={handleFinishSetup} />}
     </DashboardLayout>
   );
 }
-
-    
