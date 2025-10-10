@@ -94,6 +94,11 @@ export default function PerformanceTrendWidget() {
       label: kpis.find(k => k.key === selectedKpi)?.label || "Score",
       color: "hsl(var(--primary))",
     },
+    // We add all KPIs to the config so the color variable is always available
+    overall: { color: "hsl(var(--chart-1))" },
+    projectDelivery: { color: "hsl(var(--chart-2))" },
+    codeQuality: { color: "hsl(var(--chart-3))" },
+    collaboration: { color: "hsl(var(--chart-4))" },
   };
 
   const formatLabel = (date: Date) => {
@@ -106,6 +111,9 @@ export default function PerformanceTrendWidget() {
         case 'M': return format(date, 'MMM');
     }
   }
+
+  // Defensive check to prevent accessing out-of-bounds index
+  const isRangeValid = currentData && range[0] < currentData.length && range[1] < currentData.length;
 
   return (
     <Card>
@@ -130,8 +138,17 @@ export default function PerformanceTrendWidget() {
                     aria-label="Date Range Slider"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                    <span>{formatLabel(currentData[range[0]].date)}</span>
-                    <span>{formatLabel(currentData[range[1]].date)}</span>
+                    {isRangeValid ? (
+                        <>
+                            <span>{formatLabel(currentData[range[0]].date)}</span>
+                            <span>{formatLabel(currentData[range[1]].date)}</span>
+                        </>
+                    ) : (
+                        <>
+                            <span>Loading...</span>
+                            <span></span>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -145,7 +162,10 @@ export default function PerformanceTrendWidget() {
                         variant={selectedKpi === kpi.key ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setSelectedKpi(kpi.key)}
+                        style={{'--color-indicator': `hsl(var(--chart-${Object.keys(chartConfig).indexOf(kpi.key)}))` } as React.CSSProperties}
+                        className="flex items-center gap-2"
                     >
+                        <span className={cn('h-2 w-2 rounded-full', selectedKpi === kpi.key ? 'bg-primary-foreground' : `bg-chart-${Object.keys(chartConfig).indexOf(kpi.key)}`)}></span>
                         {kpi.label}
                     </Button>
                 ))}
@@ -188,7 +208,6 @@ export default function PerformanceTrendWidget() {
                     cursor={false}
                     content={<ChartTooltipContent indicator="dot" labelFormatter={(value) => formatLabel(new Date(value))} />}
                 />
-                <Legend verticalAlign="top" height={36} />
                 <Line
                     dataKey={selectedKpi}
                     type="monotone"
@@ -205,3 +224,4 @@ export default function PerformanceTrendWidget() {
     </Card>
   );
 }
+
