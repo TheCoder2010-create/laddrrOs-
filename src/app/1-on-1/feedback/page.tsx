@@ -372,7 +372,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                   </div>
 
                   {/* Detailed Input Accordion */}
-                  <Accordion type="multiple" defaultValue={['feedback']}>
+                  <Accordion type="multiple" defaultValue={[]}>
                       <AccordionItem value="performance-data">
                           <AccordionTrigger><TrendingUp className="mr-2 text-primary" /> Employee Performance Data</AccordionTrigger>
                           <AccordionContent className="p-2">
