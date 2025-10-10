@@ -16,6 +16,7 @@ This is the core feature for documenting and analyzing manager-employee meetings
 
 *   **Scheduling and Briefings**: Managers can see upcoming meetings. Before a meeting, they can access an AI-generated "Briefing Packet" that summarizes past conversations, outstanding action items, and coaching opportunities to help them prepare.
 *   **Feedback Capture**: After a meeting, a manager fills out a detailed form. They can provide notes, upload an audio recording of the conversation, and answer structured questions about the feedback given and how it was received.
+*   **Performance Data Integration**: The form now includes the employee's latest performance data (e.g., overall score, project delivery), giving the manager critical context for a more data-driven conversation.
 *   **AI-Powered Analysis**: Once submitted, an AI analyzes the meeting information. It generates a detailed report that includes:
     *   **Scores**: Rates the manager on leadership and the meeting's effectiveness.
     *   **Summaries**: Provides separate, tailored summaries for the manager and the employee.
@@ -40,7 +41,16 @@ This feature is designed for a user's personal and professional growth, primaril
 *   **Active Development Plan**: Accepted recommendations become active goals. Users can track their progress on these goals with a slider and add "check-in" notes to create a journal of their learning journey.
 *   **AI Feedback Loop**: During subsequent 1-on-1s, the AI knows about these active goals and provides feedback on whether the user successfully applied their new skills or missed an opportunity to do so.
 
-### 5. Manager's Lab: Specialized Training Programs
+### 5. Compare Performance (Employee-Facing)
+
+A motivational tool for employees to see how their performance stacks up against peers in a private, developmental context.
+
+*   **How it works**: From their dashboard, an employee can open a side panel to access the "Compare Performance" feature.
+*   **Peer Selection**: The user can select one or more peers from their department or level from a searchable dropdown.
+*   **Side-by-Side Comparison**: The tool displays a clean, side-by-side view of key performance metrics (e.g., Goal Completion, Project Delivery, Feedback Score). Visual indicators and progress bars make it easy to see where they stand.
+*   **AI Insight**: An AI-generated summary provides a positive, motivational insight, such as "You’re performing above 70% of your peers in goal completion," to frame the data constructively.
+
+### 6. Manager's Lab: Specialized Training Programs
 
 This is a dedicated area for managers to access and manage structured training programs for their team members.
 
