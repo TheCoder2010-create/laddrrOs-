@@ -16,8 +16,8 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
     let data = [];
     const baseDate = new Date(2023, 0, 1);
     for (let i = 0; i < numPoints; i++) {
-        let date;
         const newBaseDate = new Date(baseDate);
+        let date;
         if (period === 'day') {
             date = new Date(newBaseDate.setDate(newBaseDate.getDate() + i));
         } else if (period === 'week') {
@@ -117,7 +117,7 @@ export default function PerformanceTrendWidget() {
   const isRangeValid = currentData && currentData.length > 0 && range[0] < currentData.length && range[1] < currentData.length;
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1.5">
