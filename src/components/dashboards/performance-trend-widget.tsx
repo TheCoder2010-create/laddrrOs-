@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useMemo, useEffect, useState } from "react"
@@ -16,17 +15,16 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
     let data = [];
     const baseDate = new Date(2023, 0, 1);
     for (let i = 0; i < numPoints; i++) {
-        const newBaseDate = new Date(baseDate);
         let date;
         if (period === 'day') {
-            date = new Date(newBaseDate.setDate(newBaseDate.getDate() + i));
+            date = new Date(new Date(baseDate).setDate(baseDate.getDate() + i));
         } else if (period === 'week') {
-            date = new Date(newBaseDate.setDate(newBaseDate.getDate() + (i * 7)));
+            date = new Date(new Date(baseDate).setDate(baseDate.getDate() + (i * 7)));
         } else { // month
-            date = new Date(newBaseDate.setMonth(newBaseDate.getMonth() + i));
+            date = new Date(new Date(baseDate).setMonth(baseDate.getMonth() + i));
         }
         
-        const overall = 75 + (i * 1.5) + (Math.random() * 5 - 2.5);
+        const overall = 75 + (i * (period === 'month' ? 1.5 : period === 'week' ? 0.3 : 0.1)) + (Math.random() * 5 - 2.5);
         const projectDelivery = overall + (Math.random() * 3 - 1.5);
         const codeQuality = overall - (Math.random() * 3 - 1.5);
         const collaboration = overall + (Math.random() * 2 - 1);
@@ -213,7 +211,7 @@ export default function PerformanceTrendWidget() {
                     dataKey={selectedKpi}
                     type="monotone"
                     stroke={`var(--color-${selectedKpi})`}
-                    strokeWidth={3}
+                    strokeWidth={2}
                     dot={false}
                     activeDot={{ r: 7 }}
                     name={chartConfig[selectedKpi]?.label}
