@@ -328,11 +328,11 @@ function GoalsDashboard() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                             <Label>Sample File</Label>
-                             <Button variant="outline" className="w-full" onClick={handleDownloadSample}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download Sample
-                            </Button>
+                            <Label>Sample File</Label>
+                             <button onClick={handleDownloadSample} className="w-full text-left text-sm text-primary underline-offset-4 hover:underline flex items-center gap-2 p-2 rounded-md hover:bg-muted">
+                                <Download className="h-4 w-4" />
+                                Download sample template
+                            </button>
                         </div>
                     </div>
                     
