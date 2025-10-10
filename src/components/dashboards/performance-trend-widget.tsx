@@ -124,7 +124,8 @@ export default function PerformanceTrendWidget() {
     }
     const scores = visibleData.map(d => d[selectedKpi]);
     const minScore = Math.min(...scores);
-    const yAxisMin = Math.floor(minScore / 10) * 10;
+    // Ensure the y-axis starts slightly below the minimum score for better visibility, but not lower than 60.
+    const yAxisMin = Math.max(Math.floor(minScore - 5), 60); 
     return [yAxisMin, 100];
   }, [visibleData, selectedKpi]);
 
@@ -199,7 +200,7 @@ export default function PerformanceTrendWidget() {
             </div>
         </div>
         <div className="h-[250px] w-full mb-4">
-            <ChartContainer config={chartConfig}>
+            <ChartContainer config={chartConfig} className="h-full w-full">
               <LineChart
                 data={visibleData}
                 margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
