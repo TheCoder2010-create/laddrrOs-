@@ -19,6 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { roleUserMapping } from '@/lib/role-mapping';
 
 const frameworks = [
   { id: 'bell-curve', title: 'Bell Curve', description: 'Traditional ranking distribution.', icon: LineChart },
@@ -89,17 +90,30 @@ function ReviewGroupStep({ onBack, onNext }: { onBack: () => void, onNext: () =>
     const addKpiRow = () => {
         setKpiRows([...kpiRows, { id: kpiRows.length + 1, name: '', weightage: '', thresholds: { poor: '', average: '', good: '', excellent: '' } }]);
     };
+    
+    const availableRoles = Object.keys(roleUserMapping).filter(r => r !== 'Anonymous') as Role[];
 
     return (
         <Card className="max-w-5xl mx-auto">
             <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Users className="h-8 w-8 text-primary" />Define Review Group</CardTitle><CardDescription className="text-lg text-muted-foreground mt-1">Specify who will be part of this performance review cycle.</CardDescription></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
             <CardContent className="space-y-6 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2"><Label htmlFor="headcount">Headcount for this Review Group</Label><Input id="headcount" type="number" placeholder="e.g., 25" /></div>
-                    <div className="space-y-2"><Label htmlFor="kpi-categories">Number of KPI Categories per Role</Label><Select><SelectTrigger id="kpi-categories"><SelectValue placeholder="Select number..." /></SelectTrigger><SelectContent>{kpiCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2 lg:col-span-1">
+                        <Label htmlFor="review-role">Employee Group</Label>
+                        <Select>
+                            <SelectTrigger id="review-role"><SelectValue placeholder="Select a role..." /></SelectTrigger>
+                            <SelectContent>
+                                {availableRoles.map(role => (
+                                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2 lg:col-span-1"><Label htmlFor="headcount">Headcount for this Group</Label><Input id="headcount" type="number" placeholder="e.g., 25" /></div>
+                    <div className="space-y-2 lg:col-span-1"><Label htmlFor="kpi-categories">Number of KPI Categories</Label><Select><SelectTrigger id="kpi-categories"><SelectValue placeholder="Select number..." /></SelectTrigger><SelectContent>{kpiCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div>
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-base font-semibold">Assign KPIs for each Role</Label>
+                    <Label className="text-base font-semibold">Assign KPIs for this Role</Label>
                     <div className="border rounded-lg overflow-hidden">
                         <Table>
                             <TableHeader><TableRow><TableHead className="w-[250px]">KPI Name</TableHead><TableHead className="w-[100px]">Weightage (%)</TableHead><TableHead colSpan={4}>Thresholds</TableHead></TableRow></TableHeader>
@@ -320,6 +334,3 @@ export default function GoalsPage() {
     </DashboardLayout>
   );
 }
-
-    
-    
