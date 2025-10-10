@@ -7,7 +7,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Scale, Target, ArrowRight, BookCopy, LineChart, Users, ArrowLeft, Database, RefreshCw, Wand2, ShieldCheck, Settings, FileInput, Download } from 'lucide-react';
+import { Scale, Target, ArrowRight, BookCopy, LineChart, Users, ArrowLeft, Database, RefreshCw, Wand2, ShieldCheck, Settings, FileInput, Download, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -328,9 +328,10 @@ function GoalsDashboard() {
                             </Select>
                         </div>
                         <div className="space-y-2">
+                            <Label>Sample File</Label>
                             <button onClick={handleDownloadSample} className="w-full text-left text-sm font-medium text-primary underline-offset-4 hover:underline flex items-center gap-2 p-2 rounded-md hover:bg-muted -mx-2">
                                 <Download className="h-4 w-4" />
-                                Download Sample File
+                                Download Sample Template
                             </button>
                         </div>
                     </div>
@@ -346,7 +347,10 @@ function GoalsDashboard() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full md:w-auto" onClick={handleUpload}>Upload Data</Button>
+                    <div className="flex items-center gap-2">
+                         <Button className="w-full md:w-auto" onClick={handleUpload} disabled={!selectedFileName}>Upload Data</Button>
+                         <Paperclip className="h-5 w-5 text-muted-foreground" />
+                    </div>
                 </CardFooter>
             </Card>
         </div>
@@ -404,3 +408,5 @@ export default function GoalsPage() {
     </DashboardLayout>
   );
 }
+
+    
