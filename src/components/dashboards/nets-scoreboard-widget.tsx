@@ -9,19 +9,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Minus, MessagesSquare } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-function ScoreCard({ label, score, previousScore }: { label: string; score: number; previousScore?: number }) {
+function ScoreRow({ label, score, previousScore }: { label: string; score: number; previousScore?: number }) {
   const diff = previousScore !== undefined ? score - previousScore : 0;
   const Icon = diff > 0 ? TrendingUp : diff < 0 ? TrendingDown : Minus;
   const color = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'text-muted-foreground';
 
   return (
-    <div className="flex items-center justify-between p-2 rounded-lg bg-background/50">
+    <div className="flex items-center justify-between py-2 border-b last:border-b-0">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <div className="flex items-center gap-4">
         <p className="text-lg font-bold">{score.toFixed(1)}</p>
         {previousScore !== undefined && (
-          <div className={`flex items-center text-xs ${color}`}>
+          <div className={cn('flex items-center text-xs font-semibold', color)}>
             <Icon className="h-3 w-3 mr-0.5" />
             <span>{diff.toFixed(1)}</span>
           </div>
@@ -69,12 +70,12 @@ export default function NetsScoreboardWidget() {
           Nets Practice Scoreboard
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {latest ? (
-          <div className="grid grid-cols-1 gap-2">
-            <ScoreCard label="Clarity" score={latest.clarity} previousScore={previous?.clarity} />
-            <ScoreCard label="Empathy" score={latest.empathy} previousScore={previous?.empathy} />
-            <ScoreCard label="Assertiveness" score={latest.assertiveness} previousScore={previous?.assertiveness} />
+          <div className="space-y-1">
+            <ScoreRow label="Clarity" score={latest.clarity} previousScore={previous?.clarity} />
+            <ScoreRow label="Empathy" score={latest.empathy} previousScore={previous?.empathy} />
+            <ScoreRow label="Assertiveness" score={latest.assertiveness} previousScore={previous?.assertiveness} />
           </div>
         ) : (
             <p className="text-sm text-muted-foreground text-center">Complete a practice session to see your scores.</p>
