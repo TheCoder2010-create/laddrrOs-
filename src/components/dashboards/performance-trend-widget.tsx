@@ -17,12 +17,13 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
     const baseDate = new Date(2023, 0, 1);
     for (let i = 0; i < numPoints; i++) {
         let date;
+        const newBaseDate = new Date(baseDate);
         if (period === 'day') {
-            date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + i);
+            date = new Date(newBaseDate.setDate(newBaseDate.getDate() + i));
         } else if (period === 'week') {
-            date = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + (i * 7));
+            date = new Date(newBaseDate.setDate(newBaseDate.getDate() + (i * 7)));
         } else { // month
-            date = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, 1);
+            date = new Date(newBaseDate.setMonth(newBaseDate.getMonth() + i));
         }
         
         const overall = 75 + (i * 1.5) + (Math.random() * 5 - 2.5);
@@ -113,7 +114,7 @@ export default function PerformanceTrendWidget() {
   }
 
   // Defensive check to prevent accessing out-of-bounds index
-  const isRangeValid = currentData && range[0] < currentData.length && range[1] < currentData.length;
+  const isRangeValid = currentData && currentData.length > 0 && range[0] < currentData.length && range[1] < currentData.length;
 
   return (
     <Card>
@@ -145,7 +146,7 @@ export default function PerformanceTrendWidget() {
                         </>
                     ) : (
                         <>
-                            <span>Loading...</span>
+                            <span></span>
                             <span></span>
                         </>
                     )}
@@ -213,7 +214,7 @@ export default function PerformanceTrendWidget() {
                     type="monotone"
                     stroke={`var(--color-${selectedKpi})`}
                     strokeWidth={3}
-                    dot={{ r: 5 }}
+                    dot={false}
                     activeDot={{ r: 7 }}
                     name={chartConfig[selectedKpi]?.label}
                 />
@@ -224,4 +225,3 @@ export default function PerformanceTrendWidget() {
     </Card>
   );
 }
-
