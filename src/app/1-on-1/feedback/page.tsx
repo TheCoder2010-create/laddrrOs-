@@ -20,7 +20,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
-import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock, Timer, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, CheckCircle, XCircle } from 'lucide-react';
+import { Info, Mic, Square, Upload, MessageSquareQuote, Bot, Send, Loader2, ArrowLeft, Star, BarChart, Zap, ShieldAlert, AlertTriangle, DatabaseZap, Clock, Timer, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useRole } from '@/hooks/use-role';
@@ -37,6 +37,14 @@ interface Meeting {
   date: string | Date; // Allow for serialized date
   time: string;
 }
+
+// Mock performance data for the employee
+const mockPerformanceData = {
+    overall: 82,
+    projectDelivery: 88,
+    codeQuality: 85,
+    collaboration: 75,
+};
 
 const dataUriFromFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -72,6 +80,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
         supervisorName: supervisor,
         employeeName: meeting.with,
         conversationRecordingDataUri: "",
+        employeePerformanceData: mockPerformanceData, // Add performance data
     },
   });
 
@@ -226,6 +235,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                 oneOnOneId: historyItem.id, // Pass the ID for linking
                 pastDeclinedRecommendationAreas: pastDeclinedAreas,
                 activeDevelopmentGoals,
+                employeePerformanceData: mockPerformanceData, // Pass performance data to AI
             });
 
             setAnalysisResult(result);
@@ -363,6 +373,29 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
 
                   {/* Detailed Input Accordion */}
                   <Accordion type="multiple" defaultValue={['feedback']}>
+                      <AccordionItem value="performance-data">
+                          <AccordionTrigger><TrendingUp className="mr-2 text-primary" /> Employee Performance Data</AccordionTrigger>
+                          <AccordionContent className="p-2">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                  <div className="p-3 rounded-md bg-muted">
+                                      <p className="text-sm font-semibold text-muted-foreground">Overall</p>
+                                      <p className="text-3xl font-bold text-primary">{mockPerformanceData.overall}</p>
+                                  </div>
+                                  <div className="p-3 rounded-md bg-muted/50">
+                                      <p className="text-sm text-muted-foreground">Project Delivery</p>
+                                      <p className="text-2xl font-semibold">{mockPerformanceData.projectDelivery}</p>
+                                  </div>
+                                  <div className="p-3 rounded-md bg-muted/50">
+                                      <p className="text-sm text-muted-foreground">Code Quality</p>
+                                      <p className="text-2xl font-semibold">{mockPerformanceData.codeQuality}</p>
+                                  </div>
+                                  <div className="p-3 rounded-md bg-muted/50">
+                                      <p className="text-sm text-muted-foreground">Collaboration</p>
+                                      <p className="text-2xl font-semibold">{mockPerformanceData.collaboration}</p>
+                                  </div>
+                              </div>
+                          </AccordionContent>
+                      </AccordionItem>
                       <AccordionItem value="feedback">
                           <AccordionTrigger><MessageSquareQuote className="mr-2 text-primary" /> Feedback & Conversation Capture</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">

@@ -43,6 +43,12 @@ export const formSchema = z.object({
   pastDeclinedRecommendationAreas: z.array(z.string()).optional(),
   activeDevelopmentGoals: z.array(z.object({ id: z.string(), area: z.string(), title: z.string(), notes: z.string() })).optional(),
   languageLocale: z.string().default('en'),
+  employeePerformanceData: z.object({
+      overall: z.number(),
+      projectDelivery: z.number(),
+      codeQuality: z.number(),
+      collaboration: z.number(),
+  }).optional().describe("The employee's latest quantitative performance scores."),
 }).transform(data => ({
   ...data,
   supervisorNotes: [data.primaryFeedback, data.otherComments].filter(Boolean).join('\n\n'),

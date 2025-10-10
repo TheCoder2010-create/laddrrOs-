@@ -119,6 +119,13 @@ Conversation Transcript: {{{conversationTranscript}}}
 {{#if conversationRecordingDataUri}}
 Audio Recording (Primary source of truth): {{media url=conversationRecordingDataUri}}
 {{/if}}
+{{#if employeePerformanceData}}
+Employee's Recent Performance Scores (out of 100):
+- Overall: {{employeePerformanceData.overall}}
+- Project Delivery: {{employeePerformanceData.projectDelivery}}
+- Code Quality: {{employeePerformanceData.codeQuality}}
+- Collaboration: {{employeePerformanceData.collaboration}}
+{{/if}}
 Past Declined Coaching Areas: {{#if pastDeclinedRecommendationAreas}}{{#each pastDeclinedRecommendationAreas}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None{{/if}}
 Active Development Goals: {{#if activeDevelopmentGoals}}{{#each activeDevelopmentGoals}}* Goal Area: {{this.area}} (Title: {{this.title}}). User's check-in notes: "{{this.notes}}"{{/each}}{{else}}None{{/if}}
 Language Locale: {{languageLocale}}
@@ -130,7 +137,7 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
 1.  **supervisorSummary**: A comprehensive summary for the supervisor, including tone, energy, who led, leadership effectiveness, and actionable feedback.
 2.  **employeeSummary**: A concise, forward-looking summary for the employee. Focus on key takeaways, agreed-upon action items, and positive reinforcement or growth opportunities discussed. Frame it constructively.
 3.  **employeeInsights**: Generate a short, bulleted list of 2-3 encouraging or reflective insights specifically for the employee's feed. Examples: "You handled corrective feedback with real professionalism," or "Asking clarifying questions about the project timeline was a great move." These should be concise and positive.
-4.  **employeeSwotAnalysis**: A SWOT analysis for the employee based on the conversation. Be objective and base it on evidence from the inputs.
+4.  **employeeSwotAnalysis**: A SWOT analysis for the employee based on the conversation and their performance data. Be objective and base it on evidence from the inputs. If performance data is available, correlate it with the conversation (e.g., "Strengths: High project delivery score is reflected in their confident discussion of recent accomplishments.").
 5.  **Leadership Score (1-10)**: Rate the supervisor based on empathy, clarity, and ownership. Ask yourself: "Would I follow this person as a leader?"
 6.  **Effectiveness Score (1-10)**: Rate the session based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
 7.  **Strengths Observed**: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
