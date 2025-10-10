@@ -335,21 +335,15 @@ function GoalsDashboard() {
                             </button>
                         </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                        <Label htmlFor="file-upload">Upload File</Label>
-                        <Label htmlFor="file-upload" className="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent cursor-pointer">
-                            <FileInput className="h-5 w-5"/>
-                            <span>{selectedFileName || 'Choose a file...'}</span>
-                        </Label>
-                        <Input id="file-upload" type="file" className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={handleFileChange} />
-                        <p className="text-xs text-muted-foreground">Supported formats: .xlsx, .csv</p>
-                    </div>
                 </CardContent>
                 <CardFooter>
                     <div className="flex items-center gap-2">
                          <Button className="w-full md:w-auto" onClick={handleUpload} disabled={!selectedFileName}>Upload Data</Button>
-                         <Paperclip className="h-5 w-5 text-muted-foreground" />
+                         <Label htmlFor="file-upload" className="cursor-pointer text-muted-foreground hover:text-primary">
+                            <Paperclip className="h-5 w-5" />
+                         </Label>
+                         <Input id="file-upload" type="file" className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" onChange={handleFileChange} />
+                         {selectedFileName && <span className="text-sm text-muted-foreground">{selectedFileName}</span>}
                     </div>
                 </CardFooter>
             </Card>
