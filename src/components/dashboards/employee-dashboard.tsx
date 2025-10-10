@@ -1,5 +1,4 @@
 import DevelopmentPlanWidget from "./development-plan-widget";
-import RecentOneOnOneWidget from "./recent-one-on-one-widget";
 import AiInsightFeedWidget from "./ai-insight-feed-widget";
 import NextStepsWidget from "./next-steps-widget";
 import NetsScoreboardWidget from "./nets-scoreboard-widget";
@@ -15,7 +14,6 @@ export default function EmployeeDashboard() {
         <MyGoalsWidget />
         <RankCardWidget />
       </div>
-      <RecentOneOnOneWidget />
       <NextStepsWidget />
       <DevelopmentPlanWidget />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
