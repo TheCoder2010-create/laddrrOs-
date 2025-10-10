@@ -95,7 +95,7 @@ export function ComparePerformanceSheet() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline">
           <Rocket className="mr-2 h-4 w-4" /> Compare Performance
         </Button>
       </SheetTrigger>
