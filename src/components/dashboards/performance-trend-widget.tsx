@@ -46,7 +46,7 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
 
 const monthlyData = generateData(12, 'month');
 const weeklyData = generateData(52, 'week');
-const dailyData = generateData(365, 'day'); // Changed from 90 to 365
+const dailyData = generateData(365, 'day');
 
 const allPerformanceData = {
     M: monthlyData,
@@ -129,9 +129,12 @@ export default function PerformanceTrendWidget() {
     }
     const scores = visibleData.map(d => d[selectedKpi]);
     const minScore = Math.min(...scores);
-    // Ensure the y-axis starts slightly below the minimum score for better visibility, but not lower than 60.
-    const yAxisMin = Math.max(Math.floor(minScore - 5), 60); 
-    return [yAxisMin, 100];
+    const maxScore = Math.max(...scores);
+    
+    const yAxisMin = Math.floor(minScore / 10) * 10;
+    const yAxisMax = Math.ceil(maxScore / 5) * 5;
+
+    return [yAxisMin, yAxisMax];
   }, [visibleData, selectedKpi]);
 
 
