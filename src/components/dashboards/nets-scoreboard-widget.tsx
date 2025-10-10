@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -15,15 +16,17 @@ function ScoreCard({ label, score, previousScore }: { label: string; score: numb
   const color = diff > 0 ? 'text-green-500' : diff < 0 ? 'text-red-500' : 'text-muted-foreground';
 
   return (
-    <div className="flex flex-col items-center justify-center p-2 rounded-lg bg-background/50">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-lg font-bold">{score.toFixed(1)}</p>
-      {previousScore !== undefined && (
-        <div className={`flex items-center text-xs ${color}`}>
-          <Icon className="h-3 w-3 mr-0.5" />
-          <span>{diff.toFixed(1)}</span>
-        </div>
-      )}
+    <div className="flex items-center justify-between p-2 rounded-lg bg-background/50">
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <div className="flex items-center gap-4">
+        <p className="text-lg font-bold">{score.toFixed(1)}</p>
+        {previousScore !== undefined && (
+          <div className={`flex items-center text-xs ${color}`}>
+            <Icon className="h-3 w-3 mr-0.5" />
+            <span>{diff.toFixed(1)}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -68,7 +71,7 @@ export default function NetsScoreboardWidget() {
       </CardHeader>
       <CardContent>
         {latest ? (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <ScoreCard label="Clarity" score={latest.clarity} previousScore={previous?.clarity} />
             <ScoreCard label="Empathy" score={latest.empathy} previousScore={previous?.empathy} />
             <ScoreCard label="Assertiveness" score={latest.assertiveness} previousScore={previous?.assertiveness} />
