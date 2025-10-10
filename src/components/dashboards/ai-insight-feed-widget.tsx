@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -46,7 +47,6 @@ export default function AiInsightFeedWidget() {
             <Bot className="h-5 w-5 text-primary" />
             AI Insight Feed
         </CardTitle>
-        <CardDescription>A summary of personalized AI insights from your recent sessions.</CardDescription>
       </CardHeader>
       <CardContent>
         <Carousel
