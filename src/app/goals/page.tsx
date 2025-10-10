@@ -243,6 +243,7 @@ const mockFrameworkData = [
 function GoalsDashboard() {
     const { toast } = useToast();
     const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+    const [selectedUploadRole, setSelectedUploadRole] = useState<string | null>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -316,16 +317,17 @@ function GoalsDashboard() {
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="upload-role">Select Role</Label>
-                            <Select>
-                                <SelectTrigger id="upload-role">
-                                    <SelectValue placeholder="Select role..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Employee">Employee</SelectItem>
-                                    <SelectItem value="Team Lead">Team Lead</SelectItem>
-                                </SelectContent>
-                            </Select>
+                             <Label>Select Role</Label>
+                             <RadioGroup value={selectedUploadRole ?? ''} onValueChange={setSelectedUploadRole} className="flex gap-4 pt-1">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Employee" id="role-employee" />
+                                    <Label htmlFor="role-employee">Employee</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Team Lead" id="role-team-lead" />
+                                    <Label htmlFor="role-team-lead">Team Lead</Label>
+                                </div>
+                            </RadioGroup>
                         </div>
                         <div className="space-y-2">
                             <Label>Sample File</Label>
@@ -402,5 +404,3 @@ export default function GoalsPage() {
     </DashboardLayout>
   );
 }
-
-    
