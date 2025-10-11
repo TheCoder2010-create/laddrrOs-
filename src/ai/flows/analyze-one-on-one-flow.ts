@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow for analyzing 1-on-1 feedback sessions.
@@ -161,14 +162,17 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   If the learning was applied, set \`didApply\` to true and provide an \`applicationExample\` with a supporting quote. This is an appreciation of their effort.
     *   If an opportunity existed but was missed, set \`didApply\` to false and provide a \`missedOpportunityExample\` with a quote and a explanation of how they could have applied their learning. This is a notification.
     *   If the supervisor has clearly mastered the goal (e.g., applied it consistently and effectively), set \`completedGoalId\` to the ID of the goal and provide a \`masteryJustification\` explaining why they've mastered it.
-11. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
-12. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
+11. **Critical Insight Filtering (MANDATORY LOGIC):** Before generating 'Missed Signals' or 'Critical Coaching Insight', you MUST follow this logic. Identify every potential unaddressed issue. For each issue, first check if it meets the **Trigger Conditions** for a Critical Coaching Insight.
+    *   **If YES**, it MUST be generated ONLY in the 'criticalCoachingInsight' field and MUST NOT appear in 'missedSignals'.
+    *   **If NO**, and it is a subtle, non-critical issue, then and only then can it be placed in the 'missedSignals' field.
+12. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
+13. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
     *   **Trigger Conditions**: Repeated complaints, ignored aspirations, unresolved conflict, emotional distress, potential HR issues (e.g., statements like "I hate this workplace" or personal attacks like "you are a bad TL"). If a signal meets these conditions, it MUST be a Critical Coaching Insight and NOT a Missed Signal.
     *   **Content**: Must include a \`summary\` (what was missed), \`reason\` (why it matters AND a recommended micro-learning action), and \`severity\`. If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
     *   The \`status\` field should be set to 'open'. The AI should NOT generate content for \`supervisorResponse\` or \`employeeAcknowledgement\`.
-13. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
-14. **Localization Compliance**: If languageLocale is not 'en', note that analysis applied localized norms.
-15. **Legal & Data Compliance**: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
+14. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
+15. **Localization Compliance**: If languageLocale is not 'en', note that analysis applied localized norms.
+16. **Legal & Data Compliance**: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
 
 Generate the complete, compliant, and objective report now.`,
 });
