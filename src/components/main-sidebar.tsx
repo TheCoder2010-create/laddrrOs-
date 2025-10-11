@@ -91,13 +91,42 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       const feedback = await getAllFeedback();
       const history = await getOneOnOneHistory();
 
-      let totalMessages = feedback.filter(f => {
+      let totalMessages = 0;
+      
+      // Count notifications from the main feedback system
+      totalMessages += feedback.filter(f => {
         const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
         if (!isAssignedToMe) return false;
         const isPendingAck = f.status === 'Pending Acknowledgement';
         const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
         return isPendingAck || isIdentifiedAck;
       }).length;
+
+      // Count pending critical insight actions from 1-on-1s
+      const actionableInsightStatuses: string[] = [];
+      if (currentRole === 'Employee') actionableInsightStatuses.push('pending_employee_acknowledgement');
+      if (currentRole === 'Team Lead') {
+          actionableInsightStatuses.push('open'); // Initial action
+          actionableInsightStatuses.push('pending_supervisor_retry');
+      }
+      if (currentRole === 'AM') actionableInsightStatuses.push('pending_am_review');
+      if (currentRole === 'Manager') actionableInsightStatuses.push('pending_manager_review');
+      if (currentRole === 'HR Head') {
+          actionableInsightStatuses.push('pending_hr_review');
+          actionableInsightStatuses.push('pending_final_hr_action');
+      }
+      
+      history.forEach(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          const isMyTurn = (h.supervisorName === currentUserName && (insight?.status === 'open' || insight?.status === 'pending_supervisor_retry')) ||
+                           (h.employeeName === currentUserName && insight?.status === 'pending_employee_acknowledgement') ||
+                           (insight && insight.status && actionableInsightStatuses.includes(insight.status) && h.assignedTo?.includes(currentRole));
+
+          if (insight && insight.status && isMyTurn && actionableInsightStatuses.includes(insight.status)) {
+              totalMessages++;
+          }
+      });
+      
       setMessageCount(totalMessages);
 
       let devCount = 0;
