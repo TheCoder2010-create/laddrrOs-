@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -61,16 +62,16 @@ export default function NetsLeaderboardWidget() {
           <TableHeader>
             <TableRow>
               <TableHead>Team Member</TableHead>
-              <TableHead className="text-right">Avg Score</TableHead>
-              <TableHead className="text-right">Sessions</TableHead>
+              <TableHead className="text-center">Avg Score</TableHead>
+              <TableHead className="text-center">Sessions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedTeamScores.map(([name, data]) => (
               <TableRow key={name}>
                 <TableCell className="font-medium">{name}</TableCell>
-                <TableCell className="text-right font-semibold text-primary">{data.average.toFixed(1)}</TableCell>
-                <TableCell className="text-right">{data.sessions}</TableCell>
+                <TableCell className="text-center font-semibold text-primary">{data.average.toFixed(1)}</TableCell>
+                <TableCell className="text-center">{data.sessions}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -85,15 +86,15 @@ export default function NetsLeaderboardWidget() {
         <TableHeader>
           <TableRow>
             <TableHead>Your Stats</TableHead>
-            <TableHead className="text-right">Avg Score</TableHead>
-            <TableHead className="text-right">Sessions</TableHead>
+            <TableHead className="text-center">Avg Score</TableHead>
+            <TableHead className="text-center">Sessions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow>
             <TableCell className="font-medium">{roleUserMapping[role!]?.name}</TableCell>
-            <TableCell className="text-right font-semibold text-primary">{myScores.average.toFixed(1)}</TableCell>
-            <TableCell className="text-right">{myScores.sessions}</TableCell>
+            <TableCell className="text-center font-semibold text-primary">{myScores.average.toFixed(1)}</TableCell>
+            <TableCell className="text-center">{myScores.sessions}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
