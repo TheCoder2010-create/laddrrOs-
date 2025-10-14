@@ -39,6 +39,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const currentUserName = currentUser.name;
   const pathname = usePathname();
   const [messageCount, setMessageCount] = useState(0);
+  const [oneOnOneCount, setOneOnOneCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
   const [isInterviewerNominee, setIsInterviewerNominee] = useState(false);
   const [isLeadershipNominee, setIsLeadershipNominee] = useState(false);
@@ -46,9 +47,94 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
   const { state: sidebarState } = useSidebar();
   
+
+  const fetchData = useCallback(async () => {
+    if (!currentRole) return;
+    try {
+      // Fetch all data sources
+      const feedback = await getAllFeedback();
+      const history = await getOneOnOneHistory();
+
+      // --- Calculate 1-on-1 Notifications (Critical Insights) ---
+      let criticalInsightsCount = 0;
+      const actionableInsightStatuses: string[] = [];
+      if (currentRole === 'Employee') actionableInsightStatuses.push('pending_employee_acknowledgement');
+      if (currentRole === 'Team Lead') {
+          actionableInsightStatuses.push('open'); 
+          actionableInsightStatuses.push('pending_supervisor_retry');
+      }
+      if (currentRole === 'AM') actionableInsightStatuses.push('pending_am_review');
+      if (currentRole === 'Manager') actionableInsightStatuses.push('pending_manager_review');
+      if (currentRole === 'HR Head') {
+          actionableInsightStatuses.push('pending_hr_review');
+          actionableInsightStatuses.push('pending_final_hr_action');
+      }
+      
+      history.forEach(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          const isMyTurn = (h.supervisorName === currentUserName && (insight?.status === 'open' || insight?.status === 'pending_supervisor_retry')) ||
+                           (h.employeeName === currentUserName && insight?.status === 'pending_employee_acknowledgement') ||
+                           (insight && insight.status && actionableInsightStatuses.includes(insight.status) && h.assignedTo?.includes(currentRole));
+
+          if (insight && insight.status && isMyTurn && actionableInsightStatuses.includes(insight.status)) {
+              criticalInsightsCount++;
+          }
+      });
+      setOneOnOneCount(criticalInsightsCount);
+
+      // --- Calculate General Messages (non-1-on-1 related) ---
+      let generalMessageCount = 0;
+      generalMessageCount += feedback.filter(f => {
+        const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
+        if (!isAssignedToMe) return false;
+        const isPendingAck = f.status === 'Pending Acknowledgement';
+        const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
+        return isPendingAck || isIdentifiedAck;
+      }).length;
+      setMessageCount(generalMessageCount);
+
+      // --- Calculate Coaching Notifications ---
+      let devCount = 0;
+      history.forEach(h => {
+        if (h.supervisorName === currentUserName) {
+          devCount += h.analysis.coachingRecommendations.filter(rec => rec.status === 'pending').length;
+        }
+      });
+      const recStatusesToCount: string[] = [];
+      if (currentRole === 'AM') recStatusesToCount.push('pending_am_review');
+      if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
+      if (recStatusesToCount.length > 0) {
+        history.forEach(h => {
+            devCount += h.analysis.coachingRecommendations.filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
+        });
+      }
+      setCoachingCount(devCount);
+
+      // --- Check Nomination Statuses ---
+      const [interviewerNomination, leadershipNomination, mentorNominations] = await Promise.all([
+        getInterviewerNominationForUser(currentRole),
+        getLeadershipNominationForUser(currentRole),
+        getNominationsForMentor(currentRole)
+      ]);
+      setIsInterviewerNominee(!!interviewerNomination);
+      setIsLeadershipNominee(!!leadershipNomination);
+      setIsMentor(mentorNominations.length > 0);
+
+    } catch (error) {
+      console.error("Failed to fetch sidebar data", error);
+      setMessageCount(0);
+      setOneOnOneCount(0);
+      setCoachingCount(0);
+      setIsInterviewerNominee(false);
+      setIsLeadershipNominee(false);
+      setIsMentor(false);
+    }
+  }, [currentRole, currentUserName]);
+
+  // Menu items are now defined within the component body to access state
   const menuItems = [
     { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
-    { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500 size-5 flex-shrink-0"/>, label: '1-on-1' },
+    { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500 size-5 flex-shrink-0"/>, label: '1-on-1', badge: oneOnOneCount > 0 ? oneOnOneCount : null, badgeVariant: 'destructive' as const },
     { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
     ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     ...(isMentor ? [{ href: '/mentorship', icon: <Handshake className="text-cyan-500"/>, label: 'Mentorship' }] : []),
@@ -82,89 +168,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setOpenSubMenus([]);
     }
   }, [sidebarState]);
-
-
-  const fetchData = useCallback(async () => {
-    if (!currentRole) return;
-    try {
-      // Fetch feedback counts
-      const feedback = await getAllFeedback();
-      const history = await getOneOnOneHistory();
-
-      let totalMessages = 0;
-      
-      // Count notifications from the main feedback system
-      totalMessages += feedback.filter(f => {
-        const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
-        if (!isAssignedToMe) return false;
-        const isPendingAck = f.status === 'Pending Acknowledgement';
-        const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
-        return isPendingAck || isIdentifiedAck;
-      }).length;
-
-      // Count pending critical insight actions from 1-on-1s
-      const actionableInsightStatuses: string[] = [];
-      if (currentRole === 'Employee') actionableInsightStatuses.push('pending_employee_acknowledgement');
-      if (currentRole === 'Team Lead') {
-          actionableInsightStatuses.push('open'); // Initial action
-          actionableInsightStatuses.push('pending_supervisor_retry');
-      }
-      if (currentRole === 'AM') actionableInsightStatuses.push('pending_am_review');
-      if (currentRole === 'Manager') actionableInsightStatuses.push('pending_manager_review');
-      if (currentRole === 'HR Head') {
-          actionableInsightStatuses.push('pending_hr_review');
-          actionableInsightStatuses.push('pending_final_hr_action');
-      }
-      
-      history.forEach(h => {
-          const insight = h.analysis.criticalCoachingInsight;
-          const isMyTurn = (h.supervisorName === currentUserName && (insight?.status === 'open' || insight?.status === 'pending_supervisor_retry')) ||
-                           (h.employeeName === currentUserName && insight?.status === 'pending_employee_acknowledgement') ||
-                           (insight && insight.status && actionableInsightStatuses.includes(insight.status) && h.assignedTo?.includes(currentRole));
-
-          if (insight && insight.status && isMyTurn && actionableInsightStatuses.includes(insight.status)) {
-              totalMessages++;
-          }
-      });
-      
-      setMessageCount(totalMessages);
-
-      let devCount = 0;
-      history.forEach(h => {
-        if (h.supervisorName === currentUserName) {
-          devCount += h.analysis.coachingRecommendations.filter(rec => rec.status === 'pending').length;
-        }
-      });
-      const recStatusesToCount: string[] = [];
-      if (currentRole === 'AM') recStatusesToCount.push('pending_am_review');
-      if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
-      if (recStatusesToCount.length > 0) {
-        history.forEach(h => {
-            devCount += h.analysis.coachingRecommendations.filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
-        });
-      }
-      setCoachingCount(devCount);
-
-      // Check nomination statuses
-      const [interviewerNomination, leadershipNomination, mentorNominations] = await Promise.all([
-        getInterviewerNominationForUser(currentRole),
-        getLeadershipNominationForUser(currentRole),
-        getNominationsForMentor(currentRole)
-      ]);
-      setIsInterviewerNominee(!!interviewerNomination);
-      setIsLeadershipNominee(!!leadershipNomination);
-      setIsMentor(mentorNominations.length > 0);
-
-    } catch (error) {
-      console.error("Failed to fetch sidebar data", error);
-      setMessageCount(0);
-      setCoachingCount(0);
-      setIsInterviewerNominee(false);
-      setIsLeadershipNominee(false);
-      setIsMentor(false);
-    }
-  }, [currentRole, currentUserName]);
-
 
   useEffect(() => {
     fetchData();
@@ -305,3 +308,4 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     </Sidebar>
   );
 }
+
