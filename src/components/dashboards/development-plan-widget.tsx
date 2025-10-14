@@ -562,13 +562,13 @@ export default function DevelopmentPlanWidget() {
                                 >
                                      <div className="flex justify-between items-start gap-2">
                                         <div 
-                                            className="flex-1 cursor-pointer"
+                                            className="flex-1 cursor-pointer overflow-hidden"
                                             onClick={() => setHistoryInView(rec)}
                                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setHistoryInView(rec); }}
                                             role="button"
                                             tabIndex={0}
                                         >
-                                            <p className="font-semibold text-foreground leading-tight truncate pr-2">{rec.area}</p>
+                                            <p className="font-semibold text-foreground leading-tight whitespace-normal pr-2">{rec.area}</p>
                                         </div>
                                         <div className="flex items-center">
                                             {rec.type === "Other" && (
@@ -613,7 +613,3 @@ export default function DevelopmentPlanWidget() {
         </>
     );
 }
-
-    
-
-    
