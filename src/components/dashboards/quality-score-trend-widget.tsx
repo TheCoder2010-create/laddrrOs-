@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRole } from '@/hooks/use-role';
 import { getOneOnOneHistory } from '@/services/feedback-service';
 import { roleUserMapping } from '@/lib/role-mapping';
@@ -43,6 +43,22 @@ export default function QualityScoreTrendWidget() {
     return () => window.removeEventListener('feedbackUpdated', fetchScores);
   }, [fetchScores]);
 
+  const yAxisDomain = useMemo(() => {
+    if (chartData.length === 0) {
+      return [0, 10];
+    }
+    const scores = chartData.map(d => d.score);
+    const minScore = Math.min(...scores);
+    const maxScore = Math.max(...scores);
+    
+    // Give some padding and round to nearest integer
+    const yAxisMin = Math.max(0, Math.floor(minScore - 1));
+    const yAxisMax = Math.min(10, Math.ceil(maxScore + 1));
+
+    return [yAxisMin, yAxisMax];
+  }, [chartData]);
+
+
   return (
     <Card>
       <CardHeader>
@@ -56,7 +72,7 @@ export default function QualityScoreTrendWidget() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-64 w-full" />
         ) : chartData.length > 0 ? (
           <div className="h-[250px] w-full">
             <ChartContainer
@@ -64,11 +80,11 @@ export default function QualityScoreTrendWidget() {
             >
               <LineChart
                 data={chartData}
-                margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
               >
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis domain={[0, 10]} tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis domain={yAxisDomain} tickLine={false} axisLine={false} tickMargin={8} />
                 <ChartTooltip
                   cursor={false}
                   content={<ChartTooltipContent indicator="dot" />}
