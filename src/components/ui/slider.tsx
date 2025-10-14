@@ -10,12 +10,20 @@ const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
 >(({ className, value, ...props }, ref) => {
-  const [localValue, setLocalValue] = React.useState(value || [0]);
+  const [localValue, setLocalValue] = React.useState(value || props.defaultValue || [0]);
   const isRange = Array.isArray(localValue);
 
   React.useEffect(() => {
-    setLocalValue(value || [0]);
-  }, [value]);
+    // Update local state if the external value/defaultValue prop changes
+    setLocalValue(value || props.defaultValue || [0]);
+  }, [value, props.defaultValue]);
+
+  const handleValueChange = (newValue: number[]) => {
+    setLocalValue(newValue);
+    if (props.onValueChange) {
+      props.onValueChange(newValue);
+    }
+  }
 
   return (
     <SliderPrimitive.Root
@@ -25,6 +33,7 @@ const Slider = React.forwardRef<
         className
       )}
       value={localValue as number[] | undefined}
+      onValueChange={handleValueChange}
       {...props}
     >
       <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
