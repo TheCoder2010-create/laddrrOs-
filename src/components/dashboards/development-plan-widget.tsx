@@ -537,9 +537,6 @@ export default function DevelopmentPlanWidget() {
                             <Activity className="text-primary" />
                             Active Development Plan
                         </CardTitle>
-                        <CardDescription>
-                            Update your progress on your current coaching goals. Click a card to view its history.
-                        </CardDescription>
                     </div>
                      <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)}>
