@@ -69,9 +69,9 @@ export default function NetsLeaderboardWidget() {
           <TableBody>
             {sortedTeamScores.map(([name, data]) => (
               <TableRow key={name}>
-                <TableCell className="font-medium">{name}</TableCell>
-                <TableCell className="text-center font-semibold text-primary">{data.average.toFixed(1)}</TableCell>
-                <TableCell className="text-center">{data.sessions}</TableCell>
+                <TableCell className="font-medium py-2">{name}</TableCell>
+                <TableCell className="text-center font-semibold text-primary py-2">{data.average.toFixed(1)}</TableCell>
+                <TableCell className="text-center py-2">{data.sessions}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -92,9 +92,9 @@ export default function NetsLeaderboardWidget() {
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell className="font-medium">{roleUserMapping[role!]?.name}</TableCell>
-            <TableCell className="text-center font-semibold text-primary">{myScores.average.toFixed(1)}</TableCell>
-            <TableCell className="text-center">{myScores.sessions}</TableCell>
+            <TableCell className="font-medium py-2">{roleUserMapping[role!]?.name}</TableCell>
+            <TableCell className="text-center font-semibold text-primary py-2">{myScores.average.toFixed(1)}</TableCell>
+            <TableCell className="text-center py-2">{myScores.sessions}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
