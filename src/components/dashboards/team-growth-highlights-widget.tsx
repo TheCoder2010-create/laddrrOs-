@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -28,14 +29,11 @@ export default function TeamGrowthHighlightsWidget() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <TrendingUp className="text-green-500" />
           Team Growth Highlights
         </CardTitle>
-        <CardDescription>
-          Top progressors of the week based on session score improvements.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -57,7 +55,7 @@ export default function TeamGrowthHighlightsWidget() {
           </div>
         ) : (
           <div className="text-center py-4">
-            <p className="text-muted-foreground">Not enough data to calculate growth highlights.</p>
+            <p className="text-muted-foreground">No growth highlights to show.</p>
           </div>
         )}
       </CardContent>
