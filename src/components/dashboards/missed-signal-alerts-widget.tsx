@@ -59,7 +59,7 @@ export default function MissedSignalAlertsWidget() {
 
   return (
     <Card>
-      <CardHeader className="p-4">
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Zap className="text-yellow-500" />
           Missed Signal Alerts
