@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -29,14 +30,14 @@ export default function MyGoalsWidget() {
             <TableHeader>
                 <TableRow>
                     <TableHead>Key Performance Indicator (KPI)</TableHead>
-                    <TableHead className="text-right w-[120px]">Weightage</TableHead>
+                    <TableHead className="text-center w-[120px]">Weightage</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {myGoalsData.map((goal, index) => (
                     <TableRow key={index}>
-                        <TableCell className="font-medium">{goal.kpi}</TableCell>
-                        <TableCell className="text-right font-semibold text-primary">{goal.weightage}</TableCell>
+                        <TableCell className="font-medium py-2">{goal.kpi}</TableCell>
+                        <TableCell className="text-center font-semibold text-primary py-2">{goal.weightage}</TableCell>
                     </TableRow>
                 ))}
             </TableBody>
