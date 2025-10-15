@@ -67,17 +67,17 @@ export default function QualityScoreTrendWidget() {
           1-on-1 Quality Score Trend
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-4">
         {isLoading ? (
           <Skeleton className="h-[200px] w-full" />
         ) : chartData.length > 0 ? (
           <ChartContainer
             config={{ score: { label: "Effectiveness", color: "hsl(var(--primary))" } }}
-            className="h-[200px] w-full pb-8" // Set height and padding here
+            className="h-[200px] w-full"
           >
             <LineChart
               data={chartData}
-              margin={{ top: 5, right: 20, left: 0, bottom: 0 }} // Remove bottom margin from chart
+              margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
             >
               <CartesianGrid vertical={false} />
               <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
