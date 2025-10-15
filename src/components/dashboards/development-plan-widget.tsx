@@ -538,10 +538,10 @@ export default function DevelopmentPlanWidget() {
                             Active Development Plan
                         </CardTitle>
                         <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)}>
+                            <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)} className="hover:bg-transparent transition-transform hover:scale-125">
                                 <Bot className="h-5 w-5 text-primary" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)}>
+                            <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)} className="hover:bg-transparent transition-transform hover:scale-125">
                                 <Plus className="h-5 w-5" />
                             </Button>
                         </div>
