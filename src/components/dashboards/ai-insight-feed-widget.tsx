@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -41,7 +42,7 @@ export default function AiInsightFeedWidget() {
          <CardHeader>
             <CardTitle className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-primary" />
-                Your AI-Generated Insights
+                Your Insights
             </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-full pb-16">
@@ -56,7 +57,7 @@ export default function AiInsightFeedWidget() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
-            Your AI-Generated Insights
+            Your Insights
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex items-center justify-center">
