@@ -136,21 +136,17 @@ export default function PerformanceTrendWidget() {
   const isRangeValid = currentData && currentData.length > 0 && range[0] < currentData.length && range[1] < currentData.length;
 
   const yAxisDomain = useMemo(() => {
-    const scoreKpis = selectedKpis.filter(k => k !== 'rank');
-    if (!visibleData || visibleData.length === 0 || scoreKpis.length === 0) {
-      return [60, 100];
+    if (!visibleData || visibleData.length === 0 || selectedKpis.length === 0) {
+      return ['auto', 'auto'];
     }
-    const allScores = visibleData.flatMap(d => scoreKpis.map(kpi => d[kpi]));
-    const minScore = Math.min(...allScores);
-    const maxScore = Math.max(...allScores);
+    const allValues = visibleData.flatMap(d => selectedKpis.map(kpi => d[kpi]));
+    const minValue = Math.min(...allValues);
+    const maxValue = Math.max(...allValues);
     
-    const yAxisMin = Math.floor(minScore / 10) * 10;
-    const yAxisMax = Math.ceil(maxScore / 5) * 5;
+    const padding = (maxValue - minValue) * 0.1;
 
-    return [yAxisMin, yAxisMax];
+    return [Math.max(0, Math.floor(minValue - padding)), Math.ceil(maxValue + padding)];
   }, [visibleData, selectedKpis]);
-
-  const showRankAxis = selectedKpis.includes('rank');
 
 
   return (
@@ -240,33 +236,18 @@ export default function PerformanceTrendWidget() {
                     tickFormatter={(value) => formatLabel(new Date(value))}
                 />
                 <YAxis
-                    yAxisId="left"
                     domain={yAxisDomain}
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    label={{ value: "Score", angle: -90, position: 'insideLeft' }}
                 />
-                {showRankAxis && (
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    domain={[1, 25]}
-                    reversed
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    label={{ value: "Rank", angle: 90, position: 'insideRight' }}
-                  />
-                )}
                 <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent indicator="dot" labelFormatter={(value) => formatLabel(new Date(value))} />}
                 />
-                {selectedKpis.filter(k => k !== 'rank').map(kpiKey => (
+                {selectedKpis.map(kpiKey => (
                     <Line
                         key={kpiKey}
-                        yAxisId="left"
                         dataKey={kpiKey}
                         type="monotone"
                         stroke={chartConfig[kpiKey]?.color}
@@ -276,18 +257,6 @@ export default function PerformanceTrendWidget() {
                         name={chartConfig[kpiKey]?.label}
                     />
                 ))}
-                 {showRankAxis && (
-                    <Line
-                        yAxisId="right"
-                        dataKey="rank"
-                        type="step"
-                        stroke={chartConfig.rank.color}
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 7 }}
-                        name="Rank"
-                    />
-                )}
               </LineChart>
             </ChartContainer>
         </div>
