@@ -46,34 +46,34 @@ const mockPeerData = [
 
 const mockPerformanceData: Record<string, Record<string, { value: number; trend: 'up' | 'down' | 'stable' }>> = {
   "You": {
-    "Goal Completion": { value: 92, trend: "up" },
-    "Project Delivery": { value: 85, trend: "stable" },
-    "Feedback Score": { value: 8.8, trend: "up" },
+    "Project Delivery Rate": { value: 92, trend: "up" },
+    "Code Quality Score": { value: 85, trend: "stable" },
+    "Team Collab Rating": { value: 8.8, trend: "up" },
   },
   "alexa_ray": {
-    "Goal Completion": { value: 88, trend: "stable" },
-    "Project Delivery": { value: 91, trend: "up" },
-    "Feedback Score": { value: 8.5, trend: "down" },
+    "Project Delivery Rate": { value: 88, trend: "stable" },
+    "Code Quality Score": { value: 91, trend: "up" },
+    "Team Collab Rating": { value: 8.5, trend: "down" },
   },
   "ben_p": {
-    "Goal Completion": { value: 95, trend: "up" },
-    "Project Delivery": { value: 82, trend: "down" },
-    "Feedback Score": { value: 9.1, trend: "up" },
+    "Project Delivery Rate": { value: 95, trend: "up" },
+    "Code Quality Score": { value: 82, trend: "down" },
+    "Team Collab Rating": { value: 9.1, trend: "up" },
   },
   "cody_f": {
-    "Goal Completion": { value: 85, trend: "down" },
-    "Project Delivery": { value: 88, trend: "stable" },
-    "Feedback Score": { value: 8.2, trend: "stable" },
+    "Project Delivery Rate": { value: 85, trend: "down" },
+    "Code Quality Score": { value: 88, trend: "stable" },
+    "Team Collab Rating": { value: 8.2, trend: "stable" },
   },
   "drew_h": {
-    "Goal Completion": { value: 91, trend: "up" },
-    "Project Delivery": { value: 93, trend: "up" },
-    "Feedback Score": { value: 8.9, trend: "up" },
+    "Project Delivery Rate": { value: 91, trend: "up" },
+    "Code Quality Score": { value: 93, trend: "up" },
+    "Team Collab Rating": { value: 8.9, trend: "up" },
   },
    "eva_g": {
-    "Goal Completion": { value: 89, trend: "stable" },
-    "Project Delivery": { value: 85, trend: "stable" },
-    "Feedback Score": { value: 8.6, trend: "down" },
+    "Project Delivery Rate": { value: 89, trend: "stable" },
+    "Code Quality Score": { value: 85, trend: "stable" },
+    "Team Collab Rating": { value: 8.6, trend: "down" },
   },
 };
 
@@ -230,9 +230,9 @@ export function ComparePerformanceSheet() {
 
                             return (
                                 <div key={idx} className="flex flex-col items-center text-center space-y-2">
-                                     <p className="text-xl font-bold">{metric.value}{metricName === "Goal Completion" ? "%" : ""}</p>
+                                     <p className="text-xl font-bold">{metric.value}{metricName === "Project Delivery Rate" ? "%" : ""}</p>
                                      <Progress 
-                                        value={metricName === "Feedback Score" ? metric.value * 10 : metric.value} 
+                                        value={metricName === "Team Collab Rating" ? metric.value * 10 : metric.value} 
                                         className="h-2"
                                         indicatorClassName={cn(
                                             data.name === "You" ? "bg-primary" : "bg-muted-foreground/30",
