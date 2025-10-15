@@ -10,7 +10,7 @@ import { Target } from 'lucide-react';
 const myGoalsData = [
     { kpi: 'Project Delivery Rate', weightage: '50%' },
     { kpi: 'Code Quality Score', weightage: '30%' },
-    { kpi: 'Team Collaboration Rating', weightage: '20%' },
+    { kpi: 'Team Collab Rating', weightage: '20%' },
 ];
 
 export default function MyGoalsWidget() {
