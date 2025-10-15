@@ -22,7 +22,7 @@ export default function MyGoalsWidget() {
           My Goals & KPIs
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-0">
         <Table>
             <TableHeader>
                 <TableRow>
@@ -43,3 +43,4 @@ export default function MyGoalsWidget() {
     </Card>
   );
 }
+
