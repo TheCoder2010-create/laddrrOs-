@@ -143,7 +143,7 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
 6.  **Effectiveness Score (1-10)**: Rate the session based on whether feedback was useful, specific, actionable, growth-oriented, and if the employee left with clear next steps.
 7.  **Strengths Observed**: List 2-3 specific positive actions by the supervisor, with supporting quotes as examples.
 8.  **Coaching Recommendations**: This is the MOST IMPORTANT part of your analysis. Provide 2-3 concrete, structured coaching recommendations based on weaknesses observed in this session. For each recommendation:
-    *   Generate a unique string for the 'id' field.
+    *   Generate a temporary unique string for the 'id' field, like 'temp-rec-1'.
     *   Identify a clear 'area' for improvement (e.g., "Active Listening," "Delivering Corrective Feedback," "Setting Clear Expectations").
     *   Write a concise 'recommendation' for the supervisor.
     *   **IMPORTANT**: Include a direct quote in the 'example' field that demonstrates the area for improvement.
@@ -152,7 +152,7 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   Write a compelling 'justification' explaining why this resource is a good fit.
     *   The 'status' must be "pending".
 9.  **Action Items**: List all concrete tasks for both employee and supervisor. For each item:
-    *   Generate a unique string for the 'id' field.
+    *   Generate a temporary unique string for the 'id' field, like 'temp-ai-1'.
     *   Set the 'owner' field to either "Employee" or "Supervisor".
     *   Set the 'status' field to "pending".
     *   DO NOT set the 'completedAt' field.
