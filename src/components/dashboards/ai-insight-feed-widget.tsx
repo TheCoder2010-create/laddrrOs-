@@ -71,13 +71,11 @@ export default function AiInsightFeedWidget() {
           <CarouselContent>
             {insights.map((insight, index) => (
               <CarouselItem key={index}>
-                <div className="p-1">
-                  <div className="flex h-28 items-center justify-center p-6 bg-muted/50 rounded-lg">
-                    <p className="text-center text-sm font-medium leading-relaxed italic text-foreground">
+                <div className="p-1 text-center">
+                    <p className="text-sm font-medium leading-relaxed italic text-foreground">
                       <MessageSquareQuote className="inline-block h-4 w-4 mr-2 text-primary/70" />
                       {insight}
                     </p>
-                  </div>
                 </div>
               </CarouselItem>
             ))}
