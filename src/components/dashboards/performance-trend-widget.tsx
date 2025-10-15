@@ -32,6 +32,7 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
         const projectDelivery = overall + (Math.random() * 3 - 1.5);
         const codeQuality = overall - (Math.random() * 3 - 1.5);
         const collaboration = overall + (Math.random() * 2 - 1);
+        const rank = Math.max(1, 25 - Math.floor(overall / 4));
         
         data.push({
             date,
@@ -39,6 +40,7 @@ const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
             projectDelivery: parseFloat(projectDelivery.toFixed(1)),
             codeQuality: parseFloat(codeQuality.toFixed(1)),
             collaboration: parseFloat(collaboration.toFixed(1)),
+            rank: rank,
         });
     }
     return data;
@@ -59,6 +61,7 @@ const kpis = [
     { key: 'projectDelivery', label: 'Project Delivery' },
     { key: 'codeQuality', label: 'Code Quality' },
     { key: 'collaboration', label: 'Collaboration' },
+    { key: 'rank', label: 'Rank' },
 ] as const;
 
 type KpiKey = typeof kpis[number]['key'];
@@ -115,6 +118,7 @@ export default function PerformanceTrendWidget() {
     projectDelivery: { label: "Project Delivery", color: "hsl(var(--chart-2))" },
     codeQuality: { label: "Code Quality", color: "hsl(var(--chart-3))" },
     collaboration: { label: "Collaboration", color: "hsl(var(--chart-4))" },
+    rank: { label: "Rank", color: "hsl(var(--chart-5))" },
   };
 
   const formatLabel = (date: Date) => {
@@ -132,10 +136,11 @@ export default function PerformanceTrendWidget() {
   const isRangeValid = currentData && currentData.length > 0 && range[0] < currentData.length && range[1] < currentData.length;
 
   const yAxisDomain = useMemo(() => {
-    if (!visibleData || visibleData.length === 0 || selectedKpis.length === 0) {
+    const scoreKpis = selectedKpis.filter(k => k !== 'rank');
+    if (!visibleData || visibleData.length === 0 || scoreKpis.length === 0) {
       return [60, 100];
     }
-    const allScores = visibleData.flatMap(d => selectedKpis.map(kpi => d[kpi]));
+    const allScores = visibleData.flatMap(d => scoreKpis.map(kpi => d[kpi]));
     const minScore = Math.min(...allScores);
     const maxScore = Math.max(...allScores);
     
@@ -144,6 +149,8 @@ export default function PerformanceTrendWidget() {
 
     return [yAxisMin, yAxisMax];
   }, [visibleData, selectedKpis]);
+
+  const showRankAxis = selectedKpis.includes('rank');
 
 
   return (
@@ -233,18 +240,33 @@ export default function PerformanceTrendWidget() {
                     tickFormatter={(value) => formatLabel(new Date(value))}
                 />
                 <YAxis
+                    yAxisId="left"
                     domain={yAxisDomain}
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
+                    label={{ value: "Score", angle: -90, position: 'insideLeft' }}
                 />
+                {showRankAxis && (
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    domain={[1, 25]}
+                    reversed
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    label={{ value: "Rank", angle: 90, position: 'insideRight' }}
+                  />
+                )}
                 <ChartTooltip
                     cursor={false}
                     content={<ChartTooltipContent indicator="dot" labelFormatter={(value) => formatLabel(new Date(value))} />}
                 />
-                {selectedKpis.map(kpiKey => (
+                {selectedKpis.filter(k => k !== 'rank').map(kpiKey => (
                     <Line
                         key={kpiKey}
+                        yAxisId="left"
                         dataKey={kpiKey}
                         type="monotone"
                         stroke={chartConfig[kpiKey]?.color}
@@ -254,6 +276,18 @@ export default function PerformanceTrendWidget() {
                         name={chartConfig[kpiKey]?.label}
                     />
                 ))}
+                 {showRankAxis && (
+                    <Line
+                        yAxisId="right"
+                        dataKey="rank"
+                        type="step"
+                        stroke={chartConfig.rank.color}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 7 }}
+                        name="Rank"
+                    />
+                )}
               </LineChart>
             </ChartContainer>
         </div>
