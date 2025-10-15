@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -60,14 +59,11 @@ export default function MissedSignalAlertsWidget() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Zap className="text-yellow-500" />
           Missed Signal Alerts
         </CardTitle>
-        <CardDescription>
-          Subtle cues from recent meetings you may have overlooked.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

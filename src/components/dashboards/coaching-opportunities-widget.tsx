@@ -61,14 +61,11 @@ export default function CoachingOpportunitiesWidget() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
           <BrainCircuit className="text-purple-500" />
           Coaching Opportunities
         </CardTitle>
-        <CardDescription>
-          AI-generated growth areas for you, based on recent 1-on-1s.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

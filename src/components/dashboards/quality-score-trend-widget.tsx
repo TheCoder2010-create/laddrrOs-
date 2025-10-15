@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -61,14 +60,11 @@ export default function QualityScoreTrendWidget() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
           <BarChartIcon className="text-primary" />
           1-on-1 Quality Score Trend
         </CardTitle>
-        <CardDescription>
-          Your average AI meeting effectiveness score over the last 5 sessions.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

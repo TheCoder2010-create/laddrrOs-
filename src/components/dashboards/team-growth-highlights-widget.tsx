@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -30,7 +29,7 @@ export default function TeamGrowthHighlightsWidget() {
   return (
     <Card>
       <CardHeader className="p-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
+        <CardTitle className="flex items-center gap-2 text-base">
           <TrendingUp className="text-green-500" />
           Team Growth Highlights
         </CardTitle>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -105,16 +104,13 @@ export default function NetsLeaderboardWidget() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <MessagesSquare className="text-indigo-500" />
               Nets Skill Leaderboard
             </CardTitle>
-            <CardDescription>
-              Average overall scores from practice sessions.
-            </CardDescription>
           </div>
           <div className="flex items-center space-x-2">
             <Label htmlFor="view-toggle" className={cn(!showTeam && "text-primary font-semibold")}>

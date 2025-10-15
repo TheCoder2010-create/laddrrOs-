@@ -41,14 +41,11 @@ export default function ActionItemHeatmapWidget() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-4">
+        <CardTitle className="flex items-center gap-2 text-base">
           <ListChecks className="text-primary" />
           Team Action Item Heatmap
         </CardTitle>
-        <CardDescription>
-          At-a-glance view of open and overdue action items across your team.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

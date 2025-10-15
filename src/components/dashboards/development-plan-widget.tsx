@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
@@ -531,9 +530,9 @@ export default function DevelopmentPlanWidget() {
             </Dialog>
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between p-4">
-                    <div className="space-y-1.5">
-                        <CardTitle className="flex items-center gap-2">
+                <CardHeader className="flex flex-row items-start justify-between p-4">
+                    <div>
+                        <CardTitle className="flex items-center gap-2 text-base">
                             <Activity className="text-primary" />
                             Active Development Plan
                         </CardTitle>
