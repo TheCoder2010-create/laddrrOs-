@@ -16,6 +16,7 @@ export default function LeadDashboard() {
         <div className="lg:col-span-2 space-y-6">
           <QualityScoreTrendWidget />
           <ActionItemHeatmapWidget />
+          <TeamGrowthHighlightsWidget />
         </div>
         <div className="space-y-6">
           <MissedSignalAlertsWidget />
@@ -25,7 +26,6 @@ export default function LeadDashboard() {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <NetsLeaderboardWidget />
-        <TeamGrowthHighlightsWidget />
       </div>
 
       <DevelopmentPlanWidget />
