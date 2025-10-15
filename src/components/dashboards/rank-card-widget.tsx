@@ -1,7 +1,7 @@
 
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Award, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ComparePerformanceSheet } from './compare-performance-sheet';
@@ -27,7 +27,6 @@ export default function RankCardWidget() {
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center pt-4">
         <div className="flex items-baseline text-6xl font-bold">
-            <span className="text-4xl text-muted-foreground mr-1">#</span>
             <span className="text-primary">{rankData.rank}</span>
             <span className="text-2xl text-muted-foreground ml-1">/ {rankData.total}</span>
         </div>
