@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -66,38 +67,37 @@ export default function QualityScoreTrendWidget() {
           1-on-1 Quality Score Trend
         </CardTitle>
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent>
         {isLoading ? (
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-[200px] w-full" />
         ) : chartData.length > 0 ? (
-          <div className="h-[220px] w-full">
-            <ChartContainer
-              config={{ score: { label: "Effectiveness", color: "hsl(var(--primary))" } }}
+          <ChartContainer
+            config={{ score: { label: "Effectiveness", color: "hsl(var(--primary))" } }}
+            className="h-[200px] w-full pb-8" // Set height and padding here
+          >
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 20, left: 0, bottom: 0 }} // Remove bottom margin from chart
             >
-              <LineChart
-                data={chartData}
-                margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis domain={yAxisDomain} tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
-                />
-                <Line
-                  dataKey="score"
-                  type="monotone"
-                  stroke="var(--color-score)"
-                  strokeWidth={3}
-                  dot={{ r: 5, fill: "var(--color-score)", strokeWidth: 2, stroke: "hsl(var(--card))" }}
-                  activeDot={{ r: 7 }}
-                />
-              </LineChart>
-            </ChartContainer>
-          </div>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis domain={yAxisDomain} tickLine={false} axisLine={false} tickMargin={8} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dot" />}
+              />
+              <Line
+                dataKey="score"
+                type="monotone"
+                stroke="var(--color-score)"
+                strokeWidth={3}
+                dot={{ r: 5, fill: "var(--color-score)", strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                activeDot={{ r: 7 }}
+              />
+            </LineChart>
+          </ChartContainer>
         ) : (
-          <div className="text-center py-8">
+          <div className="text-center py-8 h-[200px] flex items-center justify-center">
             <p className="text-muted-foreground">Not enough session data to display a trend.</p>
           </div>
         )}
