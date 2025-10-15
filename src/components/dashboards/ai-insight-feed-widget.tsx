@@ -37,24 +37,36 @@ export default function AiInsightFeedWidget() {
   }
 
   if (insights.length === 0) {
-    return null; // Don't show the widget if there are no insights
+    return (
+        <Card className="h-full">
+         <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                AI Insight Feed
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-full pb-16">
+            <p className="text-sm text-muted-foreground">No insights yet.</p>
+        </CardContent>
+    </Card>
+    )
   }
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
             AI Insight Feed
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex items-center justify-center">
         <Carousel
           opts={{
             align: "start",
             loop: true,
           }}
-          className="w-full"
+          className="w-full max-w-xs"
         >
           <CarouselContent>
             {insights.map((insight, index) => (
