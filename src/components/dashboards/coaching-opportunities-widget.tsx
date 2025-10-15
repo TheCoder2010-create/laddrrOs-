@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { BrainCircuit, MessageSquareQuote } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type CoachingOpportunity = {
   id: string;
@@ -73,17 +74,19 @@ export default function CoachingOpportunitiesWidget() {
         {isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : opportunities.length > 0 ? (
-          <div className="space-y-4">
-            {opportunities.map(opp => (
-              <div key={opp.id} className="p-3 border rounded-lg bg-muted/50">
-                <p className="font-semibold text-primary">{opp.area}</p>
-                <p className="text-sm text-muted-foreground mt-1">"{opp.recommendation}"</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  From session with {opp.employeeName} {formatDistanceToNow(new Date(opp.date), { addSuffix: true })}
-                </p>
-              </div>
-            ))}
-          </div>
+          <ScrollArea className="h-[200px] pr-4">
+            <div className="space-y-4">
+              {opportunities.map(opp => (
+                <div key={opp.id} className="p-3 border rounded-lg bg-muted/50">
+                  <p className="font-semibold text-primary">{opp.area}</p>
+                  <p className="text-sm text-muted-foreground mt-1">"{opp.recommendation}"</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    From session with {opp.employeeName} {formatDistanceToNow(new Date(opp.date), { addSuffix: true })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         ) : (
           <div className="text-center py-4">
             <p className="text-muted-foreground">No new coaching opportunities found.</p>
