@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,7 +8,8 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Zap, AlertTriangle } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type MissedSignal = {
     id: string;
@@ -71,19 +73,21 @@ export default function MissedSignalAlertsWidget() {
         {isLoading ? (
           <Skeleton className="h-32 w-full" />
         ) : signals.length > 0 ? (
-          <div className="space-y-3">
-            {signals.map(signal => (
-              <div key={signal.id} className="flex items-start gap-3 p-3 border rounded-lg bg-yellow-500/10 border-yellow-500/20">
-                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                <div>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300">"{signal.signal}"</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        With {signal.employeeName} {formatDistanceToNow(new Date(signal.date), { addSuffix: true })}
-                    </p>
+          <ScrollArea className="h-[200px] pr-4">
+            <div className="space-y-3">
+              {signals.map(signal => (
+                <div key={signal.id} className="flex items-start gap-3 p-3 border rounded-lg bg-yellow-500/10 border-yellow-500/20">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">"{signal.signal}"</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                          With {signal.employeeName} {formatDistanceToNow(new Date(signal.date), { addSuffix: true })}
+                      </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         ) : (
           <div className="text-center py-4">
             <p className="text-muted-foreground">No missed signals detected in recent sessions.</p>
