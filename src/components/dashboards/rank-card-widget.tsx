@@ -16,11 +16,12 @@ const rankData = {
 export default function RankCardWidget() {
   return (
     <Card>
-      <CardHeader className="pb-2 p-4">
+      <CardHeader className="flex flex-row items-center justify-between p-4">
         <CardTitle className="flex items-center gap-2">
           <Award className="text-yellow-500" />
           Rank
         </CardTitle>
+        <ComparePerformanceSheet />
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center pt-4">
         <div className="flex items-baseline text-6xl font-bold">
@@ -31,14 +32,11 @@ export default function RankCardWidget() {
         <p className="text-lg font-medium text-muted-foreground mt-1">
             Top {rankData.percentile}%
         </p>
-      </CardContent>
-      <CardFooter className="flex-col items-center justify-center space-y-4">
-         <Badge variant="secondary" className="flex items-center gap-1.5">
+         <Badge variant="secondary" className="flex items-center gap-1.5 mt-4">
             <TrendingUp className="h-3 w-3 text-green-500"/>
             Up 2 spots from last quarter
         </Badge>
-        <ComparePerformanceSheet />
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 }
