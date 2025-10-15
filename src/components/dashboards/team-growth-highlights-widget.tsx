@@ -28,7 +28,7 @@ export default function TeamGrowthHighlightsWidget() {
 
   return (
     <Card>
-      <CardHeader className="p-4">
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <TrendingUp className="text-green-500" />
           Team Growth Highlights

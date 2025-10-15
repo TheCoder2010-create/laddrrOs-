@@ -104,7 +104,7 @@ export default function NetsLeaderboardWidget() {
 
   return (
     <Card>
-      <CardHeader className="p-4">
+      <CardHeader className="p-2">
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">

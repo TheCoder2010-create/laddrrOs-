@@ -41,7 +41,7 @@ export default function ActionItemHeatmapWidget() {
 
   return (
     <Card>
-      <CardHeader className="p-4">
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <ListChecks className="text-primary" />
           Team Action Item Heatmap

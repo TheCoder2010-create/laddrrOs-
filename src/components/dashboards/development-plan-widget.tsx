@@ -530,7 +530,7 @@ export default function DevelopmentPlanWidget() {
             </Dialog>
 
             <Card>
-                <CardHeader className="flex flex-row items-start justify-between p-4">
+                <CardHeader className="flex flex-row items-start justify-between p-2">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base">
                             <Activity className="text-primary" />
@@ -609,5 +609,3 @@ export default function DevelopmentPlanWidget() {
         </>
     );
 }
-
-    

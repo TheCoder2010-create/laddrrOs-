@@ -61,7 +61,7 @@ export default function CoachingOpportunitiesWidget() {
 
   return (
     <Card>
-      <CardHeader className="p-4">
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <BrainCircuit className="text-purple-500" />
           Coaching Opportunities
