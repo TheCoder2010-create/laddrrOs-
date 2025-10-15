@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { ListChecks, AlertTriangle, Calendar, BrainCircuit, Briefcase } from 'lucide-react';
+import { ListChecks, AlertTriangle, Calendar, BrainCircuit, Briefcase, CheckSquare, Square } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -119,9 +119,9 @@ export default function ActionItemHeatmapWidget() {
       <Dialog open={!!selectedEmployee} onOpenChange={(isOpen) => !isOpen && setSelectedEmployee(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Pending Action Items for {selectedEmployee}</DialogTitle>
+            <DialogTitle>Action Items for {selectedEmployee}</DialogTitle>
             <DialogDescription>
-              A list of all open tasks assigned to this team member.
+              A list of all tasks assigned to this team member.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 max-h-[60vh] overflow-y-auto pr-2">
@@ -131,9 +131,17 @@ export default function ActionItemHeatmapWidget() {
               <div className="space-y-3">
                 {employeeActionItems.map(item => (
                   <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50">
-                      <div className="mt-1">{getSourceIcon(item.sourceType)}</div>
+                      <div className="mt-1">
+                        {item.status === 'completed' ? (
+                          <CheckSquare className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Square className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
                       <div className="flex-1">
-                          <p className="font-medium text-foreground">{item.task}</p>
+                          <p className={cn("font-medium text-foreground", item.status === 'completed' && "line-through text-muted-foreground")}>
+                            {item.task}
+                          </p>
                           <p className="text-xs text-muted-foreground">From: {item.source}</p>
                       </div>
                       {item.dueDate && (
@@ -145,7 +153,7 @@ export default function ActionItemHeatmapWidget() {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">No pending action items for {selectedEmployee}.</p>
+              <p className="text-center text-muted-foreground py-8">No action items for {selectedEmployee}.</p>
             )}
           </div>
         </DialogContent>

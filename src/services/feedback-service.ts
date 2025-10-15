@@ -1134,14 +1134,13 @@ export async function getActionItemsForEmployee(employeeName: string): Promise<A
     history.forEach(h => {
         if (h.employeeName === employeeName && h.analysis.actionItems) {
             h.analysis.actionItems.forEach(ai => {
-                if (ai.owner === 'Employee' && ai.status === 'pending') {
-                    allItems.push({
-                        ...ai,
-                        sourceType: '1-on-1',
-                        source: `1-on-1 with ${h.supervisorName}`,
-                        dueDate: new Date(new Date(h.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                    });
-                }
+                // Show all items, not just pending
+                allItems.push({
+                    ...ai,
+                    sourceType: '1-on-1',
+                    source: `1-on-1 with ${h.supervisorName}`,
+                    dueDate: new Date(new Date(h.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                });
             });
         }
     });
@@ -1162,7 +1161,11 @@ export async function getActionItemsForEmployee(employeeName: string): Promise<A
         });
     }
     
-    return allItems.sort((a,b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
+    return allItems.sort((a,b) => {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        return new Date(b.dueDate || 0).getTime() - new Date(a.dueDate || 0).getTime()
+    });
 }
 
 export async function getTeamPulse(): Promise<number> {
