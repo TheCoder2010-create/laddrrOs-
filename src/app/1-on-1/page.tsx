@@ -1036,35 +1036,39 @@ function HistorySection({ role }: { role: Role }) {
                                       {supervisorActionItems.length > 0 && (
                                           <div key={`${item.id}-supervisor-items`}>
                                               <h5 className="font-medium">{formatActorName('Supervisor')}</h5>
-                                              {supervisorActionItems.map(ai => {
-                                                  const isOwner = isSupervisorInvolved;
-                                                  return (
-                                                      <div key={ai.id} className="flex items-center gap-3">
-                                                          <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
-                                                          <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
-                                                              {ai.task}
-                                                          </label>
-                                                          {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
-                                                      </div>
-                                                  );
-                                              })}
+                                              <div className="space-y-2 mt-2">
+                                                  {supervisorActionItems.map(ai => {
+                                                      const isOwner = isSupervisorInvolved;
+                                                      return (
+                                                          <div key={ai.id} className="flex items-center gap-3">
+                                                              <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
+                                                              <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
+                                                                  {ai.task}
+                                                              </label>
+                                                              {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
+                                                          </div>
+                                                      );
+                                                  })}
+                                              </div>
                                           </div>
                                       )}
                                       {employeeActionItems.length > 0 && (
                                           <div key={`${item.id}-employee-items`}>
                                               <h5 className="font-medium">{formatActorName('Employee')}</h5>
-                                              {employeeActionItems.map(ai => {
-                                                  const isOwner = isEmployee;
-                                                  return (
-                                                      <div key={ai.id} className="flex items-center gap-3">
-                                                          <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
-                                                          <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
-                                                              {ai.task}
-                                                          </label>
-                                                          {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
-                                                      </div>
-                                                  );
-                                              })}
+                                               <div className="space-y-2 mt-2">
+                                                  {employeeActionItems.map(ai => {
+                                                      const isOwner = isEmployee;
+                                                      return (
+                                                          <div key={ai.id} className="flex items-center gap-3">
+                                                              <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
+                                                              <label htmlFor={`item-${ai.id}`} className={cn("text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", ai.status === 'completed' && "line-through text-muted-foreground")}>
+                                                                  {ai.task}
+                                                              </label>
+                                                              {ai.completedAt && <span className="text-xs text-muted-foreground">({format(new Date(ai.completedAt), 'MMM d')})</span>}
+                                                          </div>
+                                                      );
+                                                  })}
+                                              </div>
                                           </div>
                                       )}
                                     </div>
@@ -1408,3 +1412,4 @@ export default function Home() {
     
 
     
+
