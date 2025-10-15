@@ -70,13 +70,13 @@ export default function QualityScoreTrendWidget() {
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
         ) : chartData.length > 0 ? (
-          <div className="h-[200px] w-full">
+          <div className="h-[220px] w-full">
             <ChartContainer
               config={{ score: { label: "Effectiveness", color: "hsl(var(--primary))" } }}
             >
               <LineChart
                 data={chartData}
-                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
               >
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
