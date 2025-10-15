@@ -372,9 +372,9 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                   </div>
 
                   {/* Detailed Input Accordion */}
-                  <Accordion type="multiple" defaultValue={[]} className="space-y-1">
+                  <Accordion type="multiple" defaultValue={[]} className="w-full space-y-1">
                       <AccordionItem value="performance-data">
-                          <AccordionTrigger className="justify-start gap-2"><TrendingUp className="mr-2 text-primary" /> Employee Performance Data</AccordionTrigger>
+                          <AccordionTrigger className="py-2 justify-start gap-2"><TrendingUp className="mr-2 text-primary" /> Employee Performance Data</AccordionTrigger>
                           <AccordionContent className="p-2">
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                                   <div className="p-3 rounded-md bg-muted">
@@ -397,7 +397,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           </AccordionContent>
                       </AccordionItem>
                       <AccordionItem value="feedback">
-                          <AccordionTrigger className="justify-start gap-2"><MessageSquareQuote className="mr-2 text-primary" /> Feedback & Conversation Capture</AccordionTrigger>
+                          <AccordionTrigger className="py-2 justify-start gap-2"><MessageSquareQuote className="mr-2 text-primary" /> Feedback & Conversation Capture</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="primaryFeedback" render={({ field }) => (
                                   <FormItem><FormLabel>Primary Feedback / Talking Points {!hasMedia && <span className="text-destructive">*</span>}</FormLabel><FormControl><Textarea rows={5} placeholder="What was the core message delivered?" {...field} /></FormControl><FormMessage /></FormItem>
@@ -419,7 +419,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           </AccordionContent>
                       </AccordionItem>
                        <AccordionItem value="signals">
-                          <AccordionTrigger className="justify-start gap-2"><Zap className="mr-2 text-yellow-500"/> Sentiment & Signals</AccordionTrigger>
+                          <AccordionTrigger className="py-2 justify-start gap-2"><Zap className="mr-2 text-yellow-500"/> Sentiment & Signals</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="showedSignsOfStress" render={({ field }) => (
                                   <FormItem><FormLabel>Did employee show signs of stress or disengagement?</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem><SelectItem value="Unsure">Unsure</SelectItem></SelectContent></Select><FormMessage /></FormItem>
@@ -436,7 +436,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           </AccordionContent>
                       </AccordionItem>
                       <AccordionItem value="appreciation">
-                          <AccordionTrigger className="justify-start gap-2"><Star className="mr-2 text-yellow-400"/> Appreciation Block</AccordionTrigger>
+                          <AccordionTrigger className="py-2 justify-start gap-2"><Star className="mr-2 text-yellow-400"/> Appreciation Block</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                                <FormField control={form.control} name="didAppreciate" render={({ field }) => (
                                   <FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Did you specifically appreciate the employee for something?</FormLabel></FormItem>
@@ -453,7 +453,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                           </AccordionContent>
                       </AccordionItem>
                        <AccordionItem value="summary">
-                          <AccordionTrigger className="justify-start gap-2"><MessageSquareQuote className="mr-2 text-muted-foreground"/> Media & Summary</AccordionTrigger>
+                          <AccordionTrigger className="py-2 justify-start gap-2"><MessageSquareQuote className="mr-2 text-muted-foreground"/> Media & Summary</AccordionTrigger>
                           <AccordionContent className="space-y-4 p-2">
                               <FormField control={form.control} name="otherComments" render={({ field }) => (
                                   <FormItem><FormLabel>Other Comments or Observations</FormLabel><FormControl><Textarea rows={4} placeholder="Anything else of note from the conversation?" {...field} /></FormControl><FormMessage /></FormItem>
