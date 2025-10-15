@@ -531,18 +531,20 @@ export default function DevelopmentPlanWidget() {
             </Dialog>
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between p-2">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                        <Activity className="text-primary" />
-                        Active Development Plan
-                    </CardTitle>
-                     <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)}>
-                            <Bot className="h-5 w-5 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)}>
-                            <Plus className="h-5 w-5" />
-                        </Button>
+                <CardHeader className="p-2">
+                    <div className="flex justify-between items-center">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Activity className="text-primary" />
+                            Active Development Plan
+                        </CardTitle>
+                        <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)}>
+                                <Bot className="h-5 w-5 text-primary" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)}>
+                                <Plus className="h-5 w-5" />
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
