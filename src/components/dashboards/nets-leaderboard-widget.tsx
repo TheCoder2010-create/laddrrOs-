@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -68,9 +69,9 @@ export default function NetsLeaderboardWidget() {
           <TableBody>
             {sortedTeamScores.map(([name, data]) => (
               <TableRow key={name}>
-                <TableCell className="font-medium py-2">{name}</TableCell>
-                <TableCell className="text-center font-semibold text-primary py-2">{data.average.toFixed(1)}</TableCell>
-                <TableCell className="text-center py-2">{data.sessions}</TableCell>
+                <TableCell className="font-medium py-1">{name}</TableCell>
+                <TableCell className="text-center font-semibold text-primary py-1">{data.average.toFixed(1)}</TableCell>
+                <TableCell className="text-center py-1">{data.sessions}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -91,9 +92,9 @@ export default function NetsLeaderboardWidget() {
         </TableHeader>
         <TableBody>
           <TableRow>
-            <TableCell className="font-medium py-2">{roleUserMapping[role!]?.name}</TableCell>
-            <TableCell className="text-center font-semibold text-primary py-2">{myScores.average.toFixed(1)}</TableCell>
-            <TableCell className="text-center py-2">{myScores.sessions}</TableCell>
+            <TableCell className="font-medium py-1">{roleUserMapping[role!]?.name}</TableCell>
+            <TableCell className="text-center font-semibold text-primary py-1">{myScores.average.toFixed(1)}</TableCell>
+            <TableCell className="text-center py-1">{myScores.sessions}</TableCell>
           </TableRow>
         </TableBody>
       </Table>
