@@ -1,7 +1,7 @@
 
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Target } from 'lucide-react';
 
@@ -19,7 +19,7 @@ export default function MyGoalsWidget() {
       <CardHeader className="p-4">
         <CardTitle className="flex items-center gap-2">
           <Target className="text-primary" />
-          My Goals & KPIs
+          Goals
         </CardTitle>
       </CardHeader>
       <CardContent className="pb-0">
@@ -43,4 +43,3 @@ export default function MyGoalsWidget() {
     </Card>
   );
 }
-
