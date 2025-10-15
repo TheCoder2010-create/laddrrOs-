@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
@@ -530,13 +531,11 @@ export default function DevelopmentPlanWidget() {
             </Dialog>
 
             <Card>
-                <CardHeader className="flex flex-row items-start justify-between p-2">
-                    <div>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Activity className="text-primary" />
-                            Active Development Plan
-                        </CardTitle>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between p-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <Activity className="text-primary" />
+                        Active Development Plan
+                    </CardTitle>
                      <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)}>
                             <Bot className="h-5 w-5 text-primary" />
