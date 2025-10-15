@@ -7,17 +7,39 @@ import { getOneOnOneHistory } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bot, MessageSquareQuote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselApi, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay";
+import { cn } from '@/lib/utils';
 
 
 export default function AiInsightFeedWidget() {
   const { role } = useRole();
   const [insights, setInsights] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+
   const plugin = useRef(
     Autoplay({ delay: 5000, stopOnInteraction: true })
   );
+
+  useEffect(() => {
+    if (!api) {
+      return
+    }
+ 
+    setCurrent(api.selectedScrollSnap())
+ 
+    const onSelect = (api: CarouselApi) => {
+      setCurrent(api.selectedScrollSnap())
+    }
+
+    api.on("select", onSelect)
+ 
+    return () => {
+      api.off("select", onSelect)
+    }
+  }, [api]);
 
   const fetchInsights = useCallback(async () => {
     if (!role) return;
@@ -36,6 +58,10 @@ export default function AiInsightFeedWidget() {
     window.addEventListener('feedbackUpdated', fetchInsights);
     return () => window.removeEventListener('feedbackUpdated', fetchInsights);
   }, [fetchInsights]);
+
+  const handleDotClick = useCallback((index: number) => {
+    api?.scrollTo(index);
+  }, [api]);
 
   if (isLoading) {
     return <Skeleton className="h-40 w-full" />;
@@ -65,8 +91,9 @@ export default function AiInsightFeedWidget() {
             Your Insights
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex items-center justify-center">
+      <CardContent className="flex-1 flex flex-col items-center justify-center">
         <Carousel
+          setApi={setApi}
           plugins={[plugin.current]}
           opts={{
             align: "start",
@@ -89,6 +116,19 @@ export default function AiInsightFeedWidget() {
             ))}
           </CarouselContent>
         </Carousel>
+        <div className="flex gap-2 mt-4">
+          {insights.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => handleDotClick(index)}
+              className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                current === index ? "bg-primary" : "bg-muted-foreground/30"
+              )}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
