@@ -1091,6 +1091,7 @@ function HistorySection({ role }: { role: Role }) {
                                         <CardContent className="space-y-4">
                                             <div className="space-y-4">
                                                 <p className="text-sm text-muted-foreground">{insight.summary}</p>
+                                                <p className="text-sm text-muted-foreground mt-2"><strong>Why it matters:</strong> {insight.reason}</p>
                                                 
                                                 {canSupervisorAct && (
                                                     <div className="mt-4">
