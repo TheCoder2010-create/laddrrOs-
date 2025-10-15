@@ -66,7 +66,7 @@ export default function QualityScoreTrendWidget() {
           1-on-1 Quality Score Trend
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-4">
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
         ) : chartData.length > 0 ? (
