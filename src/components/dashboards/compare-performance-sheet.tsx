@@ -148,7 +148,7 @@ export function ComparePerformanceSheet() {
     }}>
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">
-          <Rocket className="mr-2 h-4 w-4" /> Compare Performance
+          Compare
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
