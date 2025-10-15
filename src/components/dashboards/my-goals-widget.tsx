@@ -16,14 +16,11 @@ const myGoalsData = [
 export default function MyGoalsWidget() {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="p-4">
         <CardTitle className="flex items-center gap-2">
           <Target className="text-primary" />
           My Goals & KPIs
         </CardTitle>
-        <CardDescription>
-          Your key performance indicators and their weightage for the current review cycle.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
