@@ -15,7 +15,7 @@ const myGoalsData = [
 
 export default function MyGoalsWidget() {
   return (
-    <Card>
+    <Card className="max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="text-primary" />
@@ -30,7 +30,7 @@ export default function MyGoalsWidget() {
             <TableHeader>
                 <TableRow>
                     <TableHead>Key Performance Indicator (KPI)</TableHead>
-                    <TableHead className="text-center w-[120px]">Weightage</TableHead>
+                    <TableHead className="text-center w-[100px]">Weightage</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
