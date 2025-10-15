@@ -26,7 +26,7 @@ export default function MyGoalsWidget() {
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead className="h-auto">KPI</TableHead>
+                    <TableHead className="h-auto text-center">KPI</TableHead>
                     <TableHead className="text-center w-[100px] h-auto">Weightage</TableHead>
                 </TableRow>
             </TableHeader>
