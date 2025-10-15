@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect, useRef, ChangeEvent } from 'react';
@@ -414,7 +415,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                                   <FormItem><FormLabel>Specific Areas for Improvement {form.getValues("feedbackTone") === 'Corrective' && <span className="text-destructive">*</span>}</FormLabel><FormControl><Input placeholder="Describe specific areas for improvement..." {...field} /></FormControl><FormMessage /></FormItem>
                                )} />
                                <FormField control={form.control} name="growthRating" render={({ field }) => (
-                                  <FormItem><FormLabel>Growth/Performance Trajectory (1=Needs significant improvement, 5=Exceeding expectations) <span className="text-destructive">*</span></FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="1" /></FormControl><FormLabel className="font-normal">1</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="2" /></FormControl><FormLabel className="font-normal">2</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="3" /></FormControl><FormLabel className="font-normal">3</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="4" /></FormControl><FormLabel className="font-normal">4</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="5" /></FormControl><FormLabel className="font-normal">5</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
+                                  <FormItem><FormLabel>Growth/Performance Trajectory (1=Needs significant improvement, 5=Exceeding expectations) <span className="text-destructive">*</span>}</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2"><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="1" /></FormControl><FormLabel className="font-normal">1</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="2" /></FormControl><FormLabel className="font-normal">2</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="3" /></FormControl><FormLabel className="font-normal">3</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="4" /></FormControl><FormLabel className="font-normal">4</FormLabel></FormItem><FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="5" /></FormControl><FormLabel className="font-normal">5</FormLabel></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
                                )} />
                           </AccordionContent>
                       </AccordionItem>
@@ -462,10 +463,10 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                       </AccordionItem>
                   </Accordion>
               </CardContent>
-              <CardFooter>
-                   <Button type="submit" className="w-full" disabled={isPending}>
+              <CardFooter className="justify-center">
+                   <Button type="submit" disabled={isPending}>
                       {isPending ? <Loader2 className="mr-2 animate-spin"/> : <Send className="mr-2" />}
-                      Submit One-on-One Session
+                      Submit
                   </Button>
               </CardFooter>
           </Card>
@@ -673,3 +674,5 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
+
+    
