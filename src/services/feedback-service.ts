@@ -186,7 +186,7 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
                     { role: 'model', content: "Hey, you wanted to chat?" },
                     { role: 'user', content: "Yes, I wanted to discuss some feedback regarding your communication in team meetings.", annotation: "Great start. This is clear and sets the stage without being alarming.", type: 'positive' },
                     { role: 'model', content: "Oh? I thought I was being clear. What's the issue?" },
-                    { role: 'user', content: "You need to be less dismissive of others' ideas.", annotation: "This could be perceived as an attack. Try framing it from your perspective, e.g., 'I've noticed that when others share ideas, the conversation sometimes moves on before we can fully explore them.'", type: 'negative' }
+                    { role: 'user', content: "You need to be less dismissive of others' ideas.", annotation: "This could be perceived as an attack. Try framing it from your perspective, e.g., 'I\'ve noticed that when others share ideas, the conversation sometimes moves on before we can fully explore them.'", type: 'negative' }
                 ]
             }
         },
@@ -1122,6 +1122,46 @@ export async function getAggregatedActionItems(role: Role): Promise<ActionItemWi
     // In a real app, you would also fetch from training programs etc.
     // For now, this is a good start.
 
+    return allItems.sort((a,b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
+}
+
+export async function getActionItemsForEmployee(employeeName: string): Promise<ActionItemWithSource[]> {
+    const allItems: ActionItemWithSource[] = [];
+    const employeeRole = getRoleByName(employeeName);
+
+    // From 1-on-1s
+    const history = await getOneOnOneHistory();
+    history.forEach(h => {
+        if (h.employeeName === employeeName && h.analysis.actionItems) {
+            h.analysis.actionItems.forEach(ai => {
+                if (ai.owner === 'Employee' && ai.status === 'pending') {
+                    allItems.push({
+                        ...ai,
+                        sourceType: '1-on-1',
+                        source: `1-on-1 with ${h.supervisorName}`,
+                        dueDate: new Date(new Date(h.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                    });
+                }
+            });
+        }
+    });
+
+    // From Coaching Plans (if the employee can have them)
+    if (employeeRole) {
+        const coachingPlans = await getActiveCoachingPlansForUser(employeeRole);
+        coachingPlans.forEach(plan => {
+            allItems.push({
+                id: `coach-${plan.rec.id}`,
+                owner: employeeRole,
+                task: `Work on coaching goal: ${plan.rec.area}`,
+                status: 'pending',
+                sourceType: 'Coaching',
+                source: `Plan: ${plan.rec.resource}`,
+                dueDate: plan.rec.endDate,
+            });
+        });
+    }
+    
     return allItems.sort((a,b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime());
 }
 
