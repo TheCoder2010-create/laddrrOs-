@@ -1,18 +1,23 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRole } from '@/hooks/use-role';
 import { getOneOnOneHistory } from '@/services/feedback-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bot, MessageSquareQuote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
+
 
 export default function AiInsightFeedWidget() {
   const { role } = useRole();
   const [insights, setInsights] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const plugin = useRef(
+    Autoplay({ delay: 5000, stopOnInteraction: true })
+  );
 
   const fetchInsights = useCallback(async () => {
     if (!role) return;
@@ -62,11 +67,14 @@ export default function AiInsightFeedWidget() {
       </CardHeader>
       <CardContent className="flex-1 flex items-center justify-center">
         <Carousel
+          plugins={[plugin.current]}
           opts={{
             align: "start",
             loop: true,
           }}
           className="w-full max-w-xs"
+          onMouseEnter={plugin.current.stop}
+          onMouseLeave={plugin.current.reset}
         >
           <CarouselContent>
             {insights.map((insight, index) => (
@@ -80,8 +88,6 @@ export default function AiInsightFeedWidget() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="-left-4" />
-          <CarouselNext className="-right-4" />
         </Carousel>
       </CardContent>
     </Card>
