@@ -1,7 +1,7 @@
 
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Target } from 'lucide-react';
 
@@ -26,8 +26,8 @@ export default function MyGoalsWidget() {
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>Key Performance Indicator (KPI)</TableHead>
-                    <TableHead className="text-center w-[100px]">Weightage</TableHead>
+                    <TableHead className="h-auto">Key Performance Indicator (KPI)</TableHead>
+                    <TableHead className="text-center w-[100px] h-auto">Weightage</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
