@@ -6,7 +6,6 @@ import { useRole } from '@/hooks/use-role';
 import { getTeamActionItemStatus, getActionItemsForEmployee, ActionItemWithSource } from '@/services/feedback-service';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ListChecks, AlertTriangle, Calendar, BrainCircuit, Briefcase, CheckSquare, Square } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -78,35 +77,25 @@ export default function ActionItemHeatmapWidget() {
             <Skeleton className="h-24 w-full" />
           ) : hasData ? (
             <div className="flex flex-wrap gap-3">
-              <TooltipProvider>
-                {Object.entries(teamStatus).map(([name, { open, overdue }]) => (
-                  <Tooltip key={name}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => handleEmployeeClick(name)}
-                        className="flex items-center gap-2 border rounded-full px-3 py-1.5 bg-muted/50 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-                      >
-                         <span
-                            className={cn(
-                              "h-3 w-3 rounded-full relative flex items-center justify-center",
-                              getColor(open, overdue)
-                            )}
-                          >
-                            {overdue > 0 && 
-                              <AlertTriangle className="h-3 w-3 absolute text-white" />}
-                         </span>
-                        <span className="text-sm font-medium">{name}</span>
-                        <span className="text-sm text-muted-foreground">({open})</span>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{open} open action item(s)</p>
-                      {overdue > 0 && <p className="text-destructive">{overdue} overdue</p>}
-                      <p className="text-xs text-muted-foreground mt-1">Click to view details</p>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-              </TooltipProvider>
+              {Object.entries(teamStatus).map(([name, { open, overdue }]) => (
+                <button
+                  key={name}
+                  onClick={() => handleEmployeeClick(name)}
+                  className="flex items-center gap-2 border rounded-full px-3 py-1.5 bg-muted/50 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <span
+                    className={cn(
+                      "h-3 w-3 rounded-full relative flex items-center justify-center",
+                      getColor(open, overdue)
+                    )}
+                  >
+                    {overdue > 0 && 
+                      <AlertTriangle className="h-3 w-3 absolute text-white" />}
+                  </span>
+                  <span className="text-sm font-medium">{name}</span>
+                  <span className="text-sm text-muted-foreground">({open})</span>
+                </button>
+              ))}
             </div>
           ) : (
             <div className="text-center py-4">
