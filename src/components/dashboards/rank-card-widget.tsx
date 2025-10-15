@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -20,7 +19,7 @@ export default function RankCardWidget() {
       <CardHeader className="pb-2 p-4">
         <CardTitle className="flex items-center gap-2">
           <Award className="text-yellow-500" />
-          My Performance Rank
+          Rank
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center pt-4">
