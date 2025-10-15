@@ -9,22 +9,22 @@ import TeamGrowthHighlightsWidget from "./team-growth-highlights-widget";
 
 export default function LeadDashboard() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <h1 className="text-3xl font-bold font-headline mb-6 text-foreground">Team Lead Dashboard</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
           <QualityScoreTrendWidget />
           <ActionItemHeatmapWidget />
           <TeamGrowthHighlightsWidget />
         </div>
-        <div className="space-y-6">
+        <div className="space-y-4">
           <MissedSignalAlertsWidget />
           <CoachingOpportunitiesWidget />
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <NetsLeaderboardWidget />
         <DevelopmentPlanWidget />
       </div>
