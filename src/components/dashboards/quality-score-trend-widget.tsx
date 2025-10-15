@@ -77,7 +77,7 @@ export default function QualityScoreTrendWidget() {
           >
             <LineChart
               data={chartData}
-              margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
+              margin={{ top: 5, right: 20, left: 0, bottom: 0 }}
             >
               <CartesianGrid vertical={false} />
               <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
