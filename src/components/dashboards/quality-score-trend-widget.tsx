@@ -70,7 +70,7 @@ export default function QualityScoreTrendWidget() {
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
         ) : chartData.length > 0 ? (
-          <div className="h-[250px] w-full">
+          <div className="h-[200px] w-full">
             <ChartContainer
               config={{ score: { label: "Effectiveness", color: "hsl(var(--primary))" } }}
             >
