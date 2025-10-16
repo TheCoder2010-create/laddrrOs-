@@ -307,6 +307,7 @@ export default function PerformanceTrendWidget() {
                     axisLine={false}
                     tickMargin={8}
                     reversed={selectedKpis.includes('rank')}
+                    allowDecimals={false}
                 />
                 <ChartTooltip
                     cursor={false}
@@ -331,3 +332,5 @@ export default function PerformanceTrendWidget() {
     </Card>
   );
 }
+
+    
