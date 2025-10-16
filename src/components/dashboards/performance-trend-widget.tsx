@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
 import { LineChart, CartesianGrid, XAxis, YAxis, Line } from "recharts"
 import { TrendingUp, Save } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "../ui/button"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
@@ -68,16 +68,48 @@ const kpis = [
 type KpiKey = typeof kpis[number]['key'];
 type TimePeriod = 'D' | 'W' | 'M';
 
+const STORAGE_KEY = 'performanceTrendDefaultView';
+
 export default function PerformanceTrendWidget() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('M');
   const [range, setRange] = useState<number[]>([0, 11]); 
   const [selectedKpis, setSelectedKpis] = useState<KpiKey[]>(['overall']);
   const { toast } = useToast();
 
+  // Load saved view from localStorage on initial render
+  useEffect(() => {
+    const savedViewJSON = localStorage.getItem(STORAGE_KEY);
+    if (savedViewJSON) {
+      try {
+        const savedView = JSON.parse(savedViewJSON);
+        // We set timePeriod first, so that the subsequent range update has the correct data length
+        if (savedView.timePeriod) {
+            setTimePeriod(savedView.timePeriod);
+        }
+        if (savedView.selectedKpis) {
+            setSelectedKpis(savedView.selectedKpis);
+        }
+        if (savedView.range) {
+            setRange(savedView.range);
+        }
+      } catch (e) {
+        console.error("Failed to parse saved view:", e);
+      }
+    }
+  }, []);
+
   const currentData = useMemo(() => allPerformanceData[timePeriod], [timePeriod]);
 
-  // Reset range when time period changes
-  useEffect(() => {
+  // Reset range when time period changes, unless we are initializing from storage
+   useEffect(() => {
+    const savedViewJSON = localStorage.getItem(STORAGE_KEY);
+    if (savedViewJSON) {
+        const savedView = JSON.parse(savedViewJSON);
+        if (savedView.timePeriod === timePeriod) {
+            return; // Don't reset if we are loading the saved period
+        }
+    }
+    
     // For daily view, show a 3-month (approx 90 days) window by default
     if (timePeriod === 'D') {
       setRange([0, 89]);
@@ -116,7 +148,12 @@ export default function PerformanceTrendWidget() {
   };
 
   const handleSaveView = () => {
-    // In a real app, this would save to user preferences (e.g., in localStorage or a database)
+    const viewToSave = {
+      timePeriod,
+      range,
+      selectedKpis,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(viewToSave));
     toast({
       title: "View Saved",
       description: "Your current view has been set as the default.",
@@ -280,3 +317,5 @@ export default function PerformanceTrendWidget() {
     </Card>
   );
 }
+
+    
