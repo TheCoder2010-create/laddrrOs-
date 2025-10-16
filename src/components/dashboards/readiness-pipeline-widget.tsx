@@ -43,8 +43,8 @@ export default function ReadinessPipelineWidget() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Rocket className="text-blue-500" />
           Readiness Pipeline
         </CardTitle>
