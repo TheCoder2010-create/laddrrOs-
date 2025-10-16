@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
@@ -539,7 +540,7 @@ export default function DevelopmentPlanWidget() {
                         </CardTitle>
                         <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)} className="hover:bg-transparent transition-transform hover:scale-125">
-                                <AiGenieIcon className="h-10 w-10 text-primary" />
+                                <AiGenieIcon className="h-7 w-7 text-primary" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)} className="hover:bg-transparent transition-transform hover:scale-125">
                                 <Plus className="h-5 w-5" />
