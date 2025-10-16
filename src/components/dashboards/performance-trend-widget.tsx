@@ -219,7 +219,7 @@ export default function PerformanceTrendWidget() {
                     Performance Trend
                 </CardTitle>
             </div>
-            <div className="w-full sm:w-64">
+            <div className="w-full sm:w-64 pt-2 sm:pt-0">
                 <Slider
                     value={range}
                     min={0}
@@ -329,5 +329,7 @@ export default function PerformanceTrendWidget() {
     </Card>
   );
 }
+
+    
 
     
