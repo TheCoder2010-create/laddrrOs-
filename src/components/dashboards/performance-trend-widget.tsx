@@ -136,14 +136,27 @@ export default function PerformanceTrendWidget() {
 
   const handleKpiToggle = (kpiKey: KpiKey) => {
     setSelectedKpis(prev => {
-        const isSelected = prev.includes(kpiKey);
-        if (isSelected) {
-            // Prevent removing the last selected KPI
-            if (prev.length === 1) return prev;
-            return prev.filter(k => k !== kpiKey);
-        } else {
-            return [...prev, kpiKey];
-        }
+      // If "Rank" is clicked, it becomes the only selected KPI.
+      if (kpiKey === 'rank') {
+        return ['rank'];
+      }
+
+      // If another KPI is clicked...
+      const isCurrentlySelected = prev.includes(kpiKey);
+      const isRankSelected = prev.includes('rank');
+
+      // If rank is currently selected, and we click something else, start a new selection.
+      if (isRankSelected) {
+        return [kpiKey];
+      }
+
+      // Standard multi-select logic for other KPIs.
+      if (isCurrentlySelected) {
+        if (prev.length === 1) return prev; // Don't allow deselecting the last one
+        return prev.filter(k => k !== kpiKey);
+      } else {
+        return [...prev, kpiKey];
+      }
     });
   };
 
@@ -293,6 +306,7 @@ export default function PerformanceTrendWidget() {
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
+                    reversed={selectedKpis.includes('rank')}
                 />
                 <ChartTooltip
                     cursor={false}
@@ -317,5 +331,3 @@ export default function PerformanceTrendWidget() {
     </Card>
   );
 }
-
-    
