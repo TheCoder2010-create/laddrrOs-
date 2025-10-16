@@ -861,7 +861,7 @@ function HistorySection({ role }: { role: Role }) {
                     }
 
                     return (
-                        <AccordionItem value={item.id} key={item.id} className="border-b">
+                        <AccordionItem value={item.id} key={item.id}>
                             <AccordionTrigger className="px-4 py-3 w-full">
                                 <div className="flex justify-between items-center w-full">
                                     <div className="text-left">
@@ -1412,4 +1412,5 @@ export default function Home() {
     
 
     
+
 
