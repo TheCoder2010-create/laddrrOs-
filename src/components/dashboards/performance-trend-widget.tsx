@@ -218,9 +218,6 @@ export default function PerformanceTrendWidget() {
                     <TrendingUp className="text-primary" />
                     Performance Trend
                 </CardTitle>
-                <CardDescription>
-                    Your performance score over time.
-                </CardDescription>
             </div>
             <div className="w-full sm:w-64">
                 <Slider
@@ -291,7 +288,7 @@ export default function PerformanceTrendWidget() {
             <ChartContainer config={chartConfig} className="h-full w-full">
               <LineChart
                 data={visibleData}
-                margin={{ top: 5, right: 20, left: -10, bottom: 0 }}
+                margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
               >
                 <CartesianGrid vertical={false} />
                 <XAxis 
