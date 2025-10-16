@@ -48,9 +48,6 @@ export default function ReadinessPipelineWidget() {
           <Rocket className="text-blue-500" />
           Readiness Pipeline
         </CardTitle>
-        <CardDescription>
-          Percentage of employees ready for promotion based on AI readiness scores.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

@@ -45,9 +45,6 @@ export default function ManagerDevelopmentMapWidget() {
           <Map className="text-primary" />
           Manager Development Map
         </CardTitle>
-        <CardDescription>
-          Visual network of your team leads and their leadership growth trajectory.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

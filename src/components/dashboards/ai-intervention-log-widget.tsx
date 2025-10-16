@@ -43,9 +43,6 @@ export default function AiInterventionLogWidget() {
           <ShieldAlert className="text-destructive" />
           AI Intervention Log
         </CardTitle>
-        <CardDescription>
-          Tracks when AI escalated an issue and if human follow-up was timely.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

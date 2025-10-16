@@ -34,9 +34,6 @@ export default function EscalationInsightsWidget() {
           <BrainCircuit className="text-orange-500" />
           Escalation Root Causes
         </CardTitle>
-        <CardDescription>
-          Common themes from escalated issues across your teams.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (

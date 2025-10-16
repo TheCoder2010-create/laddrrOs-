@@ -40,9 +40,6 @@ export default function TeamCoachingQualityWidget() {
           <Target className="text-purple-500" />
           Team Coaching Quality Index
         </CardTitle>
-        <CardDescription>
-          Weighted score measuring the quality and frequency of 1-on-1s per team lead.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
