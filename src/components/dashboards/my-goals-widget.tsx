@@ -16,7 +16,7 @@ const myGoalsData = [
 export default function MyGoalsWidget() {
   return (
     <Card>
-      <CardHeader className="p-4">
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Target className="text-primary" />
           Goals
@@ -43,3 +43,4 @@ export default function MyGoalsWidget() {
     </Card>
   );
 }
+
