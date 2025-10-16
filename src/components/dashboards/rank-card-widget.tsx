@@ -19,7 +19,7 @@ export default function RankCardWidget() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between p-4">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Award className="text-yellow-500" />
           Rank
         </CardTitle>

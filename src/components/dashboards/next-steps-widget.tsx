@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -50,7 +51,7 @@ export default function NextStepsWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <ListTodo className="text-primary" />
           Next Steps & Deadlines
         </CardTitle>

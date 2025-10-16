@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -64,7 +65,7 @@ export default function NetsScoreboardWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
+        <CardTitle className="flex items-center gap-2 text-base">
           <MessagesSquare className="text-indigo-500" />
           Nets Scoreboard
         </CardTitle>

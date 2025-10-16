@@ -71,7 +71,7 @@ export default function AiInsightFeedWidget() {
     return (
         <Card className="h-full">
          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
                 <Bot className="h-5 w-5 text-primary" />
                 Your Insights
             </CardTitle>
@@ -86,7 +86,7 @@ export default function AiInsightFeedWidget() {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
             <Bot className="h-5 w-5 text-primary" />
             Your Insights
         </CardTitle>
