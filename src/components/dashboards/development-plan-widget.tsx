@@ -543,7 +543,7 @@ export default function DevelopmentPlanWidget() {
                                 <AiGenieIcon className="h-6 w-6 text-primary" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setIsAddPlanDialogOpen(true)} className="hover:bg-transparent transition-transform hover:scale-125">
-                                <Plus className="h-5 w-5" />
+                                <Plus className="h-6 w-6" />
                             </Button>
                         </div>
                     </div>
