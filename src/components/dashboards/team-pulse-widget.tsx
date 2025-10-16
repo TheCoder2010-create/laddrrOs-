@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
@@ -49,7 +48,6 @@ export default function TeamPulseWidget() {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center">
-        <p className="text-xs text-muted-foreground mb-1">Anonymized Team Growth Trajectory</p>
         <p className={cn("text-4xl font-bold", getPulseColor(pulse))}>
           {pulse.toFixed(1)}
         </p>
