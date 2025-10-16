@@ -50,7 +50,7 @@ export default function NextStepsWidget() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <ListTodo className="text-primary" />
           Next Steps & Deadlines

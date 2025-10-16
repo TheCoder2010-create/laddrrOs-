@@ -70,7 +70,7 @@ export default function AiInsightFeedWidget() {
   if (insights.length === 0) {
     return (
         <Card className="h-full">
-         <CardHeader>
+         <CardHeader className="p-2">
             <CardTitle className="flex items-center gap-2 text-base">
                 <Bot className="h-5 w-5 text-primary" />
                 Your Insights
@@ -85,7 +85,7 @@ export default function AiInsightFeedWidget() {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader>
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
             <Bot className="h-5 w-5 text-primary" />
             Your Insights

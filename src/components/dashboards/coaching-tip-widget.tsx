@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -55,7 +56,7 @@ export default function CoachingTipWidget() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base text-primary">
           <Lightbulb className="h-5 w-5" />
           Coaching Tip

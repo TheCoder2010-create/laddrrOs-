@@ -64,7 +64,7 @@ export default function NetsScoreboardWidget() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="p-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <MessagesSquare className="text-indigo-500" />
           Nets Scoreboard
