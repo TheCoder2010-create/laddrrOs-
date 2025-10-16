@@ -1,7 +1,6 @@
-
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Map, Zap, BrainCircuit, Users } from 'lucide-react';
 
 // Mock data representing skill clusters and their growth
@@ -14,8 +13,8 @@ const skillClusters = [
 export default function OrganizationalLearningMapWidget() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Map className="text-primary" />
           Organizational Learning Map
         </CardTitle>
