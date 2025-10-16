@@ -1,3 +1,4 @@
+
 import DevelopmentPlanWidget from "./development-plan-widget";
 import LeadershipMaturityCurveWidget from "./leadership-maturity-curve-widget";
 import EarlyWarningSystemWidget from "./early-warning-system-widget";
@@ -8,7 +9,6 @@ import AiCultureNarrativesWidget from "./ai-culture-narratives-widget";
 export default function HRHeadDashboard() {
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold font-headline mb-6 text-foreground">HR Head Dashboard</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
