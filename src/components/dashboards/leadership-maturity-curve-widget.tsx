@@ -1,7 +1,6 @@
-
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { BarChart } from 'lucide-react';
 
@@ -15,8 +14,8 @@ const maturityData = [
 export default function LeadershipMaturityCurveWidget() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <BarChart className="text-primary" />
           Leadership Maturity Curve
         </CardTitle>

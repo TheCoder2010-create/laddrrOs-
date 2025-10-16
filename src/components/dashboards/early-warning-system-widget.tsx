@@ -1,7 +1,6 @@
-
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AlertOctagon, TrendingDown, Users } from 'lucide-react';
 
 const warningData = [
@@ -12,8 +11,8 @@ const warningData = [
 export default function EarlyWarningSystemWidget() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <AlertOctagon className="text-destructive" />
           Early Warning System
         </CardTitle>

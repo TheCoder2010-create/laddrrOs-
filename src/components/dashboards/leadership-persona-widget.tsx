@@ -1,7 +1,6 @@
-
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Users } from 'lucide-react';
@@ -25,8 +24,8 @@ const chartConfig = {
 export default function LeadershipPersonaWidget() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Users className="text-purple-500" />
           Leadership Persona Breakdown
         </CardTitle>

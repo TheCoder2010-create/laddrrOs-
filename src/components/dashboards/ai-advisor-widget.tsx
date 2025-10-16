@@ -1,7 +1,6 @@
-
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bot, Lightbulb, ChevronsRight } from 'lucide-react';
 
@@ -15,8 +14,8 @@ const advice = {
 export default function AiAdvisorWidget() {
   return (
     <Card className="bg-primary/5 border-primary/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary">
+      <CardHeader className="p-2">
+        <CardTitle className="flex items-center gap-2 text-base text-primary">
           <Bot />
           AI Leadership Advisor
         </CardTitle>

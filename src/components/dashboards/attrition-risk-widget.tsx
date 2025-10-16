@@ -1,7 +1,6 @@
-
 "use client"
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { AlertTriangle, TrendingDown } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -15,8 +14,8 @@ const riskData = [
 export default function AttritionRiskWidget() {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="text-destructive" />
           Predictive Attrition Risk
         </CardTitle>
