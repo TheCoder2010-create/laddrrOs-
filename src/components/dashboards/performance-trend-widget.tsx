@@ -6,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Slider } from "@/components/ui/slider"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
 import { LineChart, CartesianGrid, XAxis, YAxis, Line } from "recharts"
-import { TrendingUp } from "lucide-react"
+import { TrendingUp, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
 
 // Mock data representing performance over different time periods
 const generateData = (numPoints: number, period: 'day' | 'week' | 'month') => {
@@ -71,6 +72,7 @@ export default function PerformanceTrendWidget() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('M');
   const [range, setRange] = useState<number[]>([0, 11]); 
   const [selectedKpis, setSelectedKpis] = useState<KpiKey[]>(['overall']);
+  const { toast } = useToast();
 
   const currentData = useMemo(() => allPerformanceData[timePeriod], [timePeriod]);
 
@@ -110,6 +112,14 @@ export default function PerformanceTrendWidget() {
         } else {
             return [...prev, kpiKey];
         }
+    });
+  };
+
+  const handleSaveView = () => {
+    // In a real app, this would save to user preferences (e.g., in localStorage or a database)
+    toast({
+      title: "View Saved",
+      description: "Your current view has been set as the default.",
     });
   };
 
@@ -207,18 +217,24 @@ export default function PerformanceTrendWidget() {
                     );
                 })}
             </div>
-            <div className="flex items-center gap-1 rounded-md bg-muted p-1">
-                {(['D', 'W', 'M'] as TimePeriod[]).map(period => (
-                    <Button
-                        key={period}
-                        variant={timePeriod === period ? 'secondary' : 'ghost'}
-                        size="sm"
-                        className="h-7 px-2.5"
-                        onClick={() => setTimePeriod(period)}
-                    >
-                        {period}
-                    </Button>
-                ))}
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 rounded-md bg-muted p-1">
+                    {(['D', 'W', 'M'] as TimePeriod[]).map(period => (
+                        <Button
+                            key={period}
+                            variant={timePeriod === period ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-7 px-2.5"
+                            onClick={() => setTimePeriod(period)}
+                        >
+                            {period}
+                        </Button>
+                    ))}
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSaveView}>
+                    <Save className="h-4 w-4 text-muted-foreground" />
+                    <span className="sr-only">Save default view</span>
+                </Button>
             </div>
         </div>
         <div className="h-[250px] w-full mb-4">
