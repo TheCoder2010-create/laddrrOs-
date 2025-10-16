@@ -17,9 +17,6 @@ export default function EarlyWarningSystemWidget() {
           <AlertOctagon className="text-destructive" />
           Early Warning System
         </CardTitle>
-        <CardDescription>
-          AI-detected culture hotspots based on sentiment shifts.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {warningData.map(item => (

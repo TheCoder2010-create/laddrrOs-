@@ -32,9 +32,6 @@ export default function ProgramImpactHeatmapWidget() {
           <Flame className="text-orange-500" />
           Program Impact Heatmap
         </CardTitle>
-        <CardDescription>
-          Correlation between training participation and leadership score improvements.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <TooltipProvider>

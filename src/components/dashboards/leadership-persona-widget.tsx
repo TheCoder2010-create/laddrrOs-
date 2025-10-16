@@ -30,9 +30,6 @@ export default function LeadershipPersonaWidget() {
           <Users className="text-purple-500" />
           Leadership Persona Breakdown
         </CardTitle>
-        <CardDescription>
-          Distribution of leadership styles across the organization.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[200px] w-full">

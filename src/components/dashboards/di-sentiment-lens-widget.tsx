@@ -19,9 +19,6 @@ export default function DiSentimentLensWidget() {
           <Eye className="text-teal-500" />
           D&I Sentiment Lens
         </CardTitle>
-        <CardDescription>
-          Inclusivity patterns in feedback and participation.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {diData.map(item => (

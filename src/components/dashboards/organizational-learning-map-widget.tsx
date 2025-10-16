@@ -19,9 +19,6 @@ export default function OrganizationalLearningMapWidget() {
           <Map className="text-primary" />
           Organizational Learning Map
         </CardTitle>
-        <CardDescription>
-          Emerging skill clusters and growth trends across departments.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

@@ -20,9 +20,6 @@ export default function LeadershipMaturityCurveWidget() {
           <BarChart className="text-primary" />
           Leadership Maturity Curve
         </CardTitle>
-        <CardDescription>
-          Maturity distribution across the organization's leadership pipeline.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {maturityData.map(item => (

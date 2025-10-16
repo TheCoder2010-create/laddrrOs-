@@ -20,9 +20,6 @@ export default function AiAdvisorWidget() {
           <Bot />
           AI Leadership Advisor
         </CardTitle>
-        <CardDescription>
-          Your AI-powered strategic recommendation for this week.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>

@@ -20,9 +20,6 @@ export default function AttritionRiskWidget() {
           <AlertTriangle className="text-destructive" />
           Predictive Attrition Risk
         </CardTitle>
-        <CardDescription>
-          Teams showing early signs of burnout or disengagement.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {riskData.map(item => (

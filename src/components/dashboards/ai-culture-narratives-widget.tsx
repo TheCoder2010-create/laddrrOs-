@@ -14,9 +14,6 @@ export default function AiCultureNarrativesWidget() {
           <Bot />
           AI Culture Narrative
         </CardTitle>
-        <CardDescription>
-            Quarterly summary of the organization's cultural evolution.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="relative">
