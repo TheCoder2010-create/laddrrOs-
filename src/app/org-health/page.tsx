@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from 'react';
@@ -35,6 +34,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { assignCoachingFromOrgHealth } from '@/services/org-coaching-service';
+import OrgHealthDashboard from '@/components/dashboards/org-health-dashboard';
 
 
 function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void }) {
@@ -773,6 +773,8 @@ function OrgHealthContent() {
                 </h1>
             </div>
         </div>
+
+        <OrgHealthDashboard />
         
         <ActiveSurveys key={key} onUpdate={handleSurveyDeployed} />
         
@@ -810,4 +812,3 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
-
