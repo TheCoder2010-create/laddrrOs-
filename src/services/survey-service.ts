@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -39,12 +40,11 @@ export async function deploySurvey(surveyData: { objective: string; questions: S
 }
 
 /**
- * Gets all currently active surveys.
+ * Gets all surveys, both active and closed.
  */
-export async function getActiveSurveys(): Promise<DeployedSurvey[]> {
+export async function getAllSurveys(): Promise<DeployedSurvey[]> {
     const allSurveys = getFromStorage<DeployedSurvey>(SURVEY_KEY);
     return allSurveys
-        .filter(s => s.status === 'active')
         .sort((a, b) => new Date(b.deployedAt).getTime() - new Date(a.deployedAt).getTime());
 }
 
@@ -52,8 +52,8 @@ export async function getActiveSurveys(): Promise<DeployedSurvey[]> {
  * Gets the most recent active survey.
  */
 export async function getLatestActiveSurvey(): Promise<DeployedSurvey | null> {
-    const activeSurveys = await getActiveSurveys();
-    return activeSurveys.length > 0 ? activeSurveys[0] : null;
+    const allSurveys = await getAllSurveys();
+    return allSurveys.find(s => s.status === 'active') || null;
 }
 
 /**
@@ -64,6 +64,18 @@ export async function submitSurveyResponse(surveyId: string): Promise<void> {
     const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
     if (surveyIndex !== -1) {
         allSurveys[surveyIndex].submissionCount++;
+        saveToStorage(SURVEY_KEY, allSurveys);
+    }
+}
+
+/**
+ * Closes an active survey.
+ */
+export async function closeSurvey(surveyId: string): Promise<void> {
+    const allSurveys = getFromStorage<DeployedSurvey>(SURVEY_KEY);
+    const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
+    if (surveyIndex !== -1 && allSurveys[surveyIndex].status === 'active') {
+        allSurveys[surveyIndex].status = 'closed';
         saveToStorage(SURVEY_KEY, allSurveys);
     }
 }

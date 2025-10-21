@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -16,104 +16,18 @@ import { useToast } from '@/hooks/use-toast';
 import { generateSurveyQuestions } from '@/ai/flows/generate-survey-questions-flow';
 import { summarizeSurveyResults, type SummarizeSurveyResultsOutput } from '@/ai/flows/summarize-survey-results-flow';
 import type { SurveyQuestion, DeployedSurvey } from '@/ai/schemas/survey-schemas';
-import { deploySurvey, getActiveSurveys } from '@/services/survey-service';
+import { deploySurvey, getAllSurveys, closeSurvey } from '@/services/survey-service';
 import { v4 as uuidv4 } from 'uuid';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
-function SurveyResultsDialog({ survey, open, onOpenChange }: { survey: DeployedSurvey | null, open: boolean, onOpenChange: (open: boolean) => void }) {
-    const [summary, setSummary] = useState<SummarizeSurveyResultsOutput | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (open && survey && !summary) {
-            setIsLoading(true);
-            setError(null);
-            
-            // Mock anonymous responses for the AI to summarize
-            const mockResponses = [
-                "I feel like my work isn't valued.",
-                "Better work-life balance would be great.",
-                "Communication from leadership has been unclear lately.",
-                "I enjoy my team, but the overall company morale seems low.",
-                "The recent re-org has caused a lot of confusion and stress.",
-                "I appreciate the flexible work hours.",
-            ];
-
-            summarizeSurveyResults({ surveyObjective: survey.objective, anonymousResponses: mockResponses })
-                .then(setSummary)
-                .catch(err => {
-                    console.error("Failed to summarize results", err);
-                    setError("Could not generate an AI summary at this time.");
-                })
-                .finally(() => setIsLoading(false));
-        }
-    }, [open, survey, summary]);
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                       <Bot className="text-primary" /> AI Summary: {survey?.objective}
-                    </DialogTitle>
-                    <DialogDescription>
-                        An AI-generated thematic analysis of the anonymous survey responses.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 max-h-[60vh] overflow-y-auto pr-2 space-y-4">
-                    {isLoading && (
-                        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground h-48">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p>Analyzing responses...</p>
-                        </div>
-                    )}
-                    {error && (
-                         <Alert variant="destructive">
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-                    {summary && (
-                        <div className="space-y-4">
-                             <div>
-                                <h4 className="font-semibold text-lg">Overall Sentiment</h4>
-                                <p className="text-sm text-muted-foreground">{summary.overallSentiment}</p>
-                            </div>
-                            <div>
-                                <h4 className="font-semibold text-lg">Key Themes</h4>
-                                <ul className="list-disc pl-5 space-y-2 mt-2">
-                                    {summary.keyThemes.map((theme, i) => (
-                                        <li key={i}>
-                                            <span className="font-semibold">{theme.theme}</span>
-                                            <p className="text-sm text-muted-foreground">{theme.summary}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                             <div>
-                                <h4 className="font-semibold text-lg">Actionable Recommendations</h4>
-                                <ul className="list-disc pl-5 space-y-2 mt-2">
-                                    {summary.recommendations.map((rec, i) => (
-                                        <li key={i} className="text-sm text-muted-foreground">{rec}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
-}
 
 function CreateSurveyWizard() {
   const [objective, setObjective] = useState('');
@@ -274,15 +188,113 @@ function CreateSurveyWizard() {
   )
 }
 
+const mockResponses = [
+    "I feel like my work isn't valued.",
+    "Better work-life balance would be great.",
+    "Communication from leadership has been unclear lately.",
+    "I enjoy my team, but the overall company morale seems low.",
+    "The recent re-org has caused a lot of confusion and stress.",
+    "I appreciate the flexible work hours.",
+    "It's hard to see a clear career path from my current position.",
+    "My manager is supportive, but they seem just as overworked as we are.",
+];
+
+function SurveyResults({ survey }: { survey: DeployedSurvey }) {
+    const [summary, setSummary] = useState<SummarizeSurveyResultsOutput | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleAnalyze = () => {
+        setIsLoading(true);
+        setError(null);
+        summarizeSurveyResults({ surveyObjective: survey.objective, anonymousResponses: mockResponses })
+            .then(setSummary)
+            .catch(err => {
+                console.error("Failed to summarize results", err);
+                setError("Could not generate an AI summary at this time.");
+            })
+            .finally(() => setIsLoading(false));
+    }
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h3 className="font-semibold text-lg flex items-center gap-2 mb-2">
+                    <Eye className="h-5 w-5 text-primary" />
+                    Raw Responses ({mockResponses.length} total)
+                </h3>
+                <div className="max-h-60 overflow-y-auto space-y-2 rounded-md border bg-muted/50 p-3">
+                    {mockResponses.map((res, i) => (
+                        <div key={i} className="flex items-start gap-2 p-2 border-b last:border-b-0">
+                            <MessageSquare className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                            <p className="text-sm text-foreground">{res}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {survey.status === 'closed' && (
+                <div>
+                     <Button onClick={handleAnalyze} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 animate-spin" /> : <Bot className="mr-2" />}
+                        Analyse Responses
+                    </Button>
+
+                    {error && (
+                         <Alert variant="destructive" className="mt-4">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    {summary && (
+                        <Card className="mt-4">
+                             <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                <Bot className="text-primary" /> AI Summary
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-foreground">Overall Sentiment</h4>
+                                    <p className="text-sm text-muted-foreground">{summary.overallSentiment}</p>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-foreground">Key Themes</h4>
+                                    <ul className="list-disc pl-5 space-y-2 mt-2">
+                                        {summary.keyThemes.map((theme, i) => (
+                                            <li key={i}>
+                                                <span className="font-semibold">{theme.theme}</span>
+                                                <p className="text-sm text-muted-foreground">{theme.summary}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-foreground">Actionable Recommendations</h4>
+                                    <ul className="list-disc pl-5 space-y-2 mt-2">
+                                        {summary.recommendations.map((rec, i) => (
+                                            <li key={i} className="text-sm text-muted-foreground">{rec}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ActiveSurveys() {
     const [surveys, setSurveys] = useState<DeployedSurvey[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedSurvey, setSelectedSurvey] = useState<DeployedSurvey | null>(null);
+    const { toast } = useToast();
 
     const fetchSurveys = useCallback(async () => {
         setIsLoading(true);
-        const activeSurveys = await getActiveSurveys();
-        setSurveys(activeSurveys);
+        const allSurveys = await getAllSurveys();
+        setSurveys(allSurveys);
         setIsLoading(false);
     }, []);
 
@@ -296,6 +308,11 @@ function ActiveSurveys() {
             window.removeEventListener('feedbackUpdated', handleStorageChange);
         };
     }, [fetchSurveys]);
+    
+    const handleCloseSurvey = async (surveyId: string) => {
+        await closeSurvey(surveyId);
+        toast({ title: "Survey Closed", description: "The survey is no longer accepting new responses." });
+    }
 
     if (isLoading) {
         return <Skeleton className="h-32 w-full" />;
@@ -306,45 +323,48 @@ function ActiveSurveys() {
     }
 
     return (
-        <>
-            <SurveyResultsDialog 
-                survey={selectedSurvey} 
-                open={!!selectedSurvey} 
-                onOpenChange={() => setSelectedSurvey(null)} 
-            />
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <ListChecks /> Active Surveys
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {surveys.map(survey => (
-                        <Card key={survey.id} className="bg-card-foreground/5">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-lg">{survey.objective}</CardTitle>
-                                <CardDescription>
-                                    Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1.5">
-                                    <Activity />
-                                    <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <ListChecks /> Deployed Surveys
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="single" collapsible className="w-full space-y-3">
+                     {surveys.map(survey => (
+                         <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
+                            <AccordionTrigger className="p-4 hover:no-underline">
+                                <div className="flex justify-between items-center w-full">
+                                    <div className="text-left">
+                                        <p className="font-semibold text-lg text-foreground">{survey.objective}</p>
+                                        <p className="text-sm font-normal text-muted-foreground">
+                                            Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
+                                        </p>
+                                    </div>
+                                     <div className="flex items-center gap-4 pr-2">
+                                         <div className="flex items-center gap-1.5 text-sm">
+                                            <Activity />
+                                            <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                        </div>
+                                         <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
+                                            {survey.status === 'active' ? 'Active' : 'Closed'}
+                                        </Badge>
+                                        {survey.status === 'active' && (
+                                            <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
+                                                <XCircle className="mr-2 h-4 w-4" /> Close Survey
+                                            </Button>
+                                        )}
+                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <ListChecks />
-                                    <span className="font-semibold text-foreground">{survey.questions.length}</span> Questions
-                                </div>
-                            </CardContent>
-                            <CardFooter>
-                                <Button variant="secondary" size="sm" onClick={() => setSelectedSurvey(survey)}>View Results</Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </CardContent>
-            </Card>
-        </>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 pt-2 border-t">
+                                <SurveyResults survey={survey} />
+                            </AccordionContent>
+                        </AccordionItem>
+                     ))}
+                </Accordion>
+            </CardContent>
+        </Card>
     );
 }
 
