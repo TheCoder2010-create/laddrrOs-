@@ -67,6 +67,14 @@ export async function sendLeadershipPulse(surveyData: { objective: string, quest
             allFeedback.unshift(newPulseSurvey as Feedback);
         }
     }
+    
+    const allSurveys = getFromStorage<DeployedSurvey>(SURVEY_KEY);
+    const activeSurvey = allSurveys.find(s => s.status === 'closed' && !s.leadershipPulseSent); // find the survey that was just analyzed
+    if(activeSurvey) {
+        activeSurvey.leadershipPulseSent = true;
+        saveToStorage(SURVEY_KEY, allSurveys);
+    }
+
 
     saveFeedbackToStorage(allFeedback);
 }
@@ -125,6 +133,16 @@ export async function closeSurvey(surveyId: string): Promise<void> {
     const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
     if (surveyIndex !== -1 && allSurveys[surveyIndex].status === 'active') {
         allSurveys[surveyIndex].status = 'closed';
+        saveToStorage(SURVEY_KEY, allSurveys);
+    }
+}
+
+export async function markLeadershipPulseAsAnalyzed(surveyId: string, recommendations: any, summary: any): Promise<void> {
+    const allSurveys = getFromStorage<DeployedSurvey>(SURVEY_KEY);
+    const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
+    if(surveyIndex !== -1) {
+        allSurveys[surveyIndex].coachingRecommendations = recommendations;
+        allSurveys[surveyIndex].summary = summary;
         saveToStorage(SURVEY_KEY, allSurveys);
     }
 }

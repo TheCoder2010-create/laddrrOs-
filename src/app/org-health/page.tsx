@@ -7,7 +7,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -17,9 +17,10 @@ import { useToast } from '@/hooks/use-toast';
 import { generateSurveyQuestions } from '@/ai/flows/generate-survey-questions-flow';
 import { summarizeSurveyResults, type SummarizeSurveyResultsOutput } from '@/ai/flows/summarize-survey-results-flow';
 import { generateLeadershipPulse } from '@/ai/flows/generate-leadership-pulse-flow';
+import { summarizeLeadershipPulse } from '@/ai/flows/summarize-leadership-pulse-flow';
 import type { GenerateLeadershipPulseOutput, LeadershipQuestion } from '@/ai/schemas/leadership-pulse-schemas';
 import type { SurveyQuestion, DeployedSurvey } from '@/ai/schemas/survey-schemas';
-import { deploySurvey, getAllSurveys, closeSurvey, sendLeadershipPulse } from '@/services/survey-service';
+import { deploySurvey, getAllSurveys, closeSurvey, sendLeadershipPulse, markLeadershipPulseAsAnalyzed } from '@/services/survey-service';
 import { v4 as uuidv4 } from 'uuid';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -218,7 +219,23 @@ const mockResponses: Record<string, string>[] = [
     },
 ];
 
-function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }: { open: boolean, onOpenChange: (open: boolean) => void, summary: SummarizeSurveyResultsOutput | null, surveyObjective: string }) {
+const mockLeadershipResponses = {
+    'Team Lead': [
+        "My team seems okay, but I've heard some chatter about workloads.",
+        "I try to give recognition, but I'm often too busy with my own deliverables.",
+    ],
+    'AM': [
+        "The Team Leads seem stretched thin, which might be impacting how they manage their teams.",
+        "We need a clearer process for project planning to avoid last-minute crunches.",
+    ],
+    'Manager': [
+        "Cross-department dependencies are causing a lot of friction and rework.",
+        "I'm concerned about the lack of visibility into project pipelines.",
+    ]
+};
+
+
+function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective, onPulseSent }: { open: boolean, onOpenChange: (open: boolean) => void, summary: SummarizeSurveyResultsOutput | null, surveyObjective: string, onPulseSent: () => void }) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pulseData, setPulseData] = useState<GenerateLeadershipPulseOutput | null>(null);
@@ -314,6 +331,7 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
                 }
             });
             toast({ title: "Leadership Pulse Sent", description: "Leaders have been notified in their Messages." });
+            onPulseSent();
             onOpenChange(false);
         } catch (e) {
             toast({ variant: 'destructive', title: "Failed to send", description: "Could not send the leadership pulse." });
@@ -417,11 +435,22 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
     )
 }
 
-function SurveyResults({ survey }: { survey: DeployedSurvey }) {
-    const [summary, setSummary] = useState<SummarizeSurveyResultsOutput | null>(null);
+type CoachingRecommendation = {
+    theme: string;
+    recommendation: string;
+    targetAudience: string;
+}
+
+function SurveyResults({ survey, onPulseSent }: { survey: DeployedSurvey, onPulseSent: () => void }) {
+    const [summary, setSummary] = useState<SummarizeSurveyResultsOutput | null>(survey.summary || null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLeadershipPulseDialogOpen, setIsLeadershipPulseDialogOpen] = useState(false);
+    
+    // State for the final coaching analysis
+    const [isAnalyzingCoaching, setIsAnalyzingCoaching] = useState(false);
+    const [coachingRecs, setCoachingRecs] = useState<CoachingRecommendation[] | null>(survey.coachingRecommendations || null);
+    const { toast } = useToast();
 
     const handleAnalyze = () => {
         setIsLoading(true);
@@ -441,7 +470,6 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
         const headers = survey.questions.map(q => `"${q.questionText.replace(/"/g, '""')}"`).join(',');
         const rows = mockResponses.map(response => {
             return survey.questions.map((q, qIndex) => {
-                // The mock data keys are 'q1', 'q2', etc.
                 const questionKey = `q${qIndex + 1}`;
                 const answer = response[questionKey] || '';
                 return `"${answer.replace(/"/g, '""')}"`;
@@ -461,6 +489,22 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
             document.body.removeChild(link);
         }
     };
+    
+    const handleAnalyzeLeadershipResponses = () => {
+        if (!summary) return;
+        setIsAnalyzingCoaching(true);
+        summarizeLeadershipPulse({ anonymousSurveySummary: summary, leadershipResponses: mockLeadershipResponses })
+            .then(result => {
+                setCoachingRecs(result.recommendations);
+                markLeadershipPulseAsAnalyzed(survey.id, result.recommendations, summary);
+                toast({ title: "Analysis Complete", description: "Coaching recommendations have been generated."});
+            })
+            .catch(err => {
+                console.error("Failed to analyze leadership pulse", err);
+                toast({ variant: 'destructive', title: "Analysis Failed" });
+            })
+            .finally(() => setIsAnalyzingCoaching(false));
+    };
 
 
     return (
@@ -470,6 +514,7 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
                 onOpenChange={setIsLeadershipPulseDialogOpen}
                 summary={summary}
                 surveyObjective={survey.objective}
+                onPulseSent={onPulseSent}
             />
 
             <div>
@@ -511,10 +556,12 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
 
             {survey.status === 'closed' && (
                 <div>
-                     <Button onClick={handleAnalyze} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 animate-spin" /> : <Bot className="mr-2" />}
-                        Analyse Responses
-                    </Button>
+                     {!summary && (
+                        <Button onClick={handleAnalyze} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 animate-spin" /> : <Bot className="mr-2" />}
+                            Analyze Anonymous Responses
+                        </Button>
+                     )}
 
                     {error && (
                          <Alert variant="destructive" className="mt-4">
@@ -527,9 +574,18 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
                              <CardHeader>
                                 <CardTitle className="flex items-center justify-between">
                                     <span className="flex items-center gap-2"><Bot className="text-primary" /> AI Summary & Actions</span>
-                                     <Button onClick={() => setIsLeadershipPulseDialogOpen(true)}>
-                                        <Users className="mr-2 h-4 w-4" /> Generate Leadership Pulse
-                                    </Button>
+                                     {survey.leadershipPulseSent ? (
+                                        !coachingRecs && (
+                                            <Button onClick={handleAnalyzeLeadershipResponses} disabled={isAnalyzingCoaching}>
+                                                {isAnalyzingCoaching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                                Analyze Leadership Responses
+                                            </Button>
+                                        )
+                                     ) : (
+                                        <Button onClick={() => setIsLeadershipPulseDialogOpen(true)}>
+                                            <Users className="mr-2 h-4 w-4" /> Generate Leadership Pulse
+                                        </Button>
+                                     )}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -559,13 +615,32 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
                             </CardContent>
                         </Card>
                     )}
+
+                    {coachingRecs && (
+                        <Card className="mt-4 border-purple-500/50">
+                            <CardHeader className="bg-purple-500/10">
+                                <CardTitle className="text-purple-700 dark:text-purple-400 flex items-center gap-2">
+                                    <BrainCircuit /> Final Coaching Recommendations
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6 space-y-3">
+                                {coachingRecs.map((rec, i) => (
+                                    <div key={i} className="p-3 border rounded-md">
+                                        <p className="font-semibold">{rec.theme}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">{rec.recommendation}</p>
+                                        <Badge variant="secondary" className="mt-2">{rec.targetAudience}</Badge>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             )}
         </div>
     );
 }
 
-function ActiveSurveys() {
+function ActiveSurveys({ onUpdate }: { onUpdate: () => void }) {
     const [surveys, setSurveys] = useState<DeployedSurvey[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
@@ -579,13 +654,6 @@ function ActiveSurveys() {
 
     useEffect(() => {
         fetchSurveys();
-        const handleDataUpdate = () => fetchSurveys();
-        window.addEventListener('storage', handleDataUpdate);
-        window.addEventListener('feedbackUpdated', handleDataUpdate);
-        return () => {
-            window.removeEventListener('storage', handleDataUpdate);
-            window.removeEventListener('feedbackUpdated', handleDataUpdate);
-        };
     }, [fetchSurveys]);
     
     const handleCloseSurvey = async (surveyId: string) => {
@@ -613,36 +681,36 @@ function ActiveSurveys() {
                 <Accordion type="single" collapsible className="w-full space-y-3">
                      {surveys.map(survey => (
                          <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
-                            <div className="flex justify-between items-center w-full p-4">
-                                <AccordionTrigger className="p-0 flex-1 hover:no-underline">
+                            <AccordionTrigger className="p-4 hover:no-underline w-full">
+                                <div className="flex justify-between items-center w-full">
                                     <div className="text-left">
                                         <p className="font-semibold text-lg text-foreground">{survey.objective}</p>
                                         <p className="text-sm font-normal text-muted-foreground">
                                             Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
                                         </p>
                                     </div>
-                                </AccordionTrigger>
-                                <div className="flex items-center gap-4 pl-4">
-                                     <div className="flex items-center gap-1.5 text-sm">
-                                        <Activity />
-                                        <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                    <div className="flex items-center gap-4 pl-4">
+                                        <div className="flex items-center gap-1.5 text-sm">
+                                            <Activity />
+                                            <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-sm">
+                                            <UserX />
+                                            <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
+                                        </div>
+                                        <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
+                                            {survey.status === 'active' ? 'Active' : 'Closed'}
+                                        </Badge>
+                                        {survey.status === 'active' && (
+                                            <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
+                                                <XCircle className="mr-2 h-4 w-4" /> Close Survey
+                                            </Button>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-sm">
-                                        <UserX />
-                                        <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
-                                    </div>
-                                     <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
-                                        {survey.status === 'active' ? 'Active' : 'Closed'}
-                                    </Badge>
-                                    {survey.status === 'active' && (
-                                        <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
-                                            <XCircle className="mr-2 h-4 w-4" /> Close Survey
-                                        </Button>
-                                    )}
-                                 </div>
-                            </div>
+                                </div>
+                            </AccordionTrigger>
                             <AccordionContent className="p-4 pt-2 border-t">
-                                <SurveyResults survey={survey} />
+                                <SurveyResults survey={survey} onPulseSent={fetchSurveys} />
                             </AccordionContent>
                         </AccordionItem>
                      ))}
@@ -653,10 +721,10 @@ function ActiveSurveys() {
 }
 
 function OrgHealthContent() {
-  const [_, forceUpdate] = useState(0);
+  const [key, setKey] = useState(0);
 
   const handleSurveyDeployed = () => {
-    forceUpdate(c => c + 1); // Force re-render of ActiveSurveys
+    setKey(prev => prev + 1); // Force re-render of ActiveSurveys
   };
 
   return (
@@ -670,7 +738,7 @@ function OrgHealthContent() {
             </div>
         </div>
         
-        <ActiveSurveys />
+        <ActiveSurveys key={key} onUpdate={handleSurveyDeployed} />
         
         <CreateSurveyWizard onSurveyDeployed={handleSurveyDeployed} />
     </div>

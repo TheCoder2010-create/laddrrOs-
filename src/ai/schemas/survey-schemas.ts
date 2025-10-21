@@ -33,6 +33,9 @@ export const DeployedSurveySchema = z.object({
     status: z.enum(['active', 'closed']),
     submissionCount: z.number().default(0),
     optOutCount: z.number().default(0),
+    leadershipPulseSent: z.boolean().optional(),
+    summary: z.any().optional(),
+    coachingRecommendations: z.any().optional(),
 });
 export type DeployedSurvey = z.infer<typeof DeployedSurveySchema>;
 
