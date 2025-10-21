@@ -13,7 +13,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import type { Role } from '@/hooks/use-role';
 
 export async function generateBriefingPacket(input: { supervisorName: string; employeeName: string; viewerRole: Role; }): Promise<BriefingPacketOutput> {
-    // 1. Fetch all relevant data
+    // 1. Fetch all relevant data that can be fetched on the client before calling the server flow.
     const allHistory = await getOneOnOneHistory();
     const supervisorActiveGoals = await getActiveCoachingPlansForUser(input.supervisorName);
 

@@ -34,7 +34,7 @@ export const BriefingPacketInputSchema = z.object({
   supervisorName: z.string().describe("The name of the supervisor."),
   employeeName: z.string().describe("The name of the employee."),
   viewerRole: z.custom<Role>().describe("The role of the person viewing the packet, e.g., 'Employee' or 'Team Lead'."),
-  // The following fields are populated by the server-side wrapper function before calling the AI
+  // The following fields are populated by the client-side wrapper function before calling the AI
   pastIssues: z.array(PastIssueSchema).optional().describe("Summaries from the last few 1-on-1 sessions."),
   actionItems: z.array(ActionItemSchema).optional().describe("A history of all action items, both pending and completed."),
   openCriticalInsights: z.array(CriticalInsightSchema).optional().describe("A list of any unresolved critical insights between the two individuals."),
