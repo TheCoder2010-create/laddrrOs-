@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { getLatestActiveSurvey, submitSurveyResponse, type DeployedSurvey } from '@/services/survey-service';
-import { FileQuestion, Send, CheckCircle, ArrowLeft } from 'lucide-react';
+import { FileQuestion, Send, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SurveyPage() {
