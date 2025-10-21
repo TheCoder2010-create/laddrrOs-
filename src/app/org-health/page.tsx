@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -16,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateSurveyQuestions } from '@/ai/flows/generate-survey-questions-flow';
 import { summarizeSurveyResults, type SummarizeSurveyResultsOutput } from '@/ai/flows/summarize-survey-results-flow';
 import { generateLeadershipPulse } from '@/ai/flows/generate-leadership-pulse-flow';
-import type { GenerateLeadershipPulseOutput } from '@/ai/schemas/leadership-pulse-schemas';
+import type { GenerateLeadershipPulseOutput, LeadershipQuestion } from '@/ai/schemas/leadership-pulse-schemas';
 import type { SurveyQuestion, DeployedSurvey } from '@/ai/schemas/survey-schemas';
 import { deploySurvey, getAllSurveys, closeSurvey, sendLeadershipPulse } from '@/services/survey-service';
 import { v4 as uuidv4 } from 'uuid';
@@ -221,6 +222,8 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pulseData, setPulseData] = useState<GenerateLeadershipPulseOutput | null>(null);
+    const [customQuestions, setCustomQuestions] = useState<Record<string, string>>({});
+
     const { toast } = useToast();
 
     useEffect(() => {
@@ -239,8 +242,31 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
         } else if (!open) {
             // Reset when dialog is closed
             setPulseData(null);
+            setCustomQuestions({});
         }
     }, [open, summary, surveyObjective, pulseData]);
+    
+    const handleAddCustomQuestion = (role: 'teamLeadQuestions' | 'amQuestions' | 'managerQuestions') => {
+        const questionText = customQuestions[role];
+        if (!questionText || !pulseData) return;
+
+        const newQuestion: LeadershipQuestion = {
+            id: uuidv4(),
+            questionText,
+            reasoning: 'Custom question added by HR Head.',
+            type: 'free-text', // Default type for custom questions
+        };
+
+        setPulseData(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                [role]: [...prev[role], newQuestion]
+            }
+        });
+        
+        setCustomQuestions(prev => ({ ...prev, [role]: '' }));
+    };
 
     const handleSendToLeaders = async () => {
         if (!pulseData) return;
@@ -263,23 +289,41 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
         }
     };
     
-    const renderQuestionList = (questions: SurveyQuestion[]) => (
+    const renderQuestionList = (questions: LeadershipQuestion[], roleKey: 'teamLeadQuestions' | 'amQuestions' | 'managerQuestions') => (
         <div className="py-4 max-h-[50vh] overflow-y-auto pr-4 space-y-4">
             {questions.map((q, index) => (
                 <div key={q.id} className="space-y-2">
-                     <Label>Question {index + 1}</Label>
+                     <Label className="flex items-center gap-2">
+                        {q.reasoning === 'Custom question added by HR Head.' ? <UserPlus className="h-4 w-4 text-primary"/> : <Bot className="h-4 w-4 text-muted-foreground"/>}
+                        Question {index + 1}
+                    </Label>
                     <div className="flex items-center gap-2">
-                        <Textarea defaultValue={q.questionText} onChange={(e) => {
-                            // This part is complex with state, for now we assume no edits
-                        }}/>
+                        <Textarea defaultValue={q.questionText} />
                         <Button variant="ghost" size="icon"><Edit className="h-4 w-4"/></Button>
                     </div>
-                    <p className="text-xs text-muted-foreground flex items-start gap-1.5 mt-1">
-                        <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                        <span>AI Rationale: {q.reasoning}</span>
-                    </p>
+                    {q.reasoning !== 'Custom question added by HR Head.' && (
+                        <p className="text-xs text-muted-foreground flex items-start gap-1.5 mt-1">
+                            <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            <span>AI Rationale: {q.reasoning}</span>
+                        </p>
+                    )}
                 </div>
             ))}
+             <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor={`custom-q-${roleKey}`}>Add a Custom Question</Label>
+                <div className="flex items-center gap-2">
+                    <Textarea
+                        id={`custom-q-${roleKey}`}
+                        placeholder="Type your question here..."
+                        value={customQuestions[roleKey] || ''}
+                        onChange={(e) => setCustomQuestions(prev => ({ ...prev, [roleKey]: e.target.value }))}
+                        rows={2}
+                    />
+                    <Button variant="outline" size="icon" onClick={() => handleAddCustomQuestion(roleKey)} disabled={!customQuestions[roleKey]}>
+                        <Plus />
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 
@@ -302,13 +346,13 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
                             <TabsTrigger value="manager">Manager</TabsTrigger>
                         </TabsList>
                         <TabsContent value="team-lead">
-                            {renderQuestionList(pulseData.teamLeadQuestions)}
+                            {renderQuestionList(pulseData.teamLeadQuestions, 'teamLeadQuestions')}
                         </TabsContent>
                          <TabsContent value="am">
-                            {renderQuestionList(pulseData.amQuestions)}
+                            {renderQuestionList(pulseData.amQuestions, 'amQuestions')}
                         </TabsContent>
                          <TabsContent value="manager">
-                            {renderQuestionList(pulseData.managerQuestions)}
+                            {renderQuestionList(pulseData.managerQuestions, 'managerQuestions')}
                         </TabsContent>
                     </Tabs>
                  )}
@@ -347,8 +391,9 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
     const handleDownloadCsv = () => {
         const headers = survey.questions.map(q => `"${q.questionText.replace(/"/g, '""')}"`).join(',');
         const rows = mockResponses.map(response => {
-            return survey.questions.map(q => {
-                const questionKey = `q${survey.questions.findIndex(sq => sq.id === q.id) + 1}`;
+            return survey.questions.map((q, qIndex) => {
+                // The mock data keys are 'q1', 'q2', etc.
+                const questionKey = `q${qIndex + 1}`;
                 const answer = response[questionKey] || '';
                 return `"${answer.replace(/"/g, '""')}"`;
             }).join(',');
@@ -609,3 +654,4 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
