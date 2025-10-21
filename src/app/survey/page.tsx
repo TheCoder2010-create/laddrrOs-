@@ -18,6 +18,7 @@ export default function SurveyPage() {
     const [responses, setResponses] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [submissionNumber, setSubmissionNumber] = useState<string | null>(null);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -50,6 +51,12 @@ export default function SurveyPage() {
         setIsSubmitting(true);
         try {
             await submitSurveyResponse(survey.id);
+            
+            // Generate a memorable 6-digit number (e.g., 123-456)
+            const num = Math.floor(100000 + Math.random() * 900000).toString();
+            const memorableNumber = `${num.substring(0, 3)}-${num.substring(3)}`;
+            setSubmissionNumber(memorableNumber);
+            
             setIsSubmitted(true);
             toast({
                 variant: 'success',
@@ -80,8 +87,15 @@ export default function SurveyPage() {
                         <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
                         <CardTitle className="text-2xl">Thank You!</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                         <p className="text-muted-foreground">Your anonymous response has been submitted successfully.</p>
+                        {submissionNumber && (
+                            <div className="p-4 bg-muted border rounded-lg">
+                                <p className="text-sm text-muted-foreground">Your Submission Number:</p>
+                                <p className="text-2xl font-bold font-mono tracking-widest text-primary">{submissionNumber}</p>
+                                <p className="text-xs text-muted-foreground mt-2">Please save this number for your records if you need to reference this submission.</p>
+                            </div>
+                        )}
                     </CardContent>
                     <CardFooter className="justify-center">
                         <Button asChild variant="outline">
