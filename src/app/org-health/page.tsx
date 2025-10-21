@@ -363,30 +363,30 @@ function ActiveSurveys() {
                 <Accordion type="single" collapsible className="w-full space-y-3">
                      {surveys.map(survey => (
                          <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
-                            <AccordionTrigger className="p-4 hover:no-underline">
-                                <div className="flex justify-between items-center w-full">
+                            <div className="flex justify-between items-center w-full p-4">
+                                <AccordionTrigger className="p-0 flex-1 hover:no-underline">
                                     <div className="text-left">
                                         <p className="font-semibold text-lg text-foreground">{survey.objective}</p>
                                         <p className="text-sm font-normal text-muted-foreground">
                                             Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
                                         </p>
                                     </div>
-                                     <div className="flex items-center gap-4 pr-2">
-                                         <div className="flex items-center gap-1.5 text-sm">
-                                            <Activity />
-                                            <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
-                                        </div>
-                                         <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
-                                            {survey.status === 'active' ? 'Active' : 'Closed'}
-                                        </Badge>
-                                        {survey.status === 'active' && (
-                                            <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
-                                                <XCircle className="mr-2 h-4 w-4" /> Close Survey
-                                            </Button>
-                                        )}
-                                     </div>
-                                </div>
-                            </AccordionTrigger>
+                                </AccordionTrigger>
+                                <div className="flex items-center gap-4 pl-4">
+                                     <div className="flex items-center gap-1.5 text-sm">
+                                        <Activity />
+                                        <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                    </div>
+                                     <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
+                                        {survey.status === 'active' ? 'Active' : 'Closed'}
+                                    </Badge>
+                                    {survey.status === 'active' && (
+                                        <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
+                                            <XCircle className="mr-2 h-4 w-4" /> Close Survey
+                                        </Button>
+                                    )}
+                                 </div>
+                            </div>
                             <AccordionContent className="p-4 pt-2 border-t">
                                 <SurveyResults survey={survey} />
                             </AccordionContent>
