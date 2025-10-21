@@ -2,7 +2,7 @@
 
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
-import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion, UserCog, ChevronRight, Scale, Building } from 'lucide-react';
+import { Briefcase, Users, UserCheck, ShieldCheck, ShieldQuestion, UserCog, ChevronRight, Scale, Building, FileQuestion } from 'lucide-react';
 import Header from './header';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -41,7 +41,7 @@ const roleDetails = {
 };
 
 export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
-  const { availableRoles } = useRole();
+  const { availableRoles, activeSurveyExists } = useRole();
   const standardRoles = availableRoles;
 
   const RoleTile = ({ role }: { role: Role }) => {
@@ -80,6 +80,38 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
             {standardRoles.map((role) => (
               <RoleTile key={role} role={role} />
             ))}
+
+            {activeSurveyExists && (
+                <>
+                    <div className="relative my-2">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                            OR
+                            </span>
+                        </div>
+                    </div>
+                    <button
+                        // onClick={() => router.push('/survey')} // This would navigate to a survey page
+                        className={cn(
+                        "group relative w-full text-left rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
+                        "bg-teal-500/10 hover:bg-teal-500/20 hover:-translate-y-1 hover:shadow-2xl hover:shadow-teal-500/20",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        "p-4"
+                        )}
+                    >
+                        <div className="flex items-center gap-4">
+                            <FileQuestion className="h-6 w-6 text-teal-500" />
+                            <div>
+                                <p className="font-semibold text-foreground">Take Active Survey</p>
+                                <p className="text-sm text-muted-foreground">Submit your anonymous response.</p>
+                            </div>
+                        </div>
+                    </button>
+                </>
+            )}
           </CardContent>
         </Card>
       </main>

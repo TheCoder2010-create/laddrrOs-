@@ -75,6 +75,9 @@ function CreateSurveyWizard() {
         objective,
         questions: finalQuestions,
     });
+
+    // Set a flag in sessionStorage to indicate an active survey exists
+    sessionStorage.setItem('active_survey_exists', 'true');
     
     toast({ variant: 'success', title: "Survey Deployed!", description: "Your anonymous survey is now active."});
     
