@@ -20,7 +20,7 @@ import { generateLeadershipPulse } from '@/ai/flows/generate-leadership-pulse-fl
 import { summarizeLeadershipPulse } from '@/ai/flows/summarize-leadership-pulse-flow';
 import type { GenerateLeadershipPulseOutput, LeadershipQuestion } from '@/ai/schemas/leadership-pulse-schemas';
 import type { SurveyQuestion, DeployedSurvey } from '@/ai/schemas/survey-schemas';
-import { deploySurvey, getAllSurveys, closeSurvey, sendLeadershipPulse, markLeadershipPulseAsAnalyzed } from '@/services/survey-service';
+import { deploySurvey, getAllSurveys, closeSurvey, sendLeadershipPulse, markLeadershipPulseAsAnalyzed, saveSurveySummary } from '@/services/survey-service';
 import { v4 as uuidv4 } from 'uuid';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -266,8 +266,8 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective, o
         }
     }, [open, summary, surveyObjective, pulseData]);
     
-    const handleAddCustomQuestion = (role: 'teamLeadQuestions' | 'amQuestions' | 'managerQuestions') => {
-        const questionText = customQuestions[role];
+    const handleAddCustomQuestion = (roleKey: 'teamLeadQuestions' | 'amQuestions' | 'managerQuestions') => {
+        const questionText = customQuestions[roleKey];
         if (!questionText || !pulseData) return;
 
         const newQuestion: LeadershipQuestion = {
@@ -281,11 +281,11 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective, o
             if (!prev) return null;
             return {
                 ...prev,
-                [role]: [...prev[role], newQuestion]
+                [roleKey]: [...prev[roleKey], newQuestion]
             }
         });
         
-        setCustomQuestions(prev => ({ ...prev, [role]: '' }));
+        setCustomQuestions(prev => ({ ...prev, [roleKey]: '' }));
     };
     
     const handleGenerateTargetedQuestion = async (roleKey: 'teamLeadQuestions' | 'amQuestions' | 'managerQuestions') => {
@@ -327,7 +327,10 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective, o
                 questions: {
                     'Team Lead': pulseData.teamLeadQuestions,
                     'AM': pulseData.amQuestions,
-                    'Manager': pulseData.managerQuestions
+                    'Manager': pulseData.managerQuestions,
+                    'Employee': [], // Ensure all keys are present if needed elsewhere
+                    'HR Head': [],
+                    'Anonymous': [],
                 }
             });
             toast({ title: "Leadership Pulse Sent", description: "Leaders have been notified in their Messages." });
@@ -441,24 +444,32 @@ type CoachingRecommendation = {
     targetAudience: string;
 }
 
-function SurveyResults({ survey, onPulseSent }: { survey: DeployedSurvey, onPulseSent: () => void }) {
+function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: DeployedSurvey, onPulseSent: () => void, onSurveyUpdated: () => void }) {
     const [summary, setSummary] = useState<SummarizeSurveyResultsOutput | null>(survey.summary || null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLeadershipPulseDialogOpen, setIsLeadershipPulseDialogOpen] = useState(false);
     
-    // State for the final coaching analysis
     const [isAnalyzingCoaching, setIsAnalyzingCoaching] = useState(false);
     const [coachingRecs, setCoachingRecs] = useState<CoachingRecommendation[] | null>(survey.coachingRecommendations || null);
     const { toast } = useToast();
 
+    useEffect(() => {
+        setSummary(survey.summary || null);
+        setCoachingRecs(survey.coachingRecommendations || null);
+    }, [survey]);
+
     const handleAnalyze = () => {
         setIsLoading(true);
         setError(null);
-        // Flatten responses for the AI summary
+        
         const flatResponses = mockResponses.flatMap(res => Object.values(res));
         summarizeSurveyResults({ surveyObjective: survey.objective, anonymousResponses: flatResponses })
-            .then(setSummary)
+            .then(async (result) => {
+                setSummary(result);
+                await saveSurveySummary(survey.id, result);
+                onSurveyUpdated();
+            })
             .catch(err => {
                 console.error("Failed to summarize results", err);
                 setError("Could not generate an AI summary at this time.");
@@ -467,15 +478,22 @@ function SurveyResults({ survey, onPulseSent }: { survey: DeployedSurvey, onPuls
     }
     
     const handleDownloadCsv = () => {
+        if (!survey || !survey.questions || survey.questions.length === 0) {
+            toast({ variant: 'destructive', title: "No questions to download." });
+            return;
+        }
+    
+        // Since mockResponses uses generic keys 'q1', 'q2', etc., we map them by index
         const headers = survey.questions.map(q => `"${q.questionText.replace(/"/g, '""')}"`).join(',');
+        
         const rows = mockResponses.map(response => {
-            return survey.questions.map((q) => {
-                const questionKey = q.id!;
+            return survey.questions.map((q, index) => {
+                const questionKey = `q${index + 1}`; // Assuming keys are q1, q2, ...
                 const answer = response[questionKey] || '';
                 return `"${answer.replace(/"/g, '""')}"`;
             }).join(',');
         });
-
+    
         const csvContent = [headers, ...rows].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -498,6 +516,7 @@ function SurveyResults({ survey, onPulseSent }: { survey: DeployedSurvey, onPuls
                 setCoachingRecs(result.recommendations);
                 markLeadershipPulseAsAnalyzed(survey.id, result.recommendations, summary);
                 toast({ title: "Analysis Complete", description: "Coaching recommendations have been generated."});
+                onSurveyUpdated();
             })
             .catch(err => {
                 console.error("Failed to analyze leadership pulse", err);
@@ -539,8 +558,8 @@ function SurveyResults({ survey, onPulseSent }: { survey: DeployedSurvey, onPuls
                         <TableBody>
                             {mockResponses.map((response, index) => (
                                 <TableRow key={index}>
-                                    {survey.questions.map((q) => {
-                                        const questionKey = q.id!;
+                                    {survey.questions.map((q, qIndex) => {
+                                        const questionKey = `q${qIndex + 1}`;
                                         return (
                                             <TableCell key={q.id} className="text-sm">
                                                 {response[questionKey] || 'No answer'}
@@ -710,7 +729,7 @@ function ActiveSurveys({ onUpdate }: { onUpdate: () => void }) {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 pt-2 border-t">
-                                <SurveyResults survey={survey} onPulseSent={fetchSurveys} />
+                                <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={fetchSurveys} />
                             </AccordionContent>
                         </AccordionItem>
                      ))}
@@ -724,7 +743,7 @@ function OrgHealthContent() {
   const [key, setKey] = useState(0);
 
   const handleSurveyDeployed = () => {
-    setKey(prev => prev + 1); // Force re-render of ActiveSurveys
+    setKey(prev => prev + 1);
   };
 
   return (

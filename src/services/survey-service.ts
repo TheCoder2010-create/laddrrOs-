@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { DeployedSurvey, SurveyQuestion } from '@/ai/schemas/survey-schemas';
+import type { DeployedSurvey, SummarizeSurveyResultsOutput, SurveyQuestion } from '@/ai/schemas/survey-schemas';
 import type { Feedback } from '@/services/feedback-service';
 import { getFeedbackFromStorage, saveFeedbackToStorage } from './feedback-service';
 import type { Role } from '@/hooks/use-role';
@@ -50,6 +51,8 @@ export async function sendLeadershipPulse(surveyData: { objective: string, quest
     const allFeedback = getFeedbackFromStorage();
     
     for (const role in surveyData.questions) {
+        if (role === 'Employee' || role === 'Anonymous') continue;
+
         const questionsForRole = surveyData.questions[role as Role];
         if (questionsForRole && questionsForRole.length > 0) {
             const newPulseSurvey: Feedback = {
@@ -58,7 +61,7 @@ export async function sendLeadershipPulse(surveyData: { objective: string, quest
                 message: `Please respond to the following questions to help us understand the root causes of recent organizational feedback.\n\n**Objective:** ${surveyData.objective}`,
                 submittedAt: new Date(),
                 criticality: 'Medium',
-                status: 'Pending Manager Action', // A generic status that implies action is needed.
+                status: 'Pending Manager Action', 
                 assignedTo: [role as Role],
                 viewed: false,
                 // @ts-ignore
@@ -133,6 +136,18 @@ export async function closeSurvey(surveyId: string): Promise<void> {
     const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
     if (surveyIndex !== -1 && allSurveys[surveyIndex].status === 'active') {
         allSurveys[surveyIndex].status = 'closed';
+        saveToStorage(SURVEY_KEY, allSurveys);
+    }
+}
+
+/**
+ * Saves the AI-generated summary to the survey object.
+ */
+export async function saveSurveySummary(surveyId: string, summary: SummarizeSurveyResultsOutput): Promise<void> {
+    const allSurveys = getFromStorage<DeployedSurvey>(SURVEY_KEY);
+    const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
+    if (surveyIndex !== -1) {
+        allSurveys[surveyIndex].summary = summary;
         saveToStorage(SURVEY_KEY, allSurveys);
     }
 }
