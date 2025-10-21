@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -15,8 +15,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { generateSurveyQuestions } from '@/ai/flows/generate-survey-questions-flow';
 import { summarizeSurveyResults, type SummarizeSurveyResultsOutput } from '@/ai/flows/summarize-survey-results-flow';
+import { generateLeadershipPulse } from '@/ai/flows/generate-leadership-pulse-flow';
+import type { LeadershipQuestion } from '@/ai/schemas/leadership-pulse-schemas';
 import type { SurveyQuestion, DeployedSurvey } from '@/ai/schemas/survey-schemas';
-import { deploySurvey, getAllSurveys, closeSurvey } from '@/services/survey-service';
+import { deploySurvey, getAllSurveys, closeSurvey, sendLeadershipPulse } from '@/services/survey-service';
 import { v4 as uuidv4 } from 'uuid';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -28,9 +30,10 @@ import {
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
-function CreateSurveyWizard() {
+function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void }) {
   const [objective, setObjective] = useState('');
   const [suggestedQuestions, setSuggestedQuestions] = useState<SurveyQuestion[]>([]);
   const [selectedQuestions, setSelectedQuestions] = useState<Record<string, boolean>>({});
@@ -89,10 +92,11 @@ function CreateSurveyWizard() {
     
     toast({ variant: 'success', title: "Survey Deployed!", description: "Your anonymous survey is now active."});
     
-    // Reset state
+    // Reset state and notify parent
     setObjective('');
     setSuggestedQuestions([]);
     setSelectedQuestions({});
+    onSurveyDeployed();
   };
   
   const allQuestionsSelected = suggestedQuestions.length > 0 && suggestedQuestions.every(q => selectedQuestions[q.id!]);
@@ -212,10 +216,91 @@ const mockResponses: Record<string, string>[] = [
     },
 ];
 
+function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }: { open: boolean, onOpenChange: (open: boolean) => void, summary: SummarizeSurveyResultsOutput | null, surveyObjective: string }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [questions, setQuestions] = useState<LeadershipQuestion[]>([]);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (open && summary && questions.length === 0) {
+            setIsLoading(true);
+            setError(null);
+            generateLeadershipPulse({ anonymousSurveySummary: summary, surveyObjective })
+                .then(result => {
+                    setQuestions(result.questions);
+                })
+                .catch(err => {
+                    console.error("Failed to generate leadership pulse", err);
+                    setError("Could not generate leadership questions at this time.");
+                })
+                .finally(() => setIsLoading(false));
+        }
+    }, [open, summary, surveyObjective, questions.length]);
+
+    const handleSendToLeaders = async () => {
+        setIsLoading(true);
+        try {
+            await sendLeadershipPulse({
+                objective: `Follow-up on: ${surveyObjective}`,
+                questions: questions,
+            });
+            toast({ title: "Leadership Pulse Sent", description: "Leaders have been notified in their Messages." });
+            onOpenChange(false);
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Failed to send", description: "Could not send the leadership pulse." });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Users className="text-primary"/> Generate Leadership Pulse Survey</DialogTitle>
+                    <DialogDescription>
+                        AI has generated these questions for leadership based on the anonymous feedback. Review, edit, and send.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 max-h-[60vh] overflow-y-auto pr-4 space-y-4">
+                    {isLoading && <div className="flex justify-center items-center h-40"><Loader2 className="animate-spin" /></div>}
+                    {error && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+                    {questions.map((q, index) => (
+                        <div key={q.id} className="space-y-2">
+                             <Label>Question {index + 1}</Label>
+                            <div className="flex items-center gap-2">
+                                <Textarea value={q.questionText} onChange={(e) => {
+                                    const newQuestions = [...questions];
+                                    newQuestions[index].questionText = e.target.value;
+                                    setQuestions(newQuestions);
+                                }}/>
+                                <Button variant="ghost" size="icon"><Edit className="h-4 w-4"/></Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground flex items-start gap-1.5 mt-1">
+                                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                <span>AI Rationale: {q.reasoning}</span>
+                            </p>
+                        </div>
+                    ))}
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSendToLeaders} disabled={isLoading || questions.length === 0}>
+                        {isLoading && <Loader2 className="mr-2 animate-spin"/>}
+                        Send to Leaders
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 function SurveyResults({ survey }: { survey: DeployedSurvey }) {
     const [summary, setSummary] = useState<SummarizeSurveyResultsOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isLeadershipPulseDialogOpen, setIsLeadershipPulseDialogOpen] = useState(false);
 
     const handleAnalyze = () => {
         setIsLoading(true);
@@ -258,6 +343,13 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
 
     return (
         <div className="space-y-6">
+             <LeadershipPulseDialog 
+                open={isLeadershipPulseDialogOpen}
+                onOpenChange={setIsLeadershipPulseDialogOpen}
+                summary={summary}
+                surveyObjective={survey.objective}
+            />
+
             <div>
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="font-semibold text-lg flex items-center gap-2">
@@ -308,8 +400,11 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
                     {summary && (
                         <Card className="mt-4">
                              <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                <Bot className="text-primary" /> AI Summary
+                                <CardTitle className="flex items-center justify-between">
+                                    <span className="flex items-center gap-2"><Bot className="text-primary" /> AI Summary & Actions</span>
+                                     <Button onClick={() => setIsLeadershipPulseDialogOpen(true)}>
+                                        <Users className="mr-2 h-4 w-4" /> Generate Leadership Pulse
+                                    </Button>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -359,18 +454,19 @@ function ActiveSurveys() {
 
     useEffect(() => {
         fetchSurveys();
-        const handleStorageChange = () => fetchSurveys();
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('feedbackUpdated', handleStorageChange);
+        const handleDataUpdate = () => fetchSurveys();
+        window.addEventListener('storage', handleDataUpdate);
+        window.addEventListener('feedbackUpdated', handleDataUpdate);
         return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('feedbackUpdated', handleStorageChange);
+            window.removeEventListener('storage', handleDataUpdate);
+            window.removeEventListener('feedbackUpdated', handleDataUpdate);
         };
     }, [fetchSurveys]);
     
     const handleCloseSurvey = async (surveyId: string) => {
         await closeSurvey(surveyId);
         toast({ title: "Survey Closed", description: "The survey is no longer accepting new responses." });
+        fetchSurveys();
     }
 
     if (isLoading) {
@@ -432,6 +528,12 @@ function ActiveSurveys() {
 }
 
 function OrgHealthContent() {
+  const [_, forceUpdate] = useState(0);
+
+  const handleSurveyDeployed = () => {
+    forceUpdate(c => c + 1); // Force re-render of ActiveSurveys
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-8">
         <div className="flex justify-between items-start">
@@ -445,7 +547,7 @@ function OrgHealthContent() {
         
         <ActiveSurveys />
         
-        <CreateSurveyWizard />
+        <CreateSurveyWizard onSurveyDeployed={handleSurveyDeployed} />
     </div>
   );
 }
