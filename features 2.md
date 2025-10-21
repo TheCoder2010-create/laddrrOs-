@@ -192,7 +192,47 @@ This is a dedicated area for managers to manage structured training programs for
 
 ---
 
-## 9. Global UI Components & UX
+## 9. Feature: Org Health & Anonymous Surveys (HR Head Only)
+
+This feature provides the HR Head with a powerful, multi-phase tool to gauge organizational health, diagnose issues, and assign targeted coaching. The entire workflow is managed from the `/org-health` page.
+
+### 9.1. Phase 1: Anonymous Survey Creation & Deployment
+- **Objective-Driven Creation**: The HR Head starts by defining a clear objective for the survey (e.g., "Assess team morale after the recent re-organization").
+- **AI-Powered Question Generation**:
+    - **AI Flow**: `generate-survey-questions-flow.ts`.
+    - **Process**: The objective is sent to an AI, which returns a list of 5-7 relevant, neutrally-worded survey questions, each with a justification for why it's being asked.
+- **Curation and Customization**: The HR Head can review the AI's suggestions, deselect any they don't want, and add their own custom questions to the list.
+- **Deployment**: Once finalized, the survey is "deployed." This creates a `DeployedSurvey` object in `sessionStorage` (managed by `survey-service.ts`) with an `active` status.
+
+### 9.2. Phase 2: Anonymous Feedback Analysis & Leadership Pulse
+- **Employee Response**: Any user can navigate to the `/survey` page to see and respond to the single active survey. Responses are anonymous (in the mock app, this just increments a counter).
+- **AI-Powered Summary**:
+    - **Trigger**: Once the HR Head closes the survey, an "Analyze Anonymous Responses" button appears.
+    - **AI Flow**: `summarize-survey-results-flow.ts`.
+    - **Process**: The flow receives all the (mock) anonymous text responses and generates a high-level `SummarizeSurveyResultsOutput` object, which includes the overall sentiment, key themes, and initial recommendations. This summary is then saved back to the `DeployedSurvey` object in storage.
+- **Leadership Pulse Generation**:
+    - **Trigger**: With the AI summary in hand, a "Generate Leadership Pulse" button becomes active.
+    - **AI Flow**: `generate-leadership-pulse-flow.ts`.
+    - **Process**: This flow is given the AI summary and is tasked with creating distinct sets of follow-up questions for Team Leads, AMs, and Managers to diagnose the root causes of the employee feedback.
+- **Leadership Pulse Curation and Deployment**:
+    - The HR Head can review the AI-generated questions for each leadership role in a tabbed interface. They can edit them, add new custom questions, or use a special AI-powered tool to generate a targeted question from a specific insight (e.g., input "low work-life balance score" to get a relevant question).
+    - **Trigger**: Clicking "Send to Leaders".
+    - **Process**: The `sendLeadershipPulse` function in `survey-service.ts` creates new items in the main `feedback-service` storage. Each item is a `Feedback` object with a `Pending Manager Action` status, assigned to the corresponding leadership role (e.g., one for all 'Team Lead's, one for 'AM's), containing their unique set of questions.
+
+### 9.3. Phase 3: Leadership Response Analysis & Coaching Assignment
+- **Leader Response**: Leaders see the pulse survey as a new item on their `/messages` page. They fill out their responses (free-text in the prototype).
+- **Final AI Analysis**:
+    - **Trigger**: Once responses are collected (simulated), an "Analyze Leadership Responses" button appears for the HR Head on the `/org-health` page.
+    - **AI Flow**: `summarize-leadership-pulse-flow.ts`.
+    - **Process**: This final flow analyzes the original employee feedback summary *and* the leaders' responses to connect the dots. It returns a list of specific, actionable coaching recommendations, each with a target audience (e.g., "All Team Leads" or a specific individual like "Ben Carter").
+- **Coaching Assignment**:
+    - **Trigger**: The HR Head clicks an "Assign Task" button next to a recommendation.
+    - **Process**: This calls the `assignCoachingFromOrgHealth` function in the `org-coaching-service.ts`. It creates a new `OrgCoachingItem` and saves it to storage.
+- **Closing the Loop**: The `getActiveCoachingPlansForUser` function in `feedback-service.ts` (which powers the "Active Development Plan" widget) is configured to also fetch and display these newly assigned `OrgCoachingItem`s. This means an assigned task from the HR Head immediately appears in the target leader's personal development plan.
+
+---
+
+## 10. Global UI Components & UX
 
 - **Theming**: Supports both light and dark modes, managed by `next-themes`.
 - **Styling**: Uses `Tailwind CSS` and `ShadCN/UI` components for a consistent design system.
