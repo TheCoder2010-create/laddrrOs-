@@ -10,7 +10,7 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2, Check, Plus, Calendar as CalendarIcon, NotebookPen, Bot } from 'lucide-react';
+import { Activity, BookOpen, Podcast, Newspaper, GraduationCap, Lightbulb, History, MessageSquare, Loader2, Check, Plus, Calendar as CalendarIcon, NotebookPen, Bot, HeartPulse } from 'lucide-react';
 import { useDebouncedCallback } from 'use-debounce';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { generateDevelopmentSuggestion } from '@/ai/flows/generate-development-suggestion-flow';
 import type { DevelopmentSuggestionOutput } from '@/ai/schemas/development-suggestion-schemas';
 import { AiGenieIcon } from '../ui/ai-genie-icon';
+import Link from 'next/link';
 
 const RecommendationIcon = ({ type }: { type: CoachingRecommendation['type'] }) => {
     switch (type) {
@@ -539,6 +540,14 @@ export default function DevelopmentPlanWidget() {
                             Active Development Plan
                         </CardTitle>
                         <div className="flex items-center gap-1">
+                             {role === 'HR Head' && (
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href="/org-health">
+                                        <HeartPulse className="mr-2 h-4 w-4"/>
+                                        Assign Tasks
+                                    </Link>
+                                </Button>
+                             )}
                             <Button variant="ghost" size="icon" onClick={() => setIsSuggestPlanDialogOpen(true)} className="hover:bg-transparent transition-transform hover:scale-125">
                                 <AiGenieIcon className="h-7 w-7 text-primary" />
                             </Button>
