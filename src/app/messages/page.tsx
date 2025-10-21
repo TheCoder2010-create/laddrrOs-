@@ -18,6 +18,68 @@ import { CriticalCoachingInsight, CoachingRecommendation } from '@/ai/schemas/on
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
+import type { SurveyQuestion } from '@/ai/schemas/survey-schemas';
+
+function LeadershipPulseWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void }) {
+    // @ts-ignore
+    const questions: SurveyQuestion[] = item.surveyQuestions || [];
+    const [responses, setResponses] = useState<Record<string, string>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+    const { role } = useRole();
+
+    const allQuestionsAnswered = questions.every(q => responses[q.id!] && responses[q.id!].trim() !== '');
+
+    const handleSubmit = async () => {
+        setIsSubmitting(true);
+        try {
+            const resolutionMessage = `Leadership Pulse submitted with ${Object.keys(responses).length} responses.`;
+            await resolveFeedback(item.trackingId, role!, resolutionMessage);
+            toast({ title: "Pulse Submitted", description: "Thank you for your valuable input." });
+            onUpdate();
+        } catch (error) {
+            console.error("Failed to submit pulse survey:", error);
+            toast({ variant: 'destructive', title: "Submission Failed" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    return (
+        <Card className="border-purple-500/50">
+            <CardHeader className="bg-purple-500/10">
+                <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                    <MessageCircleQuestion className="h-6 w-6" />
+                    Leadership Pulse Survey
+                </CardTitle>
+                <CardDescription>
+                    {item.message}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+                {questions.map((q, index) => (
+                    <div key={q.id} className="space-y-2">
+                        <Label htmlFor={`lp-q-${q.id}`} className="font-semibold">Question {index + 1}</Label>
+                        <p className="text-sm">{q.questionText}</p>
+                        <Textarea
+                            id={`lp-q-${q.id}`}
+                            placeholder="Your thoughtful response..."
+                            value={responses[q.id!] || ''}
+                            onChange={(e) => setResponses(prev => ({...prev, [q.id!]: e.target.value}))}
+                            rows={3}
+                        />
+                    </div>
+                ))}
+            </CardContent>
+            <CardFooter>
+                 <Button onClick={handleSubmit} disabled={isSubmitting || !allQuestionsAnswered}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Pulse
+                </Button>
+            </CardFooter>
+        </Card>
+    );
+}
 
 function GeneralNotificationWidget({ item, onUpdate }: { item: Feedback, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -160,6 +222,12 @@ function MessagesContent({ role }: { role: Role }) {
         if (item.status === 'Pending Employee Acknowledgment' && item.submittedBy === role) {
             userActiveMessages.push(item);
         }
+        
+        // Active "Leadership Pulse" surveys
+        // @ts-ignore
+        if (item.status === 'Pending Manager Action' && isAssignedToMe && item.surveyQuestions) {
+            userActiveMessages.push(item);
+        }
 
         // Acknowledged History items
         if (item.status === 'Closed' && item.assignedTo?.includes(role)) {
@@ -192,6 +260,10 @@ function MessagesContent({ role }: { role: Role }) {
   const hasActiveMessages = activeMessages.length > 0;
 
   const renderWidgets = (item: Feedback) => {
+    // @ts-ignore
+    if (item.surveyQuestions) {
+      return <LeadershipPulseWidget key={`${item.trackingId}-pulse`} item={item} onUpdate={fetchMessages} />;
+    }
     if (item.status === 'Pending Acknowledgement') {
         return <GeneralNotificationWidget key={`${item.trackingId}-info`} item={item} onUpdate={fetchMessages} />;
     }

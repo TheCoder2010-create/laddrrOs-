@@ -983,8 +983,8 @@ export async function resolveFeedback(trackingId: string, actor: Role, resolutio
 
     const feedback = allFeedback[feedbackIndex];
 
-    // For general notifications, we'll mark them as 'Closed' to keep them in history.
-    if (feedback.status === 'Pending Acknowledgement') {
+    // For general notifications and leadership pulses, we'll mark them as 'Closed' to keep them in history.
+    if (feedback.status === 'Pending Acknowledgement' || feedback.status === 'Pending Manager Action') {
         feedback.status = 'Closed';
     } else {
         feedback.status = 'Resolved';
