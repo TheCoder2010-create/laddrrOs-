@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -230,14 +230,44 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
             })
             .finally(() => setIsLoading(false));
     }
+    
+    const handleDownloadCsv = () => {
+        const headers = survey.questions.map(q => `"${q.questionText.replace(/"/g, '""')}"`).join(',');
+        const rows = mockResponses.map(response => {
+            return survey.questions.map(q => {
+                const questionKey = `q${survey.questions.findIndex(sq => sq.id === q.id) + 1}`;
+                const answer = response[questionKey] || '';
+                return `"${answer.replace(/"/g, '""')}"`;
+            }).join(',');
+        });
+
+        const csvContent = [headers, ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `survey_results_${survey.id}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
 
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="font-semibold text-lg flex items-center gap-2 mb-2">
-                    <Eye className="h-5 w-5 text-primary" />
-                    Raw Responses ({mockResponses.length} total)
-                </h3>
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                        <Eye className="h-5 w-5 text-primary" />
+                        Raw Responses ({mockResponses.length} total)
+                    </h3>
+                    <Button variant="outline" size="sm" onClick={handleDownloadCsv}>
+                        <Download className="mr-2 h-4 w-4" /> Download CSV
+                    </Button>
+                </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <Table>
                         <TableHeader>
@@ -252,7 +282,6 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
                                 <TableRow key={index}>
                                     {survey.questions.map(q => (
                                         <TableCell key={q.id} className="text-sm">
-                                            {/* We use a mock mapping here. In a real app, keys would match question IDs */}
                                             {response[`q${survey.questions.findIndex(sq => sq.id === q.id) + 1}`] || 'No answer'}
                                         </TableCell>
                                     ))}
