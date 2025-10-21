@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -14,10 +14,106 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { generateSurveyQuestions } from '@/ai/flows/generate-survey-questions-flow';
+import { summarizeSurveyResults, type SummarizeSurveyResultsOutput } from '@/ai/flows/summarize-survey-results-flow';
 import type { SurveyQuestion, DeployedSurvey } from '@/ai/schemas/survey-schemas';
 import { deploySurvey, getActiveSurveys } from '@/services/survey-service';
 import { v4 as uuidv4 } from 'uuid';
 import { format, formatDistanceToNow } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+
+function SurveyResultsDialog({ survey, open, onOpenChange }: { survey: DeployedSurvey | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    const [summary, setSummary] = useState<SummarizeSurveyResultsOutput | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (open && survey && !summary) {
+            setIsLoading(true);
+            setError(null);
+            
+            // Mock anonymous responses for the AI to summarize
+            const mockResponses = [
+                "I feel like my work isn't valued.",
+                "Better work-life balance would be great.",
+                "Communication from leadership has been unclear lately.",
+                "I enjoy my team, but the overall company morale seems low.",
+                "The recent re-org has caused a lot of confusion and stress.",
+                "I appreciate the flexible work hours.",
+            ];
+
+            summarizeSurveyResults({ surveyObjective: survey.objective, anonymousResponses: mockResponses })
+                .then(setSummary)
+                .catch(err => {
+                    console.error("Failed to summarize results", err);
+                    setError("Could not generate an AI summary at this time.");
+                })
+                .finally(() => setIsLoading(false));
+        }
+    }, [open, survey, summary]);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                       <Bot className="text-primary" /> AI Summary: {survey?.objective}
+                    </DialogTitle>
+                    <DialogDescription>
+                        An AI-generated thematic analysis of the anonymous survey responses.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 max-h-[60vh] overflow-y-auto pr-2 space-y-4">
+                    {isLoading && (
+                        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground h-48">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p>Analyzing responses...</p>
+                        </div>
+                    )}
+                    {error && (
+                         <Alert variant="destructive">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    {summary && (
+                        <div className="space-y-4">
+                             <div>
+                                <h4 className="font-semibold text-lg">Overall Sentiment</h4>
+                                <p className="text-sm text-muted-foreground">{summary.overallSentiment}</p>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-lg">Key Themes</h4>
+                                <ul className="list-disc pl-5 space-y-2 mt-2">
+                                    {summary.keyThemes.map((theme, i) => (
+                                        <li key={i}>
+                                            <span className="font-semibold">{theme.theme}</span>
+                                            <p className="text-sm text-muted-foreground">{theme.summary}</p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                             <div>
+                                <h4 className="font-semibold text-lg">Actionable Recommendations</h4>
+                                <ul className="list-disc pl-5 space-y-2 mt-2">
+                                    {summary.recommendations.map((rec, i) => (
+                                        <li key={i} className="text-sm text-muted-foreground">{rec}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 function CreateSurveyWizard() {
   const [objective, setObjective] = useState('');
@@ -181,6 +277,7 @@ function CreateSurveyWizard() {
 function ActiveSurveys() {
     const [surveys, setSurveys] = useState<DeployedSurvey[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedSurvey, setSelectedSurvey] = useState<DeployedSurvey | null>(null);
 
     const fetchSurveys = useCallback(async () => {
         setIsLoading(true);
@@ -209,38 +306,45 @@ function ActiveSurveys() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <ListChecks /> Active Surveys
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {surveys.map(survey => (
-                    <Card key={survey.id} className="bg-card-foreground/5">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">{survey.objective}</CardTitle>
-                            <CardDescription>
-                                Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                                <Activity />
-                                <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <ListChecks />
-                                <span className="font-semibold text-foreground">{survey.questions.length}</span> Questions
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button variant="secondary" size="sm">View Results</Button>
-                        </CardFooter>
-                    </Card>
-                ))}
-            </CardContent>
-        </Card>
+        <>
+            <SurveyResultsDialog 
+                survey={selectedSurvey} 
+                open={!!selectedSurvey} 
+                onOpenChange={() => setSelectedSurvey(null)} 
+            />
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ListChecks /> Active Surveys
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {surveys.map(survey => (
+                        <Card key={survey.id} className="bg-card-foreground/5">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-lg">{survey.objective}</CardTitle>
+                                <CardDescription>
+                                    Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1.5">
+                                    <Activity />
+                                    <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <ListChecks />
+                                    <span className="font-semibold text-foreground">{survey.questions.length}</span> Questions
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button variant="secondary" size="sm" onClick={() => setSelectedSurvey(survey)}>View Results</Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </CardContent>
+            </Card>
+        </>
     );
 }
 
