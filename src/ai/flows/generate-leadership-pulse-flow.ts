@@ -5,6 +5,7 @@
 
 import { ai } from '@/ai/genkit';
 import { GenerateLeadershipPulseInputSchema, GenerateLeadershipPulseOutputSchema, type GenerateLeadershipPulseInput, type GenerateLeadershipPulseOutput } from '@/ai/schemas/leadership-pulse-schemas';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function generateLeadershipPulse(input: GenerateLeadershipPulseInput): Promise<GenerateLeadershipPulseOutput> {
   return generateLeadershipPulseFlow(input);
