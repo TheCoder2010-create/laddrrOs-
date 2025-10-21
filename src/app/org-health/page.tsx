@@ -407,9 +407,6 @@ function OrgHealthContent() {
                     <HeartPulse className="h-8 w-8 text-primary" />
                     Org Health
                 </h1>
-                <p className="text-muted-foreground max-w-2xl">
-                    Deploy anonymous surveys to gauge employee morale, gather feedback on initiatives, and proactively monitor the health of your organization.
-                </p>
             </div>
         </div>
         
