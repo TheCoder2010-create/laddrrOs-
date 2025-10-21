@@ -47,3 +47,23 @@ export async function getActiveSurveys(): Promise<DeployedSurvey[]> {
         .filter(s => s.status === 'active')
         .sort((a, b) => new Date(b.deployedAt).getTime() - new Date(a.deployedAt).getTime());
 }
+
+/**
+ * Gets the most recent active survey.
+ */
+export async function getLatestActiveSurvey(): Promise<DeployedSurvey | null> {
+    const activeSurveys = await getActiveSurveys();
+    return activeSurveys.length > 0 ? activeSurveys[0] : null;
+}
+
+/**
+ * Anonymously submits a survey response by incrementing the submission count.
+ */
+export async function submitSurveyResponse(surveyId: string): Promise<void> {
+    const allSurveys = getFromStorage<DeployedSurvey>(SURVEY_KEY);
+    const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
+    if (surveyIndex !== -1) {
+        allSurveys[surveyIndex].submissionCount++;
+        saveToStorage(SURVEY_KEY, allSurveys);
+    }
+}

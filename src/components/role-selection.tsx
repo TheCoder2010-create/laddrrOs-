@@ -7,6 +7,7 @@ import Header from './header';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 
 interface RoleSelectionProps {
   onSelectRole: (role: Role) => void;
@@ -93,23 +94,24 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                             </span>
                         </div>
                     </div>
-                    <button
-                        // onClick={() => router.push('/survey')} // This would navigate to a survey page
-                        className={cn(
-                        "group relative w-full text-left rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
-                        "bg-teal-500/10 hover:bg-teal-500/20 hover:-translate-y-1 hover:shadow-2xl hover:shadow-teal-500/20",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                        "p-4"
-                        )}
-                    >
-                        <div className="flex items-center gap-4">
-                            <FileQuestion className="h-6 w-6 text-teal-500" />
-                            <div>
-                                <p className="font-semibold text-foreground">Take Active Survey</p>
-                                <p className="text-sm text-muted-foreground">Submit your anonymous response.</p>
+                    <Link href="/survey" passHref>
+                        <button
+                            className={cn(
+                            "group relative w-full text-left rounded-lg transition-all duration-300 ease-in-out overflow-hidden",
+                            "bg-teal-500/10 hover:bg-teal-500/20 hover:-translate-y-1 hover:shadow-2xl hover:shadow-teal-500/20",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                            "p-4"
+                            )}
+                        >
+                            <div className="flex items-center gap-4">
+                                <FileQuestion className="h-6 w-6 text-teal-500" />
+                                <div>
+                                    <p className="font-semibold text-foreground">Take Active Survey</p>
+                                    <p className="text-sm text-muted-foreground">Submit your anonymous response.</p>
+                                </div>
                             </div>
-                        </div>
-                    </button>
+                        </button>
+                    </Link>
                 </>
             
           </CardContent>
