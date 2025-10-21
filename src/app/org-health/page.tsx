@@ -223,6 +223,8 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
     const [error, setError] = useState<string | null>(null);
     const [pulseData, setPulseData] = useState<GenerateLeadershipPulseOutput | null>(null);
     const [customQuestions, setCustomQuestions] = useState<Record<string, string>>({});
+    const [isGeneratingTargeted, setIsGeneratingTargeted] = useState(false);
+    const [targetedQuestionInput, setTargetedQuestionInput] = useState('');
 
     const { toast } = useToast();
 
@@ -243,6 +245,7 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
             // Reset when dialog is closed
             setPulseData(null);
             setCustomQuestions({});
+            setTargetedQuestionInput('');
         }
     }, [open, summary, surveyObjective, pulseData]);
     
@@ -266,6 +269,36 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
         });
         
         setCustomQuestions(prev => ({ ...prev, [role]: '' }));
+    };
+    
+    const handleGenerateTargetedQuestion = async (roleKey: 'teamLeadQuestions' | 'amQuestions' | 'managerQuestions') => {
+        if (!targetedQuestionInput) {
+            toast({ variant: 'destructive', title: "Input required", description: "Please provide a metric or insight to generate a question." });
+            return;
+        }
+        setIsGeneratingTargeted(true);
+        try {
+            const result = await generateSurveyQuestions({ objective: targetedQuestionInput });
+            if (result.questions.length > 0) {
+                const newQuestion: LeadershipQuestion = { ...result.questions[0], id: uuidv4(), type: 'free-text' };
+                 setPulseData(prev => {
+                    if (!prev) return null;
+                    return {
+                        ...prev,
+                        [roleKey]: [...prev[roleKey], newQuestion]
+                    }
+                });
+                setTargetedQuestionInput('');
+                toast({ title: "Question Generated", description: "A new targeted question has been added to the list." });
+            } else {
+                throw new Error("AI did not return a question.");
+            }
+        } catch (e) {
+            console.error("Failed to generate targeted question", e);
+            toast({ variant: 'destructive', title: "Generation Failed" });
+        } finally {
+            setIsGeneratingTargeted(false);
+        }
     };
 
     const handleSendToLeaders = async () => {
@@ -309,19 +342,35 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective }:
                     )}
                 </div>
             ))}
-             <div className="space-y-2 pt-4 border-t">
-                <Label htmlFor={`custom-q-${roleKey}`}>Add a Custom Question</Label>
-                <div className="flex items-center gap-2">
+             <div className="space-y-4 pt-4 border-t">
+                <div className="space-y-2">
+                    <Label htmlFor={`targeted-q-${roleKey}`} className="font-semibold">Generate a question from a specific insight</Label>
                     <Textarea
-                        id={`custom-q-${roleKey}`}
-                        placeholder="Type your question here..."
-                        value={customQuestions[roleKey] || ''}
-                        onChange={(e) => setCustomQuestions(prev => ({ ...prev, [roleKey]: e.target.value }))}
+                        id={`targeted-q-${roleKey}`}
+                        placeholder="e.g., 'Low sentiment around work-life balance' or 'Scores for leadership clarity are down 15%'"
+                        value={targetedQuestionInput}
+                        onChange={(e) => setTargetedQuestionInput(e.target.value)}
                         rows={2}
                     />
-                    <Button variant="outline" size="icon" onClick={() => handleAddCustomQuestion(roleKey)} disabled={!customQuestions[roleKey]}>
-                        <Plus />
+                     <Button variant="secondary" size="sm" onClick={() => handleGenerateTargetedQuestion(roleKey)} disabled={isGeneratingTargeted}>
+                        {isGeneratingTargeted ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                        Generate
                     </Button>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor={`custom-q-${roleKey}`}>Or add a custom question</Label>
+                    <div className="flex items-center gap-2">
+                        <Textarea
+                            id={`custom-q-${roleKey}`}
+                            placeholder="Type your question here..."
+                            value={customQuestions[roleKey] || ''}
+                            onChange={(e) => setCustomQuestions(prev => ({ ...prev, [roleKey]: e.target.value }))}
+                            rows={2}
+                        />
+                        <Button variant="outline" size="icon" onClick={() => handleAddCustomQuestion(roleKey)} disabled={!customQuestions[roleKey]}>
+                            <Plus />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -445,11 +494,14 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
                         <TableBody>
                             {mockResponses.map((response, index) => (
                                 <TableRow key={index}>
-                                    {survey.questions.map((q, qIndex) => (
-                                        <TableCell key={q.id} className="text-sm">
-                                            {response[`q${qIndex + 1}`] || 'No answer'}
-                                        </TableCell>
-                                    ))}
+                                    {survey.questions.map((q, qIndex) => {
+                                        const questionKey = `q${qIndex + 1}`;
+                                        return (
+                                            <TableCell key={q.id} className="text-sm">
+                                                {response[questionKey] || 'No answer'}
+                                            </TableCell>
+                                        )
+                                    })}
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -654,4 +706,3 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
-
