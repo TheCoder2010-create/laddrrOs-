@@ -81,7 +81,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
               <RoleTile key={role} role={role} />
             ))}
 
-            {activeSurveyExists && (
+            
                 <>
                     <div className="relative my-2">
                         <div className="absolute inset-0 flex items-center">
@@ -111,7 +111,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
                         </div>
                     </button>
                 </>
-            )}
+            
           </CardContent>
         </Card>
       </main>

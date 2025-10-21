@@ -15,7 +15,7 @@ const ACTIVE_SURVEY_KEY = 'active_survey_exists';
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeSurveyExists, setActiveSurveyExists] = useState(false);
+    const [activeSurveyExists, setActiveSurveyExists] = useState(true); // Always show the survey option
     const router = useRouter();
     const { toast } = useToast();
 
@@ -26,8 +26,7 @@ export const useRole = () => {
                 if (storedRole && [...availableRoles].includes(storedRole)) {
                     setRole(storedRole);
                 }
-                const surveyStatus = sessionStorage.getItem(ACTIVE_SURVEY_KEY);
-                setActiveSurveyExists(surveyStatus === 'true');
+                // The survey button is now always active, so we don't need to check session storage for its visibility.
             } catch (error) {
                 console.error("Could not read from storage", error);
             } finally {
@@ -35,19 +34,6 @@ export const useRole = () => {
             }
         };
         initializeRole();
-
-        const handleStorageChange = () => {
-            const surveyStatus = sessionStorage.getItem(ACTIVE_SURVEY_KEY);
-            setActiveSurveyExists(surveyStatus === 'true');
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('feedbackUpdated', handleStorageChange); // Using existing event for simplicity
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('feedbackUpdated', handleStorageChange);
-        };
     }, []);
 
     const setCurrentRole = useCallback(async (newRole: Role | null) => {
@@ -56,15 +42,8 @@ export const useRole = () => {
         try {
             if (newRole) {
                 localStorage.setItem(ROLE_STORAGE_KEY, newRole);
-                 if (newRole !== 'HR Head') {
-                    // If a non-HR user logs in, assume they might need to see the survey again
-                    // This logic might be adjusted based on real product requirements
-                }
             } else {
                 localStorage.removeItem(ROLE_STORAGE_KEY);
-                // When logging out, also clear the active survey flag from sessionStorage for a clean state
-                sessionStorage.removeItem(ACTIVE_SURVEY_KEY);
-                setActiveSurveyExists(false);
             }
         } catch (error) {
             console.error("Could not write role to localStorage", error);
