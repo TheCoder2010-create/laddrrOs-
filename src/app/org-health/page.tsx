@@ -469,8 +469,8 @@ function SurveyResults({ survey, onPulseSent }: { survey: DeployedSurvey, onPuls
     const handleDownloadCsv = () => {
         const headers = survey.questions.map(q => `"${q.questionText.replace(/"/g, '""')}"`).join(',');
         const rows = mockResponses.map(response => {
-            return survey.questions.map((q, qIndex) => {
-                const questionKey = `q${qIndex + 1}`;
+            return survey.questions.map((q) => {
+                const questionKey = q.id!;
                 const answer = response[questionKey] || '';
                 return `"${answer.replace(/"/g, '""')}"`;
             }).join(',');
@@ -539,8 +539,8 @@ function SurveyResults({ survey, onPulseSent }: { survey: DeployedSurvey, onPuls
                         <TableBody>
                             {mockResponses.map((response, index) => (
                                 <TableRow key={index}>
-                                    {survey.questions.map((q, qIndex) => {
-                                        const questionKey = `q${qIndex + 1}`;
+                                    {survey.questions.map((q) => {
+                                        const questionKey = q.id!;
                                         return (
                                             <TableCell key={q.id} className="text-sm">
                                                 {response[questionKey] || 'No answer'}
