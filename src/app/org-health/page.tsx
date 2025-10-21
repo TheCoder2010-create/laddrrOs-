@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/accordion"
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 function CreateSurveyWizard() {
@@ -188,15 +189,27 @@ function CreateSurveyWizard() {
   )
 }
 
-const mockResponses = [
-    "I feel like my work isn't valued.",
-    "Better work-life balance would be great.",
-    "Communication from leadership has been unclear lately.",
-    "I enjoy my team, but the overall company morale seems low.",
-    "The recent re-org has caused a lot of confusion and stress.",
-    "I appreciate the flexible work hours.",
-    "It's hard to see a clear career path from my current position.",
-    "My manager is supportive, but they seem just as overworked as we are.",
+const mockResponses: Record<string, string>[] = [
+    {
+        'q1': "I feel like my work isn't valued.",
+        'q2': "Rarely, maybe once a month.",
+        'q3': "More transparency about company direction.",
+    },
+    {
+        'q1': "The work is interesting, but the deadlines are stressful.",
+        'q2': "My manager gives good feedback weekly.",
+        'q3': "Better work-life balance would be great.",
+    },
+    {
+        'q1': "I enjoy my team, but the overall company morale seems low.",
+        'q2': "Almost never. I usually hear about my performance during the quarterly review.",
+        'q3': "Clearer communication from leadership.",
+    },
+    {
+        'q1': "It feels like we're always in a state of chaos after the re-org.",
+        'q2': "I get regular feedback, which I appreciate.",
+        'q3': "I just want to know if my job is secure.",
+    },
 ];
 
 function SurveyResults({ survey }: { survey: DeployedSurvey }) {
@@ -207,7 +220,9 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
     const handleAnalyze = () => {
         setIsLoading(true);
         setError(null);
-        summarizeSurveyResults({ surveyObjective: survey.objective, anonymousResponses: mockResponses })
+        // Flatten responses for the AI summary
+        const flatResponses = mockResponses.flatMap(res => Object.values(res));
+        summarizeSurveyResults({ surveyObjective: survey.objective, anonymousResponses: flatResponses })
             .then(setSummary)
             .catch(err => {
                 console.error("Failed to summarize results", err);
@@ -223,13 +238,28 @@ function SurveyResults({ survey }: { survey: DeployedSurvey }) {
                     <Eye className="h-5 w-5 text-primary" />
                     Raw Responses ({mockResponses.length} total)
                 </h3>
-                <div className="max-h-60 overflow-y-auto space-y-2 rounded-md border bg-muted/50 p-3">
-                    {mockResponses.map((res, i) => (
-                        <div key={i} className="flex items-start gap-2 p-2 border-b last:border-b-0">
-                            <MessageSquare className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-                            <p className="text-sm text-foreground">{res}</p>
-                        </div>
-                    ))}
+                <div className="border rounded-lg overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                {survey.questions.map(q => (
+                                    <TableHead key={q.id} className="min-w-[200px]">{q.questionText}</TableHead>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {mockResponses.map((response, index) => (
+                                <TableRow key={index}>
+                                    {survey.questions.map(q => (
+                                        <TableCell key={q.id} className="text-sm">
+                                            {/* We use a mock mapping here. In a real app, keys would match question IDs */}
+                                            {response[`q${survey.questions.findIndex(sq => sq.id === q.id) + 1}`] || 'No answer'}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
             </div>
 
