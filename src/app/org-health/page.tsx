@@ -34,6 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { assignCoachingFromOrgHealth } from '@/services/org-coaching-service';
 
 
 function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void }) {
@@ -453,6 +454,7 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
     const [isAnalyzingCoaching, setIsAnalyzingCoaching] = useState(false);
     const [coachingRecs, setCoachingRecs] = useState<CoachingRecommendation[] | null>(survey.coachingRecommendations || null);
     const { toast } = useToast();
+    const { role } = useRole();
 
     useEffect(() => {
         setSummary(survey.summary || null);
@@ -524,6 +526,16 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
             })
             .finally(() => setIsAnalyzingCoaching(false));
     };
+
+    const handleAssignCoaching = async (recs: CoachingRecommendation[]) => {
+        if (!role) return;
+        try {
+            await assignCoachingFromOrgHealth(recs, role);
+            toast({ title: "Tasks Assigned", description: "Coaching tasks have been created from the recommendations." });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Assignment Failed" });
+        }
+    }
 
 
     return (
@@ -638,8 +650,13 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
                     {coachingRecs && (
                         <Card className="mt-4 border-purple-500/50">
                             <CardHeader className="bg-purple-500/10">
-                                <CardTitle className="text-purple-700 dark:text-purple-400 flex items-center gap-2">
-                                    <BrainCircuit /> Final Coaching Recommendations
+                                <CardTitle className="text-purple-700 dark:text-purple-400 flex items-center justify-between">
+                                    <span className="flex items-center gap-2">
+                                        <BrainCircuit /> Final Coaching Recommendations
+                                    </span>
+                                    <Button size="sm" onClick={() => handleAssignCoaching(coachingRecs)}>
+                                        Assign All as Tasks
+                                    </Button>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-3">
@@ -793,3 +810,4 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+

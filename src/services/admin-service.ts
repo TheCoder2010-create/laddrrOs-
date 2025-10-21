@@ -1,9 +1,11 @@
 
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
 import { type Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { OrgCoachingItem } from './org-coaching-service';
 
 export interface AdminLogEntry {
     id: string;
