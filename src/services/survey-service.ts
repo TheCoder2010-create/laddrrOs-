@@ -32,6 +32,7 @@ export async function deploySurvey(surveyData: { objective: string; questions: S
         deployedAt: new Date().toISOString(),
         status: 'active',
         submissionCount: 0,
+        optOutCount: 0,
     };
 
     allSurveys.unshift(newSurvey);
@@ -67,6 +68,22 @@ export async function submitSurveyResponse(surveyId: string): Promise<void> {
         saveToStorage(SURVEY_KEY, allSurveys);
     }
 }
+
+/**
+ * Logs that a user has opted out of a survey.
+ */
+export async function logSurveyOptOut(surveyId: string): Promise<void> {
+    const allSurveys = getFromStorage<DeployedSurvey>(SURVEY_KEY);
+    const surveyIndex = allSurveys.findIndex(s => s.id === surveyId);
+    if (surveyIndex !== -1) {
+        if (!allSurveys[surveyIndex].optOutCount) {
+            allSurveys[surveyIndex].optOutCount = 0;
+        }
+        allSurveys[surveyIndex].optOutCount++;
+        saveToStorage(SURVEY_KEY, allSurveys);
+    }
+}
+
 
 /**
  * Closes an active survey.

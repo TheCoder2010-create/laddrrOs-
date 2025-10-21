@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Zod schemas for the anonymous survey generation feature.
  */
@@ -30,6 +31,7 @@ export const DeployedSurveySchema = z.object({
     deployedAt: z.string(),
     status: z.enum(['active', 'closed']),
     submissionCount: z.number().default(0),
+    optOutCount: z.number().default(0),
 });
 export type DeployedSurvey = z.infer<typeof DeployedSurveySchema>;
 

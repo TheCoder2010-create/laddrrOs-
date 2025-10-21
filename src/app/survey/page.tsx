@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { getLatestActiveSurvey, submitSurveyResponse, type DeployedSurvey } from '@/services/survey-service';
+import { getLatestActiveSurvey, submitSurveyResponse, logSurveyOptOut, type DeployedSurvey } from '@/services/survey-service';
 import { FileQuestion, Send, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function SurveyPage() {
     const [survey, setSurvey] = useState<DeployedSurvey | null>(null);
@@ -20,6 +21,7 @@ export default function SurveyPage() {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [submissionNumber, setSubmissionNumber] = useState<string | null>(null);
     const { toast } = useToast();
+    const router = useRouter();
 
     useEffect(() => {
         const fetchSurvey = async () => {
@@ -70,6 +72,24 @@ export default function SurveyPage() {
             setIsSubmitting(false);
         }
     };
+    
+    const handleOptOut = async () => {
+        if (!survey) return;
+        try {
+            await logSurveyOptOut(survey.id);
+            toast({
+                title: "Response Logged",
+                description: "You have opted out of this survey."
+            });
+            router.push('/'); // Redirect to the main page
+        } catch (error) {
+             console.error("Failed to log opt-out", error);
+             toast({ variant: 'destructive', title: "Operation Failed" });
+        }
+    }
+    
+    const allQuestionsAnswered = survey ? survey.questions.every(q => responses[q.id!] && responses[q.id!].trim() !== '') : false;
+
 
     if (isLoading) {
         return (
@@ -157,12 +177,12 @@ export default function SurveyPage() {
                     ))}
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                     <Button asChild variant="outline">
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
-                        </Link>
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={isSubmitting}>
+                     <div>
+                        <Button asChild variant="ghost" className="text-muted-foreground hover:text-destructive">
+                            <button onClick={handleOptOut}>I don't wish to participate</button>
+                        </Button>
+                     </div>
+                    <Button onClick={handleSubmit} disabled={isSubmitting || !allQuestionsAnswered}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                         Submit Anonymously
                     </Button>

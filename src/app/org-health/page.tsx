@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -405,6 +405,10 @@ function ActiveSurveys() {
                                      <div className="flex items-center gap-1.5 text-sm">
                                         <Activity />
                                         <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-sm">
+                                        <UserX />
+                                        <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
                                     </div>
                                      <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
                                         {survey.status === 'active' ? 'Active' : 'Closed'}
