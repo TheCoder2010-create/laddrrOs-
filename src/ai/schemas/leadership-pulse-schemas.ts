@@ -23,6 +23,8 @@ export type LeadershipQuestion = z.infer<typeof LeadershipQuestionSchema>;
 
 
 export const GenerateLeadershipPulseOutputSchema = z.object({
-  questions: z.array(LeadershipQuestionSchema).describe("An array of suggested questions for the leadership pulse survey."),
+  teamLeadQuestions: z.array(LeadershipQuestionSchema).describe("An array of suggested questions specifically for the Team Lead role."),
+  amQuestions: z.array(LeadershipQuestionSchema).describe("An array of suggested questions specifically for the Assistant Manager (AM) role."),
+  managerQuestions: z.array(LeadershipQuestionSchema).describe("An array of suggested questions specifically for the Manager role."),
 });
 export type GenerateLeadershipPulseOutput = z.infer<typeof GenerateLeadershipPulseOutputSchema>;

@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { DeployedSurvey, SurveyQuestion } from '@/ai/schemas/survey-schemas';
 import type { Feedback } from '@/services/feedback-service';
 import { getFeedbackFromStorage, saveFeedbackToStorage } from './feedback-service';
+import type { Role } from '@/hooks/use-role';
 
 export const SURVEY_KEY = 'org_health_surveys_v1';
 
@@ -45,28 +46,28 @@ export async function deploySurvey(surveyData: { objective: string; questions: S
 /**
  * Sends a leadership pulse survey by creating a "Feedback" item assigned to leadership roles.
  */
-export async function sendLeadershipPulse(surveyData: { objective: string, questions: SurveyQuestion[] }): Promise<void> {
+export async function sendLeadershipPulse(surveyData: { objective: string, questions: Record<Role, SurveyQuestion[]> }): Promise<void> {
     const allFeedback = getFeedbackFromStorage();
     
-    const leadershipRoles = ['Team Lead', 'AM', 'Manager'];
+    for (const role in surveyData.questions) {
+        const questionsForRole = surveyData.questions[role as Role];
+        if (questionsForRole && questionsForRole.length > 0) {
+            const newPulseSurvey: Feedback = {
+                trackingId: `LP-${uuidv4().substring(0,8)}`,
+                subject: 'Leadership Pulse: Your Input is Requested',
+                message: `Please respond to the following questions to help us understand the root causes of recent organizational feedback.\n\n**Objective:** ${surveyData.objective}`,
+                submittedAt: new Date(),
+                criticality: 'Medium',
+                status: 'Pending Manager Action', // A generic status that implies action is needed.
+                assignedTo: [role as Role],
+                viewed: false,
+                // @ts-ignore
+                surveyQuestions: questionsForRole,
+            };
+            allFeedback.unshift(newPulseSurvey as Feedback);
+        }
+    }
 
-    const newPulseSurvey: Feedback = {
-        trackingId: `LP-${uuidv4().substring(0,8)}`,
-        subject: 'Leadership Pulse: Your Input is Requested',
-        message: `Please respond to the following questions to help us understand the root causes of recent organizational feedback.\n\n**Objective:** ${surveyData.objective}`,
-        submittedAt: new Date(),
-        criticality: 'Medium',
-        status: 'Pending Manager Action', // A generic status that implies action is needed.
-        assignedTo: leadershipRoles,
-        viewed: false,
-        // We will store the questions in a way the message board can render them.
-        // For this prototype, we can stringify them or add a new field to the Feedback type.
-        // Let's assume we add a `surveyQuestions` field to Feedback interface (needs update).
-        // @ts-ignore
-        surveyQuestions: surveyData.questions,
-    };
-
-    allFeedback.unshift(newPulseSurvey as Feedback);
     saveFeedbackToStorage(allFeedback);
 }
 
