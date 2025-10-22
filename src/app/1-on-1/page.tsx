@@ -47,7 +47,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { roleUserMapping, getRoleByName, formatActorName } from '@/lib/role-mapping';
-import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus, AuditEvent, submitAmCoachingNotes, submitAmDirectResponse, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitEmployeeAcknowledgement } from '@/services/feedback-service';
+import { getOneOnOneHistory, OneOnOneHistoryItem, submitSupervisorInsightResponse, submitSupervisorRetry, getAllFeedback, Feedback, updateCoachingRecommendationStatus, resolveFeedback, toggleActionItemStatus, AuditEvent, submitAmCoachingNotes, submitAmDirectResponse, submitManagerResolution, submitHrResolution, submitFinalHrDecision, submitEmployeeAcknowledgement, getActiveCoachingPlansForUser } from '@/services/feedback-service';
 import Link from 'next/link';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +56,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { CriticalCoachingInsight, CoachingRecommendation, ActionItem } from '@/ai/schemas/one-on-one-schemas';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { generateBriefingPacket } from '@/ai/flows/generate-briefing-packet-flow';
-import type { BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
+import type { BriefingPacketInput, BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const getMeetingDataForRole = (role: Role) => {
@@ -128,11 +128,61 @@ function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Me
             const employeeName = viewerRole === 'Employee' ? supervisor : meeting.with;
             const currentSupervisorName = viewerRole === 'Employee' ? meeting.with : supervisor;
 
-            const result = await generateBriefingPacket({
+            const supervisorRole = getRoleByName(currentSupervisorName);
+            if (!supervisorRole) {
+                throw new Error("Could not determine supervisor role.");
+            }
+
+            // 1. Fetch all relevant data on the client
+            const allHistory = await getOneOnOneHistory();
+            const supervisorActiveGoals = await getActiveCoachingPlansForUser(supervisorRole);
+    
+            // 2. Filter data for the specific supervisor-employee pair
+            const relevantHistory = allHistory
+                .filter(h => h.supervisorName === currentSupervisorName && h.employeeName === employeeName)
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+            // 3. Extract and format the necessary context for the AI
+            const pastIssues = relevantHistory.slice(0, 3).map(h => ({
+                date: `${format(new Date(h.date), 'PPP')} (${formatDistanceToNow(new Date(h.date), { addSuffix: true })})`,
+                summary: h.analysis.supervisorSummary,
+            }));
+    
+            const allActionItems = relevantHistory.flatMap(h => 
+                h.analysis.actionItems?.map(item => ({
+                    task: item.task,
+                    owner: item.owner,
+                    status: item.status,
+                    completedAt: item.completedAt ? `${format(new Date(item.completedAt), 'PPP')}` : undefined,
+                })) || []
+            );
+    
+            const openCriticalInsights = relevantHistory
+                .filter(h => h.analysis.criticalCoachingInsight && h.analysis.criticalCoachingInsight.status !== 'resolved')
+                .map(h => ({
+                    date: format(new Date(h.date), 'PPP'),
+                    summary: h.analysis.criticalCoachingInsight!.summary,
+                    status: h.analysis.criticalCoachingInsight!.status.replace(/_/g, ' '),
+                }));
+    
+            const coachingGoalsInProgress = supervisorActiveGoals.map(p => ({
+                area: p.rec.area,
+                resource: p.rec.resource,
+                progress: p.rec.progress || 0,
+            }));
+            
+            // 4. Create input for the AI flow
+            const flowInput: BriefingPacketInput = {
                 supervisorName: currentSupervisorName,
-                employeeName: employeeName,
+                employeeName,
                 viewerRole: viewerRole,
-            });
+                pastIssues,
+                actionItems: allActionItems,
+                openCriticalInsights,
+                coachingGoalsInProgress,
+            };
+
+            const result = await generateBriefingPacket(flowInput);
             setPacket(result);
         } catch (e) {
             console.error("Failed to generate briefing packet", e);
@@ -1412,5 +1462,6 @@ export default function Home() {
     
 
     
+
 
 

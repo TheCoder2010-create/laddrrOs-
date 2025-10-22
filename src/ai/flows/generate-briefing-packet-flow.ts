@@ -8,61 +8,22 @@
 
 import { ai } from '@/ai/genkit';
 import { BriefingPacketInputSchema, BriefingPacketOutputSchema, type BriefingPacketInput, type BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
-import { getOneOnOneHistory, getActiveCoachingPlansForUser } from '@/services/feedback-service';
-import { format, formatDistanceToNow } from 'date-fns';
-import type { Role } from '@/hooks/use-role';
 
-export async function generateBriefingPacket(input: { supervisorName: string; employeeName: string; viewerRole: Role; }): Promise<BriefingPacketOutput> {
-    // 1. Fetch all relevant data that can be fetched on the client before calling the server flow.
-    const allHistory = await getOneOnOneHistory();
-    const supervisorActiveGoals = await getActiveCoachingPlansForUser(input.supervisorName);
+export async function generateBriefingPacket(input: BriefingPacketInput): Promise<BriefingPacketOutput> {
+    const isEmployeeView = input.viewerRole === 'Employee';
 
-    // 2. Filter data for the specific supervisor-employee pair
-    const relevantHistory = allHistory
-        .filter(h => h.supervisorName === input.supervisorName && h.employeeName === input.employeeName)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    // 3. Extract and format the necessary context for the AI
-    const pastIssues = relevantHistory.slice(0, 3).map(h => ({
-        date: `${format(new Date(h.date), 'PPP')} (${formatDistanceToNow(new Date(h.date), { addSuffix: true })})`,
-        summary: h.analysis.supervisorSummary,
-    }));
-
-    const allActionItems = relevantHistory.flatMap(h => 
-        h.analysis.actionItems?.map(item => ({
-            task: item.task,
-            owner: item.owner,
-            status: item.status,
-            completedAt: item.completedAt ? `${format(new Date(item.completedAt), 'PPP')}` : undefined,
-        })) || []
-    );
-
-    const openCriticalInsights = relevantHistory
-        .filter(h => h.analysis.criticalCoachingInsight && h.analysis.criticalCoachingInsight.status !== 'resolved')
-        .map(h => ({
-            date: format(new Date(h.date), 'PPP'),
-            summary: h.analysis.criticalCoachingInsight!.summary,
-            status: h.analysis.criticalCoachingInsight!.status.replace(/_/g, ' '),
-        }));
-
-    const coachingGoalsInProgress = supervisorActiveGoals.map(p => ({
-        area: p.rec.area,
-        resource: p.rec.resource,
-        progress: p.rec.progress || 0,
-    }));
-    
-    // 4. Call the AI flow with the prepared data
-    const flowInput: BriefingPacketInput = {
-        ...input,
-        pastIssues,
-        actionItems: allActionItems,
-        openCriticalInsights,
-        coachingGoalsInProgress,
+    // Augment the input with the boolean flag for the prompt
+    const promptInput = {
+      ...input,
+      isEmployeeView,
     };
     
-    const result = await generateBriefingPacketFlow(flowInput);
+    const { output } = await prompt(promptInput);
 
-    return result;
+    if (!output) {
+      throw new Error("AI analysis failed to produce a briefing packet.");
+    }
+    return output;
 }
 
 
@@ -139,27 +100,3 @@ Based on the context, generate a JSON output SPECIFICALLY for the '{{{viewerRole
 {{/if}}
 `,
 });
-
-const generateBriefingPacketFlow = ai.defineFlow(
-  {
-    name: 'generateBriefingPacketFlow',
-    inputSchema: BriefingPacketInputSchema,
-    outputSchema: BriefingPacketOutputSchema,
-  },
-  async (input) => {
-    const isEmployeeView = input.viewerRole === 'Employee';
-
-    // Augment the input with the boolean flag for the prompt
-    const promptInput = {
-      ...input,
-      isEmployeeView,
-    };
-    
-    const { output } = await prompt(promptInput);
-
-    if (!output) {
-      throw new Error("AI analysis failed to produce a briefing packet.");
-    }
-    return output;
-  }
-);
