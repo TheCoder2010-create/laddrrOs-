@@ -143,9 +143,8 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
             <div className="flex justify-between items-center">
                 <CardTitle>Create New Anonymous Survey</CardTitle>
                 {mode !== 'selection' && (
-                     <Button variant="ghost" size="sm" onClick={() => { setMode('selection'); setSuggestedQuestions([])} }>
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
+                     <Button variant="ghost" size="icon" onClick={() => { setMode('selection'); setSuggestedQuestions([])} }>
+                        <ArrowLeft className="h-4 w-4" />
                     </Button>
                 )}
             </div>
@@ -886,4 +885,5 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
 
