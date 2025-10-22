@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -18,23 +19,18 @@ export default function ParticipationMetricsWidget() {
                     Survey Engagement
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">Participation Rate</p>
-                        <p className="text-2xl font-bold text-primary">{metrics.participationRate}%</p>
-                    </div>
-                    <Users className="h-8 w-8 text-muted-foreground/50" />
+            <CardContent className="grid grid-cols-3 gap-4 pt-2">
+                <div className="text-center p-3 rounded-lg bg-muted">
+                    <p className="text-sm font-medium text-muted-foreground">Participation</p>
+                    <p className="text-2xl font-bold text-primary">{metrics.participationRate}%</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                     <div className="text-center p-2 rounded-md bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Submissions</p>
-                        <p className="text-lg font-bold">{metrics.submissionCount}</p>
-                    </div>
-                     <div className="text-center p-2 rounded-md bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Opt-Outs</p>
-                        <p className="text-lg font-bold">{metrics.optOutRate}%</p>
-                    </div>
+                <div className="text-center p-3 rounded-md bg-muted/50">
+                    <p className="text-sm font-medium text-muted-foreground">Submissions</p>
+                    <p className="text-2xl font-bold">{metrics.submissionCount}</p>
+                </div>
+                <div className="text-center p-3 rounded-md bg-muted/50">
+                    <p className="text-sm font-medium text-muted-foreground">Opt-Outs</p>
+                    <p className="text-2xl font-bold">{metrics.optOutRate}%</p>
                 </div>
             </CardContent>
         </Card>
