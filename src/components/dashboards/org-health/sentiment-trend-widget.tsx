@@ -29,7 +29,6 @@ export default function SentimentTrendWidget() {
             <HeartPulse className="text-primary"/>
             Historical Morale Trends
         </CardTitle>
-        <CardDescription>Overall employee morale score over the last 6 months.</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[250px] w-full">
