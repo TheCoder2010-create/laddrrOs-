@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getActiveCoachingPlansForUser, OneOnOneHistoryItem, updateCoachingProgress, addCoachingCheckIn, addCustomCoachingPlan } from '@/services/feedback-service';
 import type { CoachingRecommendation, CheckIn } from '@/ai/schemas/one-on-one-schemas';
-import { useRole } from '@/hooks/use-role';
+import { useRole, type Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
@@ -26,7 +26,7 @@ import { getGoalFeedback } from '@/ai/flows/get-goal-feedback-flow';
 import type { GoalFeedbackInput } from '@/ai/schemas/goal-feedback-schemas';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { generateDevelopmentSuggestion } from '@/ai/flows/generate-development-suggestion-flow';
-import type { DevelopmentSuggestionOutput } from '@/ai/schemas/development-suggestion-schemas';
+import type { DevelopmentSuggestionOutput, DevelopmentSuggestionInput } from '@/ai/schemas/development-suggestion-schemas';
 import { AiGenieIcon } from '../ui/ai-genie-icon';
 import Link from 'next/link';
 
@@ -162,17 +162,33 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }: { open: boolean,
             setIsGenerating(true);
             setError(null);
             setSuggestions([]);
-            generateDevelopmentSuggestion({ forRole: role })
-                .then(result => {
+            
+            const generate = async () => {
+                try {
+                    const userName = roleUserMapping[role]?.name;
+                    if (!userName) throw new Error("User not found for role");
+
+                    const activeGoals = await getActiveCoachingPlansForUser(role);
+                    const coachingGoalsInProgress = activeGoals.map(p => ({
+                        area: p.rec.area,
+                        resource: p.rec.resource,
+                    }));
+
+                    const input: DevelopmentSuggestionInput = {
+                        userName,
+                        coachingGoalsInProgress,
+                    };
+                    
+                    const result = await generateDevelopmentSuggestion(input);
                     setSuggestions(result.suggestions);
-                })
-                .catch(err => {
-                    console.error("Failed to generate suggestions:", err);
-                    setError("Could not generate suggestions at this time. Please try again.");
-                })
-                .finally(() => {
+                } catch (err) {
+                     console.error("Failed to generate suggestions:", err);
+                     setError("Could not generate suggestions at this time. Please try again.");
+                } finally {
                     setIsGenerating(false);
-                });
+                }
+            }
+            generate();
         }
     }, [open, role]);
 

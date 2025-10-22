@@ -6,19 +6,15 @@
 
 import { ai } from '@/ai/genkit';
 import { DevelopmentSuggestionInputSchema, DevelopmentSuggestionOutputSchema, type DevelopmentSuggestionInput, type DevelopmentSuggestionOutput } from '@/ai/schemas/development-suggestion-schemas';
-import { getOneOnOneHistory, getActiveCoachingPlansForUser } from '@/services/feedback-service';
+import { getOneOnOneHistory } from '@/services/feedback-service';
 import type { Role } from '@/hooks/use-role';
 import { roleUserMapping } from '@/lib/role-mapping';
 
-export async function generateDevelopmentSuggestion(input: { forRole: Role; }): Promise<DevelopmentSuggestionOutput> {
-    const userName = roleUserMapping[input.forRole]?.name;
-    if (!userName) {
-        throw new Error("Could not find user for the provided role.");
-    }
+export async function generateDevelopmentSuggestion(input: DevelopmentSuggestionInput): Promise<DevelopmentSuggestionOutput> {
+    const userName = input.userName;
     
-    // 1. Fetch all relevant data for the user (acting as supervisor) on the client side
+    // 1. Fetch history data on the server side
     const allHistory = await getOneOnOneHistory();
-    const activeGoals = await getActiveCoachingPlansForUser(input.forRole);
 
     const relevantHistory = allHistory
         .filter(h => h.supervisorName === userName)
@@ -31,17 +27,12 @@ export async function generateDevelopmentSuggestion(input: { forRole: Role; }): 
         criticalInsightSummary: h.analysis.criticalCoachingInsight?.summary,
         coachingRecs: h.analysis.coachingRecommendations.map(r => r.area),
     }));
-
-    const coachingGoalsInProgress = activeGoals.map(p => ({
-        area: p.rec.area,
-        resource: p.rec.resource,
-    }));
     
-    // 2. Call the AI flow with the prepared data
+    // 2. Call the AI flow with all prepared data
     const flowInput: DevelopmentSuggestionInput = {
         userName,
         pastIssues,
-        coachingGoalsInProgress,
+        coachingGoalsInProgress: input.coachingGoalsInProgress,
     };
     
     const result = await generateDevelopmentSuggestionFlow(flowInput);

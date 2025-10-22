@@ -18,7 +18,7 @@ const CoachingGoalSchema = z.object({
 
 export const DevelopmentSuggestionInputSchema = z.object({
     userName: z.string(),
-    pastIssues: z.array(PastIssueSchema),
+    pastIssues: z.array(PastIssueSchema).optional(),
     coachingGoalsInProgress: z.array(CoachingGoalSchema),
 });
 export type DevelopmentSuggestionInput = z.infer<typeof DevelopmentSuggestionInputSchema>;
