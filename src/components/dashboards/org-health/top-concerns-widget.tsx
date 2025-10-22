@@ -24,9 +24,9 @@ export default function TopConcernsWidget() {
                 <div className="space-y-3">
                     {topConcerns.map(item => (
                         <div key={item.theme} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                            <p className="text-sm font-medium">{item.theme}</p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold">{item.mentions}</span>
+                            <p className="text-sm font-medium mr-4">{item.theme}</p>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-sm font-semibold w-8 text-center">{item.mentions}</span>
                                 <Badge 
                                     variant={item.sentiment === "Negative" ? "destructive" : item.sentiment === "Positive" ? "success" : "secondary"}
                                 >
