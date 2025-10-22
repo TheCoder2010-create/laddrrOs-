@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -53,6 +52,7 @@ export default function SentimentTrendWidget() {
               axisLine={false}
               tickMargin={8}
               domain={[60, 90]}
+              textAnchor="start"
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Line
