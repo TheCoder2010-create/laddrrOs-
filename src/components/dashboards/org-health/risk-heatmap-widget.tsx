@@ -47,7 +47,8 @@ export default function RiskHeatmapWidget() {
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>Sentiment Score: {item.sentimentScore}/100</p>
+                                    <p>Department: {item.department}</p>
+                                    <p>Risk Level: {item.risk}</p>
                                 </TooltipContent>
                             </Tooltip>
                         ))}
