@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit, FileText, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -37,6 +37,21 @@ import { assignCoachingFromOrgHealth } from '@/services/org-coaching-service';
 import OrgHealthDashboard from '@/components/dashboards/org-health-dashboard';
 
 
+const surveyTemplates = [
+    {
+        title: "General Morale Check",
+        objective: "Assess overall employee morale and identify key areas of satisfaction and concern."
+    },
+    {
+        title: "Work-Life Balance Pulse",
+        objective: "Gauge team sentiment regarding work-life balance and identify potential burnout risks."
+    },
+    {
+        title: "Post-Reorganization Feedback",
+        objective: "Gather feedback on the recent organizational changes to understand their impact on teams."
+    },
+];
+
 function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void }) {
   const [objective, setObjective] = useState('');
   const [suggestedQuestions, setSuggestedQuestions] = useState<SurveyQuestion[]>([]);
@@ -45,15 +60,16 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
   const [isGenerating, startGeneration] = useTransition();
   const { toast } = useToast();
 
-  const handleGenerateQuestions = () => {
-    if (!objective.trim()) {
+  const handleGenerateQuestions = (currentObjective: string) => {
+    if (!currentObjective.trim()) {
       toast({ variant: 'destructive', title: "Objective is required", description: "Please describe the goal of your survey." });
       return;
     }
+    setObjective(currentObjective);
 
     startGeneration(async () => {
       try {
-        const result = await generateSurveyQuestions({ objective });
+        const result = await generateSurveyQuestions({ objective: currentObjective });
         const questionsWithIds = result.questions.map(q => ({ ...q, id: uuidv4() }));
         setSuggestedQuestions(questionsWithIds);
         // Pre-select all suggested questions by default
@@ -114,31 +130,63 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>Create New Anonymous Survey</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="survey-objective" className="text-base font-semibold">Step 1: Define Survey Objective</Label>
-            <Textarea
-              id="survey-objective"
-              value={objective}
-              onChange={(e) => setObjective(e.target.value)}
-              rows={3}
-            />
-          </div>
-          <Button onClick={handleGenerateQuestions} disabled={isGenerating}>
-            {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
-            Generate Question Suggestions
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Templates Card */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Start from a Template</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {surveyTemplates.map((template, index) => (
+                <button 
+                    key={index}
+                    onClick={() => handleGenerateQuestions(template.objective)}
+                    className="w-full text-left p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex justify-between items-center"
+                >
+                    <div>
+                        <p className="font-semibold text-foreground">{template.title}</p>
+                        <p className="text-sm text-muted-foreground">{template.objective}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </button>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Custom Objective Card */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle>Start with an Objective</CardTitle>
+          </CardHeader>
+          <CardContent>
+              <Accordion type="single" collapsible>
+                <AccordionItem value="item-1">
+                  <AccordionTrigger className="font-semibold">Define a Custom Objective</AccordionTrigger>
+                  <AccordionContent className="pt-4 space-y-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="survey-objective" className="text-base font-semibold">Survey Objective</Label>
+                          <Textarea
+                              id="survey-objective"
+                              value={objective}
+                              onChange={(e) => setObjective(e.target.value)}
+                              rows={3}
+                          />
+                      </div>
+                      <Button onClick={() => handleGenerateQuestions(objective)} disabled={isGenerating}>
+                          {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
+                          Generate Question Suggestions
+                      </Button>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+          </CardContent>
+        </Card>
+      </div>
       
       {(isGenerating || suggestedQuestions.length > 0) && (
         <Card>
            <CardHeader>
-            <CardTitle>Step 2: Curate and Add Questions</CardTitle>
+            <CardTitle>Curate and Add Questions</CardTitle>
             <CardDescription>Select the AI-suggested questions and add your own to finalize the survey.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
