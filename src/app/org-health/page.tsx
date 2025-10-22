@@ -838,15 +838,6 @@ function OrgHealthContent() {
 
   return (
     <div className="p-4 md:p-8 space-y-8">
-        <div className="flex justify-between items-start">
-            <div className="space-y-1">
-                <h1 className="text-3xl font-bold font-headline flex items-center gap-3">
-                    <HeartPulse className="h-8 w-8 text-primary" />
-                    Org Health
-                </h1>
-            </div>
-        </div>
-
         <OrgHealthDashboard />
         
         <ActiveSurveys key={key} onUpdate={handleSurveyDeployed} />
@@ -885,5 +876,6 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
 
 
