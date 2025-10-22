@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -36,7 +37,7 @@ export default function SentimentTrendWidget() {
             accessibilityLayer
             data={chartData}
             margin={{
-              left: 12,
+              left: -10,
               right: 12,
             }}
           >
