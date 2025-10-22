@@ -131,7 +131,7 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
   return (
     <div className="space-y-6">
        <Card className="shadow-lg">
-        <CardHeader>
+       <CardHeader className="p-2 pt-2">
           <CardTitle>Create New Anonymous Survey</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -159,8 +159,8 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
                          <Accordion type="single" collapsible>
                             <AccordionItem value="item-1" className="border rounded-lg">
                                 <AccordionTrigger className="font-semibold py-3 hover:no-underline px-3">Define a Custom Objective</AccordionTrigger>
-                                <AccordionContent className="pt-2 pb-4 space-y-4 px-3">
-                                    <div className="space-y-2">
+                                <AccordionContent className="pt-2 pb-4 space-y-4 px-0">
+                                    <div className="space-y-2 px-3">
                                         <Label htmlFor="survey-objective" className="text-base font-semibold">Survey Objective</Label>
                                         <Textarea
                                             id="survey-objective"
