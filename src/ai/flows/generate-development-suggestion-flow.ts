@@ -15,9 +15,9 @@ export async function generateDevelopmentSuggestion(input: { forRole: Role; }): 
         throw new Error("Could not find user for the provided role.");
     }
     
-    // 1. Fetch all relevant data for the user (acting as supervisor)
+    // 1. Fetch all relevant data for the user (acting as supervisor) on the client side
     const allHistory = await getOneOnOneHistory();
-    const activeGoals = await getActiveCoachingPlansForUser(userName);
+    const activeGoals = await getActiveCoachingPlansForUser(input.forRole);
 
     const relevantHistory = allHistory
         .filter(h => h.supervisorName === userName)
