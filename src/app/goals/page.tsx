@@ -45,7 +45,6 @@ function FrameworkStep({ onNext }: { onNext: () => void }) {
         <Card className="max-w-4xl mx-auto">
             <CardHeader>
                 <CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Scale className="h-8 w-8 text-primary" />Set Up Your Performance Framework</CardTitle>
-                <CardDescription className="text-lg text-muted-foreground">Choose the evaluation methodology that best fits your team's needs.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
                 <div className="space-y-2">
@@ -94,7 +93,7 @@ function ReviewGroupStep({ onBack, onNext }: { onBack: () => void, onNext: () =>
 
     return (
         <Card className="max-w-5xl mx-auto">
-            <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Users className="h-8 w-8 text-primary" />Define Review Group</CardTitle><CardDescription className="text-lg text-muted-foreground mt-1">Specify who will be part of this performance review cycle.</CardDescription></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
+            <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Users className="h-8 w-8 text-primary" />Define Review Group</CardTitle></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
             <CardContent className="space-y-6 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2 lg:col-span-1">
@@ -144,7 +143,7 @@ function ReviewGroupStep({ onBack, onNext }: { onBack: () => void, onNext: () =>
 function DataCollectionStep({ onBack, onNext }: { onBack: () => void, onNext: () => void }) {
     return (
         <Card className="max-w-4xl mx-auto">
-             <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Database className="h-8 w-8 text-primary" />Data Collection & Delegation</CardTitle><CardDescription className="text-lg text-muted-foreground mt-1">Define how KPI data will be provided to the system.</CardDescription></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
+             <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Database className="h-8 w-8 text-primary" />Data Collection & Delegation</CardTitle></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
             <CardContent className="space-y-6 pt-4">
                 <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2"><Label htmlFor="upload-method">How will KPI data be uploaded?</Label><Select><SelectTrigger id="upload-method"><SelectValue placeholder="Select method..." /></SelectTrigger><SelectContent>{uploadMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select></div>
@@ -163,7 +162,7 @@ function DataCollectionStep({ onBack, onNext }: { onBack: () => void, onNext: ()
 function RoleChangeStep({ onBack, onNext }: { onBack: () => void, onNext: () => void }) {
     return (
         <Card className="max-w-4xl mx-auto">
-            <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><RefreshCw className="h-8 w-8 text-primary" />Role Change Management</CardTitle><CardDescription className="text-lg text-muted-foreground mt-1">Define what happens when an employee in this group changes roles.</CardDescription></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
+            <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><RefreshCw className="h-8 w-8 text-primary" />Role Change Management</CardTitle></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
             <CardContent className="space-y-4 pt-4">
                 <p className="text-base font-semibold">If an employee changes roles, which actions should be taken?</p>
                 <div className="space-y-2 rounded-md border p-4">
@@ -188,7 +187,7 @@ function SetupAssistanceStep({ onBack, onFinish }: { onBack: () => void, onFinis
     
     return (
          <Card className="max-w-4xl mx-auto">
-            <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Wand2 className="h-8 w-8 text-primary" />Setup Assistance</CardTitle><CardDescription className="text-lg text-muted-foreground mt-1">Finalize your performance framework setup.</CardDescription></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
+            <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Wand2 className="h-8 w-8 text-primary" />Setup Assistance</CardTitle></div><Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2" /> Back</Button></div></CardHeader>
             <CardContent className="space-y-6 pt-4">
                 <p className="text-base font-semibold">Would you like Laddrr to pre-configure this system for you?</p>
                 <div className="grid md:grid-cols-2 gap-4">
@@ -281,7 +280,6 @@ function GoalsDashboard() {
             <Card>
                 <CardHeader>
                     <CardTitle className="text-3xl font-bold font-headline flex items-center gap-3"><Target className="h-8 w-8 text-primary" />Goals & KPI Framework</CardTitle>
-                    <CardDescription className="text-lg text-muted-foreground">Overview of the currently active performance framework for your teams.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -312,7 +310,6 @@ function GoalsDashboard() {
             <Card>
                 <CardHeader>
                     <CardTitle>Upload Performance Data</CardTitle>
-                    <CardDescription>Upload an Excel or CSV file with the latest performance data for a specific role.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
