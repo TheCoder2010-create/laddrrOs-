@@ -130,15 +130,14 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg">
+       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Create New Anonymous Survey</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
             <div>
                 <h3 className="font-semibold text-foreground mb-3">1. Choose a starting point</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Templates */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                          <h4 className="font-medium text-muted-foreground">Start from a Template</h4>
                         {surveyTemplates.map((template, index) => (
@@ -149,19 +148,18 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
                             >
                                 <div>
                                     <p className="font-semibold text-foreground">{template.title}</p>
+                                    <p className="text-sm text-muted-foreground">{template.objective}</p>
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </button>
                         ))}
                     </div>
-
-                    {/* Custom Objective */}
                     <div className="space-y-3">
-                        <h4 className="font-medium text-muted-foreground">Start with an Objective</h4>
+                         <h4 className="font-medium text-muted-foreground">Start with an Objective</h4>
                          <Accordion type="single" collapsible>
-                            <AccordionItem value="item-1" className="border rounded-lg px-3">
-                                <AccordionTrigger className="font-semibold py-3 hover:no-underline">Define a Custom Objective</AccordionTrigger>
-                                <AccordionContent className="pt-2 pb-4 space-y-4">
+                            <AccordionItem value="item-1" className="border rounded-lg">
+                                <AccordionTrigger className="font-semibold py-3 hover:no-underline px-3">Define a Custom Objective</AccordionTrigger>
+                                <AccordionContent className="pt-2 pb-4 space-y-4 px-3">
                                     <div className="space-y-2">
                                         <Label htmlFor="survey-objective" className="text-base font-semibold">Survey Objective</Label>
                                         <Textarea
