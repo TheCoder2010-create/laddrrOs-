@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -33,7 +34,7 @@ export default function RiskHeatmapWidget() {
     return (
         <>
             <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="p-2 pt-2">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                         <Flame className="text-destructive" />
                         Department Risk Heatmap

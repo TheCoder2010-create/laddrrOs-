@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -14,7 +15,7 @@ const topConcerns = [
 export default function TopConcernsWidget() {
     return (
         <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-2 pt-2">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
                     <AlertCircle className="text-primary" />
                     Top Themes & Concerns

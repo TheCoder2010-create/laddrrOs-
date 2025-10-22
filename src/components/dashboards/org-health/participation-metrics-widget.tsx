@@ -13,7 +13,7 @@ const metrics = {
 export default function ParticipationMetricsWidget() {
     return (
         <Card className="h-full">
-            <CardHeader className="pb-2">
+            <CardHeader className="p-2 pt-2">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
                     <Users className="text-primary" />
                     Survey Engagement
