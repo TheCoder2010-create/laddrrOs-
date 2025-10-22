@@ -124,7 +124,6 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
             <Label htmlFor="survey-objective" className="text-base font-semibold">Step 1: Define Survey Objective</Label>
             <Textarea
               id="survey-objective"
-              placeholder="e.g., 'Check employee morale after the recent re-organization' or 'Assess team sentiment regarding work-life balance.'"
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
               rows={3}
