@@ -6,7 +6,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit, FileText, ChevronRight } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit, FileText, ChevronRight, FileJson, FileType } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -59,6 +59,7 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
   const [customQuestion, setCustomQuestion] = useState('');
   const [isGenerating, startGeneration] = useTransition();
   const { toast } = useToast();
+  const [mode, setMode] = useState<'selection' | 'template' | 'custom'>('selection');
 
   const handleGenerateQuestions = (currentObjective: string) => {
     if (!currentObjective.trim()) {
@@ -116,6 +117,7 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
     setObjective('');
     setSuggestedQuestions([]);
     setSelectedQuestions({});
+    setMode('selection');
     onSurveyDeployed();
   };
   
@@ -127,113 +129,131 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
       });
       setSelectedQuestions(newSelection);
   }
+  
+  const handleTemplateClick = (templateObjective: string) => {
+    handleGenerateQuestions(templateObjective);
+    setMode('selection'); // Stay on selection, questions will appear below
+  };
 
   return (
     <div className="space-y-6">
-       <Card className="shadow-lg">
-       <CardHeader className="p-2 pt-2">
+      <Card className="shadow-lg">
+        <CardHeader className="p-2 pt-2">
           <CardTitle>Create New Anonymous Survey</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {mode === 'selection' && (
             <div>
                 <h3 className="font-semibold text-foreground mb-3">1. Choose a starting point</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                         <h4 className="font-medium text-muted-foreground">Start from a Template</h4>
-                        {surveyTemplates.map((template, index) => (
-                            <button 
-                                key={index}
-                                onClick={() => handleGenerateQuestions(template.objective)}
-                                className="w-full text-left p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex justify-between items-center"
-                            >
-                                <div>
-                                    <p className="font-semibold text-foreground">{template.title}</p>
-                                    <p className="text-sm text-muted-foreground">{template.objective}</p>
-                                </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                            </button>
-                        ))}
-                    </div>
-                    <div className="space-y-3">
-                         <h4 className="font-medium text-muted-foreground">Start with an Objective</h4>
-                         <Accordion type="single" collapsible>
-                            <AccordionItem value="item-1" className="border rounded-lg">
-                                <AccordionTrigger className="font-semibold py-3 hover:no-underline px-3">Define a Custom Objective</AccordionTrigger>
-                                <AccordionContent className="pt-2 pb-4 space-y-4 px-0">
-                                    <div className="space-y-2 px-3">
-                                        <Label htmlFor="survey-objective" className="text-base font-semibold">Survey Objective</Label>
-                                        <Textarea
-                                            id="survey-objective"
-                                            value={objective}
-                                            onChange={(e) => setObjective(e.target.value)}
-                                            rows={3}
-                                        />
-                                    </div>
-                                    <Button onClick={() => handleGenerateQuestions(objective)} disabled={isGenerating}>
-                                        {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
-                                        Generate Suggestions
-                                    </Button>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                        onClick={() => setMode('template')}
+                        className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center"
+                    >
+                        <FileJson className="h-8 w-8 text-primary mb-2"/>
+                        <p className="font-semibold">Start from a Template</p>
+                    </button>
+                    <button
+                        onClick={() => setMode('custom')}
+                        className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center"
+                    >
+                        <FileType className="h-8 w-8 text-primary mb-2"/>
+                        <p className="font-semibold">Start with an Objective</p>
+                    </button>
                 </div>
             </div>
+          )}
+
+          {mode === 'template' && (
+            <div className="space-y-3">
+              {surveyTemplates.map((template, index) => (
+                  <button 
+                      key={index}
+                      onClick={() => handleTemplateClick(template.objective)}
+                      className="w-full text-left p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex justify-between items-center"
+                  >
+                      <div>
+                          <p className="font-semibold text-foreground">{template.title}</p>
+                          <p className="text-sm text-muted-foreground">{template.objective}</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </button>
+              ))}
+            </div>
+          )}
+
+          {mode === 'custom' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                  <Label htmlFor="survey-objective" className="text-base font-semibold">Survey Objective</Label>
+                  <Textarea
+                      id="survey-objective"
+                      value={objective}
+                      onChange={(e) => setObjective(e.target.value)}
+                      rows={3}
+                  />
+              </div>
+              <Button onClick={() => handleGenerateQuestions(objective)} disabled={isGenerating || !objective.trim()}>
+                  {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
+                  Generate Suggestions
+              </Button>
+            </div>
+          )}
           
-            {(isGenerating || suggestedQuestions.length > 0) && (
-                 <div className="space-y-4 pt-6 border-t">
-                    <h3 className="font-semibold text-foreground">2. Curate and Add Questions</h3>
-                    {isGenerating ? <Skeleton className="h-40 w-full" /> : (
-                    <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="select-all" checked={allQuestionsSelected} onCheckedChange={handleSelectAll} />
-                            <Label htmlFor="select-all" className="font-semibold">Select All</Label>
-                        </div>
-                        {suggestedQuestions.map((q) => (
-                        <div key={q.id} className="flex items-start gap-4 p-3 border rounded-lg bg-muted/50">
-                            <Checkbox
-                            id={q.id}
-                            checked={!!selectedQuestions[q.id!]}
-                            onCheckedChange={(checked) => {
-                                setSelectedQuestions(prev => ({ ...prev, [q.id!]: !!checked }));
-                            }}
-                            className="mt-1"
-                            />
-                            <div className="flex-1">
-                            <Label htmlFor={q.id} className="font-medium">{q.questionText}</Label>
-                            <p className="text-xs text-muted-foreground flex items-start gap-1.5 mt-1">
-                                <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                <span>{q.reasoning}</span>
-                            </p>
-                            </div>
-                        </div>
-                        ))}
-                    </div>
-                    )}
-                    <div className="space-y-2 pt-4 border-t">
-                        <Label htmlFor="custom-question">Add a Custom Question</Label>
-                        <div className="flex items-center gap-2">
-                            <Input 
-                                id="custom-question" 
-                                placeholder="Type your own question here" 
-                                value={customQuestion}
-                                onChange={(e) => setCustomQuestion(e.target.value)}
-                            />
-                            <Button variant="outline" onClick={handleAddCustomQuestion} disabled={!customQuestion.trim()}>
-                                <Plus className="mr-2"/> Add
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+          {(isGenerating || suggestedQuestions.length > 0) && (
+            <div className="space-y-4 pt-6 border-t">
+              <h3 className="font-semibold text-foreground">2. Curate and Add Questions</h3>
+              {isGenerating ? <Skeleton className="h-40 w-full" /> : (
+              <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                      <Checkbox id="select-all" checked={allQuestionsSelected} onCheckedChange={handleSelectAll} />
+                      <Label htmlFor="select-all" className="font-semibold">Select All</Label>
+                  </div>
+                  {suggestedQuestions.map((q) => (
+                  <div key={q.id} className="flex items-start gap-4 p-3 border rounded-lg bg-muted/50">
+                      <Checkbox
+                      id={q.id}
+                      checked={!!selectedQuestions[q.id!]}
+                      onCheckedChange={(checked) => {
+                          setSelectedQuestions(prev => ({ ...prev, [q.id!]: !!checked }));
+                      }}
+                      className="mt-1"
+                      />
+                      <div className="flex-1">
+                      <Label htmlFor={q.id} className="font-medium">{q.questionText}</Label>
+                      <p className="text-xs text-muted-foreground flex items-start gap-1.5 mt-1">
+                          <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                          <span>{q.reasoning}</span>
+                      </p>
+                      </div>
+                  </div>
+                  ))}
+              </div>
+              )}
+              <div className="space-y-2 pt-4 border-t">
+                  <Label htmlFor="custom-question">Add a Custom Question</Label>
+                  <div className="flex items-center gap-2">
+                      <Input 
+                          id="custom-question" 
+                          placeholder="Type your own question here" 
+                          value={customQuestion}
+                          onChange={(e) => setCustomQuestion(e.target.value)}
+                      />
+                      <Button variant="outline" onClick={handleAddCustomQuestion} disabled={!customQuestion.trim()}>
+                          <Plus className="mr-2"/> Add
+                      </Button>
+                  </div>
+              </div>
+            </div>
+          )}
         </CardContent>
-         {(isGenerating || suggestedQuestions.length > 0) && (
-            <CardFooter>
-                <Button size="lg" onClick={handleDeploySurvey} disabled={suggestedQuestions.filter(q => selectedQuestions[q.id!]).length === 0}>
-                    <Send className="mr-2"/> Deploy Survey
-                </Button>
-            </CardFooter>
-         )}
+        {(isGenerating || suggestedQuestions.length > 0) && (
+          <CardFooter>
+              <Button size="lg" onClick={handleDeploySurvey} disabled={suggestedQuestions.filter(q => selectedQuestions[q.id!]).length === 0}>
+                  <Send className="mr-2"/> Deploy Survey
+              </Button>
+          </CardFooter>
+        )}
       </Card>
     </div>
   )
