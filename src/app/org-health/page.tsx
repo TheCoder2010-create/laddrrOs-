@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit, FileText, ChevronRight, FileJson, FileType } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit, FileText, ChevronRight, FileJson, FileType, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -132,35 +133,40 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
   
   const handleTemplateClick = (templateObjective: string) => {
     handleGenerateQuestions(templateObjective);
-    setMode('selection'); // Stay on selection, questions will appear below
+    setMode('template'); 
   };
 
   return (
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader className="p-2 pt-2">
-          <CardTitle>Create New Anonymous Survey</CardTitle>
+            <div className="flex justify-between items-center">
+                <CardTitle>Create New Anonymous Survey</CardTitle>
+                {mode !== 'selection' && (
+                     <Button variant="ghost" size="sm" onClick={() => { setMode('selection'); setSuggestedQuestions([])} }>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                    </Button>
+                )}
+            </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {mode === 'selection' && (
-            <div>
-                <h3 className="font-semibold text-foreground mb-3">1. Choose a starting point</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button
-                        onClick={() => setMode('template')}
-                        className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center"
-                    >
-                        <FileJson className="h-8 w-8 text-primary mb-2"/>
-                        <p className="font-semibold">Start from a Template</p>
-                    </button>
-                    <button
-                        onClick={() => setMode('custom')}
-                        className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center"
-                    >
-                        <FileType className="h-8 w-8 text-primary mb-2"/>
-                        <p className="font-semibold">Start with an Objective</p>
-                    </button>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                    onClick={() => setMode('template')}
+                    className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center"
+                >
+                    <FileJson className="h-8 w-8 text-primary mb-2"/>
+                    <p className="font-semibold">Start from a Template</p>
+                </button>
+                <button
+                    onClick={() => setMode('custom')}
+                    className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors flex flex-col items-center justify-center text-center"
+                >
+                    <FileType className="h-8 w-8 text-primary mb-2"/>
+                    <p className="font-semibold">Start with an Objective</p>
+                </button>
             </div>
           )}
 
@@ -184,19 +190,25 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
 
           {mode === 'custom' && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                  <Label htmlFor="survey-objective" className="text-base font-semibold">Survey Objective</Label>
-                  <Textarea
-                      id="survey-objective"
-                      value={objective}
-                      onChange={(e) => setObjective(e.target.value)}
-                      rows={3}
-                  />
-              </div>
-              <Button onClick={() => handleGenerateQuestions(objective)} disabled={isGenerating || !objective.trim()}>
-                  {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
-                  Generate Suggestions
-              </Button>
+                <Accordion type="single" collapsible defaultValue="custom-objective">
+                    <AccordionItem value="custom-objective" className="border-0">
+                        <AccordionTrigger className="font-semibold py-2">Define a Custom Objective</AccordionTrigger>
+                        <AccordionContent className="space-y-4 px-0 pb-0">
+                             <div className="space-y-2">
+                                <Textarea
+                                    id="survey-objective"
+                                    value={objective}
+                                    onChange={(e) => setObjective(e.target.value)}
+                                    rows={3}
+                                />
+                            </div>
+                            <Button onClick={() => handleGenerateQuestions(objective)} disabled={isGenerating || !objective.trim()}>
+                                {isGenerating ? <Loader2 className="mr-2 animate-spin" /> : <Wand2 className="mr-2" />}
+                                Generate Suggestions
+                            </Button>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             </div>
           )}
           
@@ -874,3 +886,4 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
