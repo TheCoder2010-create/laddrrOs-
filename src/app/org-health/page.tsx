@@ -117,7 +117,6 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Create New Anonymous Survey</CardTitle>
-          <CardDescription>Describe your objective, and let Laddrr AI help you build an effective survey to check the health of your organization.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
