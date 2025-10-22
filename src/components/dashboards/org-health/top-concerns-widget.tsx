@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -24,7 +23,7 @@ export default function TopConcernsWidget() {
             <CardContent>
                 <div className="space-y-2">
                     {topConcerns.map(item => (
-                        <div key={item.theme} className="flex items-center justify-between">
+                        <div key={item.theme} className="flex items-start justify-between">
                             <p className="text-sm font-medium mr-4">{item.theme}</p>
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className="text-sm font-semibold w-8 text-center">{item.mentions}</span>
