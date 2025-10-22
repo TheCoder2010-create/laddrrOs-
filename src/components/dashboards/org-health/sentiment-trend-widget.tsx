@@ -24,9 +24,9 @@ const chartConfig = {
 export default function SentimentTrendWidget() {
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-            <HeartPulse className="text-primary"/>
+      <CardHeader className="p-2 pt-2">
+        <CardTitle className="text-base font-medium flex items-start gap-2">
+            <HeartPulse className="text-primary mt-0.5"/>
             Historical Morale Trends
         </CardTitle>
       </CardHeader>
