@@ -864,10 +864,8 @@ function HistorySection({ role }: { role: Role }) {
                     const isEmployee = currentUserName === item.employeeName;
                     const isManagerialRole = ['AM', 'Manager', 'HR Head'].includes(role);
                     
-                    const isMyTurnToActOnInsight = item.assignedTo?.includes(role);
-
-                    const canSupervisorAct = isSupervisorForThisInsight && insightStatus === 'open' && isMyTurnToActOnInsight;
-                    const canSupervisorRetry = isSupervisorForThisInsight && insightStatus === 'pending_supervisor_retry' && isMyTurnToActOnInsight;
+                    const canSupervisorAct = isSupervisorForThisInsight && insightStatus === 'open';
+                    const canSupervisorRetry = isSupervisorForThisInsight && insightStatus === 'pending_supervisor_retry';
                     const canEmployeeAck = isEmployee && insightStatus === 'pending_employee_acknowledgement';
 
                     const finalDecisionEvent = insight?.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
@@ -1466,6 +1464,7 @@ export default function Home() {
     
 
     
+
 
 
 
