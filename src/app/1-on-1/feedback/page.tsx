@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput, type CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, updateOneOnOneHistoryItem, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForUser } from '@/services/feedback-service';
+import { saveOneOnOneHistory, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForUser } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -211,14 +211,6 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     
     startTransition(async () => {
         try {
-            const historyItem = await saveOneOnOneHistory({
-                supervisorName: supervisor,
-                employeeName: meeting.with,
-                date: new Date(meeting.date).toISOString(),
-                // Temporarily store empty analysis
-                analysis: { supervisorSummary: '', employeeSummary: '', leadershipScore: 0, effectivenessScore: 0, strengthsObserved: [], coachingRecommendations: [], actionItems: [], legalDataCompliance: { piiOmitted: false, privacyRequest: false }, biasFairnessCheck: { flag: false }, localizationCompliance: { applied: false }, employeeSwotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] } }, 
-            });
-
             // Fetch contextual data for the AI
             const pastDeclinedAreas = await getDeclinedCoachingAreasForSupervisor(supervisor);
             const activePlans = await getActiveCoachingPlansForUser(supervisor);
@@ -229,20 +221,28 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                 notes: p.rec.checkIns?.slice(-1)[0]?.notes || 'No check-ins yet.'
             }));
 
-
-            // Pass the new history ID and context to the analysis flow
+            // Step 1: Get the full analysis from the AI.
+            // The `analyzeOneOnOne` flow is now also responsible for creating the critical insight record if needed.
             const result = await analyzeOneOnOne({
                 ...values,
-                oneOnOneId: historyItem.id, // Pass the ID for linking
+                oneOnOneId: 'temp-id-for-linking', // A temporary ID, will be replaced by the real one.
                 pastDeclinedRecommendationAreas: pastDeclinedAreas,
                 activeDevelopmentGoals,
-                employeePerformanceData: mockPerformanceData, // Pass performance data to AI
+                employeePerformanceData: mockPerformanceData,
             });
 
             setAnalysisResult(result);
             
-            // Now update the history item with the real analysis
-            await updateOneOnOneHistoryItem({ ...historyItem, analysis: result });
+            // Step 2: Now save the complete history item with the real analysis.
+            const historyItem = await saveOneOnOneHistory({
+                supervisorName: supervisor,
+                employeeName: meeting.with,
+                date: new Date(meeting.date).toISOString(),
+                analysis: result, 
+            });
+
+            // The `analyzeOneOnOne` function already handles creating the critical insight feedback item,
+            // so we don't need to do anything extra here. We just need to make sure we call it.
             
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
         } catch (error) {
@@ -674,5 +674,7 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
+
+    
 
     
