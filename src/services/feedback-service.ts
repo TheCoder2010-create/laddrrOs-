@@ -134,6 +134,12 @@ const getMockOneOnOneHistory = (): OneOnOneHistoryItem[] => {
                 coachingRecommendations: [{ id: 'rec-1', area: 'Setting Clear Expectations', recommendation: 'Try to define "done" more clearly for tasks.', type: 'Article', resource: 'How to Set Clear Expectations', justification: 'Helps with alignment.', status: 'pending', auditTrail: [], checkIns: [], progress: 0 }],
                 actionItems: [{ id: 'ai-1', owner: 'Employee', task: 'Draft the API spec for the new feature', status: 'completed', completedAt: new Date(now.getDate() - 10).toISOString() }],
                 missedSignals: ["Casey mentioned working late twice, which could be a sign of workload issues you didn't explore."],
+                criticalCoachingInsight: {
+                    summary: "Employee mentioned 'feeling pretty burned out' and supervisor did not explore this critical signal.",
+                    reason: "Signs of burnout, if left unaddressed, can lead to decreased productivity, low morale, and attrition. It's critical to address these signals proactively.",
+                    severity: 'high',
+                    status: 'open',
+                },
                 biasFairnessCheck: { flag: false },
                 localizationCompliance: { applied: false },
                 legalDataCompliance: { piiOmitted: false, privacyRequest: false },
