@@ -112,6 +112,7 @@ function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Me
     const [packet, setPacket] = useState<BriefingPacketOutput | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isOpen, setIsOpen] = useState(false);
+    const { role } = useRole();
 
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
@@ -122,6 +123,7 @@ function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Me
     };
 
     const generatePacket = useCallback(async () => {
+        if (!role) return;
         setIsLoading(true);
         setError(null);
         try {
@@ -190,7 +192,7 @@ function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Me
         } finally {
             setIsLoading(false);
         }
-    }, [supervisor, meeting.with, viewerRole, packet]);
+    }, [supervisor, meeting.with, viewerRole, packet, role]);
 
     const renderList = (items?: string[]) => {
         if (!items || items.length === 0) {
@@ -858,12 +860,14 @@ function HistorySection({ role }: { role: Role }) {
                     const insightStatus = insight?.status;
                     const currentUserName = roleUserMapping[role].name;
                     
-                    const isSupervisorInvolved = currentUserName === item.supervisorName;
+                    const isSupervisorForThisInsight = currentUserName === item.supervisorName;
                     const isEmployee = currentUserName === item.employeeName;
                     const isManagerialRole = ['AM', 'Manager', 'HR Head'].includes(role);
+                    
+                    const isMyTurnToActOnInsight = item.assignedTo?.includes(role);
 
-                    const canSupervisorAct = isSupervisorInvolved && insightStatus === 'open';
-                    const canSupervisorRetry = isSupervisorInvolved && insightStatus === 'pending_supervisor_retry';
+                    const canSupervisorAct = isSupervisorForThisInsight && insightStatus === 'open' && isMyTurnToActOnInsight;
+                    const canSupervisorRetry = isSupervisorForThisInsight && insightStatus === 'pending_supervisor_retry' && isMyTurnToActOnInsight;
                     const canEmployeeAck = isEmployee && insightStatus === 'pending_employee_acknowledgement';
 
                     const finalDecisionEvent = insight?.auditTrail?.find(e => ["Assigned to Ombudsman", "Assigned to Grievance Office", "Logged Dissatisfaction & Closed"].includes(e.event));
@@ -932,7 +936,7 @@ function HistorySection({ role }: { role: Role }) {
                             </AccordionTrigger>
                             <AccordionContent className="space-y-6 pt-2 px-4 pb-4">
                                 
-                                {(isSupervisorInvolved || isManagerialRole) && (
+                                {(isSupervisorForThisInsight || isManagerialRole) && (
                                     <div className="space-y-4">
                                         <div className="bg-muted/50 p-4 rounded-lg">
                                             <div className="flex justify-between items-center mb-2">
@@ -1088,7 +1092,7 @@ function HistorySection({ role }: { role: Role }) {
                                               <h5 className="font-medium">{formatActorName('Supervisor')}</h5>
                                               <div className="space-y-2 mt-2">
                                                   {supervisorActionItems.map(ai => {
-                                                      const isOwner = isSupervisorInvolved;
+                                                      const isOwner = isSupervisorForThisInsight;
                                                       return (
                                                           <div key={ai.id} className="flex items-center gap-3">
                                                               <Checkbox id={`item-${ai.id}`} checked={ai.status === 'completed'} onCheckedChange={() => handleToggleActionItem(item.id, ai.id)} disabled={!isOwner} />
@@ -1124,7 +1128,7 @@ function HistorySection({ role }: { role: Role }) {
                                     </div>
                                   </div>
                                   
-                                  {(isSupervisorInvolved || isManagerialRole) && displayedMissedSignals.length > 0 && (
+                                  {(isSupervisorForThisInsight || isManagerialRole) && displayedMissedSignals.length > 0 && (
                                        <div className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20 mt-4">
                                           <h4 className="font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2"><AlertTriangle className="text-yellow-500"/>Missed Signals</h4>
                                            <ul className="list-disc pl-5 mt-2 space-y-1 text-yellow-600 dark:text-yellow-300">
@@ -1462,6 +1466,7 @@ export default function Home() {
     
 
     
+
 
 
 
