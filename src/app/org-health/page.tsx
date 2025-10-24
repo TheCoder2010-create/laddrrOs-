@@ -831,7 +831,7 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
     );
 }
 
-function SurveyHistory() {
+function SurveyHistory({ onUpdate }: { onUpdate: () => void }) {
     const [surveys, setSurveys] = useState<DeployedSurvey[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -872,34 +872,30 @@ function SurveyHistory() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Objective</TableHead>
-                            <TableHead>Date Closed</TableHead>
-                            <TableHead>Submissions</TableHead>
-                            <TableHead>Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {surveys.map(survey => (
-                            <TableRow key={survey.id}>
-                                <TableCell className="font-medium">{survey.objective}</TableCell>
-                                <TableCell>{format(new Date(survey.deployedAt), 'PPP')}</TableCell>
-                                <TableCell>{survey.submissionCount}</TableCell>
-                                <TableCell>
-                                    {survey.coachingRecommendations ? (
-                                        <Badge variant="success">Completed</Badge>
-                                    ) : survey.summary ? (
-                                        <Badge variant="secondary">Analyzed</Badge>
-                                    ) : (
-                                        <Badge variant="outline">Closed</Badge>
-                                    )}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                 <Accordion type="single" collapsible className="w-full space-y-3">
+                     {surveys.map(survey => (
+                         <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
+                            <AccordionTrigger className="p-4 hover:no-underline flex-1">
+                                <div className="flex justify-between items-center w-full">
+                                    <div className="text-left">
+                                        <p className="font-medium text-foreground truncate max-w-md">{survey.objective}</p>
+                                        <p className="text-sm font-normal text-muted-foreground">
+                                            Closed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant={survey.coachingRecommendations ? 'success' : survey.summary ? 'secondary' : 'outline'}>
+                                            {survey.coachingRecommendations ? 'Completed' : survey.summary ? 'Analyzed' : 'Closed'}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 pt-2 border-t">
+                                <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={onUpdate} />
+                            </AccordionContent>
+                        </AccordionItem>
+                     ))}
+                </Accordion>
             </CardContent>
         </Card>
     );
@@ -918,10 +914,10 @@ function OrgHealthContent() {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <CreateSurveyWizard onSurveyDeployed={handleSurveyChange} />
-            <SurveyHistory key={`history-${key}`} />
         </div>
         
         <DeployedSurveys key={`deployed-${key}`} onUpdate={handleSurveyChange} />
+        <SurveyHistory key={`history-${key}`} onUpdate={handleSurveyChange} />
     </div>
   );
 }
