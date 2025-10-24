@@ -139,7 +139,7 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
   return (
     <div className="space-y-6">
       <Card className="shadow-lg">
-        <CardHeader className="p-2 pt-2">
+        <CardHeader className="p-4 pt-2 pb-2">
             <div className="flex justify-between items-center">
                 <CardTitle className="text-base font-medium flex items-center gap-2">Create New Anonymous Survey</CardTitle>
                 {mode !== 'selection' && (
@@ -790,34 +790,36 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
                 <Accordion type="single" collapsible className="w-full space-y-3">
                      {surveys.map(survey => (
                          <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
-                            <AccordionTrigger className="p-4 hover:no-underline w-full">
-                                <div className="flex justify-between items-center w-full">
-                                    <div className="text-left">
-                                        <p className="font-semibold text-lg text-foreground">{survey.objective}</p>
-                                        <p className="text-sm font-normal text-muted-foreground">
-                                            Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-4 pl-4">
-                                        <div className="flex items-center gap-1.5 text-sm">
-                                            <Activity />
-                                            <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                            <div className="flex items-center p-4">
+                                <AccordionTrigger className="p-0 hover:no-underline flex-1">
+                                    <div className="flex justify-between items-center w-full">
+                                        <div className="text-left">
+                                            <p className="font-semibold text-lg text-foreground">{survey.objective}</p>
+                                            <p className="text-sm font-normal text-muted-foreground">
+                                                Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
+                                            </p>
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-sm">
-                                            <UserX />
-                                            <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
-                                        </div>
-                                        <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
-                                            {survey.status === 'active' ? 'Active' : 'Closed'}
-                                        </Badge>
-                                        {survey.status === 'active' && (
-                                            <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
-                                                <XCircle className="mr-2 h-4 w-4" /> Close Survey
-                                            </Button>
-                                        )}
                                     </div>
+                                </AccordionTrigger>
+                                <div className="flex items-center gap-4 pl-4">
+                                    <div className="flex items-center gap-1.5 text-sm">
+                                        <Activity />
+                                        <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-sm">
+                                        <UserX />
+                                        <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
+                                    </div>
+                                    <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
+                                        {survey.status === 'active' ? 'Active' : 'Closed'}
+                                    </Badge>
+                                    {survey.status === 'active' && (
+                                        <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
+                                            <XCircle className="mr-2 h-4 w-4" /> Close Survey
+                                        </Button>
+                                    )}
                                 </div>
-                            </AccordionTrigger>
+                            </div>
                             <AccordionContent className="p-4 pt-2 border-t">
                                 <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={fetchSurveys} />
                             </AccordionContent>
@@ -946,6 +948,7 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
