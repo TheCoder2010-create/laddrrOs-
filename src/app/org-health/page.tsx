@@ -36,6 +36,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { assignCoachingFromOrgHealth } from '@/services/org-coaching-service';
 import OrgHealthDashboard from '@/components/dashboards/org-health-dashboard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const surveyTemplates = [
@@ -448,7 +449,7 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective, o
                         rows={2}
                     />
                      <Button variant="secondary" size="sm" onClick={() => handleGenerateTargetedQuestion(roleKey)} disabled={isGeneratingTargeted}>
-                        {isGeneratingTargeted ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                        {isGeneratingTargeted ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
                         Generate
                     </Button>
                 </div>
@@ -648,7 +649,7 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
                                     {survey.questions.map((q, qIndex) => {
                                         const questionKey = `q${qIndex + 1}`;
                                         return (
-                                            <TableCell key={q.id} className="text-sm">
+                                            <TableCell key={q.id} className="text-sm py-2">
                                                 {response[questionKey] || 'No answer'}
                                             </TableCell>
                                         )
@@ -792,34 +793,34 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
                 <Accordion type="single" collapsible className="w-full space-y-3">
                      {surveys.map(survey => (
                          <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
-                            <div className="flex items-center p-4">
-                                <AccordionTrigger className="p-0 hover:no-underline flex-1">
+                            <AccordionTrigger className="p-4 hover:no-underline flex-1">
+                                <div className="flex justify-between items-center w-full">
                                     <div className="text-left">
                                         <p className="font-semibold text-lg text-foreground">Survey Details</p>
                                         <p className="text-sm font-normal text-muted-foreground">
                                             Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
                                         </p>
                                     </div>
-                                </AccordionTrigger>
-                                <div className="flex items-center gap-4 pl-4">
-                                    <div className="flex items-center gap-1.5 text-sm">
-                                        <Users />
-                                        <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                    <div className="flex items-center gap-4 pl-4">
+                                        <div className="flex items-center gap-1.5 text-sm">
+                                            <Users />
+                                            <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-sm">
+                                            <UserX />
+                                            <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
+                                        </div>
+                                        <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
+                                            {survey.status === 'active' ? 'Active' : 'Closed'}
+                                        </Badge>
+                                        {survey.status === 'active' && (
+                                            <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
+                                                <XCircle className="mr-2 h-4 w-4" /> Close Survey
+                                            </Button>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-sm">
-                                        <UserX />
-                                        <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
-                                    </div>
-                                    <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
-                                        {survey.status === 'active' ? 'Active' : 'Closed'}
-                                    </Badge>
-                                    {survey.status === 'active' && (
-                                        <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
-                                            <XCircle className="mr-2 h-4 w-4" /> Close Survey
-                                        </Button>
-                                    )}
                                 </div>
-                            </div>
+                            </AccordionTrigger>
                             <AccordionContent className="p-4 pt-2 border-t">
                                 <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={onUpdate} />
                             </AccordionContent>
@@ -890,8 +891,12 @@ function SurveyHistory({ onUpdate }: { onUpdate: () => void }) {
                                     </div>
                                 </div>
                             </AccordionTrigger>
-                            <AccordionContent className="p-4 pt-2 border-t">
-                                <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={onUpdate} />
+                             <AccordionContent className="border-t">
+                                <ScrollArea className="h-[70vh] w-full">
+                                    <div className="p-4 pt-2">
+                                        <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={onUpdate} />
+                                    </div>
+                                </ScrollArea>
                             </AccordionContent>
                         </AccordionItem>
                      ))}
@@ -910,6 +915,16 @@ function OrgHealthContent() {
 
   return (
     <div className="p-4 md:p-8 space-y-8">
+        <div className="flex justify-between items-start">
+            <div>
+                <h1 className="text-3xl font-bold font-headline flex items-center gap-3">
+                    <HeartPulse className="h-8 w-8 text-pink-500" />
+                    Org Health
+                </h1>
+                 <p className="text-lg text-muted-foreground mt-2">Deploy anonymous surveys, analyze feedback with AI, and drive targeted L&D actions.</p>
+            </div>
+        </div>
+
         <OrgHealthDashboard />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -951,4 +966,3 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
-
