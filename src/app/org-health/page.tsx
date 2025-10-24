@@ -7,7 +7,7 @@ import { useRole } from '@/hooks/use-role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit, FileText, ChevronRight, FileJson, FileType, ArrowLeft } from 'lucide-react';
+import { HeartPulse, Check, Loader2, Plus, Wand2, Info, Send, ListChecks, Activity, Bot, MessageSquare, Eye, XCircle, Download, UserX, Users, Edit, UserPlus, BrainCircuit, FileText, ChevronRight, FileJson, FileType, ArrowLeft, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -141,7 +141,7 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
       <Card className="shadow-lg">
         <CardHeader className="p-2 pt-2">
             <div className="flex justify-between items-center">
-                <CardTitle>Create New Anonymous Survey</CardTitle>
+                <CardTitle className="text-base font-medium flex items-center gap-2">Create New Anonymous Survey</CardTitle>
                 {mode !== 'selection' && (
                      <Button variant="ghost" size="icon" onClick={() => { setMode('selection'); setSuggestedQuestions([])} }>
                         <ArrowLeft className="h-4 w-4" />
@@ -749,7 +749,7 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
     );
 }
 
-function ActiveSurveys({ onUpdate }: { onUpdate: () => void }) {
+function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
     const [surveys, setSurveys] = useState<DeployedSurvey[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
@@ -829,6 +829,73 @@ function ActiveSurveys({ onUpdate }: { onUpdate: () => void }) {
     );
 }
 
+function SurveyHistory() {
+    const [surveys, setSurveys] = useState<DeployedSurvey[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchSurveys = useCallback(async () => {
+        setIsLoading(true);
+        const allSurveys = (await getAllSurveys()).filter(s => s.status === 'closed');
+        setSurveys(allSurveys);
+        setIsLoading(false);
+    }, []);
+
+    useEffect(() => {
+        fetchSurveys();
+    }, [fetchSurveys]);
+
+    if (isLoading) {
+        return <Skeleton className="h-24 w-full" />;
+    }
+    
+    if (surveys.length === 0) {
+        return null; // Don't show if there's no history
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <History /> Survey History
+                </CardTitle>
+                 <CardDescription>
+                    A log of all completed organizational health surveys.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Objective</TableHead>
+                            <TableHead>Date Closed</TableHead>
+                            <TableHead>Submissions</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {surveys.map(survey => (
+                            <TableRow key={survey.id}>
+                                <TableCell className="font-medium">{survey.objective}</TableCell>
+                                <TableCell>{format(new Date(survey.deployedAt), 'PPP')}</TableCell>
+                                <TableCell>{survey.submissionCount}</TableCell>
+                                <TableCell>
+                                    {survey.coachingRecommendations ? (
+                                        <Badge variant="success">Completed</Badge>
+                                    ) : survey.summary ? (
+                                        <Badge variant="secondary">Analyzed</Badge>
+                                    ) : (
+                                        <Badge variant="outline">Closed</Badge>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
+
 function OrgHealthContent() {
   const [key, setKey] = useState(0);
 
@@ -840,9 +907,12 @@ function OrgHealthContent() {
     <div className="p-4 md:p-8 space-y-8">
         <OrgHealthDashboard />
         
-        <ActiveSurveys key={key} onUpdate={handleSurveyDeployed} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CreateSurveyWizard onSurveyDeployed={handleSurveyDeployed} />
+            <SurveyHistory />
+        </div>
         
-        <CreateSurveyWizard onSurveyDeployed={handleSurveyDeployed} />
+        <DeployedSurveys key={key} onUpdate={handleSurveyDeployed} />
     </div>
   );
 }
@@ -876,6 +946,7 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
