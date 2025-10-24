@@ -139,9 +139,9 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
   return (
     <div className="space-y-6">
       <Card className="shadow-lg">
-        <CardHeader className="p-2 pt-2 pb-2">
+        <CardHeader>
             <div className="flex justify-between items-center">
-                <CardTitle className="text-base font-medium flex items-center gap-2">Create New Anonymous Survey</CardTitle>
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">Create New Anonymous Survey</CardTitle>
                 {mode !== 'selection' && (
                      <Button variant="ghost" size="icon" onClick={() => { setMode('selection'); setSuggestedQuestions([])} }>
                         <ArrowLeft className="h-4 w-4" />
@@ -564,7 +564,7 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
         const rows = mockResponses.map(response => {
             return survey.questions.map((q, index) => {
                 const questionKey = `q${index + 1}`; // Assuming keys are q1, q2, ...
-                const answer = response[questionKey] || '';
+                const answer = response[questionKey] || 'No answer';
                 return `"${answer.replace(/"/g, '""')}"`;
             }).join(',');
         });
@@ -759,7 +759,7 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
     const fetchSurveys = useCallback(async () => {
         setIsLoading(true);
         const allSurveys = await getAllSurveys();
-        setSurveys(allSurveys);
+        setSurveys(allSurveys.filter(s => s.status === 'active'));
         setIsLoading(false);
     }, []);
 
@@ -770,7 +770,7 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
     const handleCloseSurvey = async (surveyId: string) => {
         await closeSurvey(surveyId);
         toast({ title: "Survey Closed", description: "The survey is no longer accepting new responses." });
-        fetchSurveys();
+        onUpdate(); // This will re-trigger fetch in both Deployed and History
     }
 
     if (isLoading) {
@@ -785,7 +785,7 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <ListChecks /> Deployed Surveys
+                    <ListChecks /> Active Surveys
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -794,18 +794,16 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
                          <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
                             <div className="flex items-center p-4">
                                 <AccordionTrigger className="p-0 hover:no-underline flex-1">
-                                    <div className="flex justify-between items-center w-full">
-                                        <div className="text-left">
-                                            <p className="font-semibold text-lg text-foreground">Survey Details</p>
-                                            <p className="text-sm font-normal text-muted-foreground">
-                                                Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
-                                            </p>
-                                        </div>
+                                    <div className="text-left">
+                                        <p className="font-semibold text-lg text-foreground">Survey Details</p>
+                                        <p className="text-sm font-normal text-muted-foreground">
+                                            Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
+                                        </p>
                                     </div>
                                 </AccordionTrigger>
                                 <div className="flex items-center gap-4 pl-4">
                                     <div className="flex items-center gap-1.5 text-sm">
-                                        <Activity />
+                                        <Users />
                                         <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
                                     </div>
                                     <div className="flex items-center gap-1.5 text-sm">
@@ -823,7 +821,7 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
                                 </div>
                             </div>
                             <AccordionContent className="p-4 pt-2 border-t">
-                                <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={fetchSurveys} />
+                                <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={onUpdate} />
                             </AccordionContent>
                         </AccordionItem>
                      ))}
@@ -846,6 +844,13 @@ function SurveyHistory() {
 
     useEffect(() => {
         fetchSurveys();
+         const handleDataUpdate = () => fetchSurveys();
+        window.addEventListener('storage', handleDataUpdate);
+        window.addEventListener('feedbackUpdated', handleDataUpdate);
+        return () => {
+            window.removeEventListener('storage', handleDataUpdate);
+            window.removeEventListener('feedbackUpdated', handleDataUpdate);
+        };
     }, [fetchSurveys]);
 
     if (isLoading) {
@@ -859,7 +864,7 @@ function SurveyHistory() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold">
                     <History /> Survey History
                 </CardTitle>
                  <CardDescription>
@@ -903,7 +908,7 @@ function SurveyHistory() {
 function OrgHealthContent() {
   const [key, setKey] = useState(0);
 
-  const handleSurveyDeployed = () => {
+  const handleSurveyChange = () => {
     setKey(prev => prev + 1);
   };
 
@@ -912,11 +917,11 @@ function OrgHealthContent() {
         <OrgHealthDashboard />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CreateSurveyWizard onSurveyDeployed={handleSurveyDeployed} />
-            <SurveyHistory />
+            <CreateSurveyWizard onSurveyDeployed={handleSurveyChange} />
+            <SurveyHistory key={`history-${key}`} />
         </div>
         
-        <DeployedSurveys key={key} onUpdate={handleSurveyDeployed} />
+        <DeployedSurveys key={`deployed-${key}`} onUpdate={handleSurveyChange} />
     </div>
   );
 }
@@ -950,3 +955,4 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
