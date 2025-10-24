@@ -139,7 +139,7 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
   return (
     <div className="space-y-6">
       <Card className="shadow-lg">
-        <CardHeader className="p-4 pt-2 pb-2">
+        <CardHeader className="p-2 pt-2 pb-2">
             <div className="flex justify-between items-center">
                 <CardTitle className="text-base font-medium flex items-center gap-2">Create New Anonymous Survey</CardTitle>
                 {mode !== 'selection' && (
@@ -620,6 +620,8 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
                 surveyObjective={survey.objective}
                 onPulseSent={onPulseSent}
             />
+            
+            <p className="text-sm text-muted-foreground italic">"{survey.objective}"</p>
 
             <div>
                 <div className="flex justify-between items-center mb-2">
@@ -794,7 +796,7 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
                                 <AccordionTrigger className="p-0 hover:no-underline flex-1">
                                     <div className="flex justify-between items-center w-full">
                                         <div className="text-left">
-                                            <p className="font-semibold text-lg text-foreground">{survey.objective}</p>
+                                            <p className="font-semibold text-lg text-foreground">Survey Details</p>
                                             <p className="text-sm font-normal text-muted-foreground">
                                                 Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
                                             </p>
@@ -948,8 +950,3 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
-
-
-
-
-
