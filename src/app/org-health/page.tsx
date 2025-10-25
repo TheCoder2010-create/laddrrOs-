@@ -793,34 +793,36 @@ function DeployedSurveys({ onUpdate }: { onUpdate: () => void }) {
                 <Accordion type="single" collapsible className="w-full space-y-3">
                      {surveys.map(survey => (
                          <AccordionItem value={survey.id} key={survey.id} className="border rounded-lg bg-card-foreground/5">
-                            <AccordionTrigger className="p-4 hover:no-underline flex-1">
-                                <div className="flex justify-between items-center w-full">
-                                    <div className="text-left">
-                                        <p className="font-semibold text-lg text-foreground">Survey Details</p>
-                                        <p className="text-sm font-normal text-muted-foreground">
-                                            Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-4 pl-4">
-                                        <div className="flex items-center gap-1.5 text-sm">
-                                            <Users />
-                                            <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                            <div className="p-4 flex flex-1 items-center justify-between">
+                                <AccordionTrigger className="p-0 hover:no-underline flex-1">
+                                    <div className="flex items-center w-full">
+                                        <div className="text-left">
+                                            <p className="font-semibold text-lg text-foreground">Survey Details</p>
+                                            <p className="text-sm font-normal text-muted-foreground">
+                                                Deployed {formatDistanceToNow(new Date(survey.deployedAt), { addSuffix: true })}
+                                            </p>
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-sm">
-                                            <UserX />
-                                            <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
+                                        <div className="flex items-center gap-4 pl-4 ml-auto">
+                                            <div className="flex items-center gap-1.5 text-sm">
+                                                <Users />
+                                                <span className="font-semibold text-foreground">{survey.submissionCount}</span> Submissions
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-sm">
+                                                <UserX />
+                                                <span className="font-semibold text-foreground">{survey.optOutCount || 0}</span> Opt-outs
+                                            </div>
+                                            <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
+                                                {survey.status === 'active' ? 'Active' : 'Closed'}
+                                            </Badge>
                                         </div>
-                                        <Badge variant={survey.status === 'active' ? 'success' : 'secondary'}>
-                                            {survey.status === 'active' ? 'Active' : 'Closed'}
-                                        </Badge>
-                                        {survey.status === 'active' && (
-                                            <Button variant="destructive" size="sm" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
-                                                <XCircle className="mr-2 h-4 w-4" /> Close Survey
-                                            </Button>
-                                        )}
                                     </div>
-                                </div>
-                            </AccordionTrigger>
+                                </AccordionTrigger>
+                                {survey.status === 'active' && (
+                                    <Button variant="destructive" size="sm" className="ml-4" onClick={(e) => { e.stopPropagation(); handleCloseSurvey(survey.id); }}>
+                                        <XCircle className="mr-2 h-4 w-4" /> Close Survey
+                                    </Button>
+                                )}
+                            </div>
                             <AccordionContent className="p-4 pt-2 border-t">
                                 <SurveyResults survey={survey} onPulseSent={onUpdate} onSurveyUpdated={onUpdate} />
                             </AccordionContent>
@@ -966,3 +968,4 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
