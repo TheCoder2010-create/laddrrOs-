@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput, type CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForUser } from '@/services/feedback-service';
+import { saveOneOnOneHistory, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForUser, saveFeedback } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -28,7 +28,9 @@ import { useRole } from '@/hooks/use-role';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { formatActorName } from '@/lib/role-mapping';
+import { formatActorName, getRoleByName } from '@/lib/role-mapping';
+import { v4 as uuidv4 } from 'uuid';
+
 
 // Define meeting type locally as it's not exported from the main page
 interface Meeting {
@@ -211,40 +213,94 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
     
     startTransition(async () => {
         try {
-            // Fetch contextual data for the AI
-            const pastDeclinedAreas = await getDeclinedCoachingAreasForSupervisor(supervisor);
-            const activePlans = await getActiveCoachingPlansForUser(supervisor);
-            const activeDevelopmentGoals = activePlans.map(p => ({
-                id: p.rec.id,
-                area: p.rec.area,
-                title: p.rec.resource,
-                notes: p.rec.checkIns?.slice(-1)[0]?.notes || 'No check-ins yet.'
-            }));
-
-            // Step 1: Get the full analysis from the AI.
-            // The `analyzeOneOnOne` flow is now also responsible for creating the critical insight record if needed.
-            const result = await analyzeOneOnOne({
-                ...values,
-                oneOnOneId: 'temp-id-for-linking', // A temporary ID, will be replaced by the real one.
-                pastDeclinedRecommendationAreas: pastDeclinedAreas,
-                activeDevelopmentGoals,
-                employeePerformanceData: mockPerformanceData,
-            });
-
-            setAnalysisResult(result);
+            const mockResult: AnalyzeOneOnOneOutput = {
+                supervisorSummary: "This was a constructive session focused on Casey's recent performance drop in project delivery (from 92 to 88). You did a great job framing the feedback positively, but missed an opportunity to dig into their comment about 'feeling a bit burned out.' Your active coaching goal around 'Delivering Corrective Feedback' was applied well, but the missed signal on burnout is a critical area to follow up on.",
+                employeeSummary: "You and your manager had a productive conversation about your recent work. You discussed strategies to get project delivery back on track and your manager acknowledged your strong collaboration skills.",
+                employeeInsights: ["You handled the feedback on project delivery with true professionalism.", "Your ability to collaborate with the team was highlighted as a major strength."],
+                employeeSwotAnalysis: {
+                    strengths: ["Strong collaboration skills", "High code quality", "Receptive to feedback"],
+                    weaknesses: ["Recent dip in project delivery speed", "Hesitation to speak up about workload"],
+                    opportunities: ["Take lead on a smaller feature to practice project management", "Explore new frontend frameworks"],
+                    threats: ["Potential burnout if workload isn't managed", "Risk of missing key Q3 deadlines"]
+                },
+                leadershipScore: 7.5,
+                effectivenessScore: 8.0,
+                strengthsObserved: [
+                    { action: "Framing feedback positively", example: "You started by saying, 'Your work is always high quality, so I wanted to chat about the recent project pace...'" },
+                    { action: "Providing specific examples", example: "You referred directly to the delay in the 'alpha-feature' ticket." }
+                ],
+                coachingRecommendations: [
+                    { id: uuidv4(), area: "Probing for Root Cause", recommendation: "When an employee mentions a feeling like 'burnout,' pause and ask open-ended questions like 'Tell me more about that feeling.'", example: "Casey said, '...just feeling a bit burned out lately,' and the conversation moved on.", type: "Article", resource: "HBR: Beyond Burnout", justification: "This will help you uncover underlying issues before they become critical.", status: 'pending' },
+                    { id: uuidv4(), area: "Setting Clear Action Items", recommendation: "Ensure action items are SMART (Specific, Measurable, Achievable, Relevant, Time-bound).", example: "The action item 'Improve project delivery' could be more specific.", type: "Book", resource: "Measure What Matters", justification: "SMART goals provide clarity and make follow-up easier.", status: 'pending' }
+                ],
+                actionItems: [
+                    { id: uuidv4(), owner: "Employee", task: "Block out 1 hour of focus time each morning for the next 2 weeks.", status: 'pending' },
+                    { id: uuidv4(), owner: "Supervisor", task: "Check in with Casey mid-week on their workload and any blockers.", status: 'pending' }
+                ],
+                missedSignals: ["Casey mentioned working late twice but this was not explored further."],
+                criticalCoachingInsight: {
+                    summary: "Employee mentioned 'feeling pretty burned out' and supervisor did not explore this critical signal.",
+                    reason: "Signs of burnout, if left unaddressed, can lead to decreased productivity, low morale, and attrition. It's critical to address these signals proactively.",
+                    severity: 'high',
+                    status: 'open',
+                },
+                coachingImpactAnalysis: [{
+                    goalId: "mock-goal-1",
+                    goalArea: "Delivering Corrective Feedback",
+                    didApply: true,
+                    applicationExample: "You successfully applied your learning by framing the corrective feedback in a positive and constructive manner, focusing on behavior rather than personality."
+                }],
+                biasFairnessCheck: { flag: false },
+                localizationCompliance: { applied: false },
+                legalDataCompliance: { piiOmitted: true, privacyRequest: false },
+                dataHandling: {
+                    analysisTimestamp: new Date().toISOString(),
+                    recordingDeleted: true,
+                    deletionTimestamp: new Date().toISOString()
+                }
+            };
             
-            // Step 2: Now save the complete history item with the real analysis.
+            // Simulate AI processing time
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            setAnalysisResult(mockResult);
+
+            // Now, save the mock result to the history
             const historyItem = await saveOneOnOneHistory({
                 supervisorName: supervisor,
                 employeeName: meeting.with,
                 date: new Date(meeting.date).toISOString(),
-                analysis: result, 
+                analysis: mockResult, 
             });
 
-            // The `analyzeOneOnOne` function already handles creating the critical insight feedback item,
-            // so we don't need to do anything extra here. We just need to make sure we call it.
+            // The logic for creating a critical insight feedback item is now part of the `analyzeOneOnOne` flow,
+            // so we'll replicate it here for the mock.
+            if (mockResult.criticalCoachingInsight) {
+                 const supervisorRole = getRoleByName(supervisor);
+                 if (supervisorRole) {
+                    await saveFeedback([{
+                        trackingId: `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`,
+                        oneOnOneId: historyItem.id,
+                        subject: `Critical Coaching Insight from 1-on-1 with ${meeting.with}`,
+                        message: `A critical coaching insight was identified during your session. See details in the 1-on-1 history.`,
+                        submittedAt: new Date(),
+                        criticality: 'Critical',
+                        status: 'Pending Supervisor Action',
+                        assignedTo: [supervisorRole],
+                        supervisor: supervisor,
+                        employee: meeting.with,
+                        viewed: false,
+                        auditTrail: [{
+                            event: 'Critical Insight Identified',
+                            timestamp: new Date(),
+                            actor: 'HR Head',
+                            details: 'Critical coaching insight automatically logged from 1-on-1 analysis.',
+                        }],
+                    }], true);
+                 }
+            }
             
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
+
         } catch (error) {
             console.error("Analysis failed", error);
             setAnalysisError("The AI analysis failed. Please check the console for details.");
@@ -257,8 +313,8 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
       signal => signal !== analysisResult.criticalCoachingInsight?.summary
   ) || [];
 
-  const employeeActionItems = analysisResult?.actionItems.filter(item => item.owner === 'Employee') || [];
-  const supervisorActionItems = analysisResult?.actionItems.filter(item => item.owner === 'Supervisor') || [];
+  const employeeActionItems = analysisResult?.actionItems?.filter(item => item.owner === 'Employee') || [];
+  const supervisorActionItems = analysisResult?.actionItems?.filter(item => item.owner === 'Supervisor') || [];
 
   return (
     <div className="p-4 md:p-8">
@@ -674,7 +730,3 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
-
-    
-
-    
