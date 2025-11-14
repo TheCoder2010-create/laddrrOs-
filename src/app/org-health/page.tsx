@@ -557,22 +557,33 @@ function SurveyResults({ survey, onPulseSent, onSurveyUpdated }: { survey: Deplo
         setCoachingRecs(survey.coachingRecommendations || null);
     }, [survey]);
 
-    const handleAnalyze = () => {
+    const handleAnalyze = async () => {
         setIsLoading(true);
         setError(null);
         
-        const flatResponses = mockResponses.flatMap(res => Object.values(res));
-        summarizeSurveyResults({ surveyObjective: survey.objective, anonymousResponses: flatResponses })
-            .then(async (result) => {
-                setSummary(result);
-                await saveSurveySummary(survey.id, result);
-                onSurveyUpdated();
-            })
-            .catch(err => {
-                console.error("Failed to summarize results", err);
-                setError("Could not generate an AI summary at this time.");
-            })
-            .finally(() => setIsLoading(false));
+        // Mock the result
+        const mockSummary: SummarizeSurveyResultsOutput = {
+            overallSentiment: "Mixed, with pockets of high engagement but growing concerns about workload and communication clarity.",
+            keyThemes: [
+                { theme: "Work-Life Balance", summary: "Multiple employees cited increased workload and stress related to tight deadlines. There's a feeling that the pace is unsustainable." },
+                { theme: "Recognition", summary: "While some feel valued by their immediate managers, many feel their contributions are not visible to wider leadership." },
+                { theme: "Communication Clarity", summary: "There is confusion regarding the company's direction after the recent re-organization. Employees are unsure about long-term priorities." }
+            ],
+            recommendations: [
+                "Investigate workload distribution in the Engineering and Sales departments.",
+                "Implement a more structured, public recognition program.",
+                "Schedule an all-hands meeting to clarify Q4 priorities and roadmap."
+            ]
+        };
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        setSummary(mockSummary);
+        await saveSurveySummary(survey.id, mockSummary);
+        onSurveyUpdated();
+
+        setIsLoading(false);
     }
     
     const handleDownloadCsv = () => {
@@ -990,5 +1001,6 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
 
 
