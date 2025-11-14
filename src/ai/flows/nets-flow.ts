@@ -79,14 +79,24 @@ const runNetsConversationFlow = ai.defineFlow(
   },
   async (input) => {
     let outputText: string;
+
+    const processedHistory = input.history.map(msg => ({
+      isUser: msg.role === 'user',
+      isModel: msg.role === 'model',
+      content: msg.content,
+    }));
     
-    // MOCK RESPONSE LOGIC
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
     if (input.history.length === 0) {
-      outputText = `(Mock AI): Hello. I am playing the role of a ${input.persona}. Let's begin the scenario: "${input.scenario}".`;
+      // First turn, AI starts the conversation.
+      const { output } = await startConversationPrompt(input);
+      if (!output) throw new Error("AI failed to start conversation.");
+      outputText = output;
     } else {
-      const lastUserMessage = input.history[input.history.length - 1]?.content || "your last statement";
-      outputText = `(Mock AI): I acknowledge you said: "${lastUserMessage}". This is a mock response. Please continue.`;
+      // Subsequent turns, AI continues the conversation.
+      const promptInput = { ...input, history: processedHistory };
+      const { output } = await continueConversationPrompt(promptInput);
+      if (!output) throw new Error("AI failed to continue conversation.");
+      outputText = output;
     }
     
     return {
