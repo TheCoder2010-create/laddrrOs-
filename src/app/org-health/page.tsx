@@ -71,6 +71,28 @@ function CreateSurveyWizard({ onSurveyDeployed }: { onSurveyDeployed: () => void
     setObjective(currentObjective);
 
     startGeneration(async () => {
+      // MOCK DATA for "General Morale Check"
+      if (currentObjective === "Assess overall employee morale and identify key areas of satisfaction and concern.") {
+        const mockQuestions: SurveyQuestion[] = [
+          { id: uuidv4(), questionText: "On a scale of 1-10, how would you rate your overall morale at work recently?", reasoning: "Provides a quantifiable baseline for overall employee sentiment." },
+          { id: uuidv4(), questionText: "What is one thing that has energized you at work in the last month?", reasoning: "Identifies positive drivers of engagement and morale." },
+          { id: uuidv4(), questionText: "What is one thing that has drained your energy or been a source of frustration?", reasoning: "Pinpoints specific pain points and areas for improvement." },
+          { id: uuidv4(), questionText: "How well do you feel your work is recognized and valued by your manager and peers?", reasoning: "Measures the effectiveness of recognition practices, a key driver of morale." },
+          { id: uuidv4(), questionText: "Do you feel you have the resources and support needed to succeed in your role?", reasoning: "Assesses potential blockers related to tools, training, or support systems." },
+          { id: uuidv4(), questionText: "Is there anything else you would like to share about your experience at work?", reasoning: "An open-ended question to capture any issues not covered by the other questions." }
+        ];
+        
+        setSuggestedQuestions(mockQuestions);
+        const initialSelection = mockQuestions.reduce((acc, q) => {
+          if (q.id) acc[q.id] = true;
+          return acc;
+        }, {} as Record<string, boolean>);
+        setSelectedQuestions(initialSelection);
+        setMode('template'); // Switch to curation view
+        return;
+      }
+      
+      // Real API call for other objectives
       try {
         const result = await generateSurveyQuestions({ objective: currentObjective });
         const questionsWithIds = result.questions.map(q => ({ ...q, id: uuidv4() }));
@@ -968,4 +990,5 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
 
