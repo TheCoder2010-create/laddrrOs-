@@ -126,73 +126,35 @@ function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Me
         if (!role) return;
         setIsLoading(true);
         setError(null);
-        try {
-            const employeeName = viewerRole === 'Employee' ? supervisor : meeting.with;
-            const currentSupervisorName = viewerRole === 'Employee' ? meeting.with : supervisor;
+        
+        const isEmployeeView = viewerRole === 'Employee';
 
-            const supervisorRole = getRoleByName(currentSupervisorName);
-            if (!supervisorRole) {
-                throw new Error("Could not determine supervisor role.");
-            }
+        // Mock data generation
+        const mockSupervisorPacket: BriefingPacketOutput = {
+            actionItemAnalysis: "The employee has a 100% completion rate on their single action item. The supervisor has one pending item. The distribution is balanced.",
+            keyDiscussionPoints: ["Follow up on Casey's feeling of being 'burned out' from the last session.", "Discuss the next steps for the API spec now that it's drafted.", "Explore Casey's interest in leadership opportunities."],
+            outstandingActionItems: ["A critical insight regarding 'burnout' is still open and requires your action.", "You have a pending action item: 'Identify a low-risk task for Casey to lead.'"],
+            coachingOpportunities: ["Practice probing for the root cause when you hear an emotional keyword like 'burned out'.", "Use this session to practice delegating a task clearly and with full context."],
+            suggestedQuestions: ["How has your workload felt since our last conversation?", "What part of the recent project are you most proud of and why?", "If you had a magic wand, what's one thing you would change about your current role?"]
+        };
 
-            // 1. Fetch all relevant data on the client
-            const allHistory = await getOneOnOneHistory();
-            const supervisorActiveGoals = await getActiveCoachingPlansForUser(supervisorRole);
-    
-            // 2. Filter data for the specific supervisor-employee pair
-            const relevantHistory = allHistory
-                .filter(h => h.supervisorName === currentSupervisorName && h.employeeName === employeeName)
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-            // 3. Extract and format the necessary context for the AI
-            const pastIssues = relevantHistory.slice(0, 3).map(h => ({
-                date: `${format(new Date(h.date), 'PPP')} (${formatDistanceToNow(new Date(h.date), { addSuffix: true })})`,
-                summary: h.analysis.supervisorSummary,
-            }));
-    
-            const allActionItems = relevantHistory.flatMap(h => 
-                h.analysis.actionItems?.map(item => ({
-                    task: item.task,
-                    owner: item.owner,
-                    status: item.status,
-                    completedAt: item.completedAt ? `${format(new Date(item.completedAt), 'PPP')}` : undefined,
-                })) || []
-            );
-    
-            const openCriticalInsights = relevantHistory
-                .filter(h => h.analysis.criticalCoachingInsight && h.analysis.criticalCoachingInsight.status !== 'resolved')
-                .map(h => ({
-                    date: format(new Date(h.date), 'PPP'),
-                    summary: h.analysis.criticalCoachingInsight!.summary,
-                    status: h.analysis.criticalCoachingInsight!.status.replace(/_/g, ' '),
-                }));
-    
-            const coachingGoalsInProgress = supervisorActiveGoals.map(p => ({
-                area: p.rec.area,
-                resource: p.rec.resource,
-                progress: p.rec.progress || 0,
-            }));
-            
-            // 4. Create input for the AI flow
-            const flowInput: BriefingPacketInput = {
-                supervisorName: currentSupervisorName,
-                employeeName,
-                viewerRole: viewerRole,
-                pastIssues,
-                actionItems: allActionItems,
-                openCriticalInsights,
-                coachingGoalsInProgress,
-            };
+        const mockEmployeePacket: BriefingPacketOutput = {
+            actionItemAnalysis: "You have successfully completed all your assigned action items. Great job staying on top of your commitments!",
+            talkingPoints: ["Mention that you've completed the API spec and ask what the next priority is.", "Bring up your interest in mentoring a junior developer to build leadership skills.", "You could ask for more context on the long-term vision for the project you're on."],
+            employeeSummary: "You've shown great initiative in your recent work. This meeting is a good opportunity to build on that momentum and discuss your career growth with your manager."
+        };
 
-            const result = await generateBriefingPacket(flowInput);
-            setPacket(result);
-        } catch (e) {
-            console.error("Failed to generate briefing packet", e);
-            setError("Could not generate the briefing packet at this time. Please try again later.");
-        } finally {
-            setIsLoading(false);
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (isEmployeeView) {
+            setPacket(mockEmployeePacket);
+        } else {
+            setPacket(mockSupervisorPacket);
         }
-    }, [supervisor, meeting.with, viewerRole, packet, role]);
+
+        setIsLoading(false);
+    }, [supervisor, meeting.with, viewerRole, role]);
 
     const renderList = (items?: string[]) => {
         if (!items || items.length === 0) {
@@ -1464,6 +1426,7 @@ export default function Home() {
     
 
     
+
 
 
 
