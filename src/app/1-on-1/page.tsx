@@ -176,12 +176,9 @@ function BriefingPacketDialog({ meeting, supervisor, viewerRole }: { meeting: Me
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+                    <DialogTitle className="flex items-center gap-2 text-xl">
                         <SquareStack className="h-6 w-6 text-purple-500" /> Pre-1-on-1 Briefing Packet
                     </DialogTitle>
-                    <DialogDescription>
-                        Your AI-generated summary for the upcoming meeting.
-                    </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 max-h-[70vh] overflow-y-auto pr-2 space-y-6">
                     {isLoading && (
@@ -1426,6 +1423,7 @@ export default function Home() {
     
 
     
+
 
 
 
