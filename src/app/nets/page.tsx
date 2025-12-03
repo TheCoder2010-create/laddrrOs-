@@ -290,8 +290,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                                 className="group flex flex-col items-center justify-center gap-2 py-4 transition-transform duration-200 ease-in-out hover:scale-110 hover:-translate-y-1"
                             >
                                 <Icon className="h-10 w-10 text-muted-foreground transition-colors group-hover:text-primary" />
-                                <span className="font-semibold text-foreground">{roleDetails.name}</span>
-                                <span className="text-sm text-muted-foreground">({r})</span>
+                                <span className="font-semibold text-foreground">{r}</span>
                             </button>
                          )
                     })}
