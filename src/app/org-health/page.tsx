@@ -346,15 +346,28 @@ function LeadershipPulseDialog({ open, onOpenChange, summary, surveyObjective, o
         if (open && summary && !pulseData) {
             setIsLoading(true);
             setError(null);
-            generateLeadershipPulse({ anonymousSurveySummary: summary, surveyObjective })
-                .then(result => {
-                    setPulseData(result);
-                })
-                .catch(err => {
-                    console.error("Failed to generate leadership pulse", err);
-                    setError("Could not generate leadership questions at this time.");
-                })
-                .finally(() => setIsLoading(false));
+            
+            // Mock the API call
+            const mockPulseData: GenerateLeadershipPulseOutput = {
+                teamLeadQuestions: [
+                    { id: uuidv4(), questionText: "On a scale of 1-5, how confident are you in your team's current work-life balance?", type: 'rating', reasoning: "To gauge Team Lead awareness of the 'Work-Life Balance' theme identified in employee feedback." },
+                    { id: uuidv4(), questionText: "What is the biggest obstacle your team faces in meeting deadlines without stress?", type: 'free-text', reasoning: "To get ground-level reasons for the workload concerns." }
+                ],
+                amQuestions: [
+                    { id: uuidv4(), questionText: "What themes are you hearing from your Team Leads regarding their teams' morale?", type: 'free-text', reasoning: "To assess how well information is flowing up from teams to AMs." },
+                    { id: uuidv4(), questionText: "How can we better support you in coaching your Team Leads on recognition?", type: 'free-text', reasoning: "To directly address the 'Recognition' theme with the managers of managers." }
+                ],
+                managerQuestions: [
+                    { id: uuidv4(), questionText: "From your perspective, what is the root cause of the confusion around company direction?", type: 'free-text', reasoning: "To get a strategic view on the 'Communication Clarity' issue." },
+                    { id: uuidv4(), questionText: "What is one process change that could improve cross-departmental collaboration and reduce project friction?", type: 'free-text', reasoning: "To solicit solutions for operational issues that may be causing stress." }
+                ],
+            };
+            
+            setTimeout(() => {
+                setPulseData(mockPulseData);
+                setIsLoading(false);
+            }, 500);
+
         } else if (!open) {
             // Reset when dialog is closed
             setPulseData(null);
@@ -1001,6 +1014,7 @@ export default function OrgHealthPage() {
     </DashboardLayout>
   );
 }
+
 
 
 
