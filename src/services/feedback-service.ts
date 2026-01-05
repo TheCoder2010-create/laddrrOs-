@@ -288,10 +288,21 @@ export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role,
     // Create a notification for the assigned user
     const allFeedback = getFeedbackFromStorage();
     const assignerName = roleUserMapping[assignedBy]?.name || assignedBy;
+    
+    // Check if this is a system-generated assignment
+    const isSystemAssigned = assignedBy === 'HR Head'; // Using HR Head as a proxy for system/AI
+    
+    let message: string;
+    if (isSystemAssigned) {
+        message = `A practice scenario has been automatically assigned to you based on a recent 1-on-1 analysis: "${scenario}"`;
+    } else {
+        message = `${assignerName} has assigned you a new practice scenario in the Nets arena: "${scenario}"`;
+    }
+
     const notification: Feedback = {
         trackingId: `NETS-${newScenario.id}`,
         subject: `New Practice Scenario Assigned`,
-        message: `${assignerName} has assigned you a new practice scenario in the Nets arena: "${scenario}"`,
+        message: message,
         submittedAt: new Date(),
         criticality: 'Low',
         status: 'Pending Acknowledgement',
