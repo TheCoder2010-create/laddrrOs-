@@ -86,7 +86,7 @@ export interface OneOnOneHistoryItem {
 
 export interface AssignedPracticeScenario {
     id: string;
-    assignedBy: Role;
+    assignedBy: Role | 'System';
     assignedTo: Role;
     scenario: string;
     persona: Role;
@@ -270,7 +270,7 @@ const saveToStorage = (key: string, data: any[]): void => {
 // Practice Scenario Service
 // ==========================================
 
-export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role, scenario: string, persona: Role, dueDate: Date): Promise<void> {
+export async function assignPracticeScenario(assignedBy: Role | 'System', assignedTo: Role, scenario: string, persona: Role, dueDate: Date): Promise<void> {
     const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
     const newScenario: AssignedPracticeScenario = {
         id: uuidv4(),
@@ -285,38 +285,30 @@ export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role,
     allScenarios.unshift(newScenario);
     saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
 
-    // Create a notification for the assigned user
-    const allFeedback = getFeedbackFromStorage();
-    const assignerName = roleUserMapping[assignedBy]?.name || assignedBy;
-    
-    // Check if this is a system-generated assignment
-    const isSystemAssigned = assignedBy === 'HR Head'; // Using HR Head as a proxy for system/AI
-    
-    let message: string;
-    if (isSystemAssigned) {
-        message = `A practice scenario has been automatically assigned to you based on a recent 1-on-1 analysis: "${scenario}"`;
-    } else {
-        message = `${assignerName} has assigned you a new practice scenario in the Nets arena: "${scenario}"`;
+    // Only create a notification if it's a manual assignment. System assignments just update the badge.
+    if (assignedBy !== 'System') {
+        const allFeedback = getFeedbackFromStorage();
+        const assignerName = roleUserMapping[assignedBy]?.name || assignedBy;
+        
+        const notification: Feedback = {
+            trackingId: `NETS-${newScenario.id}`,
+            subject: `New Practice Scenario Assigned`,
+            message: `${assignerName} has assigned you a new practice scenario in the Nets arena: "${scenario}"`,
+            submittedAt: new Date(),
+            criticality: 'Low',
+            status: 'Pending Acknowledgement',
+            assignedTo: [assignedTo],
+            viewed: false,
+            auditTrail: [{
+                event: 'Notification Created',
+                timestamp: new Date(),
+                actor: 'System',
+                details: `Automated notification for Nets practice scenario assignment.`
+            }]
+        };
+        allFeedback.unshift(notification);
+        saveFeedbackToStorage(allFeedback);
     }
-
-    const notification: Feedback = {
-        trackingId: `NETS-${newScenario.id}`,
-        subject: `New Practice Scenario Assigned`,
-        message: message,
-        submittedAt: new Date(),
-        criticality: 'Low',
-        status: 'Pending Acknowledgement',
-        assignedTo: [assignedTo],
-        viewed: false,
-        auditTrail: [{
-            event: 'Notification Created',
-            timestamp: new Date(),
-            actor: 'System',
-            details: `Automated notification for Nets practice scenario assignment.`
-        }]
-    };
-    allFeedback.unshift(notification);
-    saveFeedbackToStorage(allFeedback);
 }
 
 export async function getPracticeScenariosForUser(userRole: Role): Promise<AssignedPracticeScenario[]> {
@@ -352,7 +344,7 @@ export async function completePracticeScenario(input: NetsConversationInput, ass
         // This was a self-initiated practice, save it anyway for the scorecard
         const newCompletedScenario: AssignedPracticeScenario = {
             id: uuidv4(),
-            assignedBy: input.persona as Role, // Loosely assign to self
+            assignedBy: 'System', 
             assignedTo: getRoleByName(roleUserMapping['Employee'].name)!, // Assuming employee is practicing
             scenario: input.scenario,
             persona: input.persona as Role,

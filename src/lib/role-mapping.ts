@@ -20,9 +20,9 @@ export const getRoleByName = (name: string): Role | undefined => {
     return undefined;
 }
 
-export const formatActorName = (actor: Role | string | undefined): string => {
+export const formatActorName = (actor: Role | 'System' | string | undefined): string => {
     if (!actor) return 'System';
-
+    if (actor === 'System') return 'System';
     if (actor === 'Anonymous') return 'Anonymous';
     
     // Check if actor is a valid role first
@@ -38,6 +38,6 @@ export const formatActorName = (actor: Role | string | undefined): string => {
         return `${actor} - ${role}`;
     }
 
-    // Fallback for simple strings like 'System'
+    // Fallback for simple strings
     return actor as string;
 };
