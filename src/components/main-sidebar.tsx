@@ -17,7 +17,7 @@ import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, Sid
 import { LogOut, User, BarChart, Check, ListTodo, MessageSquare, BrainCircuit, MessagesSquare, FlaskConical, Handshake, Scale, HeartPulse } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
-import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
+import { getAllFeedback, getOneOnOneHistory, getPracticeScenariosForUser } from '@/services/feedback-service';
 import { getNominationForUser as getInterviewerNominationForUser } from '@/services/interviewer-lab-service';
 import { getNominationForUser as getLeadershipNominationForUser, getNominationsForMentor } from '@/services/leadership-service';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +41,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const [messageCount, setMessageCount] = useState(0);
   const [oneOnOneCount, setOneOnOneCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
+  const [netsCount, setNetsCount] = useState(0);
   const [isInterviewerNominee, setIsInterviewerNominee] = useState(false);
   const [isLeadershipNominee, setIsLeadershipNominee] = useState(false);
   const [isMentor, setIsMentor] = useState(false);
@@ -51,9 +52,15 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const fetchData = useCallback(async () => {
     if (!currentRole) return;
     try {
-      // Fetch all data sources
-      const feedback = await getAllFeedback();
-      const history = await getOneOnOneHistory();
+      // Fetch all data sources in parallel
+      const [feedback, history, assignedNets, interviewerNomination, leadershipNomination, mentorNominations] = await Promise.all([
+        getAllFeedback(),
+        getOneOnOneHistory(),
+        getPracticeScenariosForUser(currentRole),
+        getInterviewerNominationForUser(currentRole),
+        getLeadershipNominationForUser(currentRole),
+        getNominationsForMentor(currentRole),
+      ]);
 
       // --- Calculate 1-on-1 Notifications (Critical Insights) ---
       let criticalInsightsCount = 0;
@@ -82,16 +89,23 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       });
       setOneOnOneCount(criticalInsightsCount);
 
-      // --- Calculate General Messages (non-1-on-1 related) ---
+      // --- Calculate General Messages (non-Nets related) ---
       let generalMessageCount = 0;
-      generalMessageCount += feedback.filter(f => {
+      feedback.forEach(f => {
         const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
-        if (!isAssignedToMe) return false;
+        if (!isAssignedToMe || f.trackingId?.startsWith('NETS-')) return; // Exclude Nets notifications
+
         const isPendingAck = f.status === 'Pending Acknowledgement';
         const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
-        return isPendingAck || isIdentifiedAck;
-      }).length;
+        if (isPendingAck || isIdentifiedAck) {
+            generalMessageCount++;
+        }
+      });
       setMessageCount(generalMessageCount);
+
+      // --- Calculate Nets Notifications ---
+      setNetsCount(assignedNets.length);
+
 
       // --- Calculate Coaching Notifications ---
       let devCount = 0;
@@ -110,12 +124,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       setCoachingCount(devCount);
 
-      // --- Check Nomination Statuses ---
-      const [interviewerNomination, leadershipNomination, mentorNominations] = await Promise.all([
-        getInterviewerNominationForUser(currentRole),
-        getLeadershipNominationForUser(currentRole),
-        getNominationsForMentor(currentRole)
-      ]);
+      // --- Set Nomination Statuses ---
       setIsInterviewerNominee(!!interviewerNomination);
       setIsLeadershipNominee(!!leadershipNomination);
       setIsMentor(mentorNominations.length > 0);
@@ -125,6 +134,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       setMessageCount(0);
       setOneOnOneCount(0);
       setCoachingCount(0);
+      setNetsCount(0);
       setIsInterviewerNominee(false);
       setIsLeadershipNominee(false);
       setIsMentor(false);
@@ -135,7 +145,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const menuItems = [
     { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
     { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500 size-5 flex-shrink-0"/>, label: '1-on-1', badge: oneOnOneCount > 0 ? oneOnOneCount : null, badgeVariant: 'destructive' as const },
-    { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets' },
+    { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets', badge: netsCount > 0 ? netsCount : null, badgeVariant: 'destructive' as const },
     ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
     ...(isMentor ? [{ href: '/mentorship', icon: <Handshake className="text-cyan-500"/>, label: 'Mentorship' }] : []),
     ...(['Manager'].includes(currentRole) ? [{ href: '/goals', icon: <Scale className="text-rose-500"/>, label: 'Goals' }] : []),
@@ -309,5 +319,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     </Sidebar>
   );
 }
+
 
 
