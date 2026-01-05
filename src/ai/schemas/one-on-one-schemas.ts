@@ -162,6 +162,7 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
   })).describe("A list of 2-3 observed strengths of the supervisor during the session."),
   coachingRecommendations: z.array(CoachingRecommendationSchema).describe("A list of 2-3 structured coaching recommendations for the supervisor, including specific learning resources."),
   actionItems: z.array(ActionItemSchema).describe("A list of clear, actionable items for the employee or supervisor."),
+  suggestedPracticeScenario: z.string().optional().describe("A concise, one-sentence practice scenario for the 'Nets' arena, based on an identified gap from this session."),
   coachingImpactAnalysis: z.array(CoachingImpactAnalysisSchema).optional().describe("A list of analyses, one for each active development goal provided."),
   missedSignals: z.array(z.string()).optional().describe("A list of subtle signals that the supervisor failed to explore."),
   criticalCoachingInsight: CriticalCoachingInsightSchema.optional().describe("An insight generated ONLY if an unaddressed red flag is present."),
@@ -180,7 +181,7 @@ export const AnalyzeOneOnOneOutputSchema = z.object({
   dataHandling: z.object({
     analysisTimestamp: z.string().describe("The ISO 8601 timestamp of when the analysis was generated."),
     recordingDeleted: z.boolean().describe("Confirms if the source audio recording was deleted after analysis."),
-    deletionTimestamp: z.string().describe("The ISO 8601 timestamp of when the source audio recording was deleted."),
+    deletionTimestamp: z-string().describe("The ISO 8601 timestamp of when the source audio recording was deleted."),
   }).optional().describe("Metadata about data processing and privacy."),
 });
 

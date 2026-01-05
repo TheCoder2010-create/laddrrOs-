@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
-import { saveFeedback } from '@/services/feedback-service';
+import { saveFeedback, assignPracticeScenario } from '@/services/feedback-service';
 import { v4 as uuidv4 } from 'uuid';
 import { getRoleByName } from '@/lib/role-mapping';
 
@@ -101,6 +101,19 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
       allFeedback.unshift(newActionItemRecord as any);
       await saveFeedback(allFeedback, true); // Use append mode
   }
+
+  // If the AI suggested a practice scenario, assign it to the supervisor
+  if (result.suggestedPracticeScenario) {
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7); // Due in 1 week
+    await assignPracticeScenario(
+        'HR Head', // Assigned by the system, attributed to HR
+        supervisorRole,
+        result.suggestedPracticeScenario,
+        employeeRole, // The persona to practice with is the employee from the 1-on-1
+        dueDate
+    );
+  }
   
   return result;
 }
@@ -156,23 +169,24 @@ If the input is empty or non-meaningful (e.g., silence, test phrases), return a 
     *   Set the 'owner' field to either "Employee" or "Supervisor".
     *   Set the 'status' field to "pending".
     *   DO NOT set the 'completedAt' field.
-10. **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided). Analyze if the supervisor had an opportunity to apply their active learning goals in this session.
+10. **suggestedPracticeScenario**: Based on the MOST significant coaching gap or missed signal in THIS session, generate a single, one-sentence practice scenario for the supervisor to use in the "Nets" arena. The scenario should directly address the identified gap. For example, if the supervisor missed a signal about burnout, the scenario could be: "Practice starting a conversation with a report who you suspect is feeling burned out." If the supervisor struggled with delivering corrective feedback, the scenario could be: "Practice giving tough feedback about missed deadlines to a high-performer."
+11. **Coaching Impact Analysis**: (Only if activeDevelopmentGoals are provided). Analyze if the supervisor had an opportunity to apply their active learning goals in this session.
     *   For each active goal, review the user's check-in notes for context on what they are learning/practicing.
     *   Determine if a situation arose where this learning could be applied.
     *   If the learning was applied, set \`didApply\` to true and provide an \`applicationExample\` with a supporting quote. This is an appreciation of their effort.
     *   If an opportunity existed but was missed, set \`didApply\` to false and provide a \`missedOpportunityExample\` with a quote and a explanation of how they could have applied their learning. This is a notification.
     *   If the supervisor has clearly mastered the goal (e.g., applied it consistently and effectively), set \`completedGoalId\` to the ID of the goal and provide a \`masteryJustification\` explaining why they've mastered it.
-11. **Critical Insight Filtering (MANDATORY LOGIC):** Before generating 'Missed Signals' or 'Critical Coaching Insight', you MUST follow this logic. Identify every potential unaddressed issue. For each issue, first check if it meets the **Trigger Conditions** for a Critical Coaching Insight.
+12. **Critical Insight Filtering (MANDATORY LOGIC):** Before generating 'Missed Signals' or 'Critical Coaching Insight', you MUST follow this logic. Identify every potential unaddressed issue. For each issue, first check if it meets the **Trigger Conditions** for a Critical Coaching Insight.
     *   **If YES**, it MUST be generated ONLY in the 'criticalCoachingInsight' field and MUST NOT appear in 'missedSignals'.
     *   **If NO**, and it is a subtle, non-critical issue, then and only then can it be placed in the 'missedSignals' field.
-12. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
-13. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
+13. **Missed Signals**: Identify any *subtle, non-critical* indications of disengagement, burnout, confusion, or unspoken ambition that the supervisor failed to explore. Do NOT include issues that qualify as a critical insight here.
+14. **Critical Coaching Insight**: (Generate ONLY if an unaddressed red flag is present. If no flag is present, OMIT this field from the JSON.)
     *   **Trigger Conditions**: Any unaddressed issue involving repeated complaints, ignored aspirations, unresolved conflict, emotional distress, or potential HR issues. Keywords like **"frustration," "unhappy," "hate this workplace," "not fair,"** or any personal attacks (e.g., "you are a bad TL") MUST be treated as a Critical Coaching Insight. If a signal meets these conditions, it MUST be a Critical Coaching Insight and NOT a Missed Signal.
     *   **Content**: Must include a \`summary\` (what was missed), \`reason\` (why it matters AND a recommended micro-learning action), and \`severity\`. If a declined coaching area matches the issue, prepend the reason with "RECURRING ISSUE: " and set severity to "high".
     *   The \`status\` field should be set to 'open'. The AI should NOT generate content for \`supervisorResponse\` or \`employeeAcknowledgement\`.
-14. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
-15. **Localization Compliance**: If languageLocale is not 'en', note that analysis applied localized norms.
-16. **Legal & Data Compliance**: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
+15. **Bias/Fairness Check**: Flag any language indicating unconscious bias or power imbalance (e.g., "You always..."). Use cultural sensitivity based on locale.
+16. **Localization Compliance**: If languageLocale is not 'en', note that analysis applied localized norms.
+17. **Legal & Data Compliance**: Set piiOmitted to true if any PII was detected and removed. Set privacyRequest to true if the employee expressed a desire for privacy.
 
 Generate the complete, compliant, and objective report now.`,
 });
