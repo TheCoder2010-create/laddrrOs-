@@ -284,6 +284,28 @@ export async function assignPracticeScenario(assignedBy: Role, assignedTo: Role,
     };
     allScenarios.unshift(newScenario);
     saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
+
+    // Create a notification for the assigned user
+    const allFeedback = getFeedbackFromStorage();
+    const assignerName = roleUserMapping[assignedBy]?.name || assignedBy;
+    const notification: Feedback = {
+        trackingId: `NETS-${newScenario.id}`,
+        subject: `New Practice Scenario Assigned`,
+        message: `${assignerName} has assigned you a new practice scenario in the Nets arena: "${scenario}"`,
+        submittedAt: new Date(),
+        criticality: 'Low',
+        status: 'Pending Acknowledgement',
+        assignedTo: [assignedTo],
+        viewed: false,
+        auditTrail: [{
+            event: 'Notification Created',
+            timestamp: new Date(),
+            actor: 'System',
+            details: `Automated notification for Nets practice scenario assignment.`
+        }]
+    };
+    allFeedback.unshift(notification);
+    saveFeedbackToStorage(allFeedback);
 }
 
 export async function getPracticeScenariosForUser(userRole: Role): Promise<AssignedPracticeScenario[]> {

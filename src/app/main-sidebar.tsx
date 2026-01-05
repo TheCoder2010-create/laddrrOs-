@@ -10,16 +10,22 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuGroup,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LogOut, User, BarChart, CheckSquare, Vault, Check, ListTodo, MessageSquare, ShieldQuestion, BrainCircuit, Scale } from 'lucide-react';
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar, SidebarMenuButton } from '@/components/ui/sidebar';
+import { LogOut, User, BarChart, Check, ListTodo, MessageSquare, BrainCircuit, MessagesSquare, FlaskConical, Handshake, Scale, HeartPulse } from 'lucide-react';
 import type { Role } from '@/hooks/use-role';
 import { useRole } from '@/hooks/use-role';
-import { getAllFeedback, getOneOnOneHistory } from '@/services/feedback-service';
+import { getAllFeedback, getOneOnOneHistory, getPracticeScenariosForUser } from '@/services/feedback-service';
+import { getNominationForUser as getInterviewerNominationForUser } from '@/services/interviewer-lab-service';
+import { getNominationForUser as getLeadershipNominationForUser, getNominationsForMentor } from '@/services/leadership-service';
 import { Badge } from '@/components/ui/badge';
 import { roleUserMapping } from '@/lib/role-mapping';
+import { cn } from '@/lib/utils';
+import { LeadershipIcon } from './ui/leadership-icon';
+import { InterviewerLabIcon } from './ui/interviewer-lab-icon';
+import { OneOnOneIcon } from './ui/one-on-one-icon';
 
 
 interface MainSidebarProps {
@@ -32,48 +38,91 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
   const currentUser = roleUserMapping[currentRole] || { name: 'User', fallback: 'U', imageHint: 'person', role: currentRole };
   const currentUserName = currentUser.name;
   const pathname = usePathname();
-  const [actionItemCount, setActionItemCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
+  const [oneOnOneCount, setOneOnOneCount] = useState(0);
   const [coachingCount, setCoachingCount] = useState(0);
+  const [netsCount, setNetsCount] = useState(0);
+  const [isInterviewerNominee, setIsInterviewerNominee] = useState(false);
+  const [isLeadershipNominee, setIsLeadershipNominee] = useState(false);
+  const [isMentor, setIsMentor] = useState(false);
+  const [openSubMenus, setOpenSubMenus] = useState<string[]>([]);
+  const { state: sidebarState } = useSidebar();
+  
 
-  const fetchFeedbackCounts = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!currentRole) return;
     try {
-      const feedback = await getAllFeedback();
-      const history = await getOneOnOneHistory();
+      // Fetch all data sources in parallel
+      const [feedback, history, assignedNets, interviewerNomination, leadershipNomination, mentorNominations] = await Promise.all([
+        getAllFeedback(),
+        getOneOnOneHistory(),
+        getPracticeScenariosForUser(currentRole),
+        getInterviewerNominationForUser(currentRole),
+        getLeadershipNominationForUser(currentRole),
+        getNominationsForMentor(currentRole),
+      ]);
 
-      // Action items count (non-1-on-1 escalations)
-      let totalActionItems = 0;
-      setActionItemCount(totalActionItems);
+      // --- Calculate 1-on-1 Notifications (Critical Insights) ---
+      let criticalInsightsCount = 0;
+      const actionableInsightStatuses: string[] = [];
+      if (currentRole === 'Employee') actionableInsightStatuses.push('pending_employee_acknowledgement');
+      if (currentRole === 'Team Lead') {
+          actionableInsightStatuses.push('open'); 
+          actionableInsightStatuses.push('pending_supervisor_retry');
+      }
+      if (currentRole === 'AM') actionableInsightStatuses.push('pending_am_review');
+      if (currentRole === 'Manager') actionableInsightStatuses.push('pending_manager_review');
+      if (currentRole === 'HR Head') {
+          actionableInsightStatuses.push('pending_hr_review');
+          actionableInsightStatuses.push('pending_final_hr_action');
+      }
+      
+      history.forEach(h => {
+          const insight = h.analysis.criticalCoachingInsight;
+          const isMyTurn = (h.supervisorName === currentUserName && (insight?.status === 'open' || insight?.status === 'pending_supervisor_retry')) ||
+                           (h.employeeName === currentUserName && insight?.status === 'pending_employee_acknowledgement') ||
+                           (insight && insight.status && actionableInsightStatuses.includes(insight.status) && h.assignedTo?.includes(currentRole));
 
+          if (insight && insight.status && isMyTurn && actionableInsightStatuses.includes(insight.status)) {
+              criticalInsightsCount++;
+          }
+      });
+      setOneOnOneCount(criticalInsightsCount);
 
-      // Messages count (only non-1-on-1 items)
-      let totalMessages = 0;
-      totalMessages += feedback.filter(f => {
+      // --- Calculate General Messages & Nets Notifications ---
+      let generalMessageCount = 0;
+      let netsNotifications = 0;
+      feedback.forEach(f => {
         const isAssignedToMe = f.assignedTo?.includes(currentRole as any);
-        if (!isAssignedToMe) return false;
+        if (!isAssignedToMe) return;
 
-        const isPendingAck = f.status === 'Pending Acknowledgement';
-        const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
-        return isPendingAck || isIdentifiedAck;
-      }).length;
-      
-      setMessageCount(totalMessages);
-      
-      // Coaching & Development Count
+        // Check for Nets practice scenario assignments
+        if (f.trackingId?.startsWith('NETS-')) {
+          if (f.status === 'Pending Acknowledgement') {
+            netsNotifications++;
+          }
+        } else {
+          // All other general messages
+          const isPendingAck = f.status === 'Pending Acknowledgement';
+          const isIdentifiedAck = f.status === 'Pending Employee Acknowledgment' && f.submittedBy === currentRole;
+          if (isPendingAck || isIdentifiedAck) {
+            generalMessageCount++;
+          }
+        }
+      });
+      setMessageCount(generalMessageCount);
+      setNetsCount(netsNotifications + assignedNets.length);
+
+      // --- Calculate Coaching Notifications ---
       let devCount = 0;
-      // My Development (pending recommendations for me)
       history.forEach(h => {
         if (h.supervisorName === currentUserName) {
           devCount += h.analysis.coachingRecommendations.filter(rec => rec.status === 'pending').length;
         }
       });
-
-      // Team Development (escalations for me to review)
       const recStatusesToCount: string[] = [];
       if (currentRole === 'AM') recStatusesToCount.push('pending_am_review');
       if (currentRole === 'Manager') recStatusesToCount.push('pending_manager_acknowledgement');
-
       if (recStatusesToCount.length > 0) {
         history.forEach(h => {
             devCount += h.analysis.coachingRecommendations.filter(rec => rec.status && recStatusesToCount.includes(rec.status)).length;
@@ -81,20 +130,67 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       }
       setCoachingCount(devCount);
 
+      // --- Set Nomination Statuses ---
+      setIsInterviewerNominee(!!interviewerNomination);
+      setIsLeadershipNominee(!!leadershipNomination);
+      setIsMentor(mentorNominations.length > 0);
+
     } catch (error) {
-      console.error("Failed to fetch feedback counts", error);
-      setActionItemCount(0);
+      console.error("Failed to fetch sidebar data", error);
       setMessageCount(0);
+      setOneOnOneCount(0);
       setCoachingCount(0);
+      setNetsCount(0);
+      setIsInterviewerNominee(false);
+      setIsLeadershipNominee(false);
+      setIsMentor(false);
     }
   }, [currentRole, currentUserName]);
 
+  // Menu items are now defined within the component body to access state
+  const menuItems = [
+    { href: '/', icon: <BarChart className="text-blue-500"/>, label: 'Dashboard' },
+    { href: '/1-on-1', icon: <OneOnOneIcon className="text-green-500 size-5 flex-shrink-0"/>, label: '1-on-1', badge: oneOnOneCount > 0 ? oneOnOneCount : null, badgeVariant: 'destructive' as const },
+    { href: '/nets', icon: <MessagesSquare className="text-indigo-500"/>, label: 'Nets', badge: netsCount > 0 ? netsCount : null, badgeVariant: 'destructive' as const },
+    ...(['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole) ? [{ href: '/coaching', icon: <BrainCircuit className="text-purple-500"/>, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
+    ...(isMentor ? [{ href: '/mentorship', icon: <Handshake className="text-cyan-500"/>, label: 'Mentorship' }] : []),
+    ...(['Manager'].includes(currentRole) ? [{ href: '/goals', icon: <Scale className="text-rose-500"/>, label: 'Goals' }] : []),
+    ...(['HR Head'].includes(currentRole) ? [{ href: '/org-health', icon: <HeartPulse className="text-pink-500"/>, label: 'Org Health' }] : []),
+    ...(['Manager', 'HR Head'].includes(currentRole) ? [{ 
+        href: '/managers-lab', 
+        icon: <FlaskConical className="text-orange-500"/>, 
+        label: "Manager's Lab",
+        children: [
+           { href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500 size-4"/>, label: "Interviewer Lab" },
+           { href: '/leadership', icon: <LeadershipIcon className="text-red-500 size-4"/>, label: "Leadership" }
+        ]
+    }] : []),
+    ...(!['Manager', 'HR Head'].includes(currentRole) && isInterviewerNominee ? [{ href: '/interviewer-lab', icon: <InterviewerLabIcon className="text-teal-500"/>, label: "Interviewer Lab" }] : []),
+    ...(!['Manager', 'HR Head'].includes(currentRole) && isLeadershipNominee ? [{ href: '/leadership', icon: <LeadershipIcon className="text-red-500 size-4"/>, label: "Leadership" }] : []),
+    { href: '/messages', icon: <MessageSquare className="text-yellow-500"/>, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
+  ];
 
   useEffect(() => {
-    fetchFeedbackCounts();
+    const activeSubMenu = menuItems.find(item => 
+      item.children?.some(child => pathname.startsWith(child.href))
+    );
+    if (activeSubMenu && !openSubMenus.includes(activeSubMenu.label)) {
+      setOpenSubMenus(prev => [...prev, activeSubMenu.label]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  useEffect(() => {
+    if (sidebarState === 'collapsed') {
+      setOpenSubMenus([]);
+    }
+  }, [sidebarState]);
+
+  useEffect(() => {
+    fetchData();
 
     const handleDataUpdate = () => {
-        fetchFeedbackCounts();
+        fetchData();
     };
 
     window.addEventListener('storage', handleDataUpdate);
@@ -104,22 +200,53 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
         window.removeEventListener('storage', handleDataUpdate);
         window.removeEventListener('feedbackUpdated', handleDataUpdate);
     };
-  }, [fetchFeedbackCounts]);
-
-  const isSupervisor = ['Team Lead', 'AM', 'Manager', 'HR Head'].includes(currentRole);
-
-  const menuItems = [
-    { href: '/', icon: <BarChart />, label: 'Dashboard' },
-    { href: '/1-on-1', icon: <CheckSquare />, label: '1-on-1' },
-    ...(isSupervisor ? [{ href: '/coaching', icon: <BrainCircuit />, label: 'Coaching', badge: coachingCount > 0 ? coachingCount : null, badgeVariant: 'secondary' as const }] : []),
-    { href: '/messages', icon: <MessageSquare />, label: 'Messages', badge: messageCount > 0 ? messageCount : null, badgeVariant: 'destructive' as const },
-  ];
+  }, [fetchData]);
   
-  const assigneeMenuItems = [
-    { href: '/action-items', icon: <ListTodo />, label: 'Action Items', badge: actionItemCount > 0 ? actionItemCount : null, badgeVariant: 'destructive' as const }
-  ]
+  const toggleSubMenu = (label: string) => {
+    setOpenSubMenus(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);
+  }
 
-  const renderMenuItem = (item: any) => (
+  const renderMenuItem = (item: any) => {
+     if (item.children) {
+      const isParentActive = item.children.some((child: any) => pathname.startsWith(child.href));
+      const isSubMenuOpen = openSubMenus.includes(item.label);
+
+      return (
+        <SidebarMenuItem key={item.label} className="flex flex-col">
+            <SidebarMenuButton 
+                asChild={false}
+                isActive={isParentActive && !isSubMenuOpen}
+                onClick={() => toggleSubMenu(item.label)}
+                className="w-full"
+            >
+              <div className="flex justify-between items-center w-full">
+                <div className="flex items-center gap-2">
+                    {item.icon}
+                    <span>{item.label}</span>
+                </div>
+              </div>
+            </SidebarMenuButton>
+            {isSubMenuOpen && (
+              <SidebarMenuSub className="mt-1">
+                {item.children.map((child: any) => (
+                  <SidebarMenuSubItem key={child.href}>
+                     <Link href={child.href} passHref>
+                      <SidebarMenuSubButton asChild isActive={pathname.startsWith(child.href)}>
+                          <div className="flex items-center gap-2">
+                             {child.icon}
+                             <span>{child.label}</span>
+                          </div>
+                      </SidebarMenuSubButton>
+                    </Link>
+                  </SidebarMenuSubItem>
+                ))}
+              </SidebarMenuSub>
+            )}
+        </SidebarMenuItem>
+      )
+    }
+
+    return (
      <SidebarMenuItem key={item.href}>
         <Link href={item.href} passHref>
           <SidebarMenuButton asChild isActive={pathname === item.href}>
@@ -137,7 +264,8 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
           </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
-  );
+    );
+  }
 
   return (
     <Sidebar>
@@ -163,7 +291,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
                 {availableRoles.map(role => (
                     <DropdownMenuItem key={role} onClick={() => onSwitchRole(role)}>
                          {currentRole === role ? (
-                            <Check className="mr-2 h-4 w-4" />
+                            <Check className="mr-2 h-4 w-4 text-green-500" />
                         ) : (
                             <span className="mr-2 h-4 w-4" />
                         )}
@@ -173,7 +301,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onSwitchRole(null)}>
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4 text-destructive" />
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -182,14 +310,13 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
       <SidebarContent className="p-2">
         <SidebarMenu>
           {menuItems.map(renderMenuItem)}
-          {(currentRole === 'HR Head' || currentRole === 'Manager' || currentRole === 'AM') && assigneeMenuItems.map(renderMenuItem)}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => onSwitchRole(null)}>
-              <LogOut />
+              <LogOut className="text-destructive"/>
               <span>Log out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -198,3 +325,6 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     </Sidebar>
   );
 }
+
+
+
