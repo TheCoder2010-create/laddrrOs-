@@ -8,7 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { analyzeOneOnOne } from '@/ai/flows/analyze-one-on-one-flow';
 import { formSchema, type AnalyzeOneOnOneOutput, type CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
-import { saveOneOnOneHistory, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForUser, saveFeedback } from '@/services/feedback-service';
+import { saveOneOnOneHistory, getDeclinedCoachingAreasForSupervisor, getActiveCoachingPlansForUser, saveFeedback, assignPracticeScenario } from '@/services/feedback-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -237,6 +237,7 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                     { id: uuidv4(), owner: "Employee", task: "Block out 1 hour of focus time each morning for the next 2 weeks.", status: 'pending' },
                     { id: uuidv4(), owner: "Supervisor", task: "Check in with Casey mid-week on their workload and any blockers.", status: 'pending' }
                 ],
+                suggestedPracticeScenario: "Practice starting a conversation with a report who you suspect is feeling burned out.",
                 missedSignals: ["Casey mentioned working late twice but this was not explored further."],
                 criticalCoachingInsight: {
                     summary: "Employee mentioned 'feeling pretty burned out' and supervisor did not explore this critical signal.",
@@ -297,6 +298,23 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
                         }],
                     }], true);
                  }
+            }
+
+            // Assign the suggested practice scenario
+            if (mockResult.suggestedPracticeScenario && role) {
+                const supervisorRole = getRoleByName(supervisor);
+                const employeeRole = getRoleByName(meeting.with);
+                if (supervisorRole && employeeRole) {
+                    const dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + 7); // Due in 1 week
+                    await assignPracticeScenario(
+                        'HR Head', // Assigned by the system, attributed to HR
+                        supervisorRole,
+                        mockResult.suggestedPracticeScenario,
+                        employeeRole, // The persona to practice with is the employee from the 1-on-1
+                        dueDate
+                    );
+                }
             }
             
             toast({ title: "Analysis Complete", description: "The AI has processed the session feedback." });
@@ -730,3 +748,5 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
+
+    
