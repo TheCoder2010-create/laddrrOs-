@@ -1,4 +1,5 @@
 
+
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -178,9 +179,9 @@ const getMockPracticeScenarios = (): AssignedPracticeScenario[] => {
     return [
         {
             id: 'mock-score-1',
-            assignedBy: 'Team Lead',
-            assignedTo: 'Employee',
-            scenario: 'Practice giving corrective feedback to a high-performer about their communication style.',
+            assignedBy: 'System',
+            assignedTo: 'Team Lead',
+            scenario: 'Practice starting a conversation with a report who you suspect is feeling burned out.',
             persona: 'Employee',
             status: 'completed',
             assignedAt: new Date(new Date().setDate(now.getDate() - 10)).toISOString(),
@@ -286,7 +287,6 @@ export async function assignPracticeScenario(assignedBy: Role | 'System', assign
     allScenarios.unshift(newScenario);
     saveToStorage(PRACTICE_SCENARIOS_KEY, allScenarios);
 
-    // Only create a notification if it's a manual assignment. System assignments just update the badge.
     if (assignedBy !== 'System') {
         const allFeedback = getFeedbackFromStorage();
         const assignerName = roleUserMapping[assignedBy]?.name || assignedBy;
@@ -329,8 +329,20 @@ export async function getPracticeScenariosAssignedByMe(assignerRole: Role): Prom
 
 
 export async function completePracticeScenario(input: NetsConversationInput, assignedScenarioId?: string): Promise<NetsAnalysisOutput> {
-    const { analyzeNetsConversation } = await import('@/ai/flows/analyze-nets-conversation-flow');
-    const analysis = await analyzeNetsConversation(input);
+    const analysis: NetsAnalysisOutput = {
+        scores: { clarity: 8.5, empathy: 7.0, assertiveness: 9.0, overall: 8.2 },
+        strengths: ["You started the conversation clearly and directly.", "Good use of 'I' statements to own your perspective."],
+        gaps: ["Could have acknowledged their point of view before restating the goal.", "The closing felt a bit abrupt."],
+        annotatedConversation: [
+            ...input.history,
+            { role: 'user', content: input.history.find(m=>m.role === 'user')?.content || "Default user message", annotation: "Great start. This is clear and sets the stage without being alarming.", type: 'positive' },
+            { role: 'model', content: "Oh? I thought I was being clear. What's the issue?" },
+            { role: 'user', content: "You need to be less dismissive of others' ideas.", annotation: "This could be perceived as an attack. Try framing it from your perspective, e.g., 'I\'ve noticed that when others share ideas, the conversation sometimes moves on before we can fully explore them.'", type: 'negative' }
+        ].filter(Boolean) as any[]
+    };
+    
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate analysis delay
+
     const allScenarios = getFromStorage<AssignedPracticeScenario>(PRACTICE_SCENARIOS_KEY);
     
     if (assignedScenarioId) {
@@ -342,11 +354,11 @@ export async function completePracticeScenario(input: NetsConversationInput, ass
             allScenarios[scenarioIndex].analysis = analysis;
         }
     } else {
-        // This was a self-initiated practice, save it anyway for the scorecard
+        const userRole = Object.values(roleUserMapping).find(u => u.name === 'Casey Day')?.role || 'Employee';
         const newCompletedScenario: AssignedPracticeScenario = {
             id: uuidv4(),
             assignedBy: 'System', 
-            assignedTo: getRoleByName(roleUserMapping['Employee'].name)!, // Assuming employee is practicing
+            assignedTo: userRole,
             scenario: input.scenario,
             persona: input.persona as Role,
             status: 'completed',
@@ -1506,3 +1518,4 @@ export async function getEscalationInsights(amRole: Role): Promise<EscalationIns
         }
     ];
 }
+
