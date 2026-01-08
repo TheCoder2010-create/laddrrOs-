@@ -306,12 +306,6 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }: { onStart: (c
                             {assignedScenarios.map(s => (
                                 <Card key={s.id} className="bg-purple-500/5">
                                     <CardHeader className="pb-3">
-                                        <CardDescription>
-                                            {s.assignedBy === 'System' 
-                                                ? `Assigned by System based on 1-on-1 analysis`
-                                                : `Assigned by ${formatActorName(s.assignedBy)}`
-                                            } {formatDistanceToNow(new Date(s.assignedAt), { addSuffix: true })}
-                                        </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <p className="font-medium text-foreground-primary">{s.scenario}</p>
