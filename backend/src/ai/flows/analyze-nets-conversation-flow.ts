@@ -5,8 +5,8 @@
  * - analyzeNetsConversation - A function that takes a conversation history and returns a full analysis.
  */
 
-import { ai } from '@/ai/genkit';
-import { NetsConversationInputSchema, NetsAnalysisOutputSchema, type NetsConversationInput, type NetsAnalysisOutput } from '@/ai/schemas/nets-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { NetsConversationInputSchema, NetsAnalysisOutputSchema, type NetsConversationInput, type NetsAnalysisOutput } from '@backend-src/ai/schemas/nets-schemas';
 
 export async function analyzeNetsConversation(input: NetsConversationInput): Promise<NetsAnalysisOutput> {
   return analyzeNetsConversationFlow(input);
@@ -24,10 +24,12 @@ const prompt = ai.definePrompt({
 
 **Conversation History:**
 {{#each history}}
-  {{#if this.isUser}}
+  {{#if (eq this.role "user")}}
     User: {{{this.content}}}
-  {{else if this.isModel}}
+  {{else if (eq this.role "model")}}
     {{../persona}}: {{{this.content}}}
+  {{else if (eq this.role "system")}}
+    System: {{{this.content}}}
   {{/if}}
 {{/each}}
 
@@ -63,19 +65,7 @@ const analyzeNetsConversationFlow = ai.defineFlow(
     outputSchema: NetsAnalysisOutputSchema,
   },
   async (input) => {
-    // Pre-process history for Handlebars compatibility
-    const processedHistory = input.history.map(msg => ({
-      isUser: msg.role === 'user',
-      isModel: msg.role === 'model',
-      content: msg.content,
-    }));
-    
-    const promptInput = {
-      ...input,
-      history: processedHistory,
-    };
-
-    const { output } = await prompt(promptInput);
+    const { output } = await prompt(input);
 
     if (!output) {
       throw new Error("AI analysis failed to produce a scorecard.");

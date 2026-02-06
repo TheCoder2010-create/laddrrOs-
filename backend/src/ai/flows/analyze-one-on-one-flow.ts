@@ -6,30 +6,37 @@
  * - analyzeOneOnOne - a function that takes form data from a 1-on-1 and returns a structured analysis.
  */
 
-import { ai } from '@/ai/genkit';
-import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@/ai/schemas/one-on-one-schemas';
-import { saveFeedback, assignPracticeScenario } from '@/services/feedback-service';
+import { ai } from '@backend-src/ai/genkit';
+
+import { AnalyzeOneOnOneInputSchema, AnalyzeOneOnOneOutputSchema, type AnalyzeOneOnOneInput, type AnalyzeOneOnOneOutput } from '@backend-src/ai/schemas/one-on-one-schemas';
+
+
+
 import { v4 as uuidv4 } from 'uuid';
-import { getRoleByName } from '@/lib/role-mapping';
+
+import { getRoleByName } from '@backend-src/lib/role-mapping';
+
+import type { AnalyzeOneOnOneResult, Feedback, AssignedPracticeScenario } from '@common/types/feedback';
 
 const generateTrackingId = () => `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
 
-export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneOutput> {
-  const result = await analyzeOneOnOneFlow(input);
+export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<AnalyzeOneOnOneResult> {
+  const analysisOutput = await analyzeOneOnOneFlow(input);
   const submittedAt = new Date();
+  const feedbackRecords: Feedback[] = [];
+  let assignedPracticeScenario: AssignedPracticeScenario | undefined;
   
   const supervisorRole = getRoleByName(input.supervisorName);
   const employeeRole = getRoleByName(input.employeeName);
 
   if (!supervisorRole || !employeeRole) {
       console.error("Could not determine roles for supervisor or employee. Aborting insight creation.");
-      return result;
+      return { analysisOutput, feedbackRecords };
   }
 
   // If a critical insight is found, create a new feedback record to trigger the workflow.
-  if (result.criticalCoachingInsight && input.oneOnOneId) {
-      const allFeedback = [];
-      const newFeedback = {
+  if (analysisOutput.criticalCoachingInsight && input.oneOnOneId) {
+      const newFeedback: Feedback = {
           trackingId: generateTrackingId(),
           oneOnOneId: input.oneOnOneId, // Link the feedback to the 1-on-1
           subject: `Critical Coaching Insight from 1-on-1 with ${input.employeeName}`,
@@ -40,9 +47,9 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
 - **How Feedback Was Received**: ${input.employeeAcceptedFeedback}
 - **Primary Feedback**: ${input.supervisorNotes || 'N/A'}`,
           submittedAt: submittedAt,
-          summary: result.criticalCoachingInsight.summary,
+          summary: analysisOutput.criticalCoachingInsight.summary,
           criticality: 'Critical' as const,
-          criticalityReasoning: result.criticalCoachingInsight.reason,
+          criticalityReasoning: analysisOutput.criticalCoachingInsight.reason,
           viewed: false,
           status: 'Pending Supervisor Action' as const,
           assignedTo: [supervisorRole],
@@ -64,14 +71,12 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           ],
       };
       
-      allFeedback.unshift(newFeedback as any);
-      await saveFeedback(allFeedback, true); // Use append mode
+      feedbackRecords.push(newFeedback);
   }
   
   // If there are action items, create a "To-Do" feedback item for the supervisor.
-  if (result.actionItems && result.actionItems.length > 0 && input.oneOnOneId) {
-      const allFeedback = [];
-      const newActionItemRecord = {
+  if (analysisOutput.actionItems && analysisOutput.actionItems.length > 0 && input.oneOnOneId) {
+      const newActionItemRecord: Feedback = {
           trackingId: generateTrackingId(),
           oneOnOneId: input.oneOnOneId,
           subject: `Action Items from 1-on-1 with ${input.employeeName}`,
@@ -83,11 +88,11 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
           supervisor: input.supervisorName, // Explicitly set supervisor name for filtering
           employee: input.employeeName,
           viewed: true, // It's a To-Do, so it's implicitly viewed by its creator
-          actionItems: result.actionItems.map(itemText => ({
+          actionItems: analysisOutput.actionItems.map(itemText => ({
               id: uuidv4(),
-              text: itemText.task,
+              task: itemText.task,
               status: 'pending' as const,
-              owner: itemText.owner === 'Supervisor' ? supervisorRole : employeeRole,
+              owner: itemText.owner,
           })),
           auditTrail: [
               {
@@ -98,24 +103,26 @@ export async function analyzeOneOnOne(input: AnalyzeOneOnOneInput): Promise<Anal
               }
           ]
       };
-      allFeedback.unshift(newActionItemRecord as any);
-      await saveFeedback(allFeedback, true); // Use append mode
+      feedbackRecords.push(newActionItemRecord);
   }
 
   // If the AI suggested a practice scenario, assign it to the supervisor
-  if (result.suggestedPracticeScenario) {
+  if (analysisOutput.suggestedPracticeScenario) {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 7); // Due in 1 week
-    await assignPracticeScenario(
-        'HR Head', // Assigned by the system, attributed to HR
-        supervisorRole,
-        result.suggestedPracticeScenario,
-        employeeRole, // The persona to practice with is the employee from the 1-on-1
-        dueDate
-    );
+    assignedPracticeScenario = {
+        id: uuidv4(),
+        assignedBy: 'HR Head', // Assigned by the system, attributed to HR
+        assignedTo: supervisorRole,
+        scenario: analysisOutput.suggestedPracticeScenario,
+        persona: employeeRole, // The persona to practice with is the employee from the 1-on-1
+        status: 'pending',
+        assignedAt: new Date().toISOString(),
+        dueDate: dueDate.toISOString(),
+    };
   }
   
-  return result;
+  return { analysisOutput, feedbackRecords, assignedPracticeScenario };
 }
 
 const prompt = ai.definePrompt({

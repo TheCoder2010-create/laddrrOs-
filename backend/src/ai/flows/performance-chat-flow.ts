@@ -6,8 +6,8 @@
  * - runPerformanceChat - A function that takes a user's question and performance data and returns a coaching response.
  */
 
-import { ai } from '@/ai/genkit';
-import { PerformanceChatInputSchema, PerformanceChatOutputSchema, type PerformanceChatInput, type PerformanceChatOutput } from '@/ai/schemas/performance-chat-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { PerformanceChatInputSchema, PerformanceChatOutputSchema, type PerformanceChatInput, type PerformanceChatOutput } from '@backend-src/ai/schemas/performance-chat-schemas';
 
 export async function runPerformanceChat(input: PerformanceChatInput): Promise<PerformanceChatOutput> {
   return performanceChatFlow(input);

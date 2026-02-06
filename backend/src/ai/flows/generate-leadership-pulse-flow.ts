@@ -3,8 +3,8 @@
  * @fileOverview An AI flow for generating a targeted leadership survey based on organizational feedback.
  */
 
-import { ai } from '@/ai/genkit';
-import { GenerateLeadershipPulseInputSchema, GenerateLeadershipPulseOutputSchema, type GenerateLeadershipPulseInput, type GenerateLeadershipPulseOutput } from '@/ai/schemas/leadership-pulse-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { GenerateLeadershipPulseInputSchema, GenerateLeadershipPulseOutputSchema, type GenerateLeadershipPulseInput, type GenerateLeadershipPulseOutput } from '@backend-src/ai/schemas/leadership-pulse-schemas';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function generateLeadershipPulse(input: GenerateLeadershipPulseInput): Promise<GenerateLeadershipPulseOutput> {

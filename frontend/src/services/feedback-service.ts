@@ -1,5 +1,4 @@
 
-
 /**
  * @fileOverview A service for managing feedback submissions using sessionStorage.
  *
@@ -7,102 +6,19 @@
  * suitable for a prototype. It now includes custom event dispatching for same-tab updates.
  */
 import { v4 as uuidv4 } from 'uuid';
-import type { Role } from '@/hooks/use-role';
+import type { Role } from '@common/types/role';
 import { roleUserMapping, getRoleByName } from '@/lib/role-mapping';
-import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn, ActionItem, NetsConversationInput, NetsAnalysisOutput } from '../types/ai';
+import type { AnalyzeOneOnOneOutput, CriticalCoachingInsight, CoachingRecommendation, CheckIn, ActionItem, NetsConversationInput, NetsAnalysisOutput } from '@common/types/ai';
+import type {
+  AuditEvent,
+  FeedbackStatus,
+  Attachment,
+  Feedback,
+  OneOnOneHistoryItem,
+  AssignedPracticeScenario,
+  ActionItemWithSource,
+} from '@common/types/feedback';
 import { getOrgCoachingItems, type OrgCoachingItem } from './org-coaching-service';
-
-
-// Helper function to generate a new ID format
-const generateTrackingId = () => `Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
-
-export interface AuditEvent {
-  event: string;
-  timestamp: Date | string; 
-  actor: Role | string;
-  details?: string;
-  isPublic?: boolean;
-}
-
-// Simplified status for the first level of escalation
-export type FeedbackStatus = 
-  | 'Open' 
-  | 'In Progress'
-  | 'Pending Supervisor Action'
-  | 'Pending Manager Action'
-  | 'Pending Identity Reveal'
-  | 'Pending Anonymous Reply'
-  | 'Pending HR Action'
-  | 'Pending Employee Acknowledgment' // New status for identified concerns
-  | 'Pending Anonymous Acknowledgement' // For anonymous users to ack HR resolution
-  | 'Pending Acknowledgement' // For FYI notifications
-  | 'Final Disposition Required' // For HR's final action
-  | 'To-Do'
-  | 'Resolved'
-  | 'Closed'
-  | 'Retaliation Claim'; // New status for child cases
-
-
-export interface Attachment {
-    name: string;
-    dataUri: string;
-}
-
-export interface Feedback {
-  trackingId: string;
-  subject: string;
-  message: string;
-  submittedAt: Date | string; 
-  submittedBy?: Role; // For identified concerns
-  summary?: string;
-  criticality?: 'Low' | 'Medium' | 'High' | 'Critical' | 'Retaliation Claim';
-  criticalityReasoning?: string;
-  auditTrail?: AuditEvent[];
-  viewed?: boolean;
-  status?: FeedbackStatus;
-  assignedTo?: Role[];
-  resolution?: string;
-  oneOnOneId?: string; // Link back to the 1-on-1 history item
-  supervisor?: Role | string; 
-  employee?: Role | string;
-  supervisorUpdate?: string;
-  actionItems?: ActionItem[];
-  isAnonymous?: boolean; // Flag for anonymous submissions from dashboard
-  managerResolution?: string; // For collaborative resolution
-  hrHeadResolution?: string;  // For collaborative resolution
-  parentCaseId?: string; // For retaliation claims
-  attachmentNames?: string[];
-  attachments?: Attachment[];
-}
-
-export interface OneOnOneHistoryItem {
-    id: string;
-    supervisorName: string;
-    employeeName: string;
-    date: string;
-    analysis: AnalyzeOneOnOneOutput;
-    // We add a top-level assignedTo for escalation routing outside the insight
-    assignedTo?: Role[]; 
-}
-
-export interface AssignedPracticeScenario {
-    id: string;
-    assignedBy: Role | 'System';
-    assignedTo: Role;
-    scenario: string;
-    persona: Role;
-    status: 'pending' | 'completed';
-    assignedAt: string;
-    dueDate: string;
-    completedAt?: string;
-    analysis?: NetsAnalysisOutput;
-}
-
-export interface ActionItemWithSource extends ActionItem {
-    sourceType: '1-on-1' | 'Coaching' | 'Training';
-    source: string; // e.g., "1-on-1 with Alex Smith" or "Coaching: Active Listening"
-    dueDate?: string;
-}
 
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';

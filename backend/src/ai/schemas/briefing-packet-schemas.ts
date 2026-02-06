@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import type { Role } from '@/hooks/use-role';
+import type { Role } from '@common/types/role';
 
 const PastIssueSchema = z.object({
   date: z.string().describe("The date of the past session."),

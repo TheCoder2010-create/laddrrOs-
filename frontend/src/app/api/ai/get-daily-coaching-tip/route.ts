@@ -1,4 +1,4 @@
-import { getDailyCoachingTip } from '@backend/ai/flows/get-daily-coaching-tip-flow';
+import { getDailyCoachingTip } from '@backend-src/ai/flows/get-daily-coaching-tip-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

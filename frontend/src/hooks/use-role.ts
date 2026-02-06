@@ -4,10 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 
-export type Role = 'Manager' | 'Team Lead' | 'AM' | 'Employee' | 'HR Head' | 'Anonymous';
-
-export const availableRoles: Role[] = ['Employee', 'Team Lead', 'AM', 'Manager', 'HR Head'];
-export const availableRolesForAssignment: Role[] = ['AM', 'Manager', 'HR Head'];
+import { Role, availableRoles } from '@common/types/role';
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 const ACTIVE_SURVEY_KEY = 'active_survey_exists';

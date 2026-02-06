@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -24,8 +25,7 @@ import { roleUserMapping } from '@/lib/role-mapping';
 import { cn } from '@/lib/utils';
 import { LeadershipIcon } from './ui/leadership-icon';
 import { InterviewerLabIcon } from './ui/interviewer-lab-icon';
-import { OneOnOneIcon } from 
-;
+import { OneOnOneIcon } from '@/components/ui/one-on-one-icon';
 
 
 interface MainSidebarProps {
@@ -325,6 +325,7 @@ export default function MainSidebar({ currentRole, onSwitchRole }: MainSidebarPr
     </Sidebar>
   );
 }
+
 
 
 

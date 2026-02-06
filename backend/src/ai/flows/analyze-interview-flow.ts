@@ -5,8 +5,8 @@
  * - analyzeInterview - A function that takes a transcript and returns a full evaluation.
  */
 
-import { ai } from '@/ai/genkit';
-import { InterviewerConversationInputSchema, InterviewerAnalysisOutputSchema, type InterviewerConversationInput, type InterviewerAnalysisOutput } from '@/ai/schemas/interviewer-lab-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { InterviewerConversationInputSchema, InterviewerAnalysisOutputSchema, type InterviewerConversationInput, type InterviewerAnalysisOutput } from '@backend-src/ai/schemas/interviewer-lab-schemas';
 
 export async function analyzeInterview(input: InterviewerConversationInput): Promise<InterviewerAnalysisOutput> {
   return analyzeInterviewFlow(input);

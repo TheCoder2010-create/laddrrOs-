@@ -6,7 +6,7 @@ import 'jspdf-autotable';
 import { format } from 'date-fns';
 import type { AuditEvent, Feedback, OneOnOneHistoryItem } from '@/services/feedback-service';
 import type { PoshComplaint, PoshAuditEvent } from '@/services/posh-service';
-import type { Role } from '@/hooks/use-role';
+import type { Role } from '@common/types/role';
 import { roleUserMapping } from './role-mapping';
 import { addAdminLogEntry } from '@/services/admin-service';
 

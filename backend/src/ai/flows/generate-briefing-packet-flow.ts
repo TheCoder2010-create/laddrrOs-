@@ -6,8 +6,8 @@
  * - generateBriefingPacket - A function that takes supervisor and employee names and returns a structured summary.
  */
 
-import { ai } from '@/ai/genkit';
-import { BriefingPacketInputSchema, BriefingPacketOutputSchema, type BriefingPacketInput, type BriefingPacketOutput } from '@/ai/schemas/briefing-packet-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { BriefingPacketInputSchema, BriefingPacketOutputSchema, type BriefingPacketInput, type BriefingPacketOutput } from '@backend-src/ai/schemas/briefing-packet-schemas';
 
 export async function generateBriefingPacket(input: BriefingPacketInput): Promise<BriefingPacketOutput> {
     const isEmployeeView = input.viewerRole === 'Employee';

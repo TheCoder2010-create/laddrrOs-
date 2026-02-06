@@ -6,8 +6,8 @@
  * - generateNetsNudge - A function that analyzes a conversation and provides a hint.
  */
 
-import { ai } from '@/ai/genkit';
-import { NetsConversationInputSchema, NetsNudgeOutputSchema, type NetsConversationInput, type NetsNudgeOutput } from '@/ai/schemas/nets-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { NetsConversationInputSchema, NetsNudgeOutputSchema, type NetsConversationInput, type NetsNudgeOutput } from '@backend-src/ai/schemas/nets-schemas';
 
 export async function generateNetsNudge(input: NetsConversationInput): Promise<NetsNudgeOutput> {
   return generateNetsNudgeFlow(input);
@@ -28,10 +28,12 @@ Do not comment on the entire conversation. Focus on providing a specific suggest
 
 **Conversation History:**
 {{#each history}}
-  {{#if this.isUser}}
+  {{#if (eq this.role "user")}}
     User: {{{this.content}}}
-  {{else if this.isModel}}
+  {{else if (eq this.role "model")}}
     {{../persona}}: {{{this.content}}}
+  {{else if (eq this.role "system")}}
+    System: {{{this.content}}}
   {{/if}}
 {{/each}}
 
@@ -58,19 +60,7 @@ const generateNetsNudgeFlow = ai.defineFlow(
     outputSchema: NetsNudgeOutputSchema,
   },
   async (input) => {
-    // Pre-process history for Handlebars compatibility
-    const processedHistory = input.history.map(msg => ({
-      isUser: msg.role === 'user',
-      isModel: msg.role === 'model',
-      content: msg.content,
-    }));
-    
-    const promptInput = {
-      ...input,
-      history: processedHistory,
-    };
-
-    const { output } = await prompt(promptInput);
+    const { output } = await prompt(input);
 
     if (!output) {
       throw new Error("AI analysis failed to produce a nudge.");

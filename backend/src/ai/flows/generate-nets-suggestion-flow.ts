@@ -6,37 +6,38 @@
  * - generateNetsSuggestion - A function that analyzes a user's history and suggests a scenario.
  */
 
-import { ai } from '@/ai/genkit';
-import { NetsSuggestionInputSchema, NetsSuggestionOutputSchema, type NetsSuggestionInput, type NetsSuggestionOutput } from '@/ai/schemas/nets-schemas';
-import { getOneOnOneHistory, getActiveCoachingPlansForUser } from '@/services/feedback-service';
-import type { Role } from '@/hooks/use-role';
-import { roleUserMapping } from '@/lib/role-mapping';
+import { ai } from '@backend-src/ai/genkit';
+import { NetsSuggestionInputSchema, NetsSuggestionOutputSchema, type NetsSuggestionInput, type NetsSuggestionOutput } from '@backend-src/ai/schemas/nets-schemas';
+import type { Role } from '@common/types/role';
+import { roleUserMapping } from '@backend-src/lib/role-mapping';
+import type { OneOnOneHistoryItem } from '@common/types/feedback';
+import type { CoachingRecommendation } from '@common/types/ai';
 
-export async function generateNetsSuggestion(input: { forRole: Role; }): Promise<NetsSuggestionOutput> {
-    const supervisorName = roleUserMapping[input.forRole]?.name;
+export async function generateNetsSuggestion(input: NetsSuggestionInput): Promise<NetsSuggestionOutput> {
+    const supervisorName = input.supervisorName;
     if (!supervisorName) {
         throw new Error("Could not find user for the provided role.");
     }
     
-    // 1. Fetch all relevant data
-    const allHistory = await getOneOnOneHistory();
-    const supervisorActiveGoals = await getActiveCoachingPlansForUser(supervisorName);
+    // 1. Get all relevant data from input
+    const allHistory = input.oneOnOneHistory || [];
+    const supervisorActiveGoals = input.activeCoachingPlans || [];
 
     // 2. Filter data for the specific supervisor
     const relevantHistory = allHistory
-        .filter(h => h.supervisorName === supervisorName)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .filter((h: OneOnOneHistoryItem) => h.supervisorName === supervisorName)
+        .sort((a: OneOnOneHistoryItem, b: OneOnOneHistoryItem) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5); // Limit to last 5 sessions for brevity
 
     // 3. Extract and format the necessary context for the AI
-    const pastIssues = relevantHistory.map(h => ({
+    const pastIssues = relevantHistory.map((h: OneOnOneHistoryItem) => ({
         employeeName: h.employeeName,
         missedSignals: h.analysis.missedSignals,
         criticalInsightSummary: h.analysis.criticalCoachingInsight?.summary,
-        coachingRecs: h.analysis.coachingRecommendations.map(r => r.area),
+        coachingRecs: h.analysis.coachingRecommendations.map((r: CoachingRecommendation) => r.area),
     }));
 
-    const coachingGoalsInProgress = supervisorActiveGoals.map(p => ({
+    const coachingGoalsInProgress = supervisorActiveGoals.map((p: { historyId: string | null, rec: CoachingRecommendation }) => ({
         area: p.rec.area,
         resource: p.rec.resource,
     }));

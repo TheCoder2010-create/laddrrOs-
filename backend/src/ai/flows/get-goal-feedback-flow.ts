@@ -5,8 +5,8 @@
  * - getGoalFeedback - A function that takes a user's goal and a situation they faced, and returns AI-powered coaching advice.
  */
 
-import { ai } from '@/ai/genkit';
-import { GoalFeedbackInputSchema, GoalFeedbackOutputSchema, type GoalFeedbackInput, type GoalFeedbackOutput } from '@/ai/schemas/goal-feedback-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { GoalFeedbackInputSchema, GoalFeedbackOutputSchema, type GoalFeedbackInput, type GoalFeedbackOutput } from '@backend-src/ai/schemas/goal-feedback-schemas';
 
 
 export async function getGoalFeedback(input: GoalFeedbackInput): Promise<GoalFeedbackOutput> {

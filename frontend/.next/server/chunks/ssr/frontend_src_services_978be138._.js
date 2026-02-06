@@ -159,8 +159,6 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$services$
 ;
 ;
 ;
-// Helper function to generate a new ID format
-const generateTrackingId = ()=>`Org-Ref-${Math.floor(100000 + Math.random() * 900000)}`;
 const FEEDBACK_KEY = 'accountability_feedback_v3';
 const ONE_ON_ONE_HISTORY_KEY = 'one_on_one_history_v3';
 const CUSTOM_COACHING_PLANS_KEY = 'custom_coaching_plans_v1';

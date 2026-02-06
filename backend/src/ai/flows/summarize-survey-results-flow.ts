@@ -6,8 +6,8 @@
  * - summarizeSurveyResults - A function that takes survey responses and returns a thematic summary.
  */
 
-import { ai } from '@/ai/genkit';
-import { SummarizeSurveyResultsInputSchema, SummarizeSurveyResultsOutputSchema, type SummarizeSurveyResultsInput, type SummarizeSurveyResultsOutput } from '@/ai/schemas/survey-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { SummarizeSurveyResultsInputSchema, SummarizeSurveyResultsOutputSchema, type SummarizeSurveyResultsInput, type SummarizeSurveyResultsOutput } from '@backend-src/ai/schemas/survey-schemas';
 
 export async function summarizeSurveyResults(input: SummarizeSurveyResultsInput): Promise<SummarizeSurveyResultsOutput> {
   return summarizeSurveyResultsFlow(input);

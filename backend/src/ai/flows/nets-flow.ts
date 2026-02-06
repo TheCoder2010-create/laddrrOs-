@@ -6,9 +6,9 @@
  * - runNetsConversation - A function that takes the simulation config and conversation history, and returns the AI's next response.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@backend-src/ai/genkit';
 import { z } from 'zod';
-import { NetsConversationInputSchema, NetsMessageSchema, type NetsConversationInput } from '@/ai/schemas/nets-schemas';
+import { NetsConversationInputSchema, NetsMessageSchema, type NetsConversationInput } from '@backend-src/ai/schemas/nets-schemas';
 
 export async function runNetsConversation(input: z.infer<typeof NetsConversationInputSchema>): Promise<z.infer<typeof NetsMessageSchema>> {
   return runNetsConversationFlow(input);
@@ -37,10 +37,12 @@ const continueConversationPrompt = ai.definePrompt({
 
 **Conversation History:**
 {{#each history}}
-  {{#if this.isUser}}
+  {{#if (eq this.role "user")}}
     User: {{{this.content}}}
-  {{else if this.isModel}}
+  {{else if (eq this.role "model")}}
     You: {{{this.content}}}
+  {{else if (eq this.role "system")}}
+    System: {{{this.content}}}
   {{/if}}
 {{/each}}
 
@@ -108,7 +110,7 @@ const runNetsConversationFlow = ai.defineFlow(
     }
     
     return {
-      role: 'model',
+      role: 'model' as "model",
       content: outputText,
     };
   }

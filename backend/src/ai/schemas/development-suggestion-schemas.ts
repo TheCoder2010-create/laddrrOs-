@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import type { OneOnOneHistoryItem } from '@common/types/feedback';
 
 const PastIssueSchema = z.object({
     employeeName: z.string(),
@@ -20,6 +21,7 @@ export const DevelopmentSuggestionInputSchema = z.object({
     userName: z.string(),
     pastIssues: z.array(PastIssueSchema).optional(),
     coachingGoalsInProgress: z.array(CoachingGoalSchema),
+    oneOnOneHistory: z.array(z.custom<OneOnOneHistoryItem>()).optional(),
 });
 export type DevelopmentSuggestionInput = z.infer<typeof DevelopmentSuggestionInputSchema>;
 

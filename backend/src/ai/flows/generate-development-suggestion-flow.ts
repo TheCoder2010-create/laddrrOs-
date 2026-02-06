@@ -4,17 +4,16 @@
  * @fileOverview An AI flow for suggesting a personalized development plan goal.
  */
 
-import { ai } from '@/ai/genkit';
-import { DevelopmentSuggestionInputSchema, DevelopmentSuggestionOutputSchema, type DevelopmentSuggestionInput, type DevelopmentSuggestionOutput } from '@/ai/schemas/development-suggestion-schemas';
-import { getOneOnOneHistory } from '@/services/feedback-service';
-import type { Role } from '@/hooks/use-role';
-import { roleUserMapping } from '@/lib/role-mapping';
+import { ai } from '@backend-src/ai/genkit';
+import { DevelopmentSuggestionInputSchema, DevelopmentSuggestionOutputSchema, type DevelopmentSuggestionInput, type DevelopmentSuggestionOutput } from '@backend-src/ai/schemas/development-suggestion-schemas';
+import type { Role } from '@common/types/role';
+import { roleUserMapping } from '@backend-src/lib/role-mapping';
 
 export async function generateDevelopmentSuggestion(input: DevelopmentSuggestionInput): Promise<DevelopmentSuggestionOutput> {
     const userName = input.userName;
     
-    // 1. Fetch history data on the server side
-    const allHistory = await getOneOnOneHistory();
+    // 1. Fetch history data from the input
+    const allHistory = input.oneOnOneHistory || [];
 
     const relevantHistory = allHistory
         .filter(h => h.supervisorName === userName)

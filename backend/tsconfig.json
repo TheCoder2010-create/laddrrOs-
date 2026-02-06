@@ -3,7 +3,7 @@
     "target": "es2022",
     "lib": ["es2022"],
     "module": "node16",
-    "rootDir": "src",
+    "baseUrl": "../",
     "resolveJsonModule": true,
     "allowJs": true,
     "outDir": "lib",
@@ -12,12 +12,13 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution":"node16",
     "sourceMap": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@backend-src/*": ["./backend/src/*"],
+      "@common/*": ["./common/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.mjs"],
-  "exclude": ["node_modules", "lib"]
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.mjs", "../common/**/*.ts"],
+  "exclude": ["node_modules", "lib", "src/lib/pdf-generator.ts"]
 }

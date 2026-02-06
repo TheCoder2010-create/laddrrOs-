@@ -20,7 +20,9 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@backend/*": ["../backend/src/*"]
+      "@backend/*": ["../backend/src/*"],
+      "@backend-src/*": ["../backend/src/*"],
+      "@common/*": ["../common/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

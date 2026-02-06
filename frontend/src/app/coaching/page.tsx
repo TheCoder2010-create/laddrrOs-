@@ -8,7 +8,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getOneOnOneHistory, OneOnOneHistoryItem, updateCoachingRecommendationStatus, reviewCoachingRecommendationDecline, acknowledgeDeclinedRecommendation } from '@/services/feedback-service';
-import type { CoachingRecommendation } from '@/ai/schemas/one-on-one-schemas';
+import type { CoachingRecommendation } from '@/types/ai';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -69,7 +69,7 @@ function MyDevelopmentWidget() {
                 item.analysis.coachingRecommendations.forEach(rec => {
                     // We only want to show actionable items or items that were just actioned (declined).
                     // Accepted items move to the other widget.
-                    if (statusesToFetch.includes(rec.status)) {
+                    if (rec.status && statusesToFetch.includes(rec.status)) {
                         // If we've already seen this rec, only keep the one from the most recent history item.
                         const existing = recsMap.get(rec.id);
                         if (!existing || new Date(item.date) > new Date(existing.historyItem.date)) {
@@ -83,7 +83,7 @@ function MyDevelopmentWidget() {
         const allRecs = Array.from(recsMap.values());
 
         setRecommendations(allRecs.sort((a,b) => {
-            const statusOrder = (status: CoachingRecommendation['status']) => {
+            const statusOrder = (status?: CoachingRecommendation['status']) => {
                 if (status === 'pending') return 1;
                 if (status === 'pending_am_review') return 2;
                 return 3;
@@ -339,7 +339,7 @@ function MyDevelopmentWidget() {
 
                                             {!isActionable && (
                                                 <div className="mt-4 pt-4 border-t">
-                                                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4 text-muted-foreground"/>Status: {rec.status.replace(/_/g, ' ')}</p>
+                                                    <p className="text-sm font-semibold flex items-center gap-2"><History className="h-4 w-4 text-muted-foreground"/>Status: {rec.status?.replace(/_/g, ' ')}</p>
                                                     {rec.rejectionReason && (
                                                         <div className="mt-2 p-2 bg-muted/50 rounded-md">
                                                             <p className="text-xs font-semibold text-muted-foreground">Your Decline Reason:</p>
@@ -573,7 +573,7 @@ function TeamDevelopmentWidget({ role }: { role: Role }) {
             return <AmReviewWidget item={item} rec={rec} onUpdate={handleUpdate} />;
         }
         
-        const amWasInvolved = rec.auditTrail?.some(e => e.actor === roleUserMapping['AM'].name);
+        const amWasInvolved = rec.auditTrail?.some(e => e.actor === roleUserMapping['AM']?.name);
         if (role === 'Manager' && (rec.status === 'pending_manager_acknowledgement' || rec.status === 'declined')) {
             return <ManagerAcknowledgementWidget item={item} rec={rec} onUpdate={handleUpdate} />;
         }

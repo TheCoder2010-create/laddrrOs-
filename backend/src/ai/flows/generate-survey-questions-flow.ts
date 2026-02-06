@@ -5,8 +5,8 @@
  * - generateSurveyQuestions - A function that takes an objective and returns a list of suggested questions with reasoning.
  */
 
-import { ai } from '@/ai/genkit';
-import { GenerateSurveyQuestionsInputSchema, GenerateSurveyQuestionsOutputSchema, type GenerateSurveyQuestionsInput, type GenerateSurveyQuestionsOutput } from '@/ai/schemas/survey-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { GenerateSurveyQuestionsInputSchema, GenerateSurveyQuestionsOutputSchema, type GenerateSurveyQuestionsInput, type GenerateSurveyQuestionsOutput } from '@backend-src/ai/schemas/survey-schemas';
 
 export async function generateSurveyQuestions(input: GenerateSurveyQuestionsInput): Promise<GenerateSurveyQuestionsOutput> {
   return generateSurveyQuestionsFlow(input);

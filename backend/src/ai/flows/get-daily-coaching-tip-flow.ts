@@ -5,7 +5,7 @@
  * - getDailyCoachingTip - A function that returns a single, concise coaching tip.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '@backend-src/ai/genkit';
 import { z } from 'zod';
 
 const DailyCoachingTipInputSchema = z.object({

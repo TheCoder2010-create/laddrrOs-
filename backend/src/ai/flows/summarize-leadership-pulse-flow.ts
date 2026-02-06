@@ -3,8 +3,8 @@
  * @fileOverview An AI flow for analyzing submitted leadership pulse surveys to generate coaching recommendations.
  */
 
-import { ai } from '@/ai/genkit';
-import { GenerateLeadershipPulseInputSchema } from '@/ai/schemas/leadership-pulse-schemas';
+import { ai } from '@backend-src/ai/genkit';
+import { GenerateLeadershipPulseInputSchema } from '@backend-src/ai/schemas/leadership-pulse-schemas';
 import { z } from 'zod';
 
 const SummarizeLeadershipPulseInputSchema = z.object({

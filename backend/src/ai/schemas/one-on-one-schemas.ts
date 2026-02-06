@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { AuditEvent as FeedbackServiceAuditEvent } from '@/services/feedback-service';
+import type { AuditEvent as OneOnOneAuditEvent } from '@common/types/feedback';
 
 // Define a schema for what an audit event should look like for the AI
 const AuditEventSchema = z.object({

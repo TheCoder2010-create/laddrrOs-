@@ -1,6 +1,6 @@
 
 
-import type { Role } from '@/hooks/use-role';
+import type { Role } from '@common/types/role';
 
 export const roleUserMapping: Record<Role, { name: string; fallback: string; imageHint: string, role: Role }> = {
   'Manager': { name: 'Alex Smith', fallback: 'AS', imageHint: 'manager', role: 'Manager' },

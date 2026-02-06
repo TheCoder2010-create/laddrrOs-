@@ -6,30 +6,18 @@
 var { g: global, __dirname, k: __turbopack_refresh__, m: module } = __turbopack_context__;
 {
 __turbopack_context__.s({
-    "availableRoles": (()=>availableRoles),
-    "availableRolesForAssignment": (()=>availableRolesForAssignment),
     "useRole": (()=>useRole)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/navigation.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/hooks/use-toast.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/common/types/role.ts [app-client] (ecmascript)");
 var _s = __turbopack_context__.k.signature();
 "use client";
 ;
 ;
 ;
-const availableRoles = [
-    'Employee',
-    'Team Lead',
-    'AM',
-    'Manager',
-    'HR Head'
-];
-const availableRolesForAssignment = [
-    'AM',
-    'Manager',
-    'HR Head'
-];
+;
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 const ACTIVE_SURVEY_KEY = 'active_survey_exists';
 const useRole = ()=>{
@@ -46,7 +34,7 @@ const useRole = ()=>{
                     try {
                         const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
                         if (storedRole && [
-                            ...availableRoles
+                            ...__TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRoles"]
                         ].includes(storedRole)) {
                             setRole(storedRole);
                         }
@@ -79,7 +67,7 @@ const useRole = ()=>{
         role,
         setRole: setCurrentRole,
         isLoading,
-        availableRoles,
+        availableRoles: __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRoles"],
         activeSurveyExists,
         toast
     };

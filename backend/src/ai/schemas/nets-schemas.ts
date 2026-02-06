@@ -3,6 +3,8 @@
  */
 
 import { z } from 'zod';
+import type { OneOnOneHistoryItem } from '@common/types/feedback'; // Assuming CoachingRecommendation is also moved to feedback.ts or common/types/ai.ts
+import type { CoachingRecommendation } from '@common/types/ai';
 
 export const NetsMessageSchema = z.object({
   role: z.enum(["user", "model", "system"]),
@@ -40,6 +42,8 @@ export const NetsSuggestionInputSchema = z.object({
     supervisorName: z.string(),
     pastIssues: z.array(PastIssueSchema),
     coachingGoalsInProgress: z.array(CoachingGoalSchema),
+    oneOnOneHistory: z.array(z.custom<OneOnOneHistoryItem>()).optional(),
+    activeCoachingPlans: z.array(z.custom<{ historyId: string | null, rec: CoachingRecommendation }>()).optional(),
 });
 export type NetsSuggestionInput = z.infer<typeof NetsSuggestionInputSchema>;
 
