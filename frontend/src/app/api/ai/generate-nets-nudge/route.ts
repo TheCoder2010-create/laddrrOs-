@@ -1,4 +1,4 @@
-import { generateNetsNudge } from '../../../../../backend/src/ai/flows/generate-nets-nudge-flow';
+import { generateNetsNudge } from '@backend/ai/flows/generate-nets-nudge-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

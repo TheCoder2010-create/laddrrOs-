@@ -33,8 +33,7 @@ import { useRole } from "@/hooks/use-role"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
-import { runPerformanceChat } from "@/ai/flows/performance-chat-flow"
-import type { PerformanceChatInput, ChatMessage } from "@/ai/schemas/performance-chat-schemas"
+import type { PerformanceChatInput, ChatMessage } from "@/types/ai"
 
 const mockPeerData = [
   { value: "alexa_ray", label: "Alexa Ray" },
@@ -122,8 +121,18 @@ export function ComparePerformanceSheet() {
                 performanceContext,
                 chatHistory,
             };
-            const response = await runPerformanceChat(input);
-            setChatHistory(prev => [...prev, { role: 'model', content: response.answer }]);
+            const response = await fetch('/api/ai/performance-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(input),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get response from AI coach.');
+            }
+
+            const result = await response.json();
+            setChatHistory(prev => [...prev, { role: 'model', content: result.answer }]);
         } catch (e) {
             console.error("Chat failed", e);
             toast({

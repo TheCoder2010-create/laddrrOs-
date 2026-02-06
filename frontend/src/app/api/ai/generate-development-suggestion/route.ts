@@ -1,4 +1,4 @@
-import { generateDevelopmentSuggestion } from '../../../../../backend/src/ai/flows/generate-development-suggestion-flow';
+import { generateDevelopmentSuggestion } from '@backend/ai/flows/generate-development-suggestion-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

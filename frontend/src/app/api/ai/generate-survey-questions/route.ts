@@ -1,4 +1,4 @@
-import { generateSurveyQuestions } from '../../../../../backend/src/ai/flows/generate-survey-questions-flow';
+import { generateSurveyQuestions } from '@backend/ai/flows/generate-survey-questions-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

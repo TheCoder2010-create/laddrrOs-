@@ -1,9 +1,7 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
 import { useRole } from '@/hooks/use-role';
-import { getDailyCoachingTip } from '../../../backend/src/ai/flows/get-daily-coaching-tip-flow';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Lightbulb } from 'lucide-react';
@@ -32,7 +30,19 @@ export default function CoachingTipWidget() {
 
       setIsLoading(true);
       try {
-        const result = await getDailyCoachingTip({ role });
+        const response = await fetch('/api/ai/get-daily-coaching-tip', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ role }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get daily coaching tip');
+        }
+
+        const result = await response.json();
         setTip(result.tip);
         sessionStorage.setItem('daily_coaching_tip', JSON.stringify({ date: today, tip: result.tip }));
       } catch (error) {

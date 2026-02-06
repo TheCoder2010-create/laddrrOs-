@@ -1,4 +1,4 @@
-import { generateLeadershipPulse } from '../../../../../backend/src/ai/flows/generate-leadership-pulse-flow';
+import { generateLeadershipPulse } from '@backend/ai/flows/generate-leadership-pulse-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

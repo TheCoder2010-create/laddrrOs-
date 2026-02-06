@@ -1,4 +1,4 @@
-import { generateNetsSuggestion } from '../../../../../backend/src/ai/flows/generate-nets-suggestion-flow';
+import { generateNetsSuggestion } from '@backend/ai/flows/generate-nets-suggestion-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

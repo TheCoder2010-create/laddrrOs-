@@ -1,4 +1,4 @@
-import { getGoalFeedback } from '../../../../../backend/src/ai/flows/get-goal-feedback-flow';
+import { getGoalFeedback } from '@backend/ai/flows/get-goal-feedback-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

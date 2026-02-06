@@ -1,4 +1,4 @@
-import { summarizeLeadershipPulse } from '../../../../../backend/src/ai/flows/summarize-leadership-pulse-flow';
+import { summarizeLeadershipPulse } from '@backend/ai/flows/summarize-leadership-pulse-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

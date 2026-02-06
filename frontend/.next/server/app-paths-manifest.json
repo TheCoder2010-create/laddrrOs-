@@ -1,3 +1,4 @@
 {
+  "/api/ai/get-daily-coaching-tip/route": "app/api/ai/get-daily-coaching-tip/route.js",
   "/page": "app/page.js"
 }

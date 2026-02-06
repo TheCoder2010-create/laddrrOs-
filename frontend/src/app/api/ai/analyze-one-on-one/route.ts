@@ -1,4 +1,4 @@
-import { analyzeOneOnOne } from '../../../../../backend/src/ai/flows/analyze-one-on-one-flow';
+import { analyzeOneOnOne } from '@backend/ai/flows/analyze-one-on-one-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

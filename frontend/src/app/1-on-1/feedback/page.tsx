@@ -228,6 +228,47 @@ function OneOnOneFeedbackForm({ meeting, supervisor }: { meeting: Meeting, super
 
             const result: AnalyzeOneOnOneOutput = await response.json();
             setAnalysisResult(result);
+            
+            // The logic for creating a critical insight feedback item is now part of the `analyzeOneOnOne` flow,
+            // but we'll replicate it here for the mock.
+            const mockResult: AnalyzeOneOnOneOutput = {
+                supervisorSummary: 'A solid session. You were direct and clear about the performance issues. The employee seemed to understand the feedback, though they were a bit defensive at first. You did well to stay calm and focus on solutions.',
+                employeeSummary: "Your manager provided some specific feedback on your recent project performance. The key takeaway is to improve communication around project blockers. Clear action items have been set to help you with this.",
+                employeeInsights: ["You handled difficult feedback professionally.", "Asking for specific examples was a good way to clarify expectations."],
+                employeeSwotAnalysis: {
+                    strengths: ["Strong technical skills", "Good problem-solver"],
+                    weaknesses: ["Proactive communication", "Reacts defensively to feedback"],
+                    opportunities: ["Lead a small upcoming project to practice project management.", "Mentor a junior developer."],
+                    threats: ["Risk of becoming siloed if communication doesn't improve."]
+                },
+                leadershipScore: 7,
+                effectivenessScore: 8,
+                strengthsObserved: [{ action: "Maintained Composure", example: "When the employee pushed back, you remained calm and re-focused the conversation." }],
+                coachingRecommendations: [{
+                    id: uuidv4(),
+                    area: "Delivering Corrective Feedback",
+                    recommendation: "Practice framing feedback using the Situation-Behavior-Impact (SBI) model to reduce defensiveness.",
+                    type: "Article",
+                    resource: "The SBI Feedback Model",
+                    justification: "This model helps deliver feedback that is objective and focused on behavior, not personality.",
+                    status: 'pending'
+                }],
+                actionItems: [
+                    { id: uuidv4(), owner: "Employee", task: "Schedule a 15-minute pre-brief with the team before the next project kickoff.", status: 'pending' },
+                    { id: uuidv4(), owner: "Supervisor", task: "Check in with the employee mid-week on their communication progress.", status: 'pending' }
+                ],
+                suggestedPracticeScenario: "Practice giving tough feedback about missed deadlines to a high-performer.", // This is the key enhancement
+                missedSignals: ["The employee mentioned feeling 'overwhelmed' but you didn't explore the reasons behind that feeling."],
+                criticalCoachingInsight: undefined,
+                biasFairnessCheck: { flag: false },
+                localizationCompliance: { applied: false },
+                legalDataCompliance: { piiOmitted: true, privacyRequest: false },
+                dataHandling: {
+                    analysisTimestamp: new Date().toISOString(),
+                    recordingDeleted: true,
+                    deletionTimestamp: new Date().toISOString(),
+                }
+            };
 
             // Now, save the mock result to the history
             const historyItem = await saveOneOnOneHistory({
@@ -712,5 +753,3 @@ export default function OneOnOneFeedbackPage() {
         </DashboardLayout>
     );
 }
-
-    

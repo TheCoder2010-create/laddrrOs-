@@ -1,4 +1,4 @@
-import { summarizeSurveyResults } from '../../../../../backend/src/ai/flows/summarize-survey-results-flow';
+import { summarizeSurveyResults } from '@backend/ai/flows/summarize-survey-results-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

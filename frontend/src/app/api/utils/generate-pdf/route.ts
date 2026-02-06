@@ -1,19 +1,17 @@
-import { generatePdf } from '../../../../../backend/src/lib/pdf-generator';
+// Note: The function 'generatePdf' does not exist in the imported module.
+// This API route will not function correctly until it's updated to use
+// an exported function like 'downloadAuditTrailPDF' and provides the correct parameters.
+
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { content } = await req.json(); // Assuming content to be put in PDF
-    const pdfBuffer = await generatePdf(content); // This needs to return a buffer or similar
+    // const { content } = await req.json(); 
+    // const pdfBuffer = await generatePdf(content); // This function doesn't exist
     
-    // Return PDF as a downloadable file
-    return new NextResponse(pdfBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="document.pdf"',
-      },
-    });
+    // Returning an error until this is properly implemented
+    return NextResponse.json({ error: "PDF generation is not implemented." }, { status: 501 });
+
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

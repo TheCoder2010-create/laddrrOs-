@@ -1,4 +1,4 @@
-import { analyzeInterview } from '../../../../../backend/src/ai/flows/analyze-interview-flow';
+import { analyzeInterview } from '@backend/ai/flows/analyze-interview-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

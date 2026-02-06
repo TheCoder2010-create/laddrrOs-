@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 6, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 60, "column": 0}, "map": {"version":3,"sources":["file:///home/user/studio/frontend/src/app/api/ai/get-daily-coaching-tip/route.ts"],"sourcesContent":["import { getDailyCoachingTip } from '../../../../../backend/src/ai/flows/get-daily-coaching-tip-flow';\nimport { NextRequest, NextResponse } from 'next/server';\n\nexport async function POST(req: NextRequest) {\n  try {\n    const body = await req.json();\n    const result = await getDailyCoachingTip(body);\n    return NextResponse.json(result);\n  } catch (error: any) {\n    return NextResponse.json({ error: error.message }, { status: 500 });\n  }\n}\n"],"names":[],"mappings":";;;;;;;;AACA;;;AAEO,eAAe,KAAK,GAAgB;IACzC,IAAI;QACF,MAAM,OAAO,MAAM,IAAI,IAAI;QAC3B,MAAM,SAAS,MAAM,oBAAoB;QACzC,OAAO,gIAAA,CAAA,eAAY,CAAC,IAAI,CAAC;IAC3B,EAAE,OAAO,OAAY;QACnB,OAAO,gIAAA,CAAA,eAAY,CAAC,IAAI,CAAC;YAAE,OAAO,MAAM,OAAO;QAAC,GAAG;YAAE,QAAQ;QAAI;IACnE;AACF","debugId":null}}]
+}

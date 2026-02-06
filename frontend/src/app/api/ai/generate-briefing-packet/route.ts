@@ -1,4 +1,4 @@
-import { generateBriefingPacket } from '../../../../../backend/src/ai/flows/generate-briefing-packet-flow';
+import { generateBriefingPacket } from '@backend/ai/flows/generate-briefing-packet-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

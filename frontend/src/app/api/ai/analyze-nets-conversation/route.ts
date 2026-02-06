@@ -1,4 +1,4 @@
-import { analyzeNetsConversation } from '../../../../../backend/src/ai/flows/analyze-nets-conversation-flow';
+import { analyzeNetsConversation } from '@backend/ai/flows/analyze-nets-conversation-flow';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {

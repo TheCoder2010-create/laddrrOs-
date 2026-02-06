@@ -3505,11 +3505,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/card.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$services$2f$feedback$2d$service$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/services/feedback-service.ts [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$role$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/hooks/use-role.ts [app-ssr] (ecmascript)");
-(()=>{
-    const e = new Error("Cannot find module '../../backend/src/lib/role-mapping'");
-    e.code = 'MODULE_NOT_FOUND';
-    throw e;
-})();
+var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/lib/role-mapping.ts [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$skeleton$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/skeleton.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$slider$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/slider.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$label$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/label.tsx [app-ssr] (ecmascript)");
@@ -3537,22 +3533,10 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$ut
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/popover.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$calendar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/calendar.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/input.tsx [app-ssr] (ecmascript)");
-(()=>{
-    const e = new Error("Cannot find module '../../../backend/src/ai/flows/get-goal-feedback-flow'");
-    e.code = 'MODULE_NOT_FOUND';
-    throw e;
-})();
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/alert.tsx [app-ssr] (ecmascript)");
-(()=>{
-    const e = new Error("Cannot find module '../../../backend/src/ai/flows/generate-development-suggestion-flow'");
-    e.code = 'MODULE_NOT_FOUND';
-    throw e;
-})();
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$ai$2d$genie$2d$icon$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/ai-genie-icon.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/client/app-dir/link.js [app-ssr] (ecmascript)");
 "use client";
-;
-;
 ;
 ;
 ;
@@ -3584,7 +3568,7 @@ const RecommendationIcon = ({ type })=>{
                 className: "h-4 w-4 text-blue-500"
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 35,
+                lineNumber: 33,
                 columnNumber: 29
             }, this);
         case 'Podcast':
@@ -3592,7 +3576,7 @@ const RecommendationIcon = ({ type })=>{
                 className: "h-4 w-4 text-purple-500"
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 36,
+                lineNumber: 34,
                 columnNumber: 32
             }, this);
         case 'Article':
@@ -3600,7 +3584,7 @@ const RecommendationIcon = ({ type })=>{
                 className: "h-4 w-4 text-green-500"
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 37,
+                lineNumber: 35,
                 columnNumber: 32
             }, this);
         case 'Course':
@@ -3608,7 +3592,7 @@ const RecommendationIcon = ({ type })=>{
                 className: "h-4 w-4 text-orange-500"
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 38,
+                lineNumber: 36,
                 columnNumber: 31
             }, this);
         default:
@@ -3616,7 +3600,7 @@ const RecommendationIcon = ({ type })=>{
                 className: "h-4 w-4 text-yellow-500"
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 39,
+                lineNumber: 37,
                 columnNumber: 25
             }, this);
     }
@@ -3676,20 +3660,20 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                             children: "Add a Custom Development Goal"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 80,
+                            lineNumber: 78,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
                             children: "Define a new coaching or development activity for yourself. This will appear in your active plan."
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 81,
+                            lineNumber: 79,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 79,
+                    lineNumber: 77,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3704,7 +3688,7 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                     children: "Goal Area"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 87,
+                                    lineNumber: 85,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -3714,13 +3698,13 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                     className: "col-span-3"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 88,
+                                    lineNumber: 86,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 86,
+                            lineNumber: 84,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3732,7 +3716,7 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                     children: "Activity"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 91,
+                                    lineNumber: 89,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -3742,13 +3726,13 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                     className: "col-span-3"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 92,
+                                    lineNumber: 90,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 90,
+                            lineNumber: 88,
                             columnNumber: 22
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3761,7 +3745,7 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                             children: "Start"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 96,
+                                            lineNumber: 94,
                                             columnNumber: 27
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Popover"], {
@@ -3778,25 +3762,25 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                                lineNumber: 100,
+                                                                lineNumber: 98,
                                                                 columnNumber: 33
                                                             }, this),
                                                             startDate ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(startDate, "MM/dd/yy") : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 children: "Pick a date"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                                lineNumber: 101,
+                                                                lineNumber: 99,
                                                                 columnNumber: 78
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 99,
+                                                        lineNumber: 97,
                                                         columnNumber: 31
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 98,
+                                                    lineNumber: 96,
                                                     columnNumber: 29
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -3811,24 +3795,24 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                         initialFocus: true
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 105,
+                                                        lineNumber: 103,
                                                         columnNumber: 33
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 104,
+                                                    lineNumber: 102,
                                                     columnNumber: 29
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 97,
+                                            lineNumber: 95,
                                             columnNumber: 27
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 95,
+                                    lineNumber: 93,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3838,7 +3822,7 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                             children: "End"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 118,
+                                            lineNumber: 116,
                                             columnNumber: 28
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Popover"], {
@@ -3855,25 +3839,25 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                                lineNumber: 122,
+                                                                lineNumber: 120,
                                                                 columnNumber: 33
                                                             }, this),
                                                             endDate ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(endDate, "MM/dd/yy") : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 children: "Pick a date"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                                lineNumber: 123,
+                                                                lineNumber: 121,
                                                                 columnNumber: 74
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 121,
+                                                        lineNumber: 119,
                                                         columnNumber: 31
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 120,
+                                                    lineNumber: 118,
                                                     columnNumber: 29
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -3889,36 +3873,36 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                         initialFocus: true
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 127,
+                                                        lineNumber: 125,
                                                         columnNumber: 33
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 126,
+                                                    lineNumber: 124,
                                                     columnNumber: 29
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 119,
+                                            lineNumber: 117,
                                             columnNumber: 28
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 117,
+                                    lineNumber: 115,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 94,
+                            lineNumber: 92,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 85,
+                    lineNumber: 83,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -3930,30 +3914,30 @@ function AddPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                 className: "mr-2 h-4 w-4 animate-spin"
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                lineNumber: 144,
+                                lineNumber: 142,
                                 columnNumber: 42
                             }, this),
                             "Add"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                        lineNumber: 143,
+                        lineNumber: 141,
                         columnNumber: 21
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 142,
+                    lineNumber: 140,
                     columnNumber: 17
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-            lineNumber: 78,
+            lineNumber: 76,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-        lineNumber: 77,
+        lineNumber: 75,
         columnNumber: 9
     }, this);
 }
@@ -3970,7 +3954,7 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
             setSuggestions([]);
             const generate = async ()=>{
                 try {
-                    const userName = roleUserMapping[role]?.name;
+                    const userName = __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["roleUserMapping"][role]?.name;
                     if (!userName) throw new Error("User not found for role");
                     const activeGoals = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$services$2f$feedback$2d$service$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getActiveCoachingPlansForUser"])(role);
                     const coachingGoalsInProgress = activeGoals.map((p)=>({
@@ -3981,7 +3965,17 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                         userName,
                         coachingGoalsInProgress
                     };
-                    const result = await generateDevelopmentSuggestion(input);
+                    const response = await fetch('/api/ai/generate-development-suggestion', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(input)
+                    });
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch suggestions');
+                    }
+                    const result = await response.json();
                     setSuggestions(result.suggestions);
                 } catch (err) {
                     console.error("Failed to generate suggestions:", err);
@@ -4034,27 +4028,27 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$bot$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Bot$3e$__["Bot"], {}, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 221,
+                                    lineNumber: 230,
                                     columnNumber: 70
                                 }, this),
                                 " AI-Suggested Development Goals"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 221,
+                            lineNumber: 230,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
                             children: "Based on your recent activity, here are some personalized development goals."
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 222,
+                            lineNumber: 231,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 220,
+                    lineNumber: 229,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4069,25 +4063,25 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                         className: "h-8 w-8 animate-spin"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                        lineNumber: 230,
+                                        lineNumber: 239,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                         children: "Analyzing your profile..."
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                        lineNumber: 231,
+                                        lineNumber: 240,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                lineNumber: 229,
+                                lineNumber: 238,
                                 columnNumber: 29
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 228,
+                            lineNumber: 237,
                             columnNumber: 26
                         }, this),
                         error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Alert"], {
@@ -4097,20 +4091,20 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                     children: "Error"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 237,
+                                    lineNumber: 246,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDescription"], {
                                     children: error
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 238,
+                                    lineNumber: 247,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 236,
+                            lineNumber: 245,
                             columnNumber: 26
                         }, this),
                         !isGenerating && suggestions.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4128,7 +4122,7 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                         children: s.area
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 247,
+                                                        lineNumber: 256,
                                                         columnNumber: 45
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4136,7 +4130,7 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                         children: s.resource
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 248,
+                                                        lineNumber: 257,
                                                         columnNumber: 45
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4147,13 +4141,13 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 249,
+                                                        lineNumber: 258,
                                                         columnNumber: 45
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                lineNumber: 246,
+                                                lineNumber: 255,
                                                 columnNumber: 41
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -4164,30 +4158,30 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                                         className: "mr-2 h-4 w-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 252,
+                                                        lineNumber: 261,
                                                         columnNumber: 45
                                                     }, this),
                                                     " Add to Plan"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                lineNumber: 251,
+                                                lineNumber: 260,
                                                 columnNumber: 41
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                        lineNumber: 245,
+                                        lineNumber: 254,
                                         columnNumber: 37
                                     }, this)
                                 }, i, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 244,
+                                    lineNumber: 253,
                                     columnNumber: 33
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 242,
+                            lineNumber: 251,
                             columnNumber: 25
                         }, this),
                         !isGenerating && suggestions.length === 0 && !error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4198,7 +4192,7 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                     children: "Could not generate any specific suggestions at this time."
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 261,
+                                    lineNumber: 270,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4206,30 +4200,30 @@ function SuggestPlanDialog({ open, onOpenChange, onPlanAdded }) {
                                     children: "Try again after your next 1-on-1 session."
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 262,
+                                    lineNumber: 271,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 260,
+                            lineNumber: 269,
                             columnNumber: 25
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 226,
+                    lineNumber: 235,
                     columnNumber: 17
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-            lineNumber: 219,
+            lineNumber: 228,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-        lineNumber: 218,
+        lineNumber: 227,
         columnNumber: 9
     }, this);
 }
@@ -4259,7 +4253,17 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                 goalDescription: rec.resource,
                 userSituation: situation
             };
-            const result = await getGoalFeedback(input);
+            const response = await fetch('/api/ai/get-goal-feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(input)
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch AI feedback');
+            }
+            const result = await response.json();
             setAiFeedback(result.feedback);
             // Log the AI feedback as a check-in
             const checkInMessage = `[AI FEEDBACK on "${rec.area}"]\nSITUATION: ${situation}\n\nCOACH: ${result.feedback}`;
@@ -4288,7 +4292,7 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                             children: "Get AI Feedback on Your Goal"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 332,
+                            lineNumber: 351,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
@@ -4303,19 +4307,19 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 334,
+                                    lineNumber: 353,
                                     columnNumber: 40
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 333,
+                            lineNumber: 352,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 331,
+                    lineNumber: 350,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4329,7 +4333,7 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                     children: "Describe a recent situation where you tried to apply this goal."
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 339,
+                                    lineNumber: 358,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -4340,13 +4344,13 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                     rows: 6
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 340,
+                                    lineNumber: 359,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 338,
+                            lineNumber: 357,
                             columnNumber: 21
                         }, this),
                         isSubmitting && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Alert"], {
@@ -4358,33 +4362,33 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                             className: "animate-spin"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 351,
+                                            lineNumber: 370,
                                             columnNumber: 33
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertTitle"], {
                                             children: "Thinking..."
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 352,
+                                            lineNumber: 371,
                                             columnNumber: 33
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 350,
+                                    lineNumber: 369,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDescription"], {
                                     children: "Your AI coach is analyzing your situation. This may take a moment."
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 354,
+                                    lineNumber: 373,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 349,
+                            lineNumber: 368,
                             columnNumber: 26
                         }, this),
                         error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Alert"], {
@@ -4394,20 +4398,20 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                     children: "Error"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 361,
+                                    lineNumber: 380,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDescription"], {
                                     children: error
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 362,
+                                    lineNumber: 381,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 360,
+                            lineNumber: 379,
                             columnNumber: 26
                         }, this),
                         aiFeedback && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Alert"], {
@@ -4417,14 +4421,14 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                     className: "h-4 w-4"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 367,
+                                    lineNumber: 386,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertTitle"], {
                                     children: "AI Coach Feedback"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 368,
+                                    lineNumber: 387,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDescription"], {
@@ -4432,19 +4436,19 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                     children: aiFeedback
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 369,
+                                    lineNumber: 388,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 366,
+                            lineNumber: 385,
                             columnNumber: 25
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 337,
+                    lineNumber: 356,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -4455,7 +4459,7 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                             children: "Close"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 374,
+                            lineNumber: 393,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -4466,37 +4470,37 @@ function GoalFeedbackDialog({ rec, historyId, open, onOpenChange, onFeedbackSubm
                                     className: "mr-2 h-4 w-4 animate-spin"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 376,
+                                    lineNumber: 395,
                                     columnNumber: 41
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$bot$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Bot$3e$__["Bot"], {
                                     className: "mr-2 h-4 w-4"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 376,
+                                    lineNumber: 395,
                                     columnNumber: 93
                                 }, this),
                                 "Get Feedback"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 375,
+                            lineNumber: 394,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 373,
+                    lineNumber: 392,
                     columnNumber: 17
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-            lineNumber: 330,
+            lineNumber: 349,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-        lineNumber: 329,
+        lineNumber: 348,
         columnNumber: 9
     }, this);
 }
@@ -4516,7 +4520,7 @@ function DevelopmentPlanWidget() {
     const fetchActivePlans = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async ()=>{
         if (!role) return;
         setIsLoading(true);
-        const userName = roleUserMapping[role]?.name || role;
+        const userName = __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["roleUserMapping"][role]?.name || role;
         if (!userName) {
             setIsLoading(false);
             return;
@@ -4579,7 +4583,7 @@ function DevelopmentPlanWidget() {
             className: "h-48 w-full"
         }, void 0, false, {
             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-            lineNumber: 467,
+            lineNumber: 486,
             columnNumber: 16
         }, this);
     }
@@ -4591,7 +4595,7 @@ function DevelopmentPlanWidget() {
                 onPlanAdded: fetchActivePlans
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 472,
+                lineNumber: 491,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SuggestPlanDialog, {
@@ -4600,7 +4604,7 @@ function DevelopmentPlanWidget() {
                 onPlanAdded: fetchActivePlans
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 478,
+                lineNumber: 497,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(GoalFeedbackDialog, {
@@ -4611,7 +4615,7 @@ function DevelopmentPlanWidget() {
                 onFeedbackSubmitted: fetchActivePlans
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 484,
+                lineNumber: 503,
                 columnNumber: 14
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -4625,7 +4629,7 @@ function DevelopmentPlanWidget() {
                                     children: "How is it going?"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 495,
+                                    lineNumber: 514,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
@@ -4638,13 +4642,13 @@ function DevelopmentPlanWidget() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 496,
+                                    lineNumber: 515,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 494,
+                            lineNumber: 513,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4655,7 +4659,7 @@ function DevelopmentPlanWidget() {
                                     children: "What have you learned or tried so far?"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 501,
+                                    lineNumber: 520,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -4667,7 +4671,7 @@ function DevelopmentPlanWidget() {
                                     className: "pr-12 pb-12"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 502,
+                                    lineNumber: 521,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -4680,35 +4684,35 @@ function DevelopmentPlanWidget() {
                                         className: "h-4 w-4 animate-spin"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                        lineNumber: 517,
+                                        lineNumber: 536,
                                         columnNumber: 52
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__["Check"], {
                                         className: "h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                        lineNumber: 517,
+                                        lineNumber: 536,
                                         columnNumber: 99
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 510,
+                                    lineNumber: 529,
                                     columnNumber: 26
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 500,
+                            lineNumber: 519,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 493,
+                    lineNumber: 512,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 492,
+                lineNumber: 511,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -4722,7 +4726,7 @@ function DevelopmentPlanWidget() {
                                     children: "Check-in History"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 526,
+                                    lineNumber: 545,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogDescription"], {
@@ -4733,13 +4737,13 @@ function DevelopmentPlanWidget() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 527,
+                                    lineNumber: 546,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 525,
+                            lineNumber: 544,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["ScrollArea"], {
@@ -4753,7 +4757,7 @@ function DevelopmentPlanWidget() {
                                                 className: "h-4 w-4 mt-1 text-primary/70 flex-shrink-0"
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                lineNumber: 536,
+                                                lineNumber: 555,
                                                 columnNumber: 41
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4764,7 +4768,7 @@ function DevelopmentPlanWidget() {
                                                         children: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(new Date(checkIn.date), 'PPP, p')
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 538,
+                                                        lineNumber: 557,
                                                         columnNumber: 45
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4772,47 +4776,47 @@ function DevelopmentPlanWidget() {
                                                         children: checkIn.notes
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 539,
+                                                        lineNumber: 558,
                                                         columnNumber: 45
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                lineNumber: 537,
+                                                lineNumber: 556,
                                                 columnNumber: 41
                                             }, this)
                                         ]
                                     }, checkIn.id, true, {
                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                        lineNumber: 535,
+                                        lineNumber: 554,
                                         columnNumber: 37
                                     }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                     className: "text-sm text-muted-foreground text-center py-4",
                                     children: "No check-ins have been logged for this item yet."
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 544,
+                                    lineNumber: 563,
                                     columnNumber: 33
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                lineNumber: 532,
+                                lineNumber: 551,
                                 columnNumber: 25
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 531,
+                            lineNumber: 550,
                             columnNumber: 22
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                    lineNumber: 524,
+                    lineNumber: 543,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 523,
+                lineNumber: 542,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -4829,14 +4833,14 @@ function DevelopmentPlanWidget() {
                                             className: "text-primary"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 555,
+                                            lineNumber: 574,
                                             columnNumber: 29
                                         }, this),
                                         "Active Development Plan"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 554,
+                                    lineNumber: 573,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4853,19 +4857,19 @@ function DevelopmentPlanWidget() {
                                                         className: "mr-2 h-4 w-4"
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 562,
+                                                        lineNumber: 581,
                                                         columnNumber: 41
                                                     }, this),
                                                     "Assign Tasks"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                lineNumber: 561,
+                                                lineNumber: 580,
                                                 columnNumber: 37
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 560,
+                                            lineNumber: 579,
                                             columnNumber: 33
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -4877,12 +4881,12 @@ function DevelopmentPlanWidget() {
                                                 className: "h-7 w-7 text-primary"
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                lineNumber: 568,
+                                                lineNumber: 587,
                                                 columnNumber: 33
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 567,
+                                            lineNumber: 586,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -4894,29 +4898,29 @@ function DevelopmentPlanWidget() {
                                                 className: "h-5 w-5"
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                lineNumber: 571,
+                                                lineNumber: 590,
                                                 columnNumber: 33
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 570,
+                                            lineNumber: 589,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 558,
+                                    lineNumber: 577,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 553,
+                            lineNumber: 572,
                             columnNumber: 21
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                        lineNumber: 552,
+                        lineNumber: 571,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -4924,7 +4928,7 @@ function DevelopmentPlanWidget() {
                             className: "p-1"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 578,
+                            lineNumber: 597,
                             columnNumber: 25
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2",
@@ -4947,12 +4951,12 @@ function DevelopmentPlanWidget() {
                                                         children: rec.area
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 594,
+                                                        lineNumber: 613,
                                                         columnNumber: 45
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 587,
+                                                    lineNumber: 606,
                                                     columnNumber: 41
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4970,12 +4974,12 @@ function DevelopmentPlanWidget() {
                                                                 className: "h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                                lineNumber: 604,
+                                                                lineNumber: 623,
                                                                 columnNumber: 53
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                            lineNumber: 598,
+                                                            lineNumber: 617,
                                                             columnNumber: 49
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4986,19 +4990,19 @@ function DevelopmentPlanWidget() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                            lineNumber: 607,
+                                                            lineNumber: 626,
                                                             columnNumber: 45
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 596,
+                                                    lineNumber: 615,
                                                     columnNumber: 41
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 586,
+                                            lineNumber: 605,
                                             columnNumber: 38
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5011,7 +5015,7 @@ function DevelopmentPlanWidget() {
                                                             type: rec.type
                                                         }, void 0, false, {
                                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                            lineNumber: 615,
+                                                            lineNumber: 634,
                                                             columnNumber: 45
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5023,13 +5027,13 @@ function DevelopmentPlanWidget() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                            lineNumber: 616,
+                                                            lineNumber: 635,
                                                             columnNumber: 45
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 614,
+                                                    lineNumber: 633,
                                                     columnNumber: 41
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5044,40 +5048,40 @@ function DevelopmentPlanWidget() {
                                                         className: "w-full"
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                        lineNumber: 621,
+                                                        lineNumber: 640,
                                                         columnNumber: 45
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                                    lineNumber: 618,
+                                                    lineNumber: 637,
                                                     columnNumber: 41
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                            lineNumber: 611,
+                                            lineNumber: 630,
                                             columnNumber: 37
                                         }, this)
                                     ]
                                 }, rec.id, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                                    lineNumber: 582,
+                                    lineNumber: 601,
                                     columnNumber: 33
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                            lineNumber: 580,
+                            lineNumber: 599,
                             columnNumber: 25
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                        lineNumber: 576,
+                        lineNumber: 595,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/frontend/src/components/dashboards/development-plan-widget.tsx",
-                lineNumber: 551,
+                lineNumber: 570,
                 columnNumber: 13
             }, this)
         ]
@@ -8962,17 +8966,11 @@ __turbopack_context__.s({
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$role$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/hooks/use-role.ts [app-ssr] (ecmascript)");
-(()=>{
-    const e = new Error("Cannot find module '../../../backend/src/ai/flows/get-daily-coaching-tip-flow'");
-    e.code = 'MODULE_NOT_FOUND';
-    throw e;
-})();
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/card.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$skeleton$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/skeleton.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$lightbulb$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Lightbulb$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/lightbulb.js [app-ssr] (ecmascript) <export default as Lightbulb>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/hooks/use-toast.ts [app-ssr] (ecmascript)");
 "use client";
-;
 ;
 ;
 ;
@@ -9000,9 +8998,19 @@ function CoachingTipWidget() {
             }
             setIsLoading(true);
             try {
-                const result = await getDailyCoachingTip({
-                    role
+                const response = await fetch('/api/ai/get-daily-coaching-tip', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        role
+                    })
                 });
+                if (!response.ok) {
+                    throw new Error('Failed to get daily coaching tip');
+                }
+                const result = await response.json();
                 setTip(result.tip);
                 sessionStorage.setItem('daily_coaching_tip', JSON.stringify({
                     date: today,
@@ -9024,7 +9032,7 @@ function CoachingTipWidget() {
             className: "h-28 w-full"
         }, void 0, false, {
             fileName: "[project]/frontend/src/components/dashboards/coaching-tip-widget.tsx",
-            lineNumber: 50,
+            lineNumber: 60,
             columnNumber: 12
         }, this);
     }
@@ -9042,19 +9050,19 @@ function CoachingTipWidget() {
                             className: "h-5 w-5"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/dashboards/coaching-tip-widget.tsx",
-                            lineNumber: 61,
+                            lineNumber: 71,
                             columnNumber: 11
                         }, this),
                         "Coaching Tip"
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/coaching-tip-widget.tsx",
-                    lineNumber: 60,
+                    lineNumber: 70,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/coaching-tip-widget.tsx",
-                lineNumber: 59,
+                lineNumber: 69,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -9067,18 +9075,18 @@ function CoachingTipWidget() {
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/dashboards/coaching-tip-widget.tsx",
-                    lineNumber: 66,
+                    lineNumber: 76,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/coaching-tip-widget.tsx",
-                lineNumber: 65,
+                lineNumber: 75,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/frontend/src/components/dashboards/coaching-tip-widget.tsx",
-        lineNumber: 58,
+        lineNumber: 68,
         columnNumber: 5
     }, this);
 }
@@ -9404,13 +9412,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/textarea.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/scroll-area.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/hooks/use-toast.ts [app-ssr] (ecmascript)");
-(()=>{
-    const e = new Error("Cannot find module '@/ai/flows/performance-chat-flow'");
-    e.code = 'MODULE_NOT_FOUND';
-    throw e;
-})();
 "use client";
-;
 ;
 ;
 ;
@@ -9577,12 +9579,22 @@ function ComparePerformanceSheet() {
                     performanceContext,
                     chatHistory
                 };
-                const response = await runPerformanceChat(input);
+                const response = await fetch('/api/ai/performance-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(input)
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to get response from AI coach.');
+                }
+                const result = await response.json();
                 setChatHistory((prev)=>[
                         ...prev,
                         {
                             role: 'model',
-                            content: response.answer
+                            content: result.answer
                         }
                     ]);
             } catch (e) {
@@ -9616,12 +9628,12 @@ function ComparePerformanceSheet() {
                     children: "Compare"
                 }, void 0, false, {
                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                    lineNumber: 150,
+                    lineNumber: 159,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                lineNumber: 149,
+                lineNumber: 158,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$sheet$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SheetContent"], {
@@ -9634,20 +9646,20 @@ function ComparePerformanceSheet() {
                                 children: "Compare Your Performance"
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                lineNumber: 156,
+                                lineNumber: 165,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$sheet$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SheetDescription"], {
                                 children: "Select peers from your department to see a side-by-side comparison. This is private and for your development only."
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                lineNumber: 157,
+                                lineNumber: 166,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                        lineNumber: 155,
+                        lineNumber: 164,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9665,19 +9677,19 @@ function ComparePerformanceSheet() {
                                                 className: "mr-2 h-4 w-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                lineNumber: 169,
+                                                lineNumber: 178,
                                                 columnNumber: 19
                                             }, this),
                                             selectedPeers.length > 0 ? `Comparing with ${selectedPeers.length} peer(s)` : "Select peers to compare..."
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                        lineNumber: 164,
+                                        lineNumber: 173,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                    lineNumber: 163,
+                                    lineNumber: 172,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -9689,7 +9701,7 @@ function ComparePerformanceSheet() {
                                                 placeholder: "Search peers..."
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                lineNumber: 177,
+                                                lineNumber: 186,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$command$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CommandList"], {
@@ -9698,7 +9710,7 @@ function ComparePerformanceSheet() {
                                                         children: "No results found."
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                        lineNumber: 179,
+                                                        lineNumber: 188,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$command$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CommandGroup"], {
@@ -9713,59 +9725,59 @@ function ComparePerformanceSheet() {
                                                                             className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])("h-4 w-4")
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                            lineNumber: 196,
+                                                                            lineNumber: 205,
                                                                             columnNumber: 33
                                                                         }, this)
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                        lineNumber: 188,
+                                                                        lineNumber: 197,
                                                                         columnNumber: 33
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                         children: peer.label
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                        lineNumber: 198,
+                                                                        lineNumber: 207,
                                                                         columnNumber: 33
                                                                     }, this)
                                                                 ]
                                                             }, peer.value, true, {
                                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                lineNumber: 184,
+                                                                lineNumber: 193,
                                                                 columnNumber: 29
                                                             }, this);
                                                         })
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                        lineNumber: 180,
+                                                        lineNumber: 189,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                lineNumber: 178,
+                                                lineNumber: 187,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                        lineNumber: 176,
+                                        lineNumber: 185,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                    lineNumber: 175,
+                                    lineNumber: 184,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                            lineNumber: 162,
+                            lineNumber: 171,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                        lineNumber: 161,
+                        lineNumber: 170,
                         columnNumber: 9
                     }, this),
                     selectedPeers.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9781,12 +9793,12 @@ function ComparePerformanceSheet() {
                                         children: data.name
                                     }, idx, false, {
                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                        lineNumber: 213,
+                                        lineNumber: 222,
                                         columnNumber: 17
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                lineNumber: 211,
+                                lineNumber: 220,
                                 columnNumber: 13
                             }, this),
                             Object.keys(mockPerformanceData["You"]).map((metricName)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9796,7 +9808,7 @@ function ComparePerformanceSheet() {
                                             children: metricName
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                            lineNumber: 221,
+                                            lineNumber: 230,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9808,7 +9820,7 @@ function ComparePerformanceSheet() {
                                                 const metric = data.metrics[metricName];
                                                 if (!metric) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {}, idx, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                    lineNumber: 225,
+                                                    lineNumber: 234,
                                                     columnNumber: 49
                                                 }, this);
                                                 const yourMetric = comparisonData[0].metrics[metricName];
@@ -9825,7 +9837,7 @@ function ComparePerformanceSheet() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                            lineNumber: 233,
+                                                            lineNumber: 242,
                                                             columnNumber: 38
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Progress"], {
@@ -9834,25 +9846,25 @@ function ComparePerformanceSheet() {
                                                             indicatorClassName: (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["cn"])(data.name === "You" ? "bg-primary" : "bg-muted-foreground/30", isHigher && "bg-green-500", isLower && "bg-red-500")
                                                         }, void 0, false, {
                                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                            lineNumber: 234,
+                                                            lineNumber: 243,
                                                             columnNumber: 38
                                                         }, this)
                                                     ]
                                                 }, idx, true, {
                                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                    lineNumber: 232,
+                                                    lineNumber: 241,
                                                     columnNumber: 33
                                                 }, this);
                                             })
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                            lineNumber: 222,
+                                            lineNumber: 231,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, metricName, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                    lineNumber: 220,
+                                    lineNumber: 229,
                                     columnNumber: 17
                                 }, this)),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9865,14 +9877,14 @@ function ComparePerformanceSheet() {
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$bot$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Bot$3e$__["Bot"], {}, void 0, false, {
                                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                    lineNumber: 252,
+                                                    lineNumber: 261,
                                                     columnNumber: 93
                                                 }, this),
                                                 " AI Summary"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                            lineNumber: 252,
+                                            lineNumber: 261,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9884,18 +9896,18 @@ function ComparePerformanceSheet() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                            lineNumber: 253,
+                                            lineNumber: 262,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                    lineNumber: 251,
+                                    lineNumber: 260,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                lineNumber: 250,
+                                lineNumber: 259,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9908,14 +9920,14 @@ function ComparePerformanceSheet() {
                                                 className: "text-primary"
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                lineNumber: 259,
+                                                lineNumber: 268,
                                                 columnNumber: 21
                                             }, this),
                                             " Performance Coach"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                        lineNumber: 258,
+                                        lineNumber: 267,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9933,7 +9945,7 @@ function ComparePerformanceSheet() {
                                                                         className: "h-5 w-5 text-primary flex-shrink-0"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                        lineNumber: 266,
+                                                                        lineNumber: 275,
                                                                         columnNumber: 62
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9941,13 +9953,13 @@ function ComparePerformanceSheet() {
                                                                         children: msg.content
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                        lineNumber: 267,
+                                                                        lineNumber: 276,
                                                                         columnNumber: 37
                                                                     }, this)
                                                                 ]
                                                             }, index, true, {
                                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                lineNumber: 265,
+                                                                lineNumber: 274,
                                                                 columnNumber: 33
                                                             }, this)),
                                                         isPending && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9957,7 +9969,7 @@ function ComparePerformanceSheet() {
                                                                     className: "h-5 w-5 text-primary flex-shrink-0"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                    lineNumber: 274,
+                                                                    lineNumber: 283,
                                                                     columnNumber: 37
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9966,29 +9978,29 @@ function ComparePerformanceSheet() {
                                                                         className: "h-4 w-4 animate-spin text-muted-foreground"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                        lineNumber: 276,
+                                                                        lineNumber: 285,
                                                                         columnNumber: 41
                                                                     }, this)
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                                    lineNumber: 275,
+                                                                    lineNumber: 284,
                                                                     columnNumber: 37
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                            lineNumber: 273,
+                                                            lineNumber: 282,
                                                             columnNumber: 33
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                    lineNumber: 263,
+                                                    lineNumber: 272,
                                                     columnNumber: 25
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                lineNumber: 262,
+                                                lineNumber: 271,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10004,7 +10016,7 @@ function ComparePerformanceSheet() {
                                                         disabled: isPending
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                        lineNumber: 283,
+                                                        lineNumber: 292,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -10014,48 +10026,48 @@ function ComparePerformanceSheet() {
                                                             className: "h-4 w-4"
                                                         }, void 0, false, {
                                                             fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                            lineNumber: 293,
+                                                            lineNumber: 302,
                                                             columnNumber: 29
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                        lineNumber: 292,
+                                                        lineNumber: 301,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                                lineNumber: 282,
+                                                lineNumber: 291,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                        lineNumber: 261,
+                                        lineNumber: 270,
                                         columnNumber: 18
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                                lineNumber: 257,
+                                lineNumber: 266,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                        lineNumber: 210,
+                        lineNumber: 219,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-                lineNumber: 154,
+                lineNumber: 163,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/frontend/src/components/dashboards/compare-performance-sheet.tsx",
-        lineNumber: 141,
+        lineNumber: 150,
         columnNumber: 5
     }, this);
 }
