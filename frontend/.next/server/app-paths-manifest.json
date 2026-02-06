@@ -1,6 +1,7 @@
 {
   "/1-on-1/page": "app/1-on-1/page.js",
   "/api/ai/get-daily-coaching-tip/route": "app/api/ai/get-daily-coaching-tip/route.js",
+  "/coaching/page": "app/coaching/page.js",
   "/nets/page": "app/nets/page.js",
   "/page": "app/page.js"
 }

@@ -60,6 +60,7 @@ const useRole = ()=>{
         setRole: setCurrentRole,
         isLoading,
         availableRoles: __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["availableRoles"],
+        availableRolesForAssignment: __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["availableRolesForAssignment"],
         activeSurveyExists,
         toast
     };

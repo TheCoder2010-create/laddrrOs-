@@ -1,16 +1,17 @@
-
 "use client"
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 import { getLatestActiveSurvey } from '@/services/survey-service';
-import { type Role, availableRoles } from '@common/types/role';
+import { type Role, availableRoles, availableRolesForAssignment } from '@common/types/role';
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 const ACTIVE_SURVEY_KEY = 'active_survey_exists';
 
 export type { Role };
-export { availableRoles };
+// This is being removed to prevent confusing re-exports.
+// Components should import these directly from @common/types/role.
+// export { availableRoles, availableRolesForAssignment };
 
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
@@ -50,5 +51,5 @@ export const useRole = () => {
         }
     }, []);
 
-    return { role, setRole: setCurrentRole, isLoading, availableRoles, activeSurveyExists, toast };
+    return { role, setRole: setCurrentRole, isLoading, availableRoles, availableRolesForAssignment, activeSurveyExists, toast };
 };

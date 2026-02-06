@@ -2,8 +2,9 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
-import type { Role } from '@/hooks/use-role';
-import { useRole, availableRoles, availableRolesForAssignment } from '@/hooks/use-role';
+import { useRole } from '@/hooks/use-role';
+import type { Role } from '@common/types/role';
+import { availableRoles, availableRolesForAssignment } from '@common/types/role';
 import DashboardLayout from '@/components/dashboard-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
