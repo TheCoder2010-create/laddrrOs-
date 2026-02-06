@@ -3,7 +3,7 @@
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Role } from '@/hooks/use-role';
+import type { Role } from '@common/types/role';
 import { roleUserMapping } from '@/lib/role-mapping';
 import { getFeedbackFromStorage, saveFeedbackToStorage, type Feedback } from './feedback-service';
 import type { NetsInitialInput } from '../types/ai';

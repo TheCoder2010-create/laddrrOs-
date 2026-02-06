@@ -1,13 +1,13 @@
+
 /**
  * @fileOverview A service for managing Interviewer Lab nominations and progress.
  */
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Role } from '@/hooks/use-role';
-import { roleUserMapping } from '../../../backend/src/lib/role-mapping';
-import type { InterviewerAnalysisOutput } from '../../../backend/src/ai/schemas/interviewer-lab-schemas';
-import type { NetsInitialInput } from '../../../backend/src/ai/schemas/nets-schemas';
+import type { Role } from '@common/types/role';
+import { roleUserMapping } from '@/lib/role-mapping';
+import type { InterviewerAnalysisOutput, NetsInitialInput } from '@/types/ai';
 import { getFeedbackFromStorage, saveFeedbackToStorage, type Feedback } from './feedback-service';
 
 // ==========================================
@@ -232,7 +232,7 @@ const getInitialModules = (): TrainingModule[] => [
                     { type: 'script', title: '🎙️ Coach Intro', content: 'Once you have a STAR answer, you need to score it objectively. Focus on:\n\nRelevance: Does it match the job requirements?\nDepth: Does it show real skill and ownership?\nOutcome: Did it produce measurable results?' },
                     { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Think of scoring like judging a competition. Judges follow clear criteria to make fair, comparable evaluations.' },
                     { type: 'script', title: '📖 Mini-Case', content: 'A finance firm created a rubric for STAR responses. Each answer was rated 1–5 for relevance, action, and result. Consistency improved and managers trusted the data.' },
-                    { type: 'quiz_mcq', question: 'Which element is not a scoring criterion for STAR answers?', options: ['Relevance', 'Depth', 'Outcome', 'Candidate’s personality color preference'], correctAnswer: 'Candidate’s personality color preference', feedback: { correct: 'Correct. Personal traits unrelated to job performance should not affect scoring.', incorrect: 'The answer is D. Focus on relevant skills, actions, and results.' } },
+                    { type: 'quiz_mcq', question: 'Which element is not a scoring criterion for STAR answers?', options: ['Relevance', 'Depth', 'Outcome', 'Candidate’s personality color preference'], correctAnswer: 'Candidate’s personality color preference', feedback: { correct: 'Correct! Personal traits unrelated to job performance should not affect scoring.', incorrect: 'The answer is D. Focus on relevant skills, actions, and results.' } },
                     { type: 'journal', prompt: 'Review your last STAR evaluation. Did you use all three scoring dimensions? Note one way to improve your scoring next time.' },
                     { type: 'script', title: '📌 Coach Wrap-Up', content: 'Scoring STAR responses objectively ensures fair, data-driven decisions.' },
                     { type: 'journal', prompt: '🚀 Stretch Activity\n\nTake a sample STAR answer. Score it 1–5 for relevance, depth, and outcome. Compare your scores with a peer or team rubric.' }
@@ -253,7 +253,7 @@ const getInitialModules = (): TrainingModule[] => [
         isCompleted: false,
         lessons: [
             {
-                id: 'l3-1', title: 'Understanding Bias in Interviews', type: 'standard', isCompleted: false,
+                id: 'l3-1', title: 'Introduction to Behavioral Interviewing', type: 'standard', isCompleted: false,
                 steps: [
                     { type: 'script', title: '🎙️ Coach Intro', content: 'Bias is a natural human tendency. In interviews, unconscious bias can distort your judgment, favor some candidates, or disadvantage others. Recognizing bias is the first step to reducing it.' },
                     { type: 'script', title: '📊 Teaching Moment / Analogy', content: 'Think of bias like colored glasses. If you don’t notice the tint, everything you see is slightly skewed. Removing or adjusting those glasses gives a clearer, fairer view.' },
@@ -559,14 +559,14 @@ export async function nominateUser(managerRole: Role, nomineeRole: Role, targetR
         trackingId: `IL-NOM-${newNomination.id}`,
         subject: `You've been nominated for Interviewer Training!`,
         message: `Congratulations! ${managerName} has nominated you for the Laddrr Interviewer Lab, a program designed to help you become a more effective and confident interviewer.\n\nThis training will help you:\n- Conduct structured, fair, and legally compliant interviews.\n- Master behavioral interviewing techniques like the STAR method.\n- Identify and mitigate unconscious bias.\n\nTo get started, please navigate to the "Interviewer Lab" section from the main sidebar and complete your pre-assessment.`,
-        submittedAt: now,
+        submittedAt: new Date(now),
         criticality: 'Low',
         status: 'Pending Acknowledgement',
         assignedTo: [nomineeRole],
         viewed: false,
         auditTrail: [{
             event: 'Notification Created',
-            timestamp: now,
+            timestamp: new Date(now),
             actor: 'System',
             details: `Automated notification for Interviewer Lab nomination.`
         }]
@@ -605,7 +605,7 @@ export async function savePreAssessment(nominationId: string, analysis: Intervie
     const index = allNominations.findIndex(n => n.id === nominationId);
 
     if (index !== -1) {
-        allNominations[index].scorePre = analysis.overallScore;
+        allNominations[index].scorePre = analysis.scores.overall;
         allNominations[index].analysisPre = analysis;
         allNominations[index].status = 'In Progress';
         allNominations[index].lastUpdated = new Date().toISOString();
@@ -622,7 +622,7 @@ export async function savePostAssessment(nominationId: string, analysis: Intervi
 
     if (index !== -1) {
         const nomination = allNominations[index];
-        nomination.scorePost = analysis.overallScore;
+        nomination.scorePost = analysis.scores.overall;
         nomination.analysisPost = analysis;
         nomination.lastUpdated = new Date().toISOString();
 

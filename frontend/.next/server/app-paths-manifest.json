@@ -1,5 +1,8 @@
 {
+  "/1-on-1/page": "app/1-on-1/page.js",
   "/api/ai/get-daily-coaching-tip/route": "app/api/ai/get-daily-coaching-tip/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/messages/page": "app/messages/page.js",
+  "/nets/page": "app/nets/page.js",
   "/page": "app/page.js"
 }

@@ -1497,7 +1497,7 @@ var { g: global, __dirname } = __turbopack_context__;
     "savePreAssessment": (()=>savePreAssessment)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$uuid$2f$dist$2f$esm$2d$node$2f$v4$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__v4$3e$__ = __turbopack_context__.i("[project]/node_modules/uuid/dist/esm-node/v4.js [app-ssr] (ecmascript) <export default as v4>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$backend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/backend/src/lib/role-mapping.ts [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/lib/role-mapping.ts [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$services$2f$feedback$2d$service$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/services/feedback-service.ts [app-ssr] (ecmascript)");
 'use client';
 ;
@@ -1973,7 +1973,7 @@ const getInitialModules = ()=>[
                             ],
                             correctAnswer: 'Candidate’s personality color preference',
                             feedback: {
-                                correct: 'Correct. Personal traits unrelated to job performance should not affect scoring.',
+                                correct: 'Correct! Personal traits unrelated to job performance should not affect scoring.',
                                 incorrect: 'The answer is D. Focus on relevant skills, actions, and results.'
                             }
                         },
@@ -2015,7 +2015,7 @@ const getInitialModules = ()=>[
             lessons: [
                 {
                     id: 'l3-1',
-                    title: 'Understanding Bias in Interviews',
+                    title: 'Introduction to Behavioral Interviewing',
                     type: 'standard',
                     isCompleted: false,
                     steps: [
@@ -3078,12 +3078,12 @@ async function nominateUser(managerRole, nomineeRole, targetRole) {
     allNominations.unshift(newNomination);
     saveToStorage(INTERVIEWER_LAB_KEY, allNominations);
     // Create a notification for the nominated user
-    const managerName = __TURBOPACK__imported__module__$5b$project$5d2f$backend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["roleUserMapping"][managerRole]?.name || managerRole;
+    const managerName = __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["roleUserMapping"][managerRole]?.name || managerRole;
     const notification = {
         trackingId: `IL-NOM-${newNomination.id}`,
         subject: `You've been nominated for Interviewer Training!`,
         message: `Congratulations! ${managerName} has nominated you for the Laddrr Interviewer Lab, a program designed to help you become a more effective and confident interviewer.\n\nThis training will help you:\n- Conduct structured, fair, and legally compliant interviews.\n- Master behavioral interviewing techniques like the STAR method.\n- Identify and mitigate unconscious bias.\n\nTo get started, please navigate to the "Interviewer Lab" section from the main sidebar and complete your pre-assessment.`,
-        submittedAt: now,
+        submittedAt: new Date(now),
         criticality: 'Low',
         status: 'Pending Acknowledgement',
         assignedTo: [
@@ -3093,7 +3093,7 @@ async function nominateUser(managerRole, nomineeRole, targetRole) {
         auditTrail: [
             {
                 event: 'Notification Created',
-                timestamp: now,
+                timestamp: new Date(now),
                 actor: 'System',
                 details: `Automated notification for Interviewer Lab nomination.`
             }
@@ -3116,7 +3116,7 @@ async function savePreAssessment(nominationId, analysis) {
     const allNominations = getFromStorage(INTERVIEWER_LAB_KEY);
     const index = allNominations.findIndex((n)=>n.id === nominationId);
     if (index !== -1) {
-        allNominations[index].scorePre = analysis.overallScore;
+        allNominations[index].scorePre = analysis.scores.overall;
         allNominations[index].analysisPre = analysis;
         allNominations[index].status = 'In Progress';
         allNominations[index].lastUpdated = new Date().toISOString();
@@ -3128,7 +3128,7 @@ async function savePostAssessment(nominationId, analysis) {
     const index = allNominations.findIndex((n)=>n.id === nominationId);
     if (index !== -1) {
         const nomination = allNominations[index];
-        nomination.scorePost = analysis.overallScore;
+        nomination.scorePost = analysis.scores.overall;
         nomination.analysisPost = analysis;
         nomination.lastUpdated = new Date().toISOString();
         // Certification Logic: Must show at least 15% improvement

@@ -9,10 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Bot, User, Send, Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { runNetsConversation } from '../../backend/src/ai/flows/nets-flow';
-import type { NetsConversationInput, NetsMessage, NetsInitialInput } from '../../backend/src/ai/schemas/nets-schemas';
+import type { NetsConversationInput, NetsMessage, NetsInitialInput, NetsNudgeOutput } from '@/types/ai';
 import { useToast } from '@/hooks/use-toast';
-import { generateNetsNudge } from '../../backend/src/ai/flows/generate-nets-nudge-flow';
 
 
 const Avatar = ({ icon }: { icon: React.ReactNode }) => (
@@ -58,7 +56,15 @@ export default function SimulationArena({
                         ...initialConfig,
                         history: [], // History is empty for the first turn
                     };
-                    const aiResponse = await runNetsConversation(input);
+                    
+                    const response = await fetch('/api/ai/nets', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(input)
+                    });
+                    if (!response.ok) throw new Error('AI failed to respond.');
+                    const aiResponse: NetsMessage = await response.json();
+
                     setMessages(prev => [...prev, aiResponse]);
                 } catch (error) {
                     console.error("AI simulation failed on start", error);
@@ -92,7 +98,15 @@ export default function SimulationArena({
                     ...initialConfig,
                     history: currentMessages.filter(m => m.role !== 'system'),
                 };
-                const aiResponse = await runNetsConversation(input);
+                
+                const response = await fetch('/api/ai/nets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(input)
+                });
+                if (!response.ok) throw new Error('AI failed to respond.');
+                const aiResponse: NetsMessage = await response.json();
+
                 setMessages(prev => [...prev, aiResponse]);
             } catch (error) {
                 console.error("AI simulation failed", error);
@@ -118,7 +132,15 @@ export default function SimulationArena({
                     ...initialConfig,
                     history: messages.filter(m => m.role !== 'system'),
                 };
-                const result = await generateNetsNudge(input);
+                
+                const response = await fetch('/api/ai/generate-nets-nudge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(input)
+                });
+                if (!response.ok) throw new Error('Failed to get nudge.');
+                const result: NetsNudgeOutput = await response.json();
+
                 toast({
                     title: "Coach's Nudge",
                     description: result.nudge,
