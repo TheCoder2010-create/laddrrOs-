@@ -68,6 +68,7 @@ const useRole = ()=>{
         setRole: setCurrentRole,
         isLoading,
         availableRoles: __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRoles"],
+        availableRolesForAssignment: __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRolesForAssignment"],
         activeSurveyExists,
         toast
     };
@@ -208,6 +209,7 @@ __turbopack_context__.s({
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/hooks/use-role.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/common/types/role.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$dashboard$2d$layout$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/dashboard-layout.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$skeleton$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/skeleton.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/card.tsx [app-client] (ecmascript)");
@@ -244,6 +246,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$component
 ;
 var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature(), _s2 = __turbopack_context__.k.signature();
 "use client";
+;
 ;
 ;
 ;
@@ -353,19 +356,19 @@ function AssignPracticeDialog({ onAssign }) {
                             className: "mr-2 h-4 w-4"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 106,
+                            lineNumber: 107,
                             columnNumber: 13
                         }, this),
                         "Assign"
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                    lineNumber: 105,
+                    lineNumber: 106,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 104,
+                lineNumber: 105,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogContent"], {
@@ -379,27 +382,27 @@ function AssignPracticeDialog({ onAssign }) {
                                         className: "text-primary"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 113,
+                                        lineNumber: 114,
                                         columnNumber: 15
                                     }, this),
                                     "Assign Practice Scenario"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 112,
+                                lineNumber: 113,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogDescription"], {
                                 children: "Assign a specific conversation scenario to a team member for them to practice."
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 116,
+                                lineNumber: 117,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                        lineNumber: 111,
+                        lineNumber: 112,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -414,7 +417,7 @@ function AssignPracticeDialog({ onAssign }) {
                                         children: "Assign To"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 122,
+                                        lineNumber: 123,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -429,12 +432,12 @@ function AssignPracticeDialog({ onAssign }) {
                                                         placeholder: "Select a team member"
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                        lineNumber: 129,
+                                                        lineNumber: 130,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 128,
+                                                    lineNumber: 129,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -448,29 +451,29 @@ function AssignPracticeDialog({ onAssign }) {
                                                             ]
                                                         }, memberRole, true, {
                                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                            lineNumber: 133,
+                                                            lineNumber: 134,
                                                             columnNumber: 33
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 131,
+                                                    lineNumber: 132,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 124,
+                                            lineNumber: 125,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 123,
+                                        lineNumber: 124,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 121,
+                                lineNumber: 122,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -481,7 +484,7 @@ function AssignPracticeDialog({ onAssign }) {
                                         children: "Scenario to Practice"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 142,
+                                        lineNumber: 143,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -492,13 +495,13 @@ function AssignPracticeDialog({ onAssign }) {
                                         onChange: (e)=>setScenario(e.target.value)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 143,
+                                        lineNumber: 144,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 141,
+                                lineNumber: 142,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -510,7 +513,7 @@ function AssignPracticeDialog({ onAssign }) {
                                         children: "Persona"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 152,
+                                        lineNumber: 153,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -525,12 +528,12 @@ function AssignPracticeDialog({ onAssign }) {
                                                         placeholder: "Select the AI persona"
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                        lineNumber: 159,
+                                                        lineNumber: 160,
                                                         columnNumber: 29
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 158,
+                                                    lineNumber: 159,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -539,29 +542,29 @@ function AssignPracticeDialog({ onAssign }) {
                                                             children: p
                                                         }, p, false, {
                                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                            lineNumber: 163,
+                                                            lineNumber: 164,
                                                             columnNumber: 32
                                                         }, this))
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 161,
+                                                    lineNumber: 162,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 154,
+                                            lineNumber: 155,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 153,
+                                        lineNumber: 154,
                                         columnNumber: 20
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 151,
+                                lineNumber: 152,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -573,7 +576,7 @@ function AssignPracticeDialog({ onAssign }) {
                                         children: "Complete By"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 170,
+                                        lineNumber: 171,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -593,25 +596,25 @@ function AssignPracticeDialog({ onAssign }) {
                                                                 className: "mr-2 h-4 w-4"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                                lineNumber: 182,
+                                                                lineNumber: 183,
                                                                 columnNumber: 27
                                                             }, this),
                                                             dueDate ? (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$date$2d$fns$2f$format$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["format"])(dueDate, "PPP") : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 children: "Pick a date"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                                lineNumber: 183,
+                                                                lineNumber: 184,
                                                                 columnNumber: 63
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                        lineNumber: 174,
+                                                        lineNumber: 175,
                                                         columnNumber: 25
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 173,
+                                                    lineNumber: 174,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$popover$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["PopoverContent"], {
@@ -626,35 +629,35 @@ function AssignPracticeDialog({ onAssign }) {
                                                         initialFocus: true
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                        lineNumber: 187,
+                                                        lineNumber: 188,
                                                         columnNumber: 25
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 186,
+                                                    lineNumber: 187,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 172,
+                                            lineNumber: 173,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 171,
+                                        lineNumber: 172,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 169,
+                                lineNumber: 170,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                        lineNumber: 120,
+                        lineNumber: 121,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -666,12 +669,12 @@ function AssignPracticeDialog({ onAssign }) {
                                     children: "Cancel"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 203,
+                                    lineNumber: 204,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 202,
+                                lineNumber: 203,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -682,38 +685,38 @@ function AssignPracticeDialog({ onAssign }) {
                                         className: "mr-2 animate-spin"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 206,
+                                        lineNumber: 207,
                                         columnNumber: 33
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$send$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Send$3e$__["Send"], {
                                         className: "mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 206,
+                                        lineNumber: 207,
                                         columnNumber: 77
                                     }, this),
                                     "Assign Scenario"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 205,
+                                lineNumber: 206,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                        lineNumber: 201,
+                        lineNumber: 202,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 110,
+                lineNumber: 111,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/frontend/src/app/nets/page.tsx",
-        lineNumber: 103,
+        lineNumber: 104,
         columnNumber: 7
     }, this);
 }
@@ -794,7 +797,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                             children: "Nets – Practice Arena"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 280,
+                            lineNumber: 281,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -808,31 +811,31 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                         children: "Scorecard"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 285,
+                                        lineNumber: 286,
                                         columnNumber: 29
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 284,
+                                    lineNumber: 285,
                                     columnNumber: 26
                                 }, this),
-                                __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRolesForAssignment"].includes(role) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(AssignPracticeDialog, {
+                                __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRolesForAssignment"].includes(role) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(AssignPracticeDialog, {
                                     onAssign: onAssign
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 287,
+                                    lineNumber: 288,
                                     columnNumber: 72
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 283,
+                            lineNumber: 284,
                             columnNumber: 22
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                    lineNumber: 279,
+                    lineNumber: 280,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -840,12 +843,12 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                     children: "Choose a persona to practice your conversation with."
                 }, void 0, false, {
                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                    lineNumber: 291,
+                    lineNumber: 292,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "grid grid-cols-2 md:grid-cols-3 gap-4",
-                    children: __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRoles"].filter((r)=>r !== 'Anonymous').map((r)=>{
+                    children: __TURBOPACK__imported__module__$5b$project$5d2f$common$2f$types$2f$role$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["availableRoles"].filter((r)=>r !== 'Anonymous').map((r)=>{
                         const roleDetails = __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$role$2d$mapping$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["roleUserMapping"][r] || {
                             name: r,
                             fallback: r.substring(0, 1),
@@ -861,7 +864,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                     className: "h-10 w-10 text-muted-foreground transition-colors group-hover:text-primary"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 304,
+                                    lineNumber: 305,
                                     columnNumber: 33
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -869,19 +872,19 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                     children: r
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 305,
+                                    lineNumber: 306,
                                     columnNumber: 33
                                 }, this)
                             ]
                         }, r, true, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 299,
+                            lineNumber: 300,
                             columnNumber: 29
                         }, this);
                     })
                 }, void 0, false, {
                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                    lineNumber: 294,
+                    lineNumber: 295,
                     columnNumber: 17
                 }, this),
                 assignedScenarios.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -894,14 +897,14 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                     className: "h-5 w-5 text-purple-500"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 314,
+                                    lineNumber: 315,
                                     columnNumber: 29
                                 }, this),
                                 "Assigned for Practice"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 313,
+                            lineNumber: 314,
                             columnNumber: 25
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -913,7 +916,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                             className: "pb-3"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 320,
+                                            lineNumber: 321,
                                             columnNumber: 37
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -923,7 +926,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                                     children: s.scenario
                                                 }, void 0, false, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 323,
+                                                    lineNumber: 324,
                                                     columnNumber: 41
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -934,13 +937,13 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                    lineNumber: 324,
+                                                    lineNumber: 325,
                                                     columnNumber: 41
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 322,
+                                            lineNumber: 323,
                                             columnNumber: 37
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -952,42 +955,42 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                                         className: "mr-2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                        lineNumber: 328,
+                                                        lineNumber: 329,
                                                         columnNumber: 45
                                                     }, this),
                                                     " Start Practice"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                lineNumber: 327,
+                                                lineNumber: 328,
                                                 columnNumber: 41
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 326,
+                                            lineNumber: 327,
                                             columnNumber: 37
                                         }, this)
                                     ]
                                 }, s.id, true, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 319,
+                                    lineNumber: 320,
                                     columnNumber: 33
                                 }, this))
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 317,
+                            lineNumber: 318,
                             columnNumber: 25
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                    lineNumber: 312,
+                    lineNumber: 313,
                     columnNumber: 21
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/frontend/src/app/nets/page.tsx",
-            lineNumber: 278,
+            lineNumber: 279,
             columnNumber: 14
         }, this);
     }
@@ -1007,7 +1010,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                     children: "Configure Simulation"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 347,
+                                    lineNumber: 348,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -1018,7 +1021,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                             className: "h-5 w-5 text-primary"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 351,
+                                            lineNumber: 352,
                                             columnNumber: 47
                                         }, this),
                                         " ",
@@ -1027,19 +1030,19 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                             children: selectedPersona
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 351,
+                                            lineNumber: 352,
                                             columnNumber: 89
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 350,
+                                    lineNumber: 351,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 346,
+                            lineNumber: 347,
                             columnNumber: 22
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1050,25 +1053,25 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                     className: "mr-2"
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                    lineNumber: 355,
+                                    lineNumber: 356,
                                     columnNumber: 25
                                 }, this),
                                 " Back"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 354,
+                            lineNumber: 355,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                    lineNumber: 345,
+                    lineNumber: 346,
                     columnNumber: 18
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 344,
+                lineNumber: 345,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1085,7 +1088,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                         children: "Describe the scenario to practice"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 362,
+                                        lineNumber: 363,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1098,26 +1101,26 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                                 className: "h-4 w-4 animate-spin"
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                lineNumber: 364,
+                                                lineNumber: 365,
                                                 columnNumber: 45
                                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$lightbulb$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Lightbulb$3e$__["Lightbulb"], {
                                                 className: "h-4 w-4 mr-2 text-yellow-400"
                                             }, void 0, false, {
                                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                lineNumber: 364,
+                                                lineNumber: 365,
                                                 columnNumber: 92
                                             }, this),
                                             "Get Suggestion"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 363,
+                                        lineNumber: 364,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 361,
+                                lineNumber: 362,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1128,13 +1131,13 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                 onChange: (e)=>setScenario(e.target.value)
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 368,
+                                lineNumber: 369,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                        lineNumber: 360,
+                        lineNumber: 361,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1145,7 +1148,7 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                 children: "Set AI Demeanor"
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 378,
+                                lineNumber: 379,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Select"], {
@@ -1158,12 +1161,12 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                             placeholder: "Select a difficulty"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                            lineNumber: 381,
+                                            lineNumber: 382,
                                             columnNumber: 29
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 380,
+                                        lineNumber: 381,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SelectContent"], {
@@ -1172,30 +1175,30 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                                                 children: d.label
                                             }, d.value, false, {
                                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                                lineNumber: 384,
+                                                lineNumber: 385,
                                                 columnNumber: 52
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                        lineNumber: 383,
+                                        lineNumber: 384,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                                lineNumber: 379,
+                                lineNumber: 380,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/app/nets/page.tsx",
-                        lineNumber: 377,
+                        lineNumber: 378,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 359,
+                lineNumber: 360,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -1210,24 +1213,24 @@ function SetupView({ onStart, role, assignedScenarios, onAssign }) {
                             className: "ml-2"
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/app/nets/page.tsx",
-                            lineNumber: 391,
+                            lineNumber: 392,
                             columnNumber: 36
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/app/nets/page.tsx",
-                    lineNumber: 390,
+                    lineNumber: 391,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 389,
+                lineNumber: 390,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/frontend/src/app/nets/page.tsx",
-        lineNumber: 343,
+        lineNumber: 344,
         columnNumber: 9
     }, this);
 }
@@ -1316,12 +1319,12 @@ function NetsPage() {
                 className: "w-full h-screen"
             }, void 0, false, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 461,
+                lineNumber: 462,
                 columnNumber: 73
             }, this)
         }, void 0, false, {
             fileName: "[project]/frontend/src/app/nets/page.tsx",
-            lineNumber: 461,
+            lineNumber: 462,
             columnNumber: 16
         }, this);
     }
@@ -1335,7 +1338,7 @@ function NetsPage() {
                 onExit: handleExitSimulation
             }, void 0, false, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 468,
+                lineNumber: 469,
                 columnNumber: 21
             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(SetupView, {
                 onStart: handleStartSimulation,
@@ -1344,17 +1347,17 @@ function NetsPage() {
                 onAssign: fetchAssignedScenarios
             }, void 0, false, {
                 fileName: "[project]/frontend/src/app/nets/page.tsx",
-                lineNumber: 473,
+                lineNumber: 474,
                 columnNumber: 21
             }, this)
         }, void 0, false, {
             fileName: "[project]/frontend/src/app/nets/page.tsx",
-            lineNumber: 466,
+            lineNumber: 467,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/frontend/src/app/nets/page.tsx",
-        lineNumber: 465,
+        lineNumber: 466,
         columnNumber: 9
     }, this);
 }
