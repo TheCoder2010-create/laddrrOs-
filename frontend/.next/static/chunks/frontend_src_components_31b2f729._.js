@@ -1164,22 +1164,10 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$lightbulb$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Lightbulb$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/lightbulb.js [app-client] (ecmascript) <export default as Lightbulb>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/lib/utils.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$scroll$2d$area$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/components/ui/scroll-area.tsx [app-client] (ecmascript)");
-(()=>{
-    const e = new Error("Cannot find module '../../backend/src/ai/flows/nets-flow'");
-    e.code = 'MODULE_NOT_FOUND';
-    throw e;
-})();
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$hooks$2f$use$2d$toast$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/src/hooks/use-toast.ts [app-client] (ecmascript)");
-(()=>{
-    const e = new Error("Cannot find module '../../backend/src/ai/flows/generate-nets-nudge-flow'");
-    e.code = 'MODULE_NOT_FOUND';
-    throw e;
-})();
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
-;
-;
 ;
 ;
 ;
@@ -1193,7 +1181,7 @@ const Avatar = ({ icon })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$
         children: icon
     }, void 0, false, {
         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-        lineNumber: 19,
+        lineNumber: 17,
         columnNumber: 5
     }, this);
 _c = Avatar;
@@ -1228,7 +1216,15 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                     ...initialConfig,
                                     history: []
                                 };
-                                const aiResponse = await runNetsConversation(input);
+                                const response = await fetch('/api/ai/nets', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(input)
+                                });
+                                if (!response.ok) throw new Error('AI failed to respond.');
+                                const aiResponse = await response.json();
                                 setMessages({
                                     "SimulationArena.useEffect.startSimulation": (prev)=>[
                                             ...prev,
@@ -1285,7 +1281,15 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                     ...initialConfig,
                     history: currentMessages.filter((m)=>m.role !== 'system')
                 };
-                const aiResponse = await runNetsConversation(input);
+                const response = await fetch('/api/ai/nets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(input)
+                });
+                if (!response.ok) throw new Error('AI failed to respond.');
+                const aiResponse = await response.json();
                 setMessages((prev)=>[
                         ...prev,
                         aiResponse
@@ -1316,7 +1320,15 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                     ...initialConfig,
                     history: messages.filter((m)=>m.role !== 'system')
                 };
-                const result = await generateNetsNudge(input);
+                const response = await fetch('/api/ai/generate-nets-nudge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(input)
+                });
+                if (!response.ok) throw new Error('Failed to get nudge.');
+                const result = await response.json();
                 toast({
                     title: "Coach's Nudge",
                     description: result.nudge,
@@ -1345,7 +1357,7 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                 children: arenaTitle
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 138,
+                                lineNumber: 160,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1356,20 +1368,20 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                         className: "mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                        lineNumber: 142,
+                                        lineNumber: 164,
                                         columnNumber: 25
                                     }, this),
                                     " End Session"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 141,
+                                lineNumber: 163,
                                 columnNumber: 22
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                        lineNumber: 137,
+                        lineNumber: 159,
                         columnNumber: 18
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -1380,7 +1392,7 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                 children: initialConfig.persona
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 146,
+                                lineNumber: 168,
                                 columnNumber: 52
                             }, this),
                             ". The scenario is: ",
@@ -1389,20 +1401,20 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                 children: initialConfig.scenario
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 147,
+                                lineNumber: 169,
                                 columnNumber: 38
                             }, this),
                             "."
                         ]
                     }, void 0, true, {
                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                        lineNumber: 145,
+                        lineNumber: 167,
                         columnNumber: 17
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                lineNumber: 136,
+                lineNumber: 158,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1418,12 +1430,12 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                             className: "text-primary"
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                            lineNumber: 154,
+                                            lineNumber: 176,
                                             columnNumber: 69
                                         }, void 0)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                        lineNumber: 154,
+                                        lineNumber: 176,
                                         columnNumber: 55
                                     }, this),
                                     msg.role === 'system' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1431,7 +1443,7 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                         children: msg.content
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                        lineNumber: 156,
+                                        lineNumber: 178,
                                         columnNumber: 33
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["cn"])("max-w-[75%] rounded-lg px-4 py-2", msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'),
@@ -1440,29 +1452,29 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                             children: msg.content
                                         }, void 0, false, {
                                             fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                            lineNumber: 159,
+                                            lineNumber: 181,
                                             columnNumber: 37
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                        lineNumber: 158,
+                                        lineNumber: 180,
                                         columnNumber: 33
                                     }, this),
                                     msg.role === 'user' && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Avatar, {
                                         icon: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$user$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__User$3e$__["User"], {}, void 0, false, {
                                             fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                            lineNumber: 162,
+                                            lineNumber: 184,
                                             columnNumber: 67
                                         }, void 0)
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                        lineNumber: 162,
+                                        lineNumber: 184,
                                         columnNumber: 53
                                     }, this)
                                 ]
                             }, index, true, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 153,
+                                lineNumber: 175,
                                 columnNumber: 25
                             }, this)),
                         isPending && messages.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1473,12 +1485,12 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                         className: "text-primary"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                        lineNumber: 167,
+                                        lineNumber: 189,
                                         columnNumber: 43
                                     }, void 0)
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                    lineNumber: 167,
+                                    lineNumber: 189,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1487,29 +1499,29 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                         className: "h-5 w-5 animate-spin text-muted-foreground"
                                     }, void 0, false, {
                                         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                        lineNumber: 169,
+                                        lineNumber: 191,
                                         columnNumber: 33
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                    lineNumber: 168,
+                                    lineNumber: 190,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                            lineNumber: 166,
+                            lineNumber: 188,
                             columnNumber: 25
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                    lineNumber: 151,
+                    lineNumber: 173,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                lineNumber: 150,
+                lineNumber: 172,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -1526,18 +1538,18 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                                 className: "animate-spin text-yellow-400"
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 178,
+                                lineNumber: 200,
                                 columnNumber: 44
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$lightbulb$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Lightbulb$3e$__["Lightbulb"], {
                                 className: "text-yellow-400"
                             }, void 0, false, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 178,
+                                lineNumber: 200,
                                 columnNumber: 99
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                            lineNumber: 177,
+                            lineNumber: 199,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -1550,7 +1562,7 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                             disabled: isPending
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                            lineNumber: 180,
+                            lineNumber: 202,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1560,29 +1572,29 @@ function SimulationArena({ initialConfig, onExit, arenaTitle = "Practice Arena" 
                             className: "absolute right-2",
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$send$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Send$3e$__["Send"], {}, void 0, false, {
                                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                                lineNumber: 195,
+                                lineNumber: 217,
                                 columnNumber: 25
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                            lineNumber: 189,
+                            lineNumber: 211,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                    lineNumber: 176,
+                    lineNumber: 198,
                     columnNumber: 18
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-                lineNumber: 175,
+                lineNumber: 197,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/frontend/src/components/simulation-arena.tsx",
-        lineNumber: 135,
+        lineNumber: 157,
         columnNumber: 9
     }, this);
 }

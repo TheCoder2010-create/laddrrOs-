@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
-
-import { Role, availableRoles } from '@common/types/role';
+import { getLatestActiveSurvey } from '@/services/survey-service';
+import { type Role, availableRoles } from '@common/types/role';
 
 const ROLE_STORAGE_KEY = 'accountability-os-role';
 const ACTIVE_SURVEY_KEY = 'active_survey_exists';
+
+export type { Role };
+export { availableRoles };
 
 export const useRole = () => {
     const [role, setRole] = useState<Role | null>(null);
