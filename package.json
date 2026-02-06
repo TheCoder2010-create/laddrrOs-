@@ -7,7 +7,7 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev -w frontend",
+    "dev": "npm run dev -w frontend --",
     "genkit:dev": "npm run genkit:dev -w backend",
     "genkit:watch": "npm run genkit:watch -w backend",
     "build": "npm run build -w frontend",
